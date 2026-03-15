@@ -5,8 +5,6 @@ services:
       POSTGRES_DB: transcendence
       POSTGRES_USER: transcendence
       POSTGRES_PASSWORD: transcendence
-    ports:
-      - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
