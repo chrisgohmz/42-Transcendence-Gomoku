@@ -2,9 +2,9 @@ services:
   database:
     image: postgres:16-alpine
     environment:
-      POSTGRES_DB: transcendence
-      POSTGRES_USER: transcendence
-      POSTGRES_PASSWORD: transcendence
+      POSTGRES_DB: ${POSTGRES_DB:-transcendence}
+      POSTGRES_USER: ${POSTGRES_USER:-transcendence}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
@@ -22,7 +22,7 @@ services:
     environment:
       NODE_ENV: production
       PORT: 3001
-      DATABASE_URL: postgresql://transcendence:transcendence@database:5432/transcendence?schema=public
+      DATABASE_URL: postgresql://${POSTGRES_USER:-transcendence}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}@database:5432/${POSTGRES_DB:-transcendence}?schema=public
       SOCKET_CORS_ORIGIN: http://localhost:3000
     ports:
       - "3001:3001"
