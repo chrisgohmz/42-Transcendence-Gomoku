@@ -6,14 +6,22 @@ import { io } from "socket.io-client";
 const HEALTH_REFRESH_MS = 10000;
 
 function toneForStatus(status) {
-  if (status === "ok") {
+  // Healthy states
+  if (status === "ok" || status === "connected") {
     return "ok";
   }
 
-  if (status === "degraded") {
+  // Degraded but not failed
+  if (
+    status === "degraded" ||
+    status === "connecting" ||
+    status === "checking"
+  ) {
     return "warn";
   }
 
+  // Explicit failure or unknown/unsupported states
+  // e.g., "disconnected", "error", "unreachable", etc.
   return "down";
 }
 
