@@ -1,0 +1,128 @@
+:root {
+  color-scheme: dark;
+  --bg: #09111f;
+  --panel: rgba(11, 24, 45, 0.78);
+  --panel-border: rgba(166, 194, 255, 0.16);
+  --text: #edf4ff;
+  --muted: #a8bad9;
+  --accent: #83d0ff;
+  --accent-strong: #4ee8c2;
+  --danger: #ff8f8f;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+}
+
+body {
+  font-family: "Space Grotesk", "Avenir Next", sans-serif;
+  background:
+    radial-gradient(circle at top, rgba(78, 232, 194, 0.18), transparent 28%),
+    radial-gradient(circle at bottom right, rgba(131, 208, 255, 0.2), transparent 30%),
+    linear-gradient(160deg, #040914 0%, #09111f 45%, #0d1730 100%);
+  color: var(--text);
+}
+
+.shell {
+  width: min(1100px, calc(100vw - 2rem));
+  margin: 0 auto;
+  padding: 4rem 0 5rem;
+}
+
+.hero {
+  margin-bottom: 2rem;
+}
+
+.eyebrow {
+  margin: 0 0 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  color: var(--accent-strong);
+  font-size: 0.78rem;
+}
+
+h1 {
+  margin: 0;
+  font-size: clamp(2.4rem, 5vw, 4.8rem);
+  line-height: 0.95;
+  max-width: 12ch;
+}
+
+.lede {
+  max-width: 60ch;
+  color: var(--muted);
+  font-size: 1.05rem;
+  line-height: 1.7;
+  margin-top: 1rem;
+}
+
+.panel {
+  display: grid;
+  gap: 1rem;
+  padding: 1.5rem;
+  border-radius: 28px;
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  backdrop-filter: blur(16px);
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.35);
+}
+
+.panel-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+
+.card {
+  padding: 1rem;
+  border-radius: 20px;
+  background: rgba(7, 15, 29, 0.8);
+  border: 1px solid rgba(166, 194, 255, 0.1);
+}
+
+.label {
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--muted);
+  margin-bottom: 0.55rem;
+}
+
+.value {
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.ok {
+  color: var(--accent-strong);
+}
+
+.warn {
+  color: #ffd17a;
+}
+
+.down {
+  color: var(--danger);
+}
+
+.meta {
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+@media (max-width: 640px) {
+  .shell {
+    width: min(100vw - 1.25rem, 100%);
+    padding-top: 2rem;
+  }
+
+  .panel {
+    padding: 1rem;
+  }
+}
