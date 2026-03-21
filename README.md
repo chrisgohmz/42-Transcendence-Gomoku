@@ -26,6 +26,16 @@
 # Project Management
 
 # Technical Stack
+◦ Frontend technologies and frameworks used.
+◦ Backend technologies and frameworks used.
+◦ Database system and why it was chosen.
+◦ Any other significant technologies or libraries.
+◦ Justification for major technical choices.
+
+## Frameworks and Libraries
+1. Next.js: Used for both frontend and backend development, providing a full-stack framework that allows for server-side rendering and easy API route creation
+2. Socket.IO: Used for real-time communication between the client and server, enabling features such as live chat and real-time game updates
+
 
 # Database Schema
 
