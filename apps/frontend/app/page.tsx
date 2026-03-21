@@ -1,3 +1,4 @@
+import { ClickToggleButton } from "../components/click-toggle-button";
 import { StatusPanel } from "../components/status-panel";
 
 export const dynamic = "force-dynamic";
@@ -14,6 +15,15 @@ export default function Home() {
           The frontend talks to the backend, the backend checks PostgreSQL through
           Prisma, and Socket.IO is available for realtime features.
         </p>
+      </section>
+      <section className="panel">
+        <article className="card">
+          <div className="label">Client Toggle Demo</div>
+          <p className="meta">
+            Click the button to flip local React state and update the UI.
+          </p>
+          <ClickToggleButton />
+        </article>
       </section>
       <StatusPanel socketUrl={socketUrl} />
     </main>
