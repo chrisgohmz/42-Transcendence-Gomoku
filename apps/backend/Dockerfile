@@ -21,7 +21,7 @@ RUN chmod +x scripts/start.sh
 
 EXPOSE 3001
 
-CMD ["sh", "-c", "bun scripts/wait-for-db.js && bun run prisma:push -- --skip-generate && bun run dev"]
+CMD ["sh", "-c", "bun scripts/wait-for-db.ts && bun run prisma:push -- --skip-generate && bun run dev"]
 
 FROM base AS production
 
