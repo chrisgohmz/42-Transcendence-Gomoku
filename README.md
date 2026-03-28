@@ -34,8 +34,7 @@
 
 ## Frameworks and Libraries
 1. Next.js: Used for both frontend and backend development, providing a full-stack framework that allows for server-side rendering and easy API route creation
-2. Socket.IO: Used for real-time communication between the client and server, enabling features such as live chat and real-time game updates
-
+2. Socket.IO: Used for real-time communication between the client and server, enabling features such
 
 # Database Schema
 
