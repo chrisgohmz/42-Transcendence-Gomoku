@@ -79,7 +79,9 @@ h1 {
 
 .btn {
   appearance: none;
-  border: 1px solid transparent;
+  background: rgba(166, 194, 255, 0.1);
+  border: 1px solid rgba(166, 194, 255, 0.3);
+  color: var(--text);
   border-radius: 999px;
   padding: 0.8rem 1.2rem;
   margin-top: 1rem;

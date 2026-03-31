@@ -14,7 +14,7 @@ model PlayerPresence {
 }
 
 model Room {
-	id			String		@id @default(cuid())
-	status		String		@default("waiting")
-	createdAt	DateTime	@default(now())
+  id        String   @id @default(cuid())
+  status    String   @default("waiting")
+  createdAt DateTime @default(now())
 }

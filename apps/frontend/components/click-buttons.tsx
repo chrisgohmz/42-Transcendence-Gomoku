@@ -30,7 +30,12 @@ export function ClickButtons() {
         {enabled ? "ON" : "OFF"}
       </button>
 
-      <button type="button" className="btn" onClick={handleClickCount}>
+      <button
+        type="button"
+        className="btn"
+        onClick={handleClickCount}
+        aria-label={`Increment counter, current value ${count}`}
+      >
         {count}
       </button>
     </div>
