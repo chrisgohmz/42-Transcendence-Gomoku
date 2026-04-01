@@ -1,0 +1,4 @@
+node_modules
+.next
+apps/*/node_modules
+apps/*/.next

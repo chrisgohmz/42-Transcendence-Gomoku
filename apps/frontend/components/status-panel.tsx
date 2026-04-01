@@ -46,7 +46,11 @@ function toneForStatus(status: PanelStatus): Tone {
     return "ok";
   }
 
-  if (status === "degraded" || status === "connecting" || status === "checking") {
+  if (
+    status === "degraded" ||
+    status === "connecting" ||
+    status === "checking"
+  ) {
     return "warn";
   }
 
@@ -65,7 +69,7 @@ export function StatusPanel({ socketUrl }: StatusPanelProps) {
   useEffect(() => {
     let active = true;
 
-    async function loadHealth() {
+    const loadHealth = async () => {
       try {
         const response = await fetch("/api/health", { cache: "no-store" });
         const payload = (await response.json()) as FrontendHealth;
@@ -84,7 +88,7 @@ export function StatusPanel({ socketUrl }: StatusPanelProps) {
           });
         }
       }
-    }
+    };
 
     void loadHealth();
     const timer = setInterval(() => {
@@ -154,13 +158,17 @@ export function StatusPanel({ socketUrl }: StatusPanelProps) {
         </article>
         <article className="card">
           <div className="label">Socket.IO</div>
-          <div className={`value ${toneForStatus(socketState)}`}>{socketState}</div>
+          <div className={`value ${toneForStatus(socketState)}`}>
+            {socketState}
+          </div>
         </article>
       </div>
       <div className="meta">
         <div>Socket target: {socketUrl}</div>
         <div>Last signal: {lastSignal}</div>
-        <div>Health checked: {health?.checkedAt ?? "Waiting for first response"}</div>
+        <div>
+          Health checked: {health?.checkedAt ?? "Waiting for first response"}
+        </div>
       </div>
     </section>
   );

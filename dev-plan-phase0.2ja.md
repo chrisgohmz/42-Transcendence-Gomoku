@@ -59,7 +59,7 @@ sessionStorage["proto:roomSession:<roomId>"] = JSON.stringify({
   playerId,
   seat,
   displayName,
-})
+});
 ```
 
 Phase 0 では以下の扱いとする。
@@ -82,12 +82,12 @@ Phase 0 では 1x5 の簡易 UI を使うが、将来の 15x15・連珠・観戦
 
 ## 4 種類の通信パターンと位置づけ
 
-| フロント視点の通信パターン | Phase 0 での対応実装 |
-|---|---|
-| ① ブラウザ完結 | 名前入力・手番表示・クリック可能/不可の制御 |
-| ② クリック → サーバー → レスポンス | 着手を REST で送信し、受理/拒否を返す |
-| ③ フェッチ → レンダリング | `GET /rooms` と `GET /rooms/:id/state` で一覧・状態取得 |
-| ④ サーバープッシュ | `game:update` を room 全員へ配信し、盤面を同期 |
+| フロント視点の通信パターン         | Phase 0 での対応実装                                    |
+| ---------------------------------- | ------------------------------------------------------- |
+| ① ブラウザ完結                     | 名前入力・手番表示・クリック可能/不可の制御             |
+| ② クリック → サーバー → レスポンス | 着手を REST で送信し、受理/拒否を返す                   |
+| ③ フェッチ → レンダリング          | `GET /rooms` と `GET /rooms/:id/state` で一覧・状態取得 |
+| ④ サーバープッシュ                 | `game:update` を room 全員へ配信し、盤面を同期          |
 
 ---
 
@@ -162,13 +162,13 @@ Player1       Frontend1      Backend           DB           Frontend2
 
 ### REST
 
-| メソッド | パス | 説明 |
-|---|---|---|
-| `POST` | `/api/rooms` | ルームを作成する |
-| `GET` | `/api/rooms` | 参加可能なルーム一覧を返す |
-| `POST` | `/api/rooms/:id/join` | 指定ルームに参加する |
-| `POST` | `/api/rooms/:id/moves` | 着手コマンドを送信する |
-| `GET` | `/api/rooms/:id/state` | 現在状態を返す。再接続や初期同期に使う |
+| メソッド | パス                   | 説明                                   |
+| -------- | ---------------------- | -------------------------------------- |
+| `POST`   | `/api/rooms`           | ルームを作成する                       |
+| `GET`    | `/api/rooms`           | 参加可能なルーム一覧を返す             |
+| `POST`   | `/api/rooms/:id/join`  | 指定ルームに参加する                   |
+| `POST`   | `/api/rooms/:id/moves` | 着手コマンドを送信する                 |
+| `GET`    | `/api/rooms/:id/state` | 現在状態を返す。再接続や初期同期に使う |
 
 ### ルーム作成 API
 
@@ -283,12 +283,12 @@ Player1       Frontend1      Backend           DB           Frontend2
 
 ## WebSocket イベント
 
-| 方向 | イベント名 | 内容 |
-|---|---|---|
-| Client → Server | `room:subscribe` | room の購読開始 |
-| Server → Client | `room:subscribed` | 購読完了通知 |
-| Server → Client | `game:update` | 確定済みの最新ゲーム状態を room 全員へ配信 |
-| Server → Client | `room:closed` | ルーム終了や切断整理を通知 |
+| 方向            | イベント名        | 内容                                       |
+| --------------- | ----------------- | ------------------------------------------ |
+| Client → Server | `room:subscribe`  | room の購読開始                            |
+| Server → Client | `room:subscribed` | 購読完了通知                               |
+| Server → Client | `game:update`     | 確定済みの最新ゲーム状態を room 全員へ配信 |
+| Server → Client | `room:closed`     | ルーム終了や切断整理を通知                 |
 
 ### `game:update` の例
 
@@ -578,14 +578,14 @@ Slice 9: stateVersion / baseVersion を追加
 
 ## Phase 0 → Phase 1 への移行方針
 
-| Phase 0 の部品 | Phase 1 での用途 |
-|---|---|
-| `MiniBoard.tsx` | `Board.tsx`（15x15）へ置き換え |
-| `move-validator.ts` | 五目並べの勝敗判定へ拡張 |
-| `state-builder.ts` | 観戦・再接続・棋譜再生に流用 |
-| `Room / RoomPlayer / Move` | 連珠・公開/非公開・観戦へ拡張 |
-| `stateVersion` | 同時着手・再送・再接続対応の基礎 |
-| `useSocketGame.ts` | 対局通知、チャット、観戦通知にも拡張 |
-| `GET /state` | 再接続・ページ再読込・観戦途中参加の基礎 |
+| Phase 0 の部品             | Phase 1 での用途                         |
+| -------------------------- | ---------------------------------------- |
+| `MiniBoard.tsx`            | `Board.tsx`（15x15）へ置き換え           |
+| `move-validator.ts`        | 五目並べの勝敗判定へ拡張                 |
+| `state-builder.ts`         | 観戦・再接続・棋譜再生に流用             |
+| `Room / RoomPlayer / Move` | 連珠・公開/非公開・観戦へ拡張            |
+| `stateVersion`             | 同時着手・再送・再接続対応の基礎         |
+| `useSocketGame.ts`         | 対局通知、チャット、観戦通知にも拡張     |
+| `GET /state`               | 再接続・ページ再読込・観戦途中参加の基礎 |
 
 Phase 0 の目的は「簡易ゲームを作ること」ではなく、**将来の Gomoku.com 風サービスでも通用する通信の芯を先に作ること** とする。

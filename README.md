@@ -1,7 +1,6 @@
-*This project has been created as partof the 42 curriculum by cgoh, athonda and mintan*
+_This project has been created as partof the 42 curriculum by cgoh, athonda and mintan_
 
 # Description
-
 
 # Instructions
 
@@ -56,6 +55,28 @@ docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
 
 This override switches the frontend and backend to development mode, mounts the source tree into the containers, and enables hot reload while keeping PostgreSQL in Docker.
 
+### Lint the repo
+
+```bash
+bun run lint
+bun run lint:fix
+```
+
+### Format the repo
+
+```bash
+bun run format:check
+bun run format
+```
+
+### Git hooks
+
+Pre-commit hooks are managed with `simple-git-hooks` and run `lint-staged` on staged files only.
+
+Staged TypeScript files run through ESLint and Prettier, staged CSS files run through Stylelint and Prettier, and staged JSON/Markdown/config files run through Prettier.
+
+The ESLint setup also includes `eslint-plugin-prefer-arrow` to encourage arrow functions where they improve consistency without forcing top-level standalone declarations to change.
+
 Do not regenerate lockfiles with npm. Commit the Bun lockfiles instead.
 
 # Resources
@@ -63,18 +84,17 @@ Do not regenerate lockfiles with npm. Commit the Bun lockfiles instead.
 # Team Information
 
 - Project Manager (PM): athonda
-    - Organise team meetings and ensure that the project is progressing according to schedule
-    - Track the progress and deadlines
+  - Organise team meetings and ensure that the project is progressing according to schedule
+  - Track the progress and deadlines
 - Tech Lead (TL): cgoh
-    - Final say on technical decisions and architecture
-    - Reviews our code before we merge it into the main branch
+  - Final say on technical decisions and architecture
+  - Reviews our code before we merge it into the main branch
 - Product Owner (PO): mintan
-    - Defines the product vision and requirements
-    - Prioritizes features and user stories
+  - Defines the product vision and requirements
+  - Prioritizes features and user stories
 - Developers: cgoh, athonda, mintan
-    - Responsible for implementing the features and functionality of the project
-    - Test abd document our work
-
+  - Responsible for implementing the features and functionality of the project
+  - Test abd document our work
 
 # Project Management
 
@@ -91,30 +111,32 @@ Do not regenerate lockfiles with npm. Commit the Bun lockfiles instead.
 # Features List
 
 # Modules
+
 ## Web
+
 1. A full-stack framework: Next.js was used for both frontend and backend development
 2. WebSockets: Socket.IO was used for real-time communication between the client and server. This was used for features such as live chat and the gomoku game
 3. User interaction: Users can chat with each other, view each other's profiles, and add other users as friends
 4. An ORM was used to manage the database, allowing for easy querying and manipulation of data
 
 ## User Management
+
 1. Users can create accounts, log in and update their own profiles. They will also have access to a profile page to update their own information. Their friends' profile information can also be viewed
 2. Game statistics and match history are also tracked and displayed on the user's profile page
 3. Users can used OAuth 2.0 to log in with their Google or GitHub accounts
 4. User activty analytics and insights are also displayed on a dashboard
 
 ## Artificial Intelligence
+
 1. An AI opponent was implemented for the gomoku game
 
 ## Gaming and user experience
+
 1. Users can play against each other in real-time, with a live chat feature to communicate during the game
 2. The gameplay takes place on separate computers and takes place in real-time
 
 ## DevOps
+
 1. The project's backend was designed as microservices, allowing for scalability and maintainability
 
 # Individual Contributions
-
-
-
-

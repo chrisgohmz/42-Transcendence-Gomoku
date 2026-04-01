@@ -12,8 +12,8 @@ export default function Home() {
         <p className="eyebrow">42 Transcendence</p>
         <h1>One command boots the full local stack.</h1>
         <p className="lede">
-          The frontend talks to the backend, the backend checks PostgreSQL through
-          Prisma, and Socket.IO is available for realtime features.
+          The frontend talks to the backend, the backend checks PostgreSQL
+          through Prisma, and Socket.IO is available for realtime features.
         </p>
       </section>
       <section className="panel">

@@ -35,10 +35,12 @@ export default function Home() {
         >
           Backend Service
         </p>
-        <h1 style={{ marginTop: 0 }}>Next.js, Prisma, PostgreSQL, and Socket.IO are live.</h1>
+        <h1 style={{ marginTop: 0 }}>
+          Next.js, Prisma, PostgreSQL, and Socket.IO are live.
+        </h1>
         <p style={{ color: "#a8bad9", lineHeight: 1.7 }}>
-          Use <code>/api/health</code> for the container health check and connect to
-          Socket.IO on this same service at port 3001.
+          Use <code>/api/health</code> for the container health check and
+          connect to Socket.IO on this same service at port 3001.
         </p>
       </section>
     </main>

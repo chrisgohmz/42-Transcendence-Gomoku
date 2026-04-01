@@ -56,7 +56,9 @@ async function waitForDatabase(): Promise<void> {
     }
   }
 
-  throw new Error(`Database did not become reachable after ${retries} attempts.`);
+  throw new Error(
+    `Database did not become reachable after ${retries} attempts.`,
+  );
 }
 
 waitForDatabase().catch((error: unknown) => {

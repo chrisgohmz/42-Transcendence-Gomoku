@@ -59,7 +59,7 @@ sessionStorage["proto:roomSession:<roomId>"] = JSON.stringify({
   playerId,
   seat,
   displayName,
-})
+});
 ```
 
 Phase 0 behavior:
@@ -82,12 +82,12 @@ Phase 0 uses a simplified 1x5 UI, but the following fields are designed for the 
 
 ## Four Communication Patterns
 
-| Pattern (frontend perspective) | Implementation in Phase 0 |
-|---|---|
-| ① Browser-only | Name input, turn display, click enable/disable control |
-| ② Click → Server → Response | Send a move via REST; receive accept or reject |
-| ③ Fetch → Render | `GET /rooms` and `GET /rooms/:id/state` for list and state |
-| ④ Server Push | Broadcast `game:update` to the whole room; sync the board |
+| Pattern (frontend perspective) | Implementation in Phase 0                                  |
+| ------------------------------ | ---------------------------------------------------------- |
+| ① Browser-only                 | Name input, turn display, click enable/disable control     |
+| ② Click → Server → Response    | Send a move via REST; receive accept or reject             |
+| ③ Fetch → Render               | `GET /rooms` and `GET /rooms/:id/state` for list and state |
+| ④ Server Push                  | Broadcast `game:update` to the whole room; sync the board  |
 
 ---
 
@@ -162,13 +162,13 @@ Notes:
 
 ### REST Endpoints
 
-| Method | Path | Description |
-|---|---|---|
-| `POST` | `/api/rooms` | Create a room |
-| `GET` | `/api/rooms` | List rooms available to join |
-| `POST` | `/api/rooms/:id/join` | Join the specified room |
-| `POST` | `/api/rooms/:id/moves` | Submit a move |
-| `GET` | `/api/rooms/:id/state` | Get current state; used for reconnection and initial sync |
+| Method | Path                   | Description                                               |
+| ------ | ---------------------- | --------------------------------------------------------- |
+| `POST` | `/api/rooms`           | Create a room                                             |
+| `GET`  | `/api/rooms`           | List rooms available to join                              |
+| `POST` | `/api/rooms/:id/join`  | Join the specified room                                   |
+| `POST` | `/api/rooms/:id/moves` | Submit a move                                             |
+| `GET`  | `/api/rooms/:id/state` | Get current state; used for reconnection and initial sync |
 
 ### Create Room
 
@@ -283,12 +283,12 @@ The game start is communicated not by a dedicated `room:started` event, but thro
 
 ## WebSocket Events
 
-| Direction | Event | Description |
-|---|---|---|
-| Client → Server | `room:subscribe` | Begin subscribing to a room |
-| Server → Client | `room:subscribed` | Subscription confirmed |
-| Server → Client | `game:update` | Latest confirmed game state broadcast to all room members |
-| Server → Client | `room:closed` | Room has ended or been cleaned up |
+| Direction       | Event             | Description                                               |
+| --------------- | ----------------- | --------------------------------------------------------- |
+| Client → Server | `room:subscribe`  | Begin subscribing to a room                               |
+| Server → Client | `room:subscribed` | Subscription confirmed                                    |
+| Server → Client | `game:update`     | Latest confirmed game state broadcast to all room members |
+| Server → Client | `room:closed`     | Room has ended or been cleaned up                         |
 
 ### `game:update` payload
 
@@ -576,14 +576,14 @@ Slice 9: Add stateVersion / baseVersion
 
 ## Migration Path: Phase 0 → Phase 1
 
-| Phase 0 component | Role in Phase 1 |
-|---|---|
-| `MiniBoard.tsx` | Replaced by `Board.tsx` (15x15) |
-| `move-validator.ts` | Extended with Gomoku win detection |
-| `state-builder.ts` | Reused for spectating, reconnection, and game replay |
-| `Room / RoomPlayer / Move` | Extended for Renju, public/private rooms, spectating |
-| `stateVersion` | Foundation for concurrent move handling, retries, reconnection |
-| `useSocketGame.ts` | Extended for game notifications, chat, and spectating |
-| `GET /state` | Foundation for reconnection, page reload, and mid-game spectating |
+| Phase 0 component          | Role in Phase 1                                                   |
+| -------------------------- | ----------------------------------------------------------------- |
+| `MiniBoard.tsx`            | Replaced by `Board.tsx` (15x15)                                   |
+| `move-validator.ts`        | Extended with Gomoku win detection                                |
+| `state-builder.ts`         | Reused for spectating, reconnection, and game replay              |
+| `Room / RoomPlayer / Move` | Extended for Renju, public/private rooms, spectating              |
+| `stateVersion`             | Foundation for concurrent move handling, retries, reconnection    |
+| `useSocketGame.ts`         | Extended for game notifications, chat, and spectating             |
+| `GET /state`               | Foundation for reconnection, page reload, and mid-game spectating |
 
 The goal of Phase 0 is not to build a simplified game. It is to **establish the communication core that will hold up in a full Gomoku.com-style service**.

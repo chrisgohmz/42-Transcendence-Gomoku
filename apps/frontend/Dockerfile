@@ -19,7 +19,7 @@ COPY . .
 
 EXPOSE 3000
 
-CMD ["bun", "run", "dev"]
+CMD ["sh", "-c", "bun install --frozen-lockfile && bun run dev"]
 
 FROM base AS production
 
