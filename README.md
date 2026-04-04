@@ -11,7 +11,10 @@ This repo now uses Bun as the only supported package manager.
 ### Prerequisites
 
 - Docker and Docker Compose
-- Bun 1.x for local app commands
+- Bun 1.x for package manager and script commands
+- Node 24 LTS for local Prisma CLI usage
+
+An `.nvmrc` file is included at the repo root if you use `nvm`.
 
 After installing Bun, restart your shell so both `bun` and `bunx` are available on your `PATH`.
 Run `bun install` once at the repo root if you want VS Code to use a single workspace TypeScript SDK for the whole repository.
@@ -27,16 +30,44 @@ The backend install intentionally skips dependency lifecycle scripts. Generate t
 
 ### Run locally without containers
 
+Start PostgreSQL in Docker first so the host-side `DATABASE_URL` in `.env` can reach `localhost:5432`:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d database
+```
+
+Then run the backend and frontend from your host shell:
+
 ```bash
 (cd apps/backend && bun run dev)
 (cd apps/frontend && bun run dev)
 ```
 
+The frontend uses Next's default Turbopack dev server. The backend's custom
+Next server currently forces webpack in development because that path is more
+reliable with Prisma + `pg` externals.
+
 ### Prisma workflow
 
 ```bash
 (cd apps/backend && bun run prisma:generate)
-(cd apps/backend && bun run prisma:push)
+(cd apps/backend && bun run prisma:migrate:dev -- --name <migration-name>)
+```
+
+For host-side Prisma commands, `DATABASE_URL` should point to `localhost:5432`. In containers, Compose still injects a container-only URL that uses `database:5432`.
+
+When `schema.prisma` changes, create a migration locally with `prisma migrate dev`,
+verify it, and commit the generated `apps/backend/prisma/migrations/` files.
+
+This repo now applies committed migrations on container startup with
+`prisma migrate deploy` instead of syncing the schema with `db push`.
+
+If you were already using the old `db push` workflow locally, do a one-time reset
+before the first migration-based run:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.dev.yml down -v
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d database
 ```
 
 ### Run the full stack with containers
@@ -53,7 +84,7 @@ This runs the app in a production-style container mode.
 docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
 ```
 
-This override switches the frontend and backend to development mode, mounts the source tree into the containers, and enables hot reload while keeping PostgreSQL in Docker.
+This override switches the frontend and backend to development mode, mounts the source tree into the containers, enables hot reload while keeping PostgreSQL in Docker, and publishes PostgreSQL on `localhost:5432` for host-side Prisma and backend commands.
 
 ### Lint the repo
 

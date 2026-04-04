@@ -1,6 +1,8 @@
+import "../lib/load-env";
+
 import { createConnection } from "node:net";
 
-const databaseUrl = process.env.DATABASE_URL;
+const databaseUrl = process.env["DATABASE_URL"];
 
 if (!databaseUrl) {
   console.error("DATABASE_URL is not defined.");
@@ -10,8 +12,8 @@ if (!databaseUrl) {
 const parsedUrl = new URL(databaseUrl);
 const host = parsedUrl.hostname;
 const port = Number(parsedUrl.port || 5432);
-const retries = Number(process.env.DB_WAIT_RETRIES || 30);
-const delayMs = Number(process.env.DB_WAIT_DELAY_MS || 2000);
+const retries = Number(process.env["DB_WAIT_RETRIES"] || 30);
+const delayMs = Number(process.env["DB_WAIT_DELAY_MS"] || 2000);
 
 function sleep(duration: number): Promise<void> {
   return new Promise((resolve) => {

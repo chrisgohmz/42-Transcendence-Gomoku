@@ -21,6 +21,11 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
         with:
@@ -41,7 +46,7 @@ jobs:
 
       - name: Build frontend
         working-directory: apps/frontend
-        run: bunx --bun next build --no-lint
+        run: bun run build
 
       - name: Install backend dependencies
         working-directory: apps/backend
@@ -53,4 +58,4 @@ jobs:
 
       - name: Build backend
         working-directory: apps/backend
-        run: bunx --bun next build --no-lint
+        run: bun run build

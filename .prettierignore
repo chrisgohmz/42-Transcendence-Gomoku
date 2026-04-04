@@ -4,3 +4,4 @@ node_modules
 bun.lock
 apps/*/node_modules
 apps/*/.next
+apps/backend/generated

@@ -2,5 +2,5 @@
 set -eu
 
 bun scripts/wait-for-db.ts
-bun run prisma:push -- --skip-generate
+bun run prisma:migrate:deploy
 exec bun run start

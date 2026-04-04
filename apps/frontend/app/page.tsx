@@ -4,7 +4,7 @@ import { StatusPanel } from "../components/status-panel";
 export const dynamic = "force-dynamic";
 
 export default function Home() {
-  const socketUrl = process.env.SOCKET_PUBLIC_URL ?? "http://localhost:3001";
+  const socketUrl = process.env["SOCKET_PUBLIC_URL"] ?? "http://localhost:3001";
 
   return (
     <main className="shell">

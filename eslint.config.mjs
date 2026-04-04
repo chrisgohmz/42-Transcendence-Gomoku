@@ -33,6 +33,7 @@ const eslintConfig = defineConfig([
     "**/.next/**",
     "**/out/**",
     "**/build/**",
+    "apps/backend/generated/**",
     "**/next-env.d.ts",
   ]),
   eslintConfigPrettier,

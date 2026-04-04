@@ -1,4 +1,5 @@
 node_modules
 .next
+generated
 bun-debug.log*
 npm-debug.log*

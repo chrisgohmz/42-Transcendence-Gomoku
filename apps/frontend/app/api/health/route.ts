@@ -5,7 +5,8 @@ function getErrorMessage(error: unknown): string {
 }
 
 export async function GET() {
-  const backendUrl = process.env.BACKEND_INTERNAL_URL ?? "http://backend:3001";
+  const backendUrl =
+    process.env["BACKEND_INTERNAL_URL"] ?? "http://backend:3001";
 
   try {
     const response = await fetch(`${backendUrl}/api/health`, {

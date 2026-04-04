@@ -9,7 +9,7 @@
     "start": "next start -H 0.0.0.0 -p 3000"
   },
   "dependencies": {
-    "next": "15.2.8",
+    "next": "16.2.2",
     "react": "19.0.0",
     "react-dom": "19.0.0",
     "socket.io-client": "4.8.1"
