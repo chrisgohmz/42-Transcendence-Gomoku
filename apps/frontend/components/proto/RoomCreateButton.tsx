@@ -13,6 +13,7 @@ type CreateRoomResponse = {
 
 type ErrorResponse = {
   message?: string;
+  detail?: string;
   error?: string;
 };
 
@@ -40,6 +41,7 @@ export function RoomCreateButton({
           .catch(() => null)) as ErrorResponse | null;
         const message =
           errorPayload?.message ??
+          errorPayload?.detail ??
           errorPayload?.error ??
           `Request failed with status ${response.status}`;
         onError(message);
