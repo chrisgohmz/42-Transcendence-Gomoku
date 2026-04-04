@@ -8,7 +8,7 @@
     "dev": "bun server.ts",
     "build": "bun run prisma:generate && next build",
     "start": "bun server.ts",
-    "prisma:generate": "rm -rf generated/prisma && bunx --bun prisma generate",
+    "prisma:generate": "node -e \"require('fs').rmSync('generated/prisma', { recursive: true, force: true });\" && bunx --bun prisma generate",
     "prisma:migrate:dev": "bunx --bun prisma migrate dev",
     "prisma:migrate:deploy": "bunx --bun prisma migrate deploy"
   },

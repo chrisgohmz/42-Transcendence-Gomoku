@@ -4,9 +4,9 @@ import { createServer } from "node:http";
 import next from "next";
 import { Server } from "socket.io";
 
-const dev = process.env.NODE_ENV !== "production";
+const dev = process.env["NODE_ENV"] !== "production";
 const hostname = "0.0.0.0";
-const port = Number(process.env.PORT || 3001);
+const port = Number(process.env["PORT"] || 3001);
 
 // The custom server runs under Bun in dev, but Next's dev webpack path is more
 // reliable here than Turbopack for Prisma + pg externals inside the backend app.
@@ -19,7 +19,7 @@ const app = next({
 const handle = app.getRequestHandler();
 
 function readCorsOrigins(): string[] {
-  const configuredOrigins = process.env.SOCKET_CORS_ORIGIN;
+  const configuredOrigins = process.env["SOCKET_CORS_ORIGIN"];
 
   if (!configuredOrigins) {
     return ["http://localhost:3000"];

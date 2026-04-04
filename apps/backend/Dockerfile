@@ -4,7 +4,6 @@ WORKDIR /app
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV BUN_INSTALL=/root/.bun
 ENV PATH=${BUN_INSTALL}/bin:${PATH}
-ENV DATABASE_URL=postgresql://transcendence:change_me_please@database:5432/transcendence?schema=public
 
 RUN apt-get update \
     && apt-get install -y --no-install-recommends curl unzip ca-certificates openssl \
