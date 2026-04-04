@@ -48,7 +48,8 @@ async function parseJsonSafely<T>(response: Response): Promise<T | null> {
 }
 
 export async function POST(request: Request) {
-  const backendUrl = process.env.BACKEND_INTERNAL_URL ?? "http://backend:3001";
+  const backendUrl =
+    process.env["BACKEND_INTERNAL_URL"] ?? "http://backend:3001";
 
   try {
     const body = await request.arrayBuffer();

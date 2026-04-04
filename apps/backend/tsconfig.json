@@ -17,7 +17,17 @@
       {
         "name": "next"
       }
-    ]
+    ],
+    "paths": { "@/*": ["./app/*"] },
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "allowUnusedLabels": false,
+    "noUncheckedSideEffectImports": true,
+    "noFallthroughCasesInSwitch": true,
+    "allowUnreachableCode": false,
+    "noUncheckedIndexedAccess": true,
+    "noPropertyAccessFromIndexSignature": true,
+    "erasableSyntaxOnly": true
   },
   "include": [
     "next-env.d.ts",
