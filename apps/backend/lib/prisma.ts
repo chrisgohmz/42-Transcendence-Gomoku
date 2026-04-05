@@ -1,9 +1,10 @@
 import "./load-env";
 
 import { PrismaPg } from "@prisma/adapter-pg";
+import { createId } from "@paralleldrive/cuid2";
 import { Pool } from "pg";
 
-import { PrismaClient } from "../generated/prisma/client";
+import { Prisma, PrismaClient } from "../generated/prisma/client";
 
 declare global {
   var prisma: PrismaClient | undefined;
@@ -29,7 +30,43 @@ function getPrisma(): PrismaClient {
     });
 
   const adapter = new PrismaPg(pool);
-  const prisma = new PrismaClient({ adapter });
+  const cuidModels = new Set([
+    "User",
+    "OAuthAccount",
+    "UserSession",
+    "Conversation",
+    "ConversationParticipant",
+    "ChatMessage",
+    "Room",
+    "RoomParticipant",
+    "Move",
+  ]);
+
+  const prisma = new PrismaClient({ adapter }).$extends(
+    Prisma.defineExtension({
+      query: {
+        $allModels: {
+          create({ model, args, query }) {
+            if (cuidModels.has(model) && args?.data && args.data.id == null) {
+              args.data.id = createId();
+            }
+            return query(args);
+          },
+          createMany({ model, args, query }) {
+            if (cuidModels.has(model) && args?.data) {
+              const payloads = Array.isArray(args.data) ? args.data : [args.data];
+              for (const entry of payloads) {
+                if (entry && entry.id == null) {
+                  entry.id = createId();
+                }
+              }
+            }
+            return query(args);
+          },
+        },
+      },
+    }),
+  ) as unknown as PrismaClient;
 
   if (process.env["NODE_ENV"] !== "production") {
     globalThis.prismaPool = pool;
