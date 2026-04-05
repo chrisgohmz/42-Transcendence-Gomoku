@@ -274,10 +274,3 @@ model UserGameStats {
   @@unique([userId, ruleType, boardSize])
   @@index([userId])
 }
-
-// Kept for compatibility with existing small model
-model PlayerPresence {
-  id        Int      @id @default(autoincrement())
-  nickname  String   @unique
-  createdAt DateTime @default(now())
-}
