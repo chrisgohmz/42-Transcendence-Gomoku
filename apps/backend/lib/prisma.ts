@@ -54,7 +54,9 @@ function getPrisma(): PrismaClient {
           },
           createMany({ model, args, query }) {
             if (cuidModels.has(model) && args?.data) {
-              const payloads = Array.isArray(args.data) ? args.data : [args.data];
+              const payloads = Array.isArray(args.data)
+                ? args.data
+                : [args.data];
               for (const entry of payloads) {
                 if (entry && entry.id == null) {
                   entry.id = createId();
