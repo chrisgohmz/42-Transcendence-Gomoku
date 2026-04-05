@@ -9,23 +9,30 @@ export async function POST(request: Request) {
     process.env["BACKEND_INTERNAL_URL"] ?? "http://backend:3001";
 
   try {
-    const response = await fetch(`${backendUrl}/api/rooms`, {
+    const init: RequestInit & { duplex?: "half" } = {
       method: "POST",
       headers: request.headers,
       body: request.body,
       cache: "no-store",
-    });
+      duplex: "half",
+    };
 
-    const data = await response.json();
-    return Response.json(data, { status: response.status });
+    const response = await fetch(`${backendUrl}/api/rooms`, init);
+
+    return new Response(response.body, {
+      status: response.status,
+      headers: response.headers,
+    });
   } catch (error) {
+    const message = getErrorMessage(error);
     return Response.json(
       {
         error: "failed_to_create_room",
-        detail: getErrorMessage(error),
+        message,
+        detail: message,
       },
       {
-        status: 500,
+        status: 502,
       },
     );
   }
