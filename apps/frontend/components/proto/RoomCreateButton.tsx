@@ -8,7 +8,7 @@ type RoomCreateButtonProps = {
 };
 
 type CreateRoomResponse = {
-  roomId: string;
+  id?: string;
 };
 
 type ErrorResponse = {
@@ -48,14 +48,15 @@ export function RoomCreateButton({
         return;
       }
 
-      const payload = (await response.json()) as CreateRoomResponse;
+      const result = (await response.json()) as CreateRoomResponse;
+      const roomId = result.id;
 
-      if (!payload.roomId) {
-        onError("Invalid response: roomId is missing");
+      if (!roomId) {
+        onError("Invalid response: id is missing");
         return;
       }
 
-      onSuccess(payload.roomId);
+      onSuccess(roomId);
     } catch {
       onError("Network error while creating room");
     } finally {
