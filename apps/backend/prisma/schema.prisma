@@ -66,7 +66,7 @@ enum Seat {
 // Models
 
 model User {
-  id        String     @id @default(cuid())
+  id        String     @id @default(cuid2())
   kind      UserKind   @default(HUMAN)
   username  String     @unique
   displayName String
@@ -94,7 +94,7 @@ model User {
 }
 
 model OAuthAccount {
-  id                 String         @id @default(cuid())
+  id                 String         @id @default(cuid2())
   userId             String
   provider           OAuthProvider
   providerAccountId  String
@@ -110,7 +110,7 @@ model OAuthAccount {
 }
 
 model UserSession {
-  id           String   @id @default(cuid())
+  id           String   @id @default(cuid2())
   userId       String
   sessionToken String   @unique
   expiresAt    DateTime
@@ -138,7 +138,7 @@ model Friendship {
 }
 
 model Conversation {
-  id           String           @id @default(cuid())
+  id           String           @id @default(cuid2())
   kind         ConversationKind @default(DIRECT)
   directKey    String?          @unique
   roomId       String?          @unique
@@ -153,7 +153,7 @@ model Conversation {
 }
 
 model ConversationParticipant {
-  id             String   @id @default(cuid())
+  id             String   @id @default(cuid2())
   conversationId String
   userId         String
   joinedAt       DateTime @default(now())
@@ -168,7 +168,7 @@ model ConversationParticipant {
 }
 
 model ChatMessage {
-  id             String      @id @default(cuid())
+  id             String      @id @default(cuid2())
   conversationId String
   senderUserId   String?
   kind           MessageKind @default(USER)
@@ -185,7 +185,7 @@ model ChatMessage {
 }
 
 model Room {
-  id                 String       @id @default(cuid())
+  id                 String       @id @default(cuid2())
   status             RoomStatus   @default(WAITING)
   visibility         RoomVisibility @default(PUBLIC)
   ruleType           RuleType     @default(GOMOKU)
@@ -210,7 +210,7 @@ model Room {
 }
 
 model RoomParticipant {
-  id                  String   @id @default(cuid()) // playerId in Phase 0.2 API
+  id                  String   @id @default(cuid2()) // playerId in Phase 0.2 API
   roomId              String
   userId              String?
   displayNameSnapshot String
@@ -230,7 +230,7 @@ model RoomParticipant {
 }
 
 model Move {
-  id            String   @id @default(cuid())
+  id            String   @id @default(cuid2())
   roomId        String
   participantId String
   moveNumber    Int
