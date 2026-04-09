@@ -48,6 +48,10 @@ export default function Navbar() {
           <Link href="/login">
             <Button>Login</Button>
           </Link>
+
+          <Link href="/signup">
+            <Button>Sign Up</Button>
+          </Link>
         </div>
       </nav>
     </header>

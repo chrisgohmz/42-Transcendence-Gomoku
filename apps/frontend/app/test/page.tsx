@@ -1,10 +1,8 @@
 import Link from "next/link";
-import Navbar from "../components/nav-bar";
 
 export default function HomePage() {
   return (
     <main className="min-h-screen bg-slate-100 p-8">
-    <Navbar />
       <div className="mx-auto max-w-xl rounded-2xl bg-white p-8 shadow-lg">
         <h1 className="text-3xl font-bold text-slate-900">Home</h1>
 
