@@ -10,7 +10,8 @@
     "start": "bun server.ts",
     "prisma:generate": "node -e \"require('fs').rmSync('generated/prisma', { recursive: true, force: true });\" && bunx --bun prisma generate",
     "prisma:migrate:dev": "bunx --bun prisma migrate dev",
-    "prisma:migrate:deploy": "bunx --bun prisma migrate deploy"
+    "prisma:migrate:deploy": "bunx --bun prisma migrate deploy",
+    "prisma:seed": "bunx --bun prisma db seed"
   },
   "dependencies": {
     "@paralleldrive/cuid2": "3.3.0",

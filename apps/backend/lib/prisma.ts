@@ -36,10 +36,12 @@ function getPrisma(): PrismaClient {
     "UserSession",
     "Conversation",
     "ConversationParticipant",
-    "ChatMessage",
-    "Room",
-    "RoomParticipant",
-    "Move",
+    "DirectMessage",
+    "Match",
+    "MatchParticipant",
+    "MatchMove",
+    "AvatarMedia",
+    "AnalyticsEvent",
   ]);
 
   const prisma = new PrismaClient({ adapter }).$extends(
@@ -47,8 +49,11 @@ function getPrisma(): PrismaClient {
       query: {
         $allModels: {
           create({ model, args, query }) {
-            if (cuidModels.has(model) && args?.data && args.data.id == null) {
-              args.data.id = createId();
+            if (cuidModels.has(model) && args?.data) {
+              const payload = args.data as { id?: string | null };
+              if (payload.id == null) {
+                payload.id = createId();
+              }
             }
             return query(args);
           },
@@ -58,8 +63,9 @@ function getPrisma(): PrismaClient {
                 ? args.data
                 : [args.data];
               for (const entry of payloads) {
-                if (entry && entry.id == null) {
-                  entry.id = createId();
+                const mutableEntry = entry as { id?: string | null } | null;
+                if (mutableEntry && mutableEntry.id == null) {
+                  mutableEntry.id = createId();
                 }
               }
             }

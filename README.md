@@ -59,6 +59,12 @@ For host-side Prisma commands, `DATABASE_URL` should point to `localhost:5432`. 
 When `schema.prisma` changes, create a migration locally with `prisma migrate dev`,
 verify it, and commit the generated `apps/backend/prisma/migrations/` files.
 
+Seed the database with development demo data (skips if users already exist):
+
+```bash
+(cd apps/backend && bun run prisma:seed)
+```
+
 This repo now applies committed migrations on container startup with
 `prisma migrate deploy` instead of syncing the schema with `db push`.
 

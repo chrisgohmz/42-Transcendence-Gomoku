@@ -16,6 +16,9 @@ const databaseUrl =
 
 export default defineConfig({
   schema: "./prisma/schema.prisma",
+  migrations: {
+    seed: "bun --bun prisma/seed.ts",
+  },
   datasource: {
     url: databaseUrl ?? env("DATABASE_URL"),
   },

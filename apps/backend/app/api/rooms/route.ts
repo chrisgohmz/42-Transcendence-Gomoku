@@ -9,13 +9,13 @@ function getErrorMessage(error: unknown): string {
 
 export async function POST() {
   try {
-    const room = await prisma.room.create({
+    const match = await prisma.match.create({
       data: {},
     });
     return Response.json({
-      id: room.id,
-      status: room.status,
-      createdAt: room.createdAt,
+      id: match.id,
+      status: match.status,
+      createdAt: match.createdAt,
     });
   } catch (error) {
     return Response.json(

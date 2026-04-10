@@ -24,28 +24,18 @@ enum FriendshipStatus {
   PENDING
   ACCEPTED
   DECLINED
+  BLOCKED
 }
 
 enum ConversationKind {
   DIRECT
-  ROOM
+  GROUP
+  MATCH
 }
 
 enum MessageKind {
   USER
   SYSTEM
-}
-
-enum RoomStatus {
-  WAITING
-  PLAYING
-  FINISHED
-  CANCELLED
-}
-
-enum RoomVisibility {
-  PUBLIC
-  PRIVATE
 }
 
 enum RuleType {
@@ -63,10 +53,35 @@ enum Seat {
   WHITE
 }
 
+enum ProfileVisibility {
+  PUBLIC
+  FRIENDS
+  PRIVATE
+}
+
+enum MatchStatus {
+  WAITING
+  IN_PROGRESS
+  FINISHED
+  CANCELLED
+}
+
+enum MatchVisibility {
+  PUBLIC
+  PRIVATE
+}
+
+enum MatchResult {
+  WIN
+  LOSS
+  DRAW
+  CANCELLED
+}
+
 // Models
 
 model User {
-  id              String    @id @default(dbgenerated("cuid2()"))
+  id              String    @id @default(cuid(2))
   kind            UserKind  @default(HUMAN)
   username        String    @unique
   displayName     String
@@ -75,17 +90,22 @@ model User {
   passwordHash    String?
   avatarUrl       String?
   bio             String?
+  statusMessage   String?
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
   lastSeenAt      DateTime?
 
-  oauthAccounts    OAuthAccount[]
-  sessions         UserSession[]
-  conversations    ConversationParticipant[]
-  messages         ChatMessage[]
-  roomParticipants RoomParticipant[]
-  createdRooms     Room[]                    @relation("roomCreator")
-  gameStats        UserGameStats[]
+  profile           UserProfile?
+  oauthAccounts     OAuthAccount[]
+  sessions          UserSession[]
+  conversations     ConversationParticipant[]
+  messages          DirectMessage[]           @relation("MessageSender")
+  matchParticipants MatchParticipant[]
+  createdMatches    Match[]                   @relation("matchCreator")
+  gameStats         UserGameStats[]
+  achievements      UserAchievement[]
+  analyticsEvents   AnalyticsEvent[]
+  avatars           AvatarMedia[]             @relation("avatarUploader")
 
   // friendship relations (multiple relations to the same model must be named)
   friendshipsLow     Friendship[] @relation("friendLow")
@@ -93,8 +113,45 @@ model User {
   friendshipRequests Friendship[] @relation("friendRequestedBy")
 }
 
+model UserProfile {
+  userId      String            @id
+  avatarId    String?
+  tagline     String?
+  countryCode String?
+  language    String?
+  timezone    String?
+  visibility  ProfileVisibility @default(PUBLIC)
+  preferences Json?
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  user   User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  avatar AvatarMedia? @relation(fields: [avatarId], references: [id], onDelete: SetNull)
+
+  @@index([avatarId])
+}
+
+model AvatarMedia {
+  id           String   @id @default(cuid(2))
+  uploadedById String?
+  url          String
+  provider     String?
+  storageKey   String?
+  width        Int?
+  height       Int?
+  blurHash     String?
+  fileSize     Int?
+  contentType  String?
+  createdAt    DateTime @default(now())
+
+  uploadedBy User?         @relation("avatarUploader", fields: [uploadedById], references: [id], onDelete: SetNull)
+  profiles   UserProfile[]
+
+  @@index([uploadedById])
+}
+
 model OAuthAccount {
-  id                String        @id @default(dbgenerated("cuid2()"))
+  id                String        @id @default(cuid(2))
   userId            String
   provider          OAuthProvider
   providerAccountId String
@@ -102,6 +159,7 @@ model OAuthAccount {
   refreshToken      String?
   expiresAt         DateTime?
   createdAt         DateTime      @default(now())
+  scopes            String?
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -110,13 +168,17 @@ model OAuthAccount {
 }
 
 model UserSession {
-  id           String   @id @default(dbgenerated("cuid2()"))
+  id           String    @id @default(cuid(2))
   userId       String
-  sessionToken String   @unique
+  sessionToken String    @unique
   expiresAt    DateTime
-  createdAt    DateTime @default(now())
+  createdAt    DateTime  @default(now())
+  revokedAt    DateTime?
+  ipAddress    String?
+  userAgent    String?
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  analyticsEvents AnalyticsEvent[]
 
   @@index([userId])
 }
@@ -129,6 +191,8 @@ model Friendship {
   status        FriendshipStatus @default(PENDING)
   createdAt     DateTime         @default(now())
   respondedAt   DateTime?
+  acceptedAt    DateTime?
+  declinedAt    DateTime?
 
   userLow     User @relation("friendLow", fields: [userLowId], references: [id], onDelete: Cascade)
   userHigh    User @relation("friendHigh", fields: [userHighId], references: [id], onDelete: Cascade)
@@ -139,22 +203,24 @@ model Friendship {
 }
 
 model Conversation {
-  id            String           @id @default(dbgenerated("cuid2()"))
+  id            String           @id @default(cuid(2))
   kind          ConversationKind @default(DIRECT)
   directKey     String?          @unique
-  roomId        String?          @unique
+  matchId       String?          @unique
+  topic         String?
   createdAt     DateTime         @default(now())
   lastMessageAt DateTime?
 
-  room         Room?                     @relation(fields: [roomId], references: [id])
+  match        Match?                    @relation("MatchConversation", fields: [matchId], references: [id], onDelete: SetNull)
   participants ConversationParticipant[]
-  messages     ChatMessage[]
+  messages     DirectMessage[]
 
   @@index([directKey])
+  @@index([matchId])
 }
 
 model ConversationParticipant {
-  id             String    @id @default(dbgenerated("cuid2()"))
+  id             String    @id @default(cuid(2))
   conversationId String
   userId         String
   joinedAt       DateTime  @default(now())
@@ -168,8 +234,8 @@ model ConversationParticipant {
   @@index([userId])
 }
 
-model ChatMessage {
-  id             String      @id @default(dbgenerated("cuid2()"))
+model DirectMessage {
+  id             String      @id @default(cuid(2))
   conversationId String
   senderUserId   String?
   kind           MessageKind @default(USER)
@@ -179,60 +245,62 @@ model ChatMessage {
   deletedAt      DateTime?
 
   conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
-  sender       User?        @relation(fields: [senderUserId], references: [id])
+  sender       User?        @relation("MessageSender", fields: [senderUserId], references: [id], onDelete: SetNull)
 
   @@index([conversationId])
   @@index([senderUserId])
 }
 
-model Room {
-  id              String         @id @default(dbgenerated("cuid2()"))
-  status          RoomStatus     @default(WAITING)
-  visibility      RoomVisibility @default(PUBLIC)
-  ruleType        RuleType       @default(GOMOKU)
-  boardSize       Int            @default(15)
-  stateVersion    Int            @default(0)
+model Match {
+  id              String          @id @default(cuid(2))
+  status          MatchStatus     @default(WAITING)
+  visibility      MatchVisibility @default(PUBLIC)
+  ruleType        RuleType        @default(GOMOKU)
+  boardSize       Int             @default(15)
+  stateVersion    Int             @default(0)
   nextTurnSeat    Seat?
   winningSeat     Seat?
   endReason       String?
   createdByUserId String?
   startedAt       DateTime?
   finishedAt      DateTime?
-  createdAt       DateTime       @default(now())
-  updatedAt       DateTime       @updatedAt
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
 
-  createdBy    User?             @relation("roomCreator", fields: [createdByUserId], references: [id])
-  participants RoomParticipant[]
-  moves        Move[]
-  conversation Conversation?
+  createdBy       User?              @relation("matchCreator", fields: [createdByUserId], references: [id], onDelete: SetNull)
+  participants    MatchParticipant[]
+  moves           MatchMove[]
+  conversation    Conversation?      @relation("MatchConversation")
+  analyticsEvents AnalyticsEvent[]
 
   @@index([status])
   @@index([createdByUserId])
 }
 
-model RoomParticipant {
-  id                  String    @id @default(dbgenerated("cuid2()")) // playerId in Phase 0.2 API
-  roomId              String
+model MatchParticipant {
+  id                  String       @id @default(cuid(2)) // playerId in Phase 0.2 API
+  matchId             String
   userId              String?
   displayNameSnapshot String
-  role                Role      @default(PLAYER)
+  role                Role         @default(PLAYER)
   seat                Seat?
-  joinedAt            DateTime  @default(now())
+  result              MatchResult?
+  joinedAt            DateTime     @default(now())
   leftAt              DateTime?
 
-  room  Room   @relation(fields: [roomId], references: [id], onDelete: Cascade)
-  user  User?  @relation(fields: [userId], references: [id])
-  moves Move[]
+  match Match       @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  user  User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
+  moves MatchMove[]
 
-  @@unique([roomId, seat])
-  @@unique([roomId, userId])
-  @@index([roomId])
+  @@unique([matchId, seat])
+  @@unique([matchId, userId])
+  @@index([matchId])
   @@index([userId])
 }
 
-model Move {
-  id            String   @id @default(dbgenerated("cuid2()"))
-  roomId        String
+model MatchMove {
+  id            String   @id @default(cuid(2))
+  matchId       String
   participantId String
   moveNumber    Int
   x             Int
@@ -242,35 +310,82 @@ model Move {
   stateVersion  Int
   createdAt     DateTime @default(now())
 
-  room        Room            @relation(fields: [roomId], references: [id], onDelete: Cascade)
-  participant RoomParticipant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+  match       Match            @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  participant MatchParticipant @relation(fields: [participantId], references: [id], onDelete: Cascade)
 
-  @@unique([roomId, moveNumber])
-  @@unique([roomId, x, y])
-  @@unique([roomId, requestId])
-  @@index([roomId])
+  @@unique([matchId, moveNumber])
+  @@unique([matchId, x, y])
+  @@unique([matchId, requestId])
+  @@index([matchId])
   @@index([participantId])
 }
 
 model UserGameStats {
-  id               Int       @id @default(autoincrement())
-  userId           String
-  ruleType         RuleType
-  boardSize        Int
-  matchesPlayed    Int       @default(0)
-  wins             Int       @default(0)
-  losses           Int       @default(0)
-  draws            Int       @default(0)
-  botMatchesPlayed Int       @default(0)
-  botWins          Int       @default(0)
-  currentStreak    Int       @default(0)
-  bestStreak       Int       @default(0)
-  rating           Int?
-  lastPlayedAt     DateTime?
-  updatedAt        DateTime  @updatedAt
+  id                   Int       @id @default(autoincrement())
+  userId               String
+  ruleType             RuleType
+  boardSize            Int
+  matchesPlayed        Int       @default(0)
+  wins                 Int       @default(0)
+  losses               Int       @default(0)
+  draws                Int       @default(0)
+  botMatchesPlayed     Int       @default(0)
+  botWins              Int       @default(0)
+  currentStreak        Int       @default(0)
+  bestStreak           Int       @default(0)
+  rating               Int?
+  averageMoveTimeMs    Int?
+  totalPlayTimeSeconds Int       @default(0)
+  lastPlayedAt         DateTime?
+  updatedAt            DateTime  @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, ruleType, boardSize])
   @@index([userId])
+}
+
+model AchievementDefinition {
+  id          Int      @id @default(autoincrement())
+  code        String   @unique
+  name        String
+  description String
+  points      Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  unlocks UserAchievement[]
+}
+
+model UserAchievement {
+  id            Int       @id @default(autoincrement())
+  userId        String
+  achievementId Int
+  unlockedAt    DateTime  @default(now())
+  progress      Int       @default(0)
+  completedAt   DateTime?
+
+  user        User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  achievement AchievementDefinition @relation(fields: [achievementId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, achievementId])
+  @@index([userId])
+  @@index([achievementId])
+}
+
+model AnalyticsEvent {
+  id         String   @id @default(cuid(2))
+  userId     String?
+  sessionId  String?
+  matchId    String?
+  eventType  String
+  properties Json?
+  createdAt  DateTime @default(now())
+
+  user    User?        @relation(fields: [userId], references: [id], onDelete: SetNull)
+  session UserSession? @relation(fields: [sessionId], references: [id], onDelete: SetNull)
+  match   Match?       @relation(fields: [matchId], references: [id], onDelete: SetNull)
+
+  @@index([eventType])
+  @@index([createdAt])
 }
