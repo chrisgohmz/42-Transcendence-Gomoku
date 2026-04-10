@@ -1,5 +1,5 @@
 import { prisma } from "../../../lib/prisma";
-import { RoomStatus } from "../../../generated/prisma/enums";
+import { MatchStatus } from "../../../generated/prisma/enums";
 
 export const dynamic = "force-dynamic";
 
@@ -29,8 +29,8 @@ export async function POST() {
 }
 
 export async function GET() {
-  const rooms = await prisma.room.findMany({
-    where: { status: RoomStatus.WAITING },
+  const rooms = await prisma.match.findMany({
+    where: { status: MatchStatus.WAITING },
     orderBy: { createdAt: "desc" },
     include: {
       participants: true,
