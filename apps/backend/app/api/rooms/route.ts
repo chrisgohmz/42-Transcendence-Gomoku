@@ -1,4 +1,5 @@
 import { prisma } from "../../../lib/prisma";
+import { RoomStatus } from "../../../generated/prisma/enums";
 
 export const dynamic = "force-dynamic";
 
@@ -25,4 +26,28 @@ export async function POST() {
       { status: 500 },
     );
   }
+}
+
+export async function GET() {
+  const rooms = await prisma.room.findMany({
+    where: { status: RoomStatus.WAITING },
+    orderBy: { createdAt: "desc" },
+    include: {
+      participants: true,
+    },
+  });
+
+  const body = rooms.map((r) => ({
+    id: r.id,
+    status: r.status,
+    ruleType: r.ruleType,
+    boardSize: r.boardSize,
+    createdAt: r.createdAt,
+    players: r.participants.map((p) => ({
+      displayName: p.displayNameSnapshot,
+      seat: p.seat,
+    })),
+  }));
+
+  return Response.json(body);
 }
