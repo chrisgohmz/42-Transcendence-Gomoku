@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 import { ClickButtons } from "../components/click-buttons";
 import { StatusPanel } from "../components/status-panel";
 
@@ -23,6 +25,27 @@ export default function Home() {
             Click the button to flip local React state and update the UI.
           </p>
           <ClickButtons />
+        </article>
+      </section>
+
+      <section className="panel">
+        <article className="card">
+          <div className="label">Authentication</div>
+          <p className="meta">
+            Sign up to create a session cookie, then visit the protected account
+            page to verify guards and logout flows.
+          </p>
+          <div className="inline-links">
+            <Link className="text-link" href="/signup">
+              Create account
+            </Link>
+            <Link className="text-link" href="/login">
+              Sign in
+            </Link>
+            <Link className="text-link" href="/account">
+              Account page
+            </Link>
+          </div>
         </article>
       </section>
       <StatusPanel socketUrl={socketUrl} />

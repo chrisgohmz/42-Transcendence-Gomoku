@@ -36,6 +36,10 @@ export function RoomCreateButton({
       });
 
       if (!response.ok) {
+        if (response.status === 401) {
+          onError("Please sign in before creating a room.");
+          return;
+        }
         const errorPayload = (await response
           .json()
           .catch(() => null)) as ErrorResponse | null;

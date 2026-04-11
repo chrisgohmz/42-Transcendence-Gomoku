@@ -12,6 +12,7 @@ import {
   Seat,
   UserSession,
 } from "../generated/prisma/client";
+import { hashPassword } from "../lib/auth";
 import { prisma } from "../lib/prisma";
 
 const directKeyForUsers = (a: string, b: string): string =>
@@ -25,6 +26,8 @@ type SeededUsers = {
 };
 
 const seedUsers = async (): Promise<SeededUsers> => {
+  const hashedPassword = await hashPassword("password123");
+
   const [alice, bob, carol] = await Promise.all([
     prisma.user.create({
       data: {
@@ -32,7 +35,7 @@ const seedUsers = async (): Promise<SeededUsers> => {
         displayName: "Alice Demo",
         email: "alice@example.com",
         emailVerifiedAt: new Date(),
-        passwordHash: "demo-hash",
+        passwordHash: hashedPassword,
         statusMessage: "Ready for ranked matches",
       },
     }),
@@ -42,7 +45,7 @@ const seedUsers = async (): Promise<SeededUsers> => {
         displayName: "Bob Demo",
         email: "bob@example.com",
         emailVerifiedAt: new Date(),
-        passwordHash: "demo-hash",
+        passwordHash: hashedPassword,
         statusMessage: "Send me a challenge",
       },
     }),
@@ -52,7 +55,7 @@ const seedUsers = async (): Promise<SeededUsers> => {
         displayName: "Carol Demo",
         email: "carol@example.com",
         emailVerifiedAt: new Date(),
-        passwordHash: "demo-hash",
+        passwordHash: hashedPassword,
         statusMessage: "Spectating and learning",
       },
     }),

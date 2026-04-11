@@ -99,6 +99,12 @@ bun run lint
 bun run lint:fix
 ```
 
+### Authentication quickstart
+
+- Backend route handlers: `/api/auth/signup`, `/api/auth/login`, `/api/auth/logout`, and `/api/auth/session` set or read the `gomoku_session` httpOnly cookie and enforce session expiry.
+- Frontend pages: `/signup`, `/login`, and the protected `/account` page (redirects unauthenticated visitors).
+- Seeded demo users (Alice, Bob, Carol) all use the password `password123`.
+
 ### Format the repo
 
 ```bash

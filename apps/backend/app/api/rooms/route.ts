@@ -1,5 +1,6 @@
 import { prisma } from "../../../lib/prisma";
-import { MatchStatus } from "../../../generated/prisma/enums";
+import { getCurrentSession } from "../../../lib/auth";
+import { MatchStatus, Role, Seat } from "../../../generated/prisma/enums";
 
 export const dynamic = "force-dynamic";
 
@@ -8,9 +9,33 @@ function getErrorMessage(error: unknown): string {
 }
 
 export async function POST() {
+  const context = await getCurrentSession();
+
+  if (!context) {
+    return Response.json(
+      {
+        error: "unauthorized",
+        message: "You need to sign in before creating a room.",
+      },
+      { status: 401 },
+    );
+  }
+
   try {
     const match = await prisma.match.create({
-      data: {},
+      data: {
+        createdByUserId: context.user.id,
+        participants: {
+          create: [
+            {
+              userId: context.user.id,
+              displayNameSnapshot: context.user.displayName,
+              role: Role.PLAYER,
+              seat: Seat.BLACK,
+            },
+          ],
+        },
+      },
     });
     return Response.json({
       id: match.id,

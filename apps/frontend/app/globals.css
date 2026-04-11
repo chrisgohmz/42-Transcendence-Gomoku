@@ -169,6 +169,75 @@ h1 {
   color: var(--muted);
 }
 
+.text-link {
+  font-weight: 700;
+  color: var(--accent-strong);
+  text-decoration: none;
+}
+
+.text-link:hover {
+  text-decoration: underline;
+}
+
+.form-grid {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.field-label {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.text-input {
+  width: 100%;
+  padding: 0.85rem 1rem;
+  font: inherit;
+  color: var(--text);
+  background: rgb(12 22 40 / 80%);
+  border: 1px solid rgb(166 194 255 / 24%);
+  border-radius: 12px;
+  transition:
+    border-color 140ms ease,
+    box-shadow 140ms ease,
+    background-color 140ms ease;
+}
+
+.text-input:focus {
+  outline: none;
+  background: rgb(12 22 40 / 92%);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgb(131 208 255 / 22%);
+}
+
+.helper {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+.error-text {
+  margin: 0;
+  font-weight: 700;
+  color: var(--danger);
+}
+
+.inline-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+}
+
 @media (width <= 640px) {
   .shell {
     width: min(100vw - 1.25rem, 100%);
