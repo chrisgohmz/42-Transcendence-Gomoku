@@ -4,7 +4,7 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import UserMenu from "@/components/player-menu"
 export default function Navbar() {
-  const isLoggedIn = false
+  const isLoggedIn = true
 
   return (
     <header className="sticky top-0 z-50 border-b border-slate-200 bg-white/90 backdrop-blur">

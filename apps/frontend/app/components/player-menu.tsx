@@ -13,7 +13,7 @@ export default function UserMenu() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="outline">Profile</Button>
+        <Button>Player</Button>
       </DropdownMenuTrigger>
 
       <DropdownMenuContent align="end">
