@@ -8,12 +8,22 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+
 
 export default function UserMenu() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button>Player</Button>
+        <Button>
+          <Avatar className="h-9 w-9">
+            <AvatarImage src="/Login.svg" alt="User avatar" />
+            <AvatarFallback>MJ</AvatarFallback>
+          </Avatar>
+          <span className="hidden text-sm font-medium text-slate-800 sm:inline">
+            Profile
+          </span>
+        </Button>
       </DropdownMenuTrigger>
 
       <DropdownMenuContent align="end">
