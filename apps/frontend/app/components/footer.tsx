@@ -12,12 +12,18 @@ export default function Footer() {
           Terms of Service
         </Link>
 
+        <span>•</span>
+
         <Link
           href="/privacy"
           className="hover:text-slate-900"
         >
           Privacy Policy
         </Link>
+
+        <p className="text-xs text-slate-500">
+            © 2026 五目並べヒーロー
+        </p>
 
       </div>
     </footer>
