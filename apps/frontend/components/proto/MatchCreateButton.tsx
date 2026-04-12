@@ -2,13 +2,23 @@
 
 import { useState } from "react";
 
-type RoomCreateButtonProps = {
-  onSuccess: (roomId: string) => void;
+export type CreatedMatchInfo = {
+  matchId: string;
+  participantId: string;
+  role?: string;
+  seat?: string | null;
+};
+
+type MatchCreateButtonProps = {
+  onSuccess: (createdMatch: CreatedMatchInfo) => void;
   onError: (message: string) => void;
 };
 
-type CreateRoomResponse = {
-  id?: string;
+type CreateMatchResponse = {
+  matchId?: string;
+  participantId?: string;
+  role?: string;
+  seat?: string | null;
 };
 
 type ErrorResponse = {
@@ -17,17 +27,17 @@ type ErrorResponse = {
   error?: string;
 };
 
-export function RoomCreateButton({
+export function MatchCreateButton({
   onSuccess,
   onError,
-}: RoomCreateButtonProps) {
+}: MatchCreateButtonProps) {
   const [isLoading, setIsLoading] = useState(false);
 
   async function handleClick() {
     setIsLoading(true);
 
     try {
-      const response = await fetch("/api/rooms", {
+      const response = await fetch("/api/matches", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -52,15 +62,26 @@ export function RoomCreateButton({
         return;
       }
 
-      const result = (await response.json()) as CreateRoomResponse;
-      const roomId = result.id;
+      const result = (await response.json()) as CreateMatchResponse;
+      const matchId = result.matchId;
+      const participantId = result.participantId;
 
-      if (!roomId) {
-        onError("Invalid response: id is missing");
+      if (!matchId) {
+        onError("Invalid response: matchId is missing");
         return;
       }
 
-      onSuccess(roomId);
+      if (!participantId) {
+        onError("Invalid response: participantId is missing");
+        return;
+      }
+
+      onSuccess({
+        matchId,
+        participantId,
+        role: result.role,
+        seat: result.seat,
+      });
     } catch {
       onError("Network error while creating room");
     } finally {
@@ -75,7 +96,7 @@ export function RoomCreateButton({
       onClick={handleClick}
       disabled={isLoading}
     >
-      {isLoading ? "Creating..." : "Create Room"}
+      {isLoading ? "Creating..." : "Create Match"}
     </button>
   );
 }

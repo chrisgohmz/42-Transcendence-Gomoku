@@ -1,10 +1,20 @@
 "use client";
 
 import { useState } from "react";
-import { RoomCreateButton } from "../../components/proto/RoomCreateButton";
+import {
+  MatchCreateButton,
+  type CreatedMatchInfo,
+} from "../../components/proto/MatchCreateButton";
 
-type Room = {
-  id: string;
+type MatchParticipant = {
+  displayName: string;
+  seat: string | null;
+};
+
+type Match = {
+  matchId: string;
+  status?: string;
+  participants?: MatchParticipant[];
 };
 
 type ErrorResponse = {
@@ -14,14 +24,16 @@ type ErrorResponse = {
 };
 
 export default function ProtoPage() {
-  const [roomId, setRoomId] = useState<string | null>(null);
+  const [createdMatch, setCreatedMatch] = useState<CreatedMatchInfo | null>(
+    null,
+  );
   const [error, setError] = useState<string | null>(null);
-  const [rooms, setRooms] = useState<Room[]>([]);
+  const [matches, setMatches] = useState<Match[]>([]);
   const [listError, setListError] = useState<string | null>(null);
 
-  async function loadRooms() {
+  async function loadMatches() {
     try {
-      const response = await fetch("/api/rooms", {
+      const response = await fetch("/api/matches", {
         cache: "no-store",
       });
 
@@ -36,16 +48,16 @@ export default function ProtoPage() {
           `Request failed with status ${response.status}`;
 
         setListError(message);
-        setRooms([]);
+        setMatches([]);
         return;
       }
 
-      const data = (await response.json()) as Room[];
-      setRooms(data);
+      const data = (await response.json()) as Match[];
+      setMatches(data);
       setListError(null);
     } catch {
       setListError("Network error while loading rooms");
-      setRooms([]);
+      setMatches([]);
     }
   }
 
@@ -58,36 +70,59 @@ export default function ProtoPage() {
   //   void loadRooms();
   // }, []);
 
-  function handleSuccess(nextRoomId: string) {
-    setRoomId(nextRoomId);
+  function handleSuccess(nextCreatedMatch: CreatedMatchInfo) {
+    setCreatedMatch(nextCreatedMatch);
     setError(null);
   }
 
   function handleError(message: string) {
     setError(message);
-    setRoomId(null);
+    setCreatedMatch(null);
   }
 
   return (
     <main className="shell">
       <section className="panel">
         <article className="card">
-          <RoomCreateButton onSuccess={handleSuccess} onError={handleError} />
-          {roomId ? <p>roomId: {roomId}</p> : null}
+          <MatchCreateButton onSuccess={handleSuccess} onError={handleError} />
+          {createdMatch ? <p>matchId: {createdMatch.matchId}</p> : null}
+          {createdMatch ? (
+            <p>participantId: {createdMatch.participantId}</p>
+          ) : null}
+          {createdMatch?.role ? <p>role: {createdMatch.role}</p> : null}
+          {createdMatch && createdMatch.seat !== undefined ? (
+            <p>seat: {createdMatch.seat ?? "null"}</p>
+          ) : null}
           {error ? <p role="alert">error: {error}</p> : null}
         </article>
 
         <article className="card">
-          <button type="button" className="btn" onClick={loadRooms}>
-            Load Rooms
+          <button type="button" className="btn" onClick={loadMatches}>
+            Load Matches
           </button>
-          <p>rooms:</p>
+          <p>matches:</p>
           {listError ? <p role="alert">error: {listError}</p> : null}
           <ul>
-            {rooms.map((room) => (
-              <li key={room.id}>
-                {room.id}
-                {room.id === roomId ? " <- just created" : ""}
+            {matches.map((match) => (
+              <li key={match.matchId}>
+                <p>
+                  {match.matchId}
+                  {match.matchId === createdMatch?.matchId
+                    ? " <- just created"
+                    : ""}
+                </p>
+                {match.status ? <p>status: {match.status}</p> : null}
+                {match.participants?.length ? (
+                  <p>
+                    participants:{" "}
+                    {match.participants
+                      .map(
+                        (participant) =>
+                          `${participant.displayName} (${participant.seat ?? "null"})`,
+                      )
+                      .join(", ")}
+                  </p>
+                ) : null}
               </li>
             ))}
           </ul>

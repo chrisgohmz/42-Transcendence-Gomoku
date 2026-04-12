@@ -1,6 +1,6 @@
 import { prisma } from "../../../lib/prisma";
 import { getCurrentSession } from "../../../lib/auth";
-import { MatchStatus, Role, Seat } from "../../../generated/prisma/enums";
+import { Role, MatchStatus, Seat } from "../../../generated/prisma/enums";
 
 export const dynamic = "force-dynamic";
 
@@ -22,23 +22,28 @@ export async function POST() {
   }
 
   try {
-    const match = await prisma.match.create({
-      data: {
-        createdByUserId: context.user.id,
-        participants: {
-          create: [
-            {
-              userId: context.user.id,
-              displayNameSnapshot: context.user.displayName,
-              role: Role.PLAYER,
-              seat: Seat.BLACK,
-            },
-          ],
+    const { match, creator } = await prisma.$transaction(async (tx) => {
+      const match = await tx.match.create({
+        data: {},
+      });
+
+      const creator = await tx.matchParticipant.create({
+        data: {
+          matchId: match.id,
+          displayNameSnapshot: "Player 1",
+          role: Role.PLAYER,
+          seat: Seat.BLACK,
         },
-      },
+      });
+
+      return { match, creator };
     });
+
     return Response.json({
-      id: match.id,
+      matchId: match.id,
+      participantId: creator.id,
+      role: creator.role,
+      seat: creator.seat,
       status: match.status,
       createdAt: match.createdAt,
     });
@@ -54,7 +59,7 @@ export async function POST() {
 }
 
 export async function GET() {
-  const rooms = await prisma.match.findMany({
+  const matches = await prisma.match.findMany({
     where: { status: MatchStatus.WAITING },
     orderBy: { createdAt: "desc" },
     include: {
@@ -62,13 +67,13 @@ export async function GET() {
     },
   });
 
-  const body = rooms.map((r) => ({
-    id: r.id,
+  const body = matches.map((r) => ({
+    matchId: r.id,
     status: r.status,
     ruleType: r.ruleType,
     boardSize: r.boardSize,
     createdAt: r.createdAt,
-    players: r.participants.map((p) => ({
+    participants: r.participants.map((p) => ({
       displayName: p.displayNameSnapshot,
       seat: p.seat,
     })),
