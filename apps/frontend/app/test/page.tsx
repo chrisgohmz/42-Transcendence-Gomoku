@@ -1,26 +1,30 @@
 import Link from "next/link";
+import StatCard from "@/components/stat-card";
 
 export default function HomePage() {
   return (
-    <main className="min-h-screen bg-slate-100 p-8">
-      <div className="mx-auto max-w-xl rounded-2xl bg-white p-8 shadow-lg">
-        <h1 className="text-3xl font-bold text-slate-900">Home</h1>
-
-        <div className="mt-6 space-y-3">
-          <Link
-            href="/login"
-            className="block rounded-xl bg-slate-900 px-4 py-3 text-center text-white hover:bg-slate-700"
-          >
-            Go to Login
-          </Link>
-
-          <Link
-            href="/dashboard"
-            className="block rounded-xl border border-slate-300 px-4 py-3 text-center text-slate-900 hover:bg-slate-50"
-          >
-            Go to Dashboard
-          </Link>
+    <main className="p-6">
+      {/* Outer layout */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        
+        {/* LEFT SIDE */}
+        <div>
+          <h1 className="text-2xl font-bold">Home</h1>
+          <p className="mt-2 text-slate-600">
+            Some content on the left side
+          </p>
         </div>
+
+        {/* RIGHT SIDE (stat cards) */}
+        <div className="grid grid-cols-2 gap-4">
+          
+          <StatCard label="Players Online" value={128} />
+          <StatCard label="Matches Active" value={32} />
+          <StatCard label="Total Games" value={5421} />
+          <StatCard label="Win Rate" value="64%" />
+
+        </div>
+
       </div>
     </main>
   );
