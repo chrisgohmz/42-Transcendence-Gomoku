@@ -1,4 +1,10 @@
 const backendUrl = process.env["BACKEND_INTERNAL_URL"] ?? "http://backend:3001";
+const skippedResponseHeaders = new Set([
+  "content-encoding",
+  "content-length",
+  "set-cookie",
+  "transfer-encoding",
+]);
 
 function shouldSendBody(method: string): boolean {
   return !["GET", "HEAD", "OPTIONS"].includes(method.toUpperCase());
@@ -41,11 +47,12 @@ export async function proxyToBackend(
     cache: "no-store",
     redirect: "manual",
   });
+  const contentType = response.headers.get("content-type") ?? "";
 
   const outgoingHeaders = new Headers();
 
   response.headers.forEach((value, key) => {
-    if (key.toLowerCase() === "set-cookie") {
+    if (skippedResponseHeaders.has(key.toLowerCase())) {
       return;
     }
 
@@ -57,7 +64,18 @@ export async function proxyToBackend(
     outgoingHeaders.append("set-cookie", cookie);
   }
 
-  return new Response(response.body, {
+  if (contentType.includes("application/json")) {
+    const payload = await response.json();
+
+    return Response.json(payload, {
+      status: response.status,
+      headers: outgoingHeaders,
+    });
+  }
+
+  const payload = await response.text();
+
+  return new Response(payload, {
     status: response.status,
     headers: outgoingHeaders,
   });

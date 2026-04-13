@@ -55,8 +55,13 @@ export default function ProtoPage() {
       const data = (await response.json()) as Match[];
       setMatches(data);
       setListError(null);
-    } catch {
-      setListError("Network error while loading rooms");
+    } catch (error) {
+      console.error("Error loading matches:", error);
+      setListError(
+        error instanceof Error
+          ? error.message
+          : "Network error while loading matches",
+      );
       setMatches([]);
     }
   }

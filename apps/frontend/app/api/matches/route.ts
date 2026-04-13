@@ -4,7 +4,7 @@ export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
   try {
-    return await proxyToBackend(request, "/api/rooms");
+    return await proxyToBackend(request, "/api/matches");
   } catch (error) {
     const message =
       error instanceof Error ? error.message : "Unable to reach backend.";
@@ -14,7 +14,7 @@ export async function POST(request: Request) {
 
 export async function GET(request: Request) {
   try {
-    return await proxyToBackend(request, "/api/rooms", { method: "GET" });
+    return await proxyToBackend(request, "/api/matches", { method: "GET" });
   } catch (error) {
     const message =
       error instanceof Error ? error.message : "Unable to reach backend.";
