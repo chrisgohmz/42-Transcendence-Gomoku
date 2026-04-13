@@ -652,34 +652,34 @@ Each slice should contain only these four things whenever possible:
 - One visible confirmation in the UI
 
 ```text
-Slice 0: minimum create_room flow
+Slice 0: minimum create_match flow
   - Schema: use existing Match / MatchParticipant
   - Save: store MatchParticipant(role=PLAYER, seat=BLACK) for the creator
-  - Front: only a Create room button
+  - Front: only a Create match button
   - API: POST /api/rooms
-  - Confirm: roomId and playerId appear on the screen
+  - Confirm: matchId (roomId on the API) and playerId appear on the screen
 
-Slice 1: add list_rooms
+Slice 1: add list_matches
   - API: GET /api/rooms
-  - Query: return rooms with status=WAITING and visibility=PUBLIC
-  - Front: display a list of created rooms
-  - Confirm: the room created just before is visible in the list
+  - Query: return matches with status=WAITING and visibility=PUBLIC
+  - Front: display a list of created matches
+  - Confirm: the match created just before is visible in the list
 
-Slice 2: add join_room
+Slice 2: add join_match
   - Schema: use existing MatchParticipant
   - Save: store the participant with role=PLAYER, seat=WHITE
   - Transition: when 2 players are present, update Match.status=IN_PROGRESS, nextTurnSeat=BLACK, startedAt
   - Front: add a Join button
   - Confirm: both players' displayName and seat are visible
 
-Slice 3: add subscribe_room
+Slice 3: add subscribe_match
   - WS: room:subscribe / room:subscribed
   - Front: display subscription status
   - Confirm: subscribed appears on the screen
 
 Slice 4: minimum submit_move
   - Schema: use existing MatchMove
-  - Save: store moveNumber, participantId, x, y, requestId, baseVersion, stateVersion
+  - Save: store matchId, moveNumber, participantId, x, y, requestId, baseVersion, stateVersion
   - API: POST /api/rooms/:id/moves
   - Rule: prioritize confirming that saving works first
   - Confirm: after saving, game:update reaches both screens

@@ -6,6 +6,11 @@ import {
   type CreatedMatchInfo,
 } from "../../components/proto/MatchCreateButton";
 
+import {
+  MatchJoinButton,
+  type JoinedMatchInfo,
+} from "../../components/proto/MatchJoinButton";
+
 type MatchParticipant = {
   displayName: string;
   seat: string | null;
@@ -30,6 +35,10 @@ export default function ProtoPage() {
   const [error, setError] = useState<string | null>(null);
   const [matches, setMatches] = useState<Match[]>([]);
   const [listError, setListError] = useState<string | null>(null);
+
+  const [joinedMatch, setJoinedMatch] = useState<JoinedMatchInfo | null>(null);
+  const [joinError, setJoinError] = useState<string | null>(null);
+  const [displayName, setDisplayname] = useState("");
 
   async function loadMatches() {
     try {
@@ -123,6 +132,32 @@ export default function ProtoPage() {
                       .join(", ")}
                   </p>
                 ) : null}
+
+                <input
+                  type="text"
+                  placeholder="Your name"
+                  value={displayName}
+                  onChange={(e) => setDisplayname(e.target.value)}
+                />
+                <MatchJoinButton
+                  matchId={match.matchId}
+                  displayName={displayName}
+                  onSuccess={(info) => {
+                    setJoinedMatch(info);
+                    setJoinError(null);
+                  }}
+                  onError={(msg) => {
+                    setJoinError(msg);
+                    setJoinedMatch(null);
+                  }}
+                />
+                {joinedMatch?.matchId === match.matchId ? (
+                  <p>
+                    seat: {joinedMatch.seat} / participantId:{" "}
+                    {joinedMatch.participantId}
+                  </p>
+                ) : null}
+                {joinError ? <p role="alert">error: {joinError}</p> : null}
               </li>
             ))}
           </ul>

@@ -652,34 +652,34 @@ apps/backend/
 - 画面で「動いた」が確認できる
 
 ```text
-Slice 0: create_room の最小疎通
+Slice 0: create_match の最小疎通
   - Schema: 既存の Match / MatchParticipant を使う
   - Save: creator 用に MatchParticipant(role=PLAYER, seat=BLACK) を保存
-  - Front: Create room ボタンだけ
+  - Front: Create match ボタンだけ
   - API: POST /api/rooms
-  - Confirm: roomId と playerId が画面に表示される
+  - Confirm: matchId（API 上は roomId）と playerId が画面に表示される
 
-Slice 1: list_rooms を追加
+Slice 1: list_matches を追加
   - API: GET /api/rooms
-  - Query: status=WAITING かつ visibility=PUBLIC の room 一覧を返す
-  - Front: 作成済み room 一覧を表示
-  - Confirm: 直前に作った room が一覧に見える
+  - Query: status=WAITING かつ visibility=PUBLIC の match 一覧を返す
+  - Front: 作成済み match 一覧を表示
+  - Confirm: 直前に作った match が一覧に見える
 
-Slice 2: join_room を追加
+Slice 2: join_match を追加
   - Schema: 既存の MatchParticipant を使う
   - Save: 参加者を role=PLAYER, seat=WHITE で保存
   - Transition: 2 人揃ったら Match.status=IN_PROGRESS, nextTurnSeat=BLACK, startedAt を更新
   - Front: Join ボタンを追加
   - Confirm: 2 人の displayName / seat が画面に見える
 
-Slice 3: subscribe_room を追加
+Slice 3: subscribe_match を追加
   - WS: room:subscribe / room:subscribed
   - Front: 購読状態を表示
   - Confirm: subscribed が画面に出る
 
 Slice 4: submit_move の最小版
   - Schema: 既存の MatchMove を使う
-  - Save: moveNumber, participantId, x, y, requestId, baseVersion, stateVersion を保存
+  - Save: matchId, moveNumber, participantId, x, y, requestId, baseVersion, stateVersion を保存
   - API: POST /api/rooms/:id/moves
   - Rule: 最初は保存できることの確認を優先する
   - Confirm: 保存後に game:update が両画面へ届く
