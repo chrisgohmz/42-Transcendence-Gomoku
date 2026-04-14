@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { Prisma } from "@/../generated/prisma/client";
 import { Role, Seat, MatchStatus } from "@/../generated/prisma/enums";
 
 export const dynamic = "force-dynamic";
@@ -65,6 +66,16 @@ export async function POST(
       seat: joiner.seat,
     });
   } catch (error) {
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === "P2002"
+    ) {
+      return Response.json(
+        { error: "match_full", detail: getErrorMessage(error) },
+        { status: 409 },
+      );
+    }
+
     return Response.json(
       {
         error: "failed_to_join_match",
