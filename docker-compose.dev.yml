@@ -8,7 +8,7 @@ services:
       target: dev
     environment:
       NODE_ENV: development
-      DISABLE_SOCKET_IO: "0"
+      DISABLE_SOCKET_IO: "1"
       SOCKET_PUBLIC_URL: http://localhost:3000
       SOCKET_CORS_ORIGIN: http://localhost:3000
     volumes:

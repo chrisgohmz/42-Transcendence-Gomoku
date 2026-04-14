@@ -9,7 +9,7 @@ import {
 import {
   MatchJoinButton,
   type JoinedMatchInfo,
-} from "../../components/proto/MatchJoinButton";
+} from "@/components/proto/MatchJoinButton";
 
 type MatchParticipant = {
   displayName: string;

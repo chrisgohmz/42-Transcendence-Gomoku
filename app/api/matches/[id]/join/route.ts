@@ -1,5 +1,5 @@
-import { prisma } from "../../../../../lib/prisma";
-import { Role, Seat, MatchStatus } from "../../../../../generated/prisma/enums";
+import { prisma } from "@/lib/prisma";
+import { Role, Seat, MatchStatus } from "@/../generated/prisma/enums";
 
 export const dynamic = "force-dynamic";
 
