@@ -22,11 +22,10 @@ Run `bun install` once at the repo root if you want VS Code to use a single work
 ### Install dependencies
 
 ```bash
-(cd apps/frontend && bun install)
-(cd apps/backend && bun install)
+bun install
 ```
 
-The backend install intentionally skips dependency lifecycle scripts. Generate the Prisma client with the Bun command below after installing backend dependencies.
+The root install intentionally skips dependency lifecycle scripts. Generate the Prisma client with the Bun command below after installing dependencies.
 
 ### Run locally without containers
 
@@ -36,33 +35,32 @@ Start PostgreSQL in Docker first so the host-side `DATABASE_URL` in `.env` can r
 docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d database
 ```
 
-Then run the backend and frontend from your host shell:
+Then run the single Next app from your host shell:
 
 ```bash
-(cd apps/backend && bun run dev)
-(cd apps/frontend && bun run dev)
+bun run dev
 ```
 
-The frontend uses Next's default Turbopack dev server. The backend's custom
-Next server currently forces webpack in development because that path is more
-reliable with Prisma + `pg` externals.
+The app uses a custom Next server. In development it currently forces webpack
+instead of Turbopack because that path is more reliable here with Prisma + `pg`
+externals.
 
 ### Prisma workflow
 
 ```bash
-(cd apps/backend && bun run prisma:generate)
-(cd apps/backend && bun run prisma:migrate:dev -- --name <migration-name>)
+bun run prisma:generate
+bun run prisma:migrate:dev -- --name <migration-name>
 ```
 
 For host-side Prisma commands, `DATABASE_URL` should point to `localhost:5432`. In containers, Compose still injects a container-only URL that uses `database:5432`.
 
 When `schema.prisma` changes, create a migration locally with `prisma migrate dev`,
-verify it, and commit the generated `apps/backend/prisma/migrations/` files.
+verify it, and commit the generated `prisma/migrations/` files.
 
 Seed the database with development demo data (skips if users already exist):
 
 ```bash
-(cd apps/backend && bun run prisma:seed)
+bun run prisma:seed
 ```
 
 This repo now applies committed migrations on container startup with
@@ -82,7 +80,7 @@ docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d database
 docker compose up --build
 ```
 
-This runs the app in a production-style container mode.
+This runs the single app plus PostgreSQL in a production-style container mode.
 
 ### Run the full stack in Docker dev mode
 
@@ -90,7 +88,7 @@ This runs the app in a production-style container mode.
 docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
 ```
 
-This override switches the frontend and backend to development mode, mounts the source tree into the containers, enables hot reload while keeping PostgreSQL in Docker, and publishes PostgreSQL on `localhost:5432` for host-side Prisma and backend commands.
+This override switches the app to development mode, mounts the source tree into the container, enables hot reload while keeping PostgreSQL in Docker, and publishes PostgreSQL on `localhost:5432` for host-side Prisma and backend commands.
 
 ### Lint the repo
 
@@ -98,6 +96,13 @@ This override switches the frontend and backend to development mode, mounts the 
 bun run lint
 bun run lint:fix
 ```
+
+### Authentication quickstart
+
+- App route handlers: `/api/auth/signup`, `/api/auth/login`, `/api/auth/logout`, and `/api/auth/session` set or read the `gomoku_session` httpOnly cookie and enforce session expiry.
+- App pages: `/signup`, `/login`, and the protected `/account` page (redirects unauthenticated visitors).
+- The `/signup` and `/login` pages now submit through Next.js form actions instead of client-side `fetch` calls.
+- Seeded demo users (Alice, Bob, Carol) all use the password `password123`.
 
 ### Format the repo
 
@@ -151,7 +156,7 @@ Do not regenerate lockfiles with npm. Commit the Bun lockfiles instead.
 
 ## Web
 
-1. A full-stack framework: Next.js was used for both frontend and backend development
+1. A full-stack framework: a single Next.js app now handles the UI, route handlers, and custom realtime server
 2. WebSockets: Socket.IO was used for real-time communication between the client and server. This was used for features such as live chat and the gomoku game
 3. User interaction: Users can chat with each other, view each other's profiles, and add other users as friends
 4. An ORM was used to manage the database, allowing for easy querying and manipulation of data
@@ -174,6 +179,6 @@ Do not regenerate lockfiles with npm. Commit the Bun lockfiles instead.
 
 ## DevOps
 
-1. The project's backend was designed as microservices, allowing for scalability and maintainability
+1. The project currently runs as a single Next.js app plus PostgreSQL in Docker, keeping the local stack simple while preserving a custom realtime server for Socket.IO
 
 # Individual Contributions

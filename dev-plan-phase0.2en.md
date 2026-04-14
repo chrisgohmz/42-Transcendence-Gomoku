@@ -445,13 +445,17 @@ Even though the Phase 0 UI uses a 1x5 board, the DB uses `x / y` coordinates and
 
 ## File Structure
 
-### Frontend
-
 ```text
-apps/frontend/
-  app/
-    proto/
-      page.tsx               ← Phase 0 verification page
+app/
+  proto/
+    page.tsx                 ← Phase 0 verification page
+  api/
+    rooms/
+      route.ts               ← GET, POST /api/rooms
+      [id]/
+        join/route.ts        ← POST /api/rooms/:id/join
+        moves/route.ts       ← POST /api/rooms/:id/moves
+        state/route.ts       ← GET /api/rooms/:id/state
   components/
     proto/
       NameInput.tsx          ← Player name input
@@ -461,20 +465,6 @@ apps/frontend/
   hooks/
     useRoom.ts               ← Room creation, joining, state fetching
     useSocketGame.ts         ← Room subscription and game:update handling
-```
-
-### Backend
-
-```text
-apps/backend/
-  app/
-    api/
-      rooms/
-        route.ts             ← GET, POST /api/rooms
-        [id]/
-          join/route.ts      ← POST /api/rooms/:id/join
-          moves/route.ts     ← POST /api/rooms/:id/moves
-          state/route.ts     ← GET /api/rooms/:id/state
   lib/
     rooms/
       room-store.ts          ← Room management via Prisma
@@ -483,9 +473,9 @@ apps/backend/
       state-builder.ts       ← Rebuilds game state from Move records
     socket/
       game-handler.ts        ← Handles room:subscribe and broadcasts game:update
-  prisma/
-    schema.prisma
-  server.ts                  ← Next.js + Socket.IO entry point
+prisma/
+  schema.prisma
+server.ts                    ← Next.js + Socket.IO entry point
 ```
 
 ---

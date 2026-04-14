@@ -1,0 +1,250 @@
+:root {
+  color-scheme: dark;
+
+  --bg: #09111f;
+  --panel: rgb(11 24 45 / 78%);
+  --panel-border: rgb(166 194 255 / 16%);
+  --text: #edf4ff;
+  --muted: #a8bad9;
+  --accent: #83d0ff;
+  --accent-strong: #4ee8c2;
+  --danger: #ff8f8f;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  min-height: 100%;
+  margin: 0;
+}
+
+body {
+  font-family: "Space Grotesk", "Avenir Next", sans-serif;
+  color: var(--text);
+  background:
+    radial-gradient(circle at top, rgb(78 232 194 / 18%), transparent 28%),
+    radial-gradient(
+      circle at bottom right,
+      rgb(131 208 255 / 20%),
+      transparent 30%
+    ),
+    linear-gradient(160deg, #040914 0%, #09111f 45%, #0d1730 100%);
+}
+
+.shell {
+  width: min(1100px, calc(100vw - 2rem));
+  padding: 4rem 0 5rem;
+  margin: 0 auto;
+}
+
+.hero {
+  margin-bottom: 2rem;
+}
+
+.eyebrow {
+  margin: 0 0 0.75rem;
+  font-size: 0.78rem;
+  color: var(--accent-strong);
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+}
+
+h1 {
+  max-width: 12ch;
+  margin: 0;
+  font-size: clamp(2.4rem, 5vw, 4.8rem);
+  line-height: 0.95;
+}
+
+.lede {
+  max-width: 60ch;
+  margin-top: 1rem;
+  font-size: 1.05rem;
+  line-height: 1.7;
+  color: var(--muted);
+}
+
+.panel {
+  display: grid;
+  gap: 1rem;
+  padding: 1.5rem;
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-radius: 28px;
+  box-shadow: 0 24px 70px rgb(0 0 0 / 35%);
+  backdrop-filter: blur(16px);
+}
+
+.panel + .panel {
+  margin-top: 1rem;
+}
+
+.btn {
+  padding: 0.8rem 1.2rem;
+  margin-top: 1rem;
+  font: inherit;
+  font-weight: 700;
+  color: var(--text);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  appearance: none;
+  cursor: pointer;
+  background: rgb(166 194 255 / 10%);
+  border: 1px solid rgb(166 194 255 / 30%);
+  border-radius: 999px;
+  transition:
+    background-color 160ms ease,
+    border-color 160ms ease,
+    color 160ms ease,
+    transform 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.btn:hover {
+  transform: translateY(-1px);
+}
+
+.btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
+.btn-on {
+  color: #04131a;
+  background: var(--accent-strong);
+  border-color: var(--accent);
+  box-shadow: 0 14px 32px rgb(78 232 194 / 22%);
+}
+
+.btn-off {
+  color: var(--danger);
+  background: rgb(255 143 143 / 12%);
+  border-color: rgb(255 143 143 / 40%);
+  box-shadow: 0 14px 32px rgb(4 9 20 / 22%);
+}
+
+.panel-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1rem;
+}
+
+.card {
+  padding: 1rem;
+  background: rgb(7 15 29 / 80%);
+  border: 1px solid rgb(166 194 255 / 10%);
+  border-radius: 20px;
+}
+
+.label {
+  margin-bottom: 0.55rem;
+  font-size: 0.82rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+
+.value {
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.ok {
+  color: var(--accent-strong);
+}
+
+.warn {
+  color: #ffd17a;
+}
+
+.down {
+  color: var(--danger);
+}
+
+.meta {
+  line-height: 1.6;
+  color: var(--muted);
+}
+
+.text-link {
+  font-weight: 700;
+  color: var(--accent-strong);
+  text-decoration: none;
+}
+
+.text-link:hover {
+  text-decoration: underline;
+}
+
+.form-grid {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.field-label {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.text-input {
+  width: 100%;
+  padding: 0.85rem 1rem;
+  font: inherit;
+  color: var(--text);
+  background: rgb(12 22 40 / 80%);
+  border: 1px solid rgb(166 194 255 / 24%);
+  border-radius: 12px;
+  transition:
+    border-color 140ms ease,
+    box-shadow 140ms ease,
+    background-color 140ms ease;
+}
+
+.text-input:focus {
+  outline: none;
+  background: rgb(12 22 40 / 92%);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgb(131 208 255 / 22%);
+}
+
+.helper {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+.error-text {
+  margin: 0;
+  font-weight: 700;
+  color: var(--danger);
+}
+
+.inline-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+@media (width <= 640px) {
+  .shell {
+    width: min(100vw - 1.25rem, 100%);
+    padding-top: 2rem;
+  }
+
+  .panel {
+    padding: 1rem;
+  }
+}

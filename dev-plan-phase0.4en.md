@@ -2,9 +2,9 @@
 
 ## Background and Goal
 
-The current repository already has Docker-based `frontend / backend / PostgreSQL` setup in place, and basic connectivity between Next.js, Socket.IO, and Prisma has been confirmed. The game board, rule validation, matchmaking, authentication, match history, and rankings are still unimplemented.
+The current repository already has Docker-based `app / PostgreSQL` setup in place, and basic connectivity between Next.js, Socket.IO, and Prisma has been confirmed. The game board, rule validation, matchmaking, authentication, match history, and rankings are still unimplemented.
 
-At the same time, `apps/backend/prisma/schema.prisma` already includes more than the minimum game schema:
+At the same time, `prisma/schema.prisma` already includes more than the minimum game schema:
 
 - Authentication foundation via `User / OAuthAccount / UserSession`
 - Social foundation via `Friendship`
@@ -464,7 +464,7 @@ Example messages:
 
 ## DB Schema Design
 
-The following is the part of `apps/backend/prisma/schema.prisma` directly related to the match domain.
+The following is the part of `prisma/schema.prisma` directly related to the match domain.
 
 ```prisma
 enum MatchStatus {
@@ -588,11 +588,11 @@ Even if the Phase 0 UI is only 1x5, the DB already includes the following fields
 ### Prisma-related files currently present
 
 ```text
-apps/backend/
-  prisma/
-    schema.prisma             <- current schema source of truth
-  generated/
-    prisma/                   <- client generated from schema.prisma
+prisma/
+  schema.prisma               <- current schema source of truth
+generated/
+  prisma/                     <- client generated from schema.prisma
+app/
   lib/
     prisma.ts                 <- Prisma client entry point
 ```
@@ -600,10 +600,16 @@ apps/backend/
 ### Candidate placement for Phase 0 implementation
 
 ```text
-apps/frontend/
-  app/
-    proto/
-      page.tsx                <- Phase 0 verification page
+app/
+  proto/
+    page.tsx                  <- Phase 0 verification page
+  api/
+    rooms/
+      route.ts                <- GET, POST /api/rooms
+      [id]/
+        join/route.ts         <- POST /api/rooms/:id/join
+        moves/route.ts        <- POST /api/rooms/:id/moves
+        state/route.ts        <- GET /api/rooms/:id/state
   components/
     proto/
       NameInput.tsx           <- player name input
@@ -613,16 +619,6 @@ apps/frontend/
   hooks/
     useRoom.ts                <- room creation, join, and state fetch
     useSocketGame.ts          <- room subscription and game:update handling
-
-apps/backend/
-  app/
-    api/
-      rooms/
-        route.ts              <- GET, POST /api/rooms
-        [id]/
-          join/route.ts       <- POST /api/rooms/:id/join
-          moves/route.ts      <- POST /api/rooms/:id/moves
-          state/route.ts      <- GET /api/rooms/:id/state
   lib/
     prisma.ts                 <- Prisma client
     rooms/
@@ -632,8 +628,8 @@ apps/backend/
       state-builder.ts        <- build state from MatchMove records
     socket/
       game-handler.ts         <- room:subscribe and game:update broadcast
-  prisma/
-    schema.prisma
+prisma/
+  schema.prisma
 ```
 
 `Conversation` and `DirectMessage` do not need implementation in Phase 0, but room chat can later be added through `Conversation.matchId`.

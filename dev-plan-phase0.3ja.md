@@ -4,7 +4,7 @@
 
 現状のリポジトリは `frontend / backend / PostgreSQL` の Docker 構成と、Next.js + Socket.IO + Prisma の疎通確認まで完了している。ゲーム盤面・ルール判定・マッチング・認証・履歴・ランキングはまだ未実装。
 
-一方で、`apps/backend/prisma/schema.prisma` には、対局の最小構成を超えて以下まで先に入っている。
+一方で、`prisma/schema.prisma` には、対局の最小構成を超えて以下まで先に入っている。
 
 - `User / OAuthAccount / UserSession` による認証基盤
 - `Friendship` によるソーシャル基盤
@@ -464,7 +464,7 @@ REST 自体が失敗した場合は、別扱いにする。
 
 ## DB スキーマ設計
 
-`apps/backend/prisma/schema.prisma` のうち、対局領域に直接関係する部分を抜粋すると以下になる。
+`prisma/schema.prisma` のうち、対局領域に直接関係する部分を抜粋すると以下になる。
 
 ```prisma
 enum RoomStatus {
@@ -579,11 +579,11 @@ Phase 0 の UI は 1x5 でも、DB はすでに以下を持っているため 15
 ### 現在確認できる Prisma 関連ファイル
 
 ```text
-apps/backend/
-  prisma/
-    schema.prisma             ← 現行スキーマ本体
-  generated/
-    prisma/                   ← schema.prisma から生成された client
+prisma/
+  schema.prisma               ← 現行スキーマ本体
+generated/
+  prisma/                     ← schema.prisma から生成された client
+app/
   lib/
     prisma.ts                 ← Prisma client 利用起点
 ```
@@ -591,10 +591,16 @@ apps/backend/
 ### Phase 0 実装を進める場合の候補配置
 
 ```text
-apps/frontend/
-  app/
-    proto/
-      page.tsx                ← Phase 0 の検証ページ
+app/
+  proto/
+    page.tsx                  ← Phase 0 の検証ページ
+  api/
+    rooms/
+      route.ts                ← GET, POST /api/rooms
+      [id]/
+        join/route.ts         ← POST /api/rooms/:id/join
+        moves/route.ts        ← POST /api/rooms/:id/moves
+        state/route.ts        ← GET /api/rooms/:id/state
   components/
     proto/
       NameInput.tsx           ← プレイヤー名入力
@@ -604,16 +610,6 @@ apps/frontend/
   hooks/
     useRoom.ts                ← ルーム作成・参加・状態取得
     useSocketGame.ts          ← room 購読と game:update 受信
-
-apps/backend/
-  app/
-    api/
-      rooms/
-        route.ts              ← GET, POST /api/rooms
-        [id]/
-          join/route.ts       ← POST /api/rooms/:id/join
-          moves/route.ts      ← POST /api/rooms/:id/moves
-          state/route.ts      ← GET /api/rooms/:id/state
   lib/
     prisma.ts                 ← Prisma client
     rooms/
@@ -623,8 +619,8 @@ apps/backend/
       state-builder.ts        ← Move から state を組み立てる
     socket/
       game-handler.ts         ← room:subscribe と game:update 配信
-  prisma/
-    schema.prisma
+prisma/
+  schema.prisma
 ```
 
 `Conversation` や `ChatMessage` を扱う実装は Phase 0 では不要だが、room ごとのチャットを追加するなら `Conversation.roomId` を起点に増設できる。
