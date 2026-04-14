@@ -171,40 +171,31 @@ model Move {
 
 ## ファイル構成
 
-### フロントエンド
+### 単一 Next.js アプリ
 
-```
-apps/frontend/src/
+```text
+app/
+  proto/
+    page.tsx             ← 上記を組み合わせた検証ページ
+  api/
+    rooms/
+      route.ts           ← GET, POST /api/rooms
+      [id]/
+        join/route.ts    ← POST /api/rooms/:id/join
+        moves/route.ts   ← POST /api/rooms/:id/moves
+        state/route.ts   ← GET /api/rooms/:id/state
   components/
-    NameInput.tsx        ← プレイヤー名入力フォーム
-    RoomList.tsx         ← GET /rooms で取得した一覧を表示
-    MiniBoard.tsx        ← 1x5 のマス表示・クリックで着手送信
+    proto/
+      NameInput.tsx      ← プレイヤー名入力フォーム
+      RoomList.tsx       ← GET /rooms で取得した一覧を表示
+      MiniBoard.tsx      ← 1x5 のマス表示・クリックで着手送信
   hooks/
     useRoom.ts           ← ルーム作成・参加の REST 呼び出し
     useSocketGame.ts     ← WebSocket 購読・game:update 受信
-  app/
-    proto/
-      page.tsx           ← 上記を組み合わせた検証ページ
-```
-
-### バックエンド
-
-```
-apps/backend/src/
-  rooms/
+  lib/
     roomStore.ts         ← Prisma でルーム状態管理
-  game/
     moveValidator.ts     ← 合法手判定ロジック（占有チェック・手番チェック）
-  app/
-    api/
-      rooms/
-        route.ts         ← GET, POST /api/rooms
-        [id]/
-          join/route.ts  ← POST /api/rooms/:id/join
-          moves/route.ts ← POST /api/rooms/:id/moves
-          state/route.ts ← GET /api/rooms/:id/state
-  socket/
-    gameHandler.ts       ← room:join 受付・game:update 配信
+server.ts               ← room:join 受付・game:update 配信
 ```
 
 ---
@@ -314,7 +305,6 @@ apps/grpc/
     server.ts               ← gRPC サーバー本体
     moveChecker.ts          ← CanPlace の実装（gomoku / renju 両対応）
 
-apps/backend/src/
-  grpc/
-    moveCheckerClient.ts    ← バックエンドから gRPC サービスへの呼び出し
+app/lib/
+  moveCheckerClient.ts      ← アプリから gRPC サービスへの呼び出し
 ```

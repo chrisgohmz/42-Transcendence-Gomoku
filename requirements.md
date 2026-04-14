@@ -13,27 +13,26 @@
 
 ### 2.1 現在の技術構成
 
-- フロントエンド: `apps/frontend`
-  - Next.js 15
+- アプリ本体: リポジトリルートの Next.js アプリ
+  - Next.js 16
   - React 19
-  - `socket.io-client`
-- バックエンド: `apps/backend`
-  - Next.js 15
-  - Node.js HTTP サーバー
-  - Socket.IO
+  - Bun で起動するカスタム Next.js サーバー
+  - Socket.IO クライアント / サーバー
   - Prisma
 - データベース:
   - PostgreSQL 16
 - ローカル実行:
-  - `docker-compose.yml` による `frontend / backend / database` の 3 サービス構成
+  - `docker-compose.yml` による `app / database` の 2 サービス構成
 
 ### 2.2 現在実装されていること
 
-- フロントからバックエンドの `/api/health` を確認できる
-- バックエンドから PostgreSQL への接続確認ができる
+- 単一の Next.js アプリから `/api/health` を確認できる
+- アプリから PostgreSQL への接続確認ができる
 - Socket.IO の接続確認ができる
-- バックエンドから `welcome` と `heartbeat` を送信できる
-- Prisma スキーマは `PlayerPresence` のみ存在する
+- アプリから `welcome` と `heartbeat` を送信できる
+- `/signup` と `/login` が Next.js の form actions で動作し、`/account` でセッション確認できる
+- `/api/auth/*` と `/api/matches` の Route Handler が存在する
+- Prisma は認証、マッチ、プロフィール、会話の基礎スキーマと migration を持つ
 
 ### 2.3 現在未実装の主要領域
 
@@ -41,7 +40,6 @@
 - 対局ルール判定
 - マッチメイキング
 - ルーム管理
-- 認証
 - ユーザープロフィール
 - 対局履歴
 - ランキング
@@ -52,7 +50,7 @@
 
 - リアルタイム対戦は Socket.IO を中心に設計するのが自然
 - 永続データは Prisma + PostgreSQL で管理する前提
-- フロントとバックは分離されているが、どちらも Next.js ベースで統一されている
+- UI、Route Handler、Server Action、Socket.IO サーバーを単一の Next.js アプリに集約する方針
 - Docker Compose でローカル開発体験を揃える方針がある
 
 ## 3. 参考サイト調査まとめ
@@ -347,18 +345,13 @@
 
 ### 9.1 アーキテクチャ
 
-- `apps/frontend`
+- リポジトリルート
   - 画面表示
   - 認証 UI
   - ロビー UI
   - 対局 UI
-  - API 呼び出し
-  - Socket.IO クライアント
-- `apps/backend`
-  - 認証 API
-  - 対局 API
-  - ランキング API
-  - Socket.IO サーバー
+  - Route Handler / Server Action
+  - Socket.IO クライアント / サーバー
   - 対局状態管理
   - Prisma を通じた永続化
 

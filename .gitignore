@@ -3,12 +3,9 @@ node_modules
 .stylelintcache
 bun-debug.log*
 npm-debug.log*
-apps/*/node_modules
-apps/*/.next
-apps/backend/generated
-apps/*/bun-debug.log*
-apps/*/npm-debug.log*
-apps/*/bun.lockb
-apps/*/tsconfig.tsbuildinfo
+.next
+generated
+bun.lockb
+tsconfig.tsbuildinfo
 .DS_Store
 .env

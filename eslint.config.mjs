@@ -13,7 +13,7 @@ const eslintConfig = defineConfig([
     },
     settings: {
       next: {
-        rootDir: ["apps/frontend/", "apps/backend/"],
+        rootDir: ["."],
       },
     },
     rules: {
@@ -33,7 +33,7 @@ const eslintConfig = defineConfig([
     "**/.next/**",
     "**/out/**",
     "**/build/**",
-    "apps/backend/generated/**",
+    "generated/**",
     "**/next-env.d.ts",
   ]),
   eslintConfigPrettier,
