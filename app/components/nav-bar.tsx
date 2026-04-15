@@ -1,19 +1,19 @@
-"use client"
+"use client";
 
-import Link from "next/link"
-import Image from "next/image"
-import { Button } from "@/components/ui/button"
-import UserMenu from "@/components/player-menu"
+import Link from "next/link";
+import Image from "next/image";
+import { Button } from "@/components/ui/button";
+import UserMenu from "@/components/player-menu";
 
 export default function Navbar() {
-  const isLoggedIn = true
+  const isLoggedIn = true;
 
   return (
     <header className="sticky top-0 z-50 border-b border-slate-700/40 bg-[#0b182d]/85 backdrop-blur">
       <nav className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
-        
-        <Link href="/" 
-              className="flex items-center gap-3 rounded-md px-2 py-1 transition hover:bg-slate-800/70 active:scale-[0.98]"
+        <Link
+          href="/"
+          className="flex items-center gap-3 rounded-md px-2 py-1 transition hover:bg-slate-800/70 active:scale-[0.98]"
         >
           <Image
             src="/icons/Gomoku.png"
@@ -65,20 +65,19 @@ export default function Navbar() {
 
           {!isLoggedIn ? (
             <>
-                <Link href="login">
-                    <Button>Log In</Button>
-                </Link>
+              <Link href="login">
+                <Button>Log In</Button>
+              </Link>
 
-                <Link href="/Sign Up">
-                  <Button>Sign Up</Button>
-                </Link>
+              <Link href="/Sign Up">
+                <Button>Sign Up</Button>
+              </Link>
             </>
-            ) : 
-            < UserMenu />
-          }
-
+          ) : (
+            <UserMenu />
+          )}
         </div>
       </nav>
     </header>
-  )
+  );
 }

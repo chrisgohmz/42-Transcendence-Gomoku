@@ -1,15 +1,14 @@
-"use client"
+"use client";
 
-import Link from "next/link"
-import { Button } from "@/components/ui/button"
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-
+} from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 export default function UserMenu() {
   return (
@@ -36,10 +35,8 @@ export default function UserMenu() {
         <DropdownMenuItem asChild>
           <Link href="/messages">Messages</Link>
         </DropdownMenuItem>
-        <DropdownMenuItem>
-          Logout
-        </DropdownMenuItem>
+        <DropdownMenuItem>Logout</DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
-  )
+  );
 }
