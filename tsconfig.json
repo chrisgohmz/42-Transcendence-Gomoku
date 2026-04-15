@@ -18,6 +18,7 @@
         "name": "next"
       }
     ],
+    "types": ["bun", "node"],
     "paths": { "@/*": ["./app/*"] },
     "noUnusedLocals": true,
     "noUnusedParameters": true,
