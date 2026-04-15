@@ -101,14 +101,17 @@ export function StatusPanel({ socketUrl }: StatusPanelProps) {
 
     socket.on("connect", () => {
       setSocketState("connected");
+      setLastSignal("Connected to realtime service");
     });
 
-    socket.on("disconnect", () => {
+    socket.on("disconnect", (reason) => {
       setSocketState("disconnected");
+      setLastSignal(`Disconnected: ${reason}`);
     });
 
-    socket.on("connect_error", () => {
+    socket.on("connect_error", (error) => {
       setSocketState("error");
+      setLastSignal(`Connection error: ${getErrorMessage(error)}`);
     });
 
     socket.on("welcome", (payload: WelcomePayload) => {

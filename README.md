@@ -179,6 +179,6 @@ Do not regenerate lockfiles with npm. Commit the Bun lockfiles instead.
 
 ## DevOps
 
-1. The project currently runs as a single Next.js app plus PostgreSQL in Docker, keeping the local stack simple while preserving a custom realtime server for Socket.IO
+1. The project currently runs as a Next.js app, a dedicated Bun realtime service for Socket.IO, and PostgreSQL in Docker
 
 # Individual Contributions

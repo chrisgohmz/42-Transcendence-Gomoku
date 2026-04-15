@@ -1,18 +1,21 @@
 import Link from "next/link";
 
 import { ClickButtons } from "./components/click-buttons";
+import { StatusPanel } from "./components/status-panel";
 
 export const dynamic = "force-dynamic";
 
 export default function Home() {
+  const socketUrl = process.env["SOCKET_PUBLIC_URL"] ?? "http://localhost:3001";
+
   return (
     <main className="shell">
       <section className="hero">
         <p className="eyebrow">42 Transcendence</p>
         <h1>One command boots the full local stack.</h1>
         <p className="lede">
-          One Next.js app now serves the UI, auth, API routes, Prisma-backed
-          data, and Socket.IO from the same service.
+          One Next.js app now serves the UI, auth, API routes, and Prisma-backed
+          data, while a dedicated Bun realtime service handles Socket.IO.
         </p>
       </section>
       <section className="panel">
@@ -59,6 +62,7 @@ export default function Home() {
           </div>
         </article>
       </section>
+      <StatusPanel socketUrl={socketUrl} />
     </main>
   );
 }
