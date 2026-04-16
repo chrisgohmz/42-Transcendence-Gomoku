@@ -1,9 +1,10 @@
 "use client";
 
-import Link from "next/link";
 import Image from "next/image";
-import { Button } from "@/components/ui/button";
+import Link from "next/link";
+
 import UserMenu from "@/components/player-menu";
+import { Button } from "@/components/ui/button";
 
 export default function Navbar() {
   const isLoggedIn = true;
@@ -22,15 +23,13 @@ export default function Navbar() {
             height={42}
             className="rounded-md"
           />
-          <span className="text-lg font-semibold text-slate-50">
-            五目並べヒーロー
-          </span>
+          <span className="text-lg font-semibold text-slate-50">五目並べヒーロー</span>
         </Link>
 
         <div className="flex items-center gap-2 sm:gap-4">
           <Link
             href="/"
-            className="rounded-md px-3 py-2 text-sm font-medium text-slate-30 hover:bg-slate-800/70 hover:text-white"
+            className="text-slate-30 rounded-md px-3 py-2 text-sm font-medium hover:bg-slate-800/70 hover:text-white"
           >
             Home
           </Link>

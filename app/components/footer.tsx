@@ -16,9 +16,7 @@ export default function Footer() {
           </Link>
         </div>
 
-        <p className="text-xs text-slate-400">
-          © {new Date().getFullYear()} 五目並べヒーロー
-        </p>
+        <p className="text-xs text-slate-400">© {new Date().getFullYear()} 五目並べヒーロー</p>
       </div>
     </footer>
   );
