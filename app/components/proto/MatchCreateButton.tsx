@@ -27,10 +27,7 @@ type ErrorResponse = {
   error?: string;
 };
 
-export function MatchCreateButton({
-  onSuccess,
-  onError,
-}: MatchCreateButtonProps) {
+export function MatchCreateButton({ onSuccess, onError }: MatchCreateButtonProps) {
   const [isLoading, setIsLoading] = useState(false);
 
   async function handleClick() {
@@ -50,9 +47,7 @@ export function MatchCreateButton({
           onError("Please sign in before creating a match.");
           return;
         }
-        const errorPayload = (await response
-          .json()
-          .catch(() => null)) as ErrorResponse | null;
+        const errorPayload = (await response.json().catch(() => null)) as ErrorResponse | null;
         const message =
           errorPayload?.message ??
           errorPayload?.detail ??
@@ -90,12 +85,7 @@ export function MatchCreateButton({
   }
 
   return (
-    <button
-      type="button"
-      className="btn"
-      onClick={handleClick}
-      disabled={isLoading}
-    >
+    <button type="button" className="btn" onClick={handleClick} disabled={isLoading}>
       {isLoading ? "Creating..." : "Create Match"}
     </button>
   );

@@ -1,6 +1,6 @@
-import { prisma } from "@/lib/prisma";
 import { Prisma } from "@/../generated/prisma/client";
 import { Role, Seat, MatchStatus } from "@/../generated/prisma/enums";
+import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
 
@@ -8,10 +8,7 @@ function getErrorMessage(error: unknown): string {
   return error instanceof Error ? error.message : "Unknown error";
 }
 
-export async function POST(
-  request: Request,
-  { params }: { params: Promise<{ id: string }> },
-) {
+export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id: matchId } = await params;
     const body = (await request.json()) as { displayName?: string };
@@ -30,9 +27,7 @@ export async function POST(
       return Response.json({ error: "match_not_available" }, { status: 409 });
     }
 
-    const alreadyHasWhite = match.participants.some(
-      (p) => p.seat === Seat.WHITE,
-    );
+    const alreadyHasWhite = match.participants.some((p) => p.seat === Seat.WHITE);
     if (alreadyHasWhite) {
       return Response.json({ error: "match_full" }, { status: 409 });
     }
@@ -66,10 +61,7 @@ export async function POST(
       seat: joiner.seat,
     });
   } catch (error) {
-    if (
-      error instanceof Prisma.PrismaClientKnownRequestError &&
-      error.code === "P2002"
-    ) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
       return Response.json(
         { error: "match_full", detail: getErrorMessage(error) },
         { status: 409 },

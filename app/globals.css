@@ -26,11 +26,7 @@ body {
   color: var(--text);
   background:
     radial-gradient(circle at top, rgb(78 232 194 / 18%), transparent 28%),
-    radial-gradient(
-      circle at bottom right,
-      rgb(131 208 255 / 20%),
-      transparent 30%
-    ),
+    radial-gradient(circle at bottom right, rgb(131 208 255 / 20%), transparent 30%),
     linear-gradient(160deg, #040914 0%, #09111f 45%, #0d1730 100%);
 }
 

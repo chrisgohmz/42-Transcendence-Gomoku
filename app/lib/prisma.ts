@@ -1,7 +1,6 @@
 import "./load-env";
-
-import { PrismaPg } from "@prisma/adapter-pg";
 import { createId } from "@paralleldrive/cuid2";
+import { PrismaPg } from "@prisma/adapter-pg";
 import { Pool } from "pg";
 
 import { Prisma, PrismaClient } from "../../generated/prisma/client";
@@ -59,9 +58,7 @@ function getPrisma(): PrismaClient {
           },
           createMany({ model, args, query }) {
             if (cuidModels.has(model) && args?.data) {
-              const payloads = Array.isArray(args.data)
-                ? args.data
-                : [args.data];
+              const payloads = Array.isArray(args.data) ? args.data : [args.data];
               for (const entry of payloads) {
                 const mutableEntry = entry as { id?: string | null } | null;
                 if (mutableEntry && mutableEntry.id == null) {
@@ -86,10 +83,8 @@ function getPrisma(): PrismaClient {
 
 export const prisma = new Proxy({} as PrismaClient, {
   get: (_target, prop, receiver) => Reflect.get(getPrisma(), prop, receiver),
-  set: (_target, prop, value, receiver) =>
-    Reflect.set(getPrisma(), prop, value, receiver),
+  set: (_target, prop, value, receiver) => Reflect.set(getPrisma(), prop, value, receiver),
   has: (_target, prop) => prop in getPrisma(),
   ownKeys: () => Reflect.ownKeys(getPrisma()),
-  getOwnPropertyDescriptor: (_target, prop) =>
-    Object.getOwnPropertyDescriptor(getPrisma(), prop),
+  getOwnPropertyDescriptor: (_target, prop) => Object.getOwnPropertyDescriptor(getPrisma(), prop),
 });

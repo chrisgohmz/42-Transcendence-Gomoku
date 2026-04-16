@@ -7,10 +7,7 @@ import { initialLoginActionState } from "../auth-action-state";
 import { loginAction } from "../auth-actions";
 
 export function LoginForm() {
-  const [state, formAction, pending] = useActionState(
-    loginAction,
-    initialLoginActionState,
-  );
+  const [state, formAction, pending] = useActionState(loginAction, initialLoginActionState);
 
   return (
     <form className="form-grid" action={formAction}>

@@ -1,4 +1,3 @@
-import { prisma } from "../../../lib/prisma";
 import {
   clearSessionCookie,
   createSession,
@@ -6,6 +5,7 @@ import {
   hashPassword,
   serializeUserForResponse,
 } from "../../../lib/auth";
+import { prisma } from "../../../lib/prisma";
 
 export const dynamic = "force-dynamic";
 
@@ -65,10 +65,7 @@ export async function POST(request: Request) {
   const validation = validatePayload(body);
 
   if (validation.error) {
-    return Response.json(
-      { error: "invalid_request", message: validation.error },
-      { status: 400 },
-    );
+    return Response.json({ error: "invalid_request", message: validation.error }, { status: 400 });
   }
 
   const email = normalizeEmail(body.email!);
@@ -92,15 +89,9 @@ export async function POST(request: Request) {
 
     await createSession(user.id, request);
 
-    return Response.json(
-      { user: serializeUserForResponse(user) },
-      { status: 201 },
-    );
+    return Response.json({ user: serializeUserForResponse(user) }, { status: 201 });
   } catch (error) {
-    const duplicateResponse = handlePrismaUniqueError(error, [
-      "email",
-      "username",
-    ]);
+    const duplicateResponse = handlePrismaUniqueError(error, ["email", "username"]);
 
     if (duplicateResponse) {
       return duplicateResponse;

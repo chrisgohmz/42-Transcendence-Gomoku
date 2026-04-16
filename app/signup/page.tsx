@@ -7,8 +7,8 @@ export default function SignupPage() {
         <p className="eyebrow">Authentication</p>
         <h1>Create your account.</h1>
         <p className="lede">
-          Use an email and password to start playing immediately. No third-party
-          provider setup required.
+          Use an email and password to start playing immediately. No third-party provider setup
+          required.
         </p>
       </section>
 

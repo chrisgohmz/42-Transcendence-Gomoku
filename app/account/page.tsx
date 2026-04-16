@@ -1,12 +1,8 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
-import {
-  getCurrentSession,
-  refreshSessionIfNeeded,
-  serializeUserForResponse,
-} from "../lib/auth";
 import { LogoutButton } from "../components/logout-button";
+import { getCurrentSession, refreshSessionIfNeeded, serializeUserForResponse } from "../lib/auth";
 
 type SessionPayload = {
   user: {
@@ -49,8 +45,7 @@ export default async function AccountPage() {
   try {
     session = await loadSession();
   } catch (error) {
-    loadError =
-      error instanceof Error ? error.message : "Unable to load your session.";
+    loadError = error instanceof Error ? error.message : "Unable to load your session.";
   }
 
   if (!session && !loadError) {

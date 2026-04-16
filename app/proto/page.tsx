@@ -1,15 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import {
-  MatchCreateButton,
-  type CreatedMatchInfo,
-} from "../components/proto/MatchCreateButton";
 
-import {
-  MatchJoinButton,
-  type JoinedMatchInfo,
-} from "@/components/proto/MatchJoinButton";
+import { MatchJoinButton, type JoinedMatchInfo } from "@/components/proto/MatchJoinButton";
+
+import { MatchCreateButton, type CreatedMatchInfo } from "../components/proto/MatchCreateButton";
 
 type MatchParticipant = {
   displayName: string;
@@ -29,9 +24,7 @@ type ErrorResponse = {
 };
 
 export default function ProtoPage() {
-  const [createdMatch, setCreatedMatch] = useState<CreatedMatchInfo | null>(
-    null,
-  );
+  const [createdMatch, setCreatedMatch] = useState<CreatedMatchInfo | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [matches, setMatches] = useState<Match[]>([]);
   const [listError, setListError] = useState<string | null>(null);
@@ -47,9 +40,7 @@ export default function ProtoPage() {
       });
 
       if (!response.ok) {
-        const errorPayload = (await response
-          .json()
-          .catch(() => null)) as ErrorResponse | null;
+        const errorPayload = (await response.json().catch(() => null)) as ErrorResponse | null;
         const message =
           errorPayload?.message ??
           errorPayload?.detail ??
@@ -66,11 +57,7 @@ export default function ProtoPage() {
       setListError(null);
     } catch (error) {
       console.error("Error loading matches:", error);
-      setListError(
-        error instanceof Error
-          ? error.message
-          : "Network error while loading matches",
-      );
+      setListError(error instanceof Error ? error.message : "Network error while loading matches");
       setMatches([]);
     }
   }
@@ -100,9 +87,7 @@ export default function ProtoPage() {
         <article className="card">
           <MatchCreateButton onSuccess={handleSuccess} onError={handleError} />
           {createdMatch ? <p>matchId: {createdMatch.matchId}</p> : null}
-          {createdMatch ? (
-            <p>participantId: {createdMatch.participantId}</p>
-          ) : null}
+          {createdMatch ? <p>participantId: {createdMatch.participantId}</p> : null}
           {createdMatch?.role ? <p>role: {createdMatch.role}</p> : null}
           {createdMatch && createdMatch.seat !== undefined ? (
             <p>seat: {createdMatch.seat ?? "null"}</p>
@@ -121,9 +106,7 @@ export default function ProtoPage() {
               <li key={match.matchId}>
                 <p>
                   {match.matchId}
-                  {match.matchId === createdMatch?.matchId
-                    ? " <- just created"
-                    : ""}
+                  {match.matchId === createdMatch?.matchId ? " <- just created" : ""}
                 </p>
                 {match.status ? <p>status: {match.status}</p> : null}
                 {match.participants?.length ? (
@@ -158,8 +141,7 @@ export default function ProtoPage() {
                 />
                 {joinedMatch?.matchId === match.matchId ? (
                   <p>
-                    seat: {joinedMatch.seat} / participantId:{" "}
-                    {joinedMatch.participantId}
+                    seat: {joinedMatch.seat} / participantId: {joinedMatch.participantId}
                   </p>
                 ) : null}
                 {joinError ? <p role="alert">error: {joinError}</p> : null}

@@ -1,8 +1,4 @@
-import {
-  clearSessionCookie,
-  getCurrentSession,
-  revokeSession,
-} from "../../../lib/auth";
+import { clearSessionCookie, getCurrentSession, revokeSession } from "../../../lib/auth";
 
 export const dynamic = "force-dynamic";
 

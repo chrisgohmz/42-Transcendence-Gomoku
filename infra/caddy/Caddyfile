@@ -1,0 +1,10 @@
+https://localhost:8443 {
+	tls internal
+
+	@socket path /socket.io/*
+	handle @socket {
+		reverse_proxy realtime:3001
+	}
+
+	reverse_proxy app:3000
+}

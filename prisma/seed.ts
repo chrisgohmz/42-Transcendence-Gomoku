@@ -1,4 +1,7 @@
 import { createId } from "@paralleldrive/cuid2";
+
+import { hashPassword } from "../app/lib/auth";
+import { prisma } from "../app/lib/prisma";
 import {
   ConversationKind,
   FriendshipStatus,
@@ -12,11 +15,8 @@ import {
   Seat,
   UserSession,
 } from "../generated/prisma/client";
-import { hashPassword } from "../app/lib/auth";
-import { prisma } from "../app/lib/prisma";
 
-const directKeyForUsers = (a: string, b: string): string =>
-  [a, b].sort().join(":");
+const directKeyForUsers = (a: string, b: string): string => [a, b].sort().join(":");
 
 type SeededUsers = {
   alice: { id: string; displayName: string };
@@ -279,12 +279,8 @@ const seedMatch = async (aliceId: string, bobId: string, carolId: string) => {
   const participants = await prisma.matchParticipant.findMany({
     where: { matchId: match.id },
   });
-  const black = participants.find(
-    (participant) => participant.seat === Seat.BLACK,
-  );
-  const white = participants.find(
-    (participant) => participant.seat === Seat.WHITE,
-  );
+  const black = participants.find((participant) => participant.seat === Seat.BLACK);
+  const white = participants.find((participant) => participant.seat === Seat.WHITE);
 
   if (!black || !white) {
     throw new Error("Seed match participants were not created as expected.");
@@ -535,9 +531,7 @@ const seedAnalyticsEvents = async (
 const main = async () => {
   const existingUsers = await prisma.user.count();
   if (existingUsers > 0) {
-    console.log(
-      "Database is not empty; skipping seed to avoid clobbering existing data.",
-    );
+    console.log("Database is not empty; skipping seed to avoid clobbering existing data.");
     return;
   }
 
@@ -546,14 +540,7 @@ const main = async () => {
   await seedDirectConversation(alice.id, bob.id);
   const { match, finishedAt } = await seedMatch(alice.id, bob.id, carol.id);
   await seedStatsAndAchievements(alice.id, bob.id, carol.id, finishedAt);
-  await seedAnalyticsEvents(
-    match.id,
-    sessions,
-    alice.id,
-    bob.id,
-    carol.id,
-    finishedAt,
-  );
+  await seedAnalyticsEvents(match.id, sessions, alice.id, bob.id, carol.id, finishedAt);
 
   console.log(
     "Seed data created: users, friendship, chat, match, stats, achievements, and analytics.",

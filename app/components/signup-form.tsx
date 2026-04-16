@@ -7,10 +7,7 @@ import { initialSignupActionState } from "../auth-action-state";
 import { signupAction } from "../auth-actions";
 
 export function SignupForm() {
-  const [state, formAction, pending] = useActionState(
-    signupAction,
-    initialSignupActionState,
-  );
+  const [state, formAction, pending] = useActionState(signupAction, initialSignupActionState);
 
   return (
     <form className="form-grid" action={formAction}>
