@@ -1,0 +1,20 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "env": {
+    "browser": true,
+    "node": true
+  },
+  "globals": {
+    "Bun": "readonly"
+  },
+  "plugins": ["unicorn", "typescript", "oxc", "react", "import", "nextjs", "node"],
+  "ignorePatterns": ["generated/**", ".next/**", "node_modules/**", "next-env.d.ts"],
+  "options": {
+    "typeAware": true
+  },
+  "settings": {
+    "next": {
+      "rootDir": "."
+    }
+  }
+}

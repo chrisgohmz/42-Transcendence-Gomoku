@@ -1,13 +1,9 @@
 import "server-only";
+import { randomBytes, scrypt as nodeScrypt, timingSafeEqual } from "node:crypto";
+import { promisify } from "node:util";
 
-import {
-  randomBytes,
-  scrypt as nodeScrypt,
-  timingSafeEqual,
-} from "node:crypto";
 import { createId } from "@paralleldrive/cuid2";
 import { cookies, headers } from "next/headers";
-import { promisify } from "node:util";
 
 import type { Prisma, User, UserSession } from "../../generated/prisma/client";
 import { prisma } from "./prisma";
@@ -74,11 +70,7 @@ export async function verifyPassword(
 
   const saltBuffer = Buffer.from(salt, "base64");
   const storedHashBuffer = Buffer.from(storedHash, "base64");
-  const derivedKey = (await scrypt(
-    password,
-    saltBuffer,
-    storedHashBuffer.length,
-  )) as Buffer;
+  const derivedKey = (await scrypt(password, saltBuffer, storedHashBuffer.length)) as Buffer;
 
   if (derivedKey.length !== storedHashBuffer.length) {
     return false;
@@ -161,9 +153,7 @@ export async function getCurrentSession(): Promise<AuthContext | null> {
   return { user: session.user, session };
 }
 
-export async function refreshSessionIfNeeded(
-  context: AuthContext,
-): Promise<void> {
+export async function refreshSessionIfNeeded(context: AuthContext): Promise<void> {
   const remainingMs = context.session.expiresAt.getTime() - Date.now();
 
   if (remainingMs > SESSION_REFRESH_THRESHOLD_MS) {
@@ -190,10 +180,7 @@ export function serializeUserForResponse(user: User) {
   };
 }
 
-export function handlePrismaUniqueError(
-  error: unknown,
-  fields?: string[],
-): Response | null {
+export function handlePrismaUniqueError(error: unknown, fields?: string[]): Response | null {
   const prismaError = error as Prisma.PrismaClientKnownRequestError;
 
   if (prismaError?.code !== "P2002") {

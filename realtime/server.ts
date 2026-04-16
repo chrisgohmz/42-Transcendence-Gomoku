@@ -21,7 +21,7 @@ function readCorsOrigins(): string[] {
   const configuredOrigins = process.env["SOCKET_CORS_ORIGIN"];
 
   if (!configuredOrigins) {
-    return ["http://localhost:3000"];
+    return ["http://localhost:3000", "https://localhost:8443"];
   }
 
   return configuredOrigins.split(",").map((origin) => origin.trim());

@@ -1,5 +1,4 @@
 node_modules
-.eslintcache
 .stylelintcache
 bun-debug.log*
 npm-debug.log*
@@ -9,3 +8,4 @@ bun.lockb
 tsconfig.tsbuildinfo
 .DS_Store
 .env
+caddy-local-root.crt

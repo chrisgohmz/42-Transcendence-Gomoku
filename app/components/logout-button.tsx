@@ -24,13 +24,9 @@ export const LogoutButton = () => {
       });
 
       if (!response.ok) {
-        const payload = (await response
-          .json()
-          .catch(() => null)) as LogoutError | null;
+        const payload = (await response.json().catch(() => null)) as LogoutError | null;
         const message =
-          payload?.message ??
-          payload?.detail ??
-          "Unable to end your session right now.";
+          payload?.message ?? payload?.detail ?? "Unable to end your session right now.";
         setError(message);
         return;
       }
@@ -50,12 +46,7 @@ export const LogoutButton = () => {
 
   return (
     <div className="form-grid">
-      <button
-        type="button"
-        className="btn btn-off"
-        onClick={handleLogout}
-        disabled={pending}
-      >
+      <button type="button" className="btn btn-off" onClick={handleLogout} disabled={pending}>
         {pending ? "Signing out…" : "Sign out"}
       </button>
       {error ? (

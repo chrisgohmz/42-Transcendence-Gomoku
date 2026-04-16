@@ -41,9 +41,7 @@ Then run the single Next app from your host shell:
 bun run dev
 ```
 
-The app uses a custom Next server. In development it currently forces webpack
-instead of Turbopack because that path is more reliable here with Prisma + `pg`
-externals.
+This host-shell path still serves plain HTTP on `http://localhost:3000`.
 
 ### Prisma workflow
 
@@ -80,7 +78,7 @@ docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d database
 docker compose up --build
 ```
 
-This runs the single app plus PostgreSQL in a production-style container mode.
+This runs the Next app, Bun realtime service, Caddy HTTPS reverse proxy, and PostgreSQL in a production-style local container mode. Open the app at `https://localhost:8443`.
 
 ### Run the full stack in Docker dev mode
 
@@ -88,7 +86,15 @@ This runs the single app plus PostgreSQL in a production-style container mode.
 docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
 ```
 
-This override switches the app to development mode, mounts the source tree into the container, enables hot reload while keeping PostgreSQL in Docker, and publishes PostgreSQL on `localhost:5432` for host-side Prisma and backend commands.
+This override switches the app to development mode, mounts the source tree into the containers, enables hot reload while keeping PostgreSQL in Docker, and publishes PostgreSQL on `localhost:5432` for host-side Prisma and backend commands. Open the app at `https://localhost:8443`.
+
+For local HTTPS, Caddy issues a certificate from its internal local CA. Browsers will usually warn until you trust that CA once on your machine. You can copy the root certificate out of the running proxy container with:
+
+```bash
+docker compose cp caddy:/data/caddy/pki/authorities/local/root.crt ./caddy-local-root.crt
+```
+
+Then import `./caddy-local-root.crt` into your OS/browser trust store.
 
 ### Lint the repo
 
@@ -115,9 +121,7 @@ bun run format
 
 Pre-commit hooks are managed with `simple-git-hooks` and run `lint-staged` on staged files only.
 
-Staged TypeScript files run through ESLint and Prettier, staged CSS files run through Stylelint and Prettier, and staged JSON/Markdown/config files run through Prettier.
-
-The ESLint setup also includes `eslint-plugin-prefer-arrow` to encourage arrow functions where they improve consistency without forcing top-level standalone declarations to change.
+Staged JavaScript and TypeScript files run through Oxlint and Oxfmt, staged CSS files run through Stylelint and Oxfmt, and staged JSON/Markdown/config files run through Oxfmt.
 
 Do not regenerate lockfiles with npm. Commit the Bun lockfiles instead.
 
@@ -179,6 +183,6 @@ Do not regenerate lockfiles with npm. Commit the Bun lockfiles instead.
 
 ## DevOps
 
-1. The project currently runs as a Next.js app, a dedicated Bun realtime service for Socket.IO, and PostgreSQL in Docker
+1. The project currently runs as a Next.js app, a dedicated Bun realtime service for Socket.IO, a Caddy HTTPS reverse proxy, and PostgreSQL in Docker
 
 # Individual Contributions

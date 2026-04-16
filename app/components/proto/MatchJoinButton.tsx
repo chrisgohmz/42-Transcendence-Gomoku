@@ -48,9 +48,7 @@ export function MatchJoinButton({
       });
 
       if (!response.ok) {
-        const errorPayload = (await response
-          .json()
-          .catch(() => null)) as ErrorResponse | null;
+        const errorPayload = (await response.json().catch(() => null)) as ErrorResponse | null;
         const message =
           errorPayload?.message ??
           errorPayload?.detail ??

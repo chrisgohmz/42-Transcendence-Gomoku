@@ -1,5 +1,4 @@
 import "../app/lib/load-env";
-
 import { createConnection } from "node:net";
 
 const databaseUrl = process.env["DATABASE_URL"];
@@ -51,16 +50,12 @@ async function waitForDatabase(): Promise<void> {
       console.log(`Database is reachable on ${host}:${port}.`);
       return;
     } catch (error) {
-      console.log(
-        `Database not ready yet (${attempt}/${retries}): ${getErrorMessage(error)}`,
-      );
+      console.log(`Database not ready yet (${attempt}/${retries}): ${getErrorMessage(error)}`);
       await sleep(delayMs);
     }
   }
 
-  throw new Error(
-    `Database did not become reachable after ${retries} attempts.`,
-  );
+  throw new Error(`Database did not become reachable after ${retries} attempts.`);
 }
 
 waitForDatabase().catch((error: unknown) => {

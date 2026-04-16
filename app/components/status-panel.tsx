@@ -41,11 +41,7 @@ function toneForStatus(status: PanelStatus): Tone {
     return "ok";
   }
 
-  if (
-    status === "degraded" ||
-    status === "connecting" ||
-    status === "checking"
-  ) {
+  if (status === "degraded" || status === "connecting" || status === "checking") {
     return "warn";
   }
 
@@ -139,24 +135,18 @@ export function StatusPanel({ socketUrl }: StatusPanelProps) {
         </article>
         <article className="card">
           <div className="label">Database</div>
-          <div className={`value ${toneForStatus(databaseStatus)}`}>
-            {databaseStatus}
-          </div>
+          <div className={`value ${toneForStatus(databaseStatus)}`}>{databaseStatus}</div>
         </article>
         <article className="card">
           <div className="label">Socket.IO</div>
-          <div className={`value ${toneForStatus(socketState)}`}>
-            {socketState}
-          </div>
+          <div className={`value ${toneForStatus(socketState)}`}>{socketState}</div>
         </article>
       </div>
       <div className="meta">
         <div>Socket target: {socketUrl}</div>
         <div>Last signal: {lastSignal}</div>
         {health?.error ? <div>Last health error: {health.error}</div> : null}
-        <div>
-          Health checked: {health?.checkedAt ?? "Waiting for first response"}
-        </div>
+        <div>Health checked: {health?.checkedAt ?? "Waiting for first response"}</div>
       </div>
     </section>
   );

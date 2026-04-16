@@ -1,10 +1,10 @@
-import { prisma } from "../../../lib/prisma";
 import {
   clearSessionCookie,
   createSession,
   serializeUserForResponse,
   verifyPassword,
 } from "../../../lib/auth";
+import { prisma } from "../../../lib/prisma";
 
 export const dynamic = "force-dynamic";
 
@@ -42,8 +42,7 @@ export async function POST(request: Request) {
       where: { email },
     });
 
-    const isValid =
-      user && (await verifyPassword(password, user.passwordHash ?? null));
+    const isValid = user && (await verifyPassword(password, user.passwordHash ?? null));
 
     if (!user || !isValid) {
       await clearSessionCookie();

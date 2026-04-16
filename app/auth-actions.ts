@@ -2,14 +2,9 @@
 
 import { redirect } from "next/navigation";
 
-import { prisma } from "./lib/prisma";
 import type { LoginActionState, SignupActionState } from "./auth-action-state";
-import {
-  clearSessionCookie,
-  createSession,
-  hashPassword,
-  verifyPassword,
-} from "./lib/auth";
+import { clearSessionCookie, createSession, hashPassword, verifyPassword } from "./lib/auth";
+import { prisma } from "./lib/prisma";
 
 function normalizeEmail(email: string): string {
   return email.trim().toLowerCase();
@@ -19,21 +14,21 @@ function normalizeUsername(username: string): string {
   return username.trim();
 }
 
+function getFormString(formData: FormData, field: string): string {
+  const value = formData.get(field);
+  return typeof value === "string" ? value : "";
+}
+
 function isUniqueConstraintError(error: unknown): boolean {
-  return (
-    typeof error === "object" &&
-    error !== null &&
-    "code" in error &&
-    error.code === "P2002"
-  );
+  return typeof error === "object" && error !== null && "code" in error && error.code === "P2002";
 }
 
 export async function loginAction(
   _previousState: LoginActionState,
   formData: FormData,
 ): Promise<LoginActionState> {
-  const email = String(formData.get("email") ?? "");
-  const password = String(formData.get("password") ?? "").trim();
+  const email = getFormString(formData, "email");
+  const password = getFormString(formData, "password").trim();
 
   if (!email.trim() || !password) {
     await clearSessionCookie();
@@ -49,8 +44,7 @@ export async function loginAction(
       where: { email: normalizeEmail(email) },
     });
 
-    const isValid =
-      user && (await verifyPassword(password, user.passwordHash ?? null));
+    const isValid = user && (await verifyPassword(password, user.passwordHash ?? null));
 
     if (!user || !isValid) {
       await clearSessionCookie();
@@ -78,10 +72,10 @@ export async function signupAction(
   _previousState: SignupActionState,
   formData: FormData,
 ): Promise<SignupActionState> {
-  const email = String(formData.get("email") ?? "");
-  const username = String(formData.get("username") ?? "");
-  const displayName = String(formData.get("displayName") ?? "");
-  const password = String(formData.get("password") ?? "").trim();
+  const email = getFormString(formData, "email");
+  const username = getFormString(formData, "username");
+  const displayName = getFormString(formData, "displayName");
+  const password = getFormString(formData, "password").trim();
 
   const normalizedEmail = normalizeEmail(email);
   const normalizedUsername = normalizeUsername(username);

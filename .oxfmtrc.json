@@ -1,0 +1,5 @@
+{
+  "ignorePatterns": ["generated/**", ".next/**", "next-env.d.ts", "infra/caddy/Caddyfile"],
+  "sortImports": true,
+  "sortTailwindcss": true
+}

@@ -1,6 +1,6 @@
-import { prisma } from "../../lib/prisma";
-import { getCurrentSession } from "../../lib/auth";
 import { Role, MatchStatus, Seat } from "../../../generated/prisma/enums";
+import { getCurrentSession } from "../../lib/auth";
+import { prisma } from "../../lib/prisma";
 
 export const dynamic = "force-dynamic";
 

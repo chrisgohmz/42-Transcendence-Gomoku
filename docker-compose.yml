@@ -23,9 +23,7 @@ services:
       NODE_ENV: production
       PORT: 3000
       DATABASE_URL: postgresql://${POSTGRES_USER:-transcendence}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}@database:5432/${POSTGRES_DB:-transcendence}?schema=public
-      SOCKET_PUBLIC_URL: http://localhost:3001
-    ports:
-      - "3000:3000"
+      SOCKET_PUBLIC_URL: ${SOCKET_PUBLIC_URL:-https://localhost:8443}
     depends_on:
       database:
         condition: service_healthy
@@ -52,9 +50,7 @@ services:
       NODE_ENV: production
       SOCKET_HOST: 0.0.0.0
       SOCKET_PORT: 3001
-      SOCKET_CORS_ORIGIN: http://localhost:3000
-    ports:
-      - "3001:3001"
+      SOCKET_CORS_ORIGIN: ${SOCKET_CORS_ORIGIN:-https://localhost:8443}
     networks:
       - transcendence
     healthcheck:
@@ -70,9 +66,27 @@ services:
       retries: 10
       start_period: 5s
 
+  caddy:
+    image: caddy:2.11.2-alpine
+    depends_on:
+      app:
+        condition: service_healthy
+      realtime:
+        condition: service_healthy
+    ports:
+      - "8443:8443"
+    volumes:
+      - ./infra/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    networks:
+      - transcendence
+
 networks:
   transcendence:
     driver: bridge
 
 volumes:
+  caddy_config:
+  caddy_data:
   postgres_data:
