@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 
+import "../node_modules/shadcn/dist/tailwind.css";
+import "../node_modules/tw-animate-css/dist/tw-animate.css";
 import "./globals.css";
 import type { ReactNode } from "react";
 
