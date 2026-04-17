@@ -17,7 +17,7 @@ export default function UserMenu() {
       <DropdownMenuTrigger asChild>
         <Button>
           <Avatar className="h-9 w-9">
-            <AvatarImage src="/Login.svg" alt="User avatar" />
+            <AvatarImage src="/icons/Login.svg" alt="User avatar" />
             <AvatarFallback>MJ</AvatarFallback>
           </Avatar>
           <span className="hidden text-sm font-medium text-slate-800 sm:inline">Profile</span>
