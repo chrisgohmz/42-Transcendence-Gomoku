@@ -7,7 +7,7 @@ import UserMenu from "@/components/player-menu";
 import { Button } from "@/components/ui/button";
 
 export default function Navbar() {
-  const isLoggedIn = true;
+  const isLoggedIn = false;
 
   return (
     <header className="sticky top-0 z-50 border-b border-slate-700/40 bg-[#0b182d]/85 backdrop-blur">
@@ -17,7 +17,7 @@ export default function Navbar() {
           className="flex items-center gap-3 rounded-md px-2 py-1 transition hover:bg-slate-800/70 active:scale-[0.98]"
         >
           <Image
-            src="/icons/Gomoku.png"
+            src="/icons/Gomoku.svg"
             alt="Transcendence logo"
             width={42}
             height={42}
