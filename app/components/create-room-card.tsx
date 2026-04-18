@@ -22,18 +22,23 @@ import {
 
 export default function CreateRoomCard() {
     return (
-        <Card>
+        <Card className="border-white/10 bg-slate-900/70 text-white shadow-xl backdrop-blur">
           <CardHeader>
             <CardTitle>Create Room</CardTitle>
-            <CardDescription>
-              Leave the password blank to create a public room.
-            </CardDescription>
+                <CardDescription className="text-slate-300">
+                    Leave the password blank to create a public room.
+                </CardDescription>
           </CardHeader>
 
           <CardContent>
-            <div>
-              <Label htmlFor="room-password">Password</Label>
-              <Input id="room-password" type="password" placeholder="Optional password" />
+            <div className="space-y-2">
+                <Label htmlFor="room-password">Password</Label>
+                <Input
+                  id="room-password"
+                  type="password"
+                  placeholder="Optional password"
+                  className="border-slate-300 bg-white text-slate-900 placeholder:text-slate-400 mt-1"
+                />
             </div>
           </CardContent>
 
