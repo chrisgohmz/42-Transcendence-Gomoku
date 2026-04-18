@@ -8,6 +8,7 @@ import {
 } from "@/components/ui/table";
 
 type LeaderboardEntry = {
+  playerId: number;
   rank: number;
   player: string;
   rating: number;
@@ -30,33 +31,40 @@ export default function LeaderboardTable({ entries }: LeaderboardTableProps) {
           To get the player ranking from the database later
         </p>
       </div>
-
-        <div className="overflow-hidden rounded-2xl border border-white/10">
-          <Table>
+      <div className="overflow-x-auto rounded-2xl border border-white/10">
+        <Table>
             <TableHeader>
-              <TableRow>
-                <TableHead>Rank</TableHead>
-                <TableHead>Player</TableHead>
-                <TableHead>Rating</TableHead>
-                <TableHead>Wins</TableHead>
-                <TableHead>Losses</TableHead>
-                <TableHead>Win Rate</TableHead>
-              </TableRow>
-            </TableHeader>
-
-            <TableBody>
-              {entries.map((entry) => (
-                <TableRow key={entry.rank}>
-                  <TableCell>{entry.rank}</TableCell>
-                  <TableCell>{entry.player}</TableCell>
-                  <TableCell>{entry.rating}</TableCell>
-                  <TableCell>{entry.wins}</TableCell>
-                  <TableCell>{entry.losses}</TableCell>
-                  <TableCell>{entry.winRate}</TableCell>
+                <TableRow>
+                    <TableHead className="text-slate-200">Rank</TableHead>
+                    <TableHead className="text-slate-200">Player</TableHead>
+                    <TableHead className="text-slate-200">Rating</TableHead>
+                    <TableHead className="text-slate-200">Wins</TableHead>
+                    <TableHead className="text-slate-200">Losses</TableHead>
+                    <TableHead className="text-slate-200">Win Rate</TableHead>
                 </TableRow>
-              ))}
+            </TableHeader>
+            
+            <TableBody>
+              {entries.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={6} className="text-center text-slate-300">
+                    No leaderboard data yet.
+                  </TableCell>
+                </TableRow>
+              ) : (
+                entries.map((entry) => (
+                  <TableRow key={entry.playerId}>
+                    <TableCell>{entry.rank}</TableCell>
+                    <TableCell>{entry.player}</TableCell>
+                    <TableCell>{entry.rating}</TableCell>
+                    <TableCell>{entry.wins}</TableCell>
+                    <TableCell>{entry.losses}</TableCell>
+                    <TableCell>{entry.winRate}</TableCell>
+                  </TableRow>
+                ))
+              )}
             </TableBody>
-          </Table>
+        </Table>
         </div>
     </section>
   );

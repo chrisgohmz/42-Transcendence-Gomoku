@@ -1,14 +1,45 @@
-import Section from "@/components/section";
+
+import LeaderboardTable from "@/components/leaderboardtable";
+
+const entries = [
+    {
+        playerId: 1,
+        rank: 1,
+        player: "tan ah kao",
+        rating: 9001,
+        wins: 76,
+        losses: 67,
+        winRate: "53.15%"
+    },
+    {
+        playerId: 2,
+        rank: 2,
+        player: "lim ah kao",
+        rating: 9000,
+        wins: 76,
+        losses: 68,
+        winRate: "52.78%"
+    }
+]
+
+/* Use for testing the table with no entries*/
+const emptyEntries: {
+  playerId: number;
+  rank: number;
+  player: string;
+  rating: number;
+  wins: number;
+  losses: number;
+  winRate: string;
+}[] = [];
+
 
 export default function LeaderBoard() {
   return (
-    <main className="mx-auto max-w-3xl p-6">
-      <h1 className="text-2xl font-bold">Privacy Policy</h1>
-      <p className="mt-4 text-slate-200">Privacy? More like piracy hehehe</p>
-
-      <Section title="1. Some Text 1">This is some text for 1</Section>
-
-      <Section title="2. Some Text 2">This is some text for 2</Section>
+    <main className="min-h-screen bg-slate-950 px-6 py-10 text-white">
+      <section className="mx-auto max-w-4xl">
+        <LeaderboardTable entries={entries} />
+      </section>
     </main>
   );
 }
