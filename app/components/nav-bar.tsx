@@ -49,7 +49,7 @@ export default function Navbar() {
           </Link>
 
           <Link
-            href="/"
+            href="/leaderboard"
             className="rounded-md px-3 py-2 text-sm font-medium text-slate-300 hover:bg-slate-800/70 hover:text-white"
           >
             Leaderboard
