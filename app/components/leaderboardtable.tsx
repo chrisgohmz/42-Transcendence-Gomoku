@@ -23,15 +23,7 @@ type LeaderboardTableProps = {
 
 export default function LeaderboardTable({ entries }: LeaderboardTableProps) {
   return (
-    <section className="rounded-3xl border border-white/10 bg-slate-900/70 p-6 shadow-xl">
-      <div className="mb-6">
-        <p className="text-sm uppercase tracking-[0.2em] text-cyan-300">Rankings</p>
-        <h2 className="mt-2 text-2xl font-semibold text-white">Leaderboard</h2>
-        <p className="mt-2 text-sm text-slate-300">
-          To get the player ranking from the database later
-        </p>
-      </div>
-      <div className="overflow-x-auto rounded-2xl border border-white/10">
+    <div className="overflow-x-auto rounded-2xl border border-white/10">
         <Table>
             <TableHeader>
                 <TableRow>
@@ -65,7 +57,6 @@ export default function LeaderboardTable({ entries }: LeaderboardTableProps) {
               )}
             </TableBody>
         </Table>
-        </div>
-    </section>
+    </div>
   );
 }

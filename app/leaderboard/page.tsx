@@ -38,7 +38,14 @@ export default function LeaderBoard() {
   return (
     <main className="min-h-screen bg-slate-950 px-6 py-10 text-white">
       <section className="mx-auto max-w-4xl">
-        <LeaderboardTable entries={entries} />
+            <div className="mb-6">
+                <p className="text-sm uppercase tracking-[0.2em] text-cyan-300">Rankings</p>
+                <h2 className="mt-2 text-2xl font-semibold text-white">Leaderboard</h2>
+                <p className="mt-2 text-sm text-slate-300">
+                    To get the player ranking from the database later
+                </p>
+            </div>
+            <LeaderboardTable entries={entries} />
       </section>
     </main>
   );
