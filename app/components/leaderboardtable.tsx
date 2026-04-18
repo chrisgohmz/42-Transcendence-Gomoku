@@ -27,12 +27,12 @@ export default function LeaderboardTable({ entries }: LeaderboardTableProps) {
         <Table>
             <TableHeader>
                 <TableRow>
-                    <TableHead className="text-slate-200">Rank</TableHead>
-                    <TableHead className="text-slate-200">Player</TableHead>
-                    <TableHead className="text-slate-200">Rating</TableHead>
-                    <TableHead className="text-slate-200">Wins</TableHead>
-                    <TableHead className="text-slate-200">Losses</TableHead>
-                    <TableHead className="text-slate-200">Win Rate</TableHead>
+                    <TableHead className="font-semibold text-slate-200">Rank</TableHead>
+                    <TableHead className="font-semibold text-slate-200">Player</TableHead>
+                    <TableHead className="font-semibold text-slate-200">Rating</TableHead>
+                    <TableHead className="font-semibold text-slate-200">Wins</TableHead>
+                    <TableHead className="font-semibold text-slate-200">Losses</TableHead>
+                    <TableHead className="font-semibold text-slate-200">Win Rate</TableHead>
                 </TableRow>
             </TableHeader>
             

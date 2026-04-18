@@ -22,7 +22,7 @@ const entries = [
 ];
 
 
-export default function TestPage() {
+export default function vsHuman() {
   return (
     <main className="min-h-screen bg-slate-950 px-6 py-10 text-white">
     <section className="mx-auto max-w-4xl space-y-8">
