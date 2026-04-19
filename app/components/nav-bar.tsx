@@ -7,7 +7,7 @@ import UserMenu from "@/components/player-menu";
 import { Button } from "@/components/ui/button";
 
 export default function Navbar() {
-  const isLoggedIn = false;
+  const isLoggedIn = true;
 
   return (
     <header className="sticky top-0 z-50 border-b border-slate-700/40 bg-[#0b182d]/85 backdrop-blur">
