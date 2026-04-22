@@ -1,14 +1,14 @@
-"use client";
-
-import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 
 import UserMenu from "@/components/player-menu";
 import { Button } from "@/components/ui/button";
+import { getCurrentSession } from "@/lib/auth";
 
-export default function Navbar() {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+export default async function Navbar() {
+  const sessionData = await getCurrentSession();
+  const isLoggedIn = sessionData !== null;
+  const realUsername = sessionData?.user.username;
 
   return (
     <header className="sticky top-0 z-50 border-b border-slate-700/40 bg-[#0b182d]/85 backdrop-blur">
@@ -65,7 +65,9 @@ export default function Navbar() {
 
           {!isLoggedIn ? (
             <>
-              <Button onClick={() => setIsLoggedIn(true)}>Log In</Button>
+              <Link href="/login">
+                <Button>Log In</Button>
+              </Link>
 
               <Link href="/signup">
                 <Button>Sign Up</Button>
@@ -73,7 +75,7 @@ export default function Navbar() {
             </>
           ) : (
             <div className="flex items-center gap-4">
-              <UserMenu onLogout={() => setIsLoggedIn(false)} />
+              <UserMenu username={realUsername} />
             </div>
           )}
         </div>
