@@ -21,7 +21,7 @@ export default async function ProfilePage() {
                         <h2 className="m-0 text-2xl font-bold capitalize">{realUser.username}</h2>
                         <p className="meta mb-2">Gomoku Player</p>
                         <div className="inline-links">
-                            <Link className="text-link" href="#">Edit Profile</Link>
+							<Link className="text-link" href="/profile/edit">Edit Profile</Link>
                         </div>
                     </article>
                     <div className="flex-2 flex flex-col gap-8">
