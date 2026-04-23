@@ -3,6 +3,7 @@
 import { useState } from "react";
 
 import { MatchJoinButton, type JoinedMatchInfo } from "@/components/proto/MatchJoinButton";
+import { useSocketGame } from "@/hooks/useSocketGame";
 
 import { MatchCreateButton, type CreatedMatchInfo } from "../components/proto/MatchCreateButton";
 
@@ -23,6 +24,11 @@ type ErrorResponse = {
   error?: string;
 };
 
+type MatchSession = {
+  matchId: string;
+  participantId: string;
+};
+
 export default function ProtoPage() {
   const [createdMatch, setCreatedMatch] = useState<CreatedMatchInfo | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -32,6 +38,10 @@ export default function ProtoPage() {
   const [joinedMatch, setJoinedMatch] = useState<JoinedMatchInfo | null>(null);
   const [joinError, setJoinError] = useState<string | null>(null);
   const [displayName, setDisplayname] = useState("");
+
+  const [session, setSession] = useState<MatchSession | null>(null);
+
+  const { status } = useSocketGame(session?.matchId ?? null, session?.participantId ?? null);
 
   async function loadMatches() {
     try {
@@ -74,6 +84,10 @@ export default function ProtoPage() {
   function handleSuccess(nextCreatedMatch: CreatedMatchInfo) {
     setCreatedMatch(nextCreatedMatch);
     setError(null);
+    setSession({
+      matchId: nextCreatedMatch.matchId,
+      participantId: nextCreatedMatch.participantId,
+    });
   }
 
   function handleError(message: string) {
@@ -133,6 +147,10 @@ export default function ProtoPage() {
                   onSuccess={(info) => {
                     setJoinedMatch(info);
                     setJoinError(null);
+                    setSession({
+                      matchId: info.matchId,
+                      participantId: info.participantId,
+                    });
                   }}
                   onError={(msg) => {
                     setJoinError(msg);
@@ -148,6 +166,9 @@ export default function ProtoPage() {
               </li>
             ))}
           </ul>
+        </article>
+        <article className="card">
+          <p>discription status: {status}</p>
         </article>
       </section>
     </main>
