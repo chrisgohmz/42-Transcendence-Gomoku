@@ -13,23 +13,34 @@ export async function updateProfile(formData: FormData) {
     }
 
     const newUsername = formData.get("username") as string;
+    const newDisplayName = formData.get("displayName") as string;
 
+    // Basic validation
     if (!newUsername || newUsername.length < 3) {
         return { error: "Username must be at least 3 characters long." };
+    }
+
+    if (!newDisplayName || newDisplayName.trim() === "") {
+        return { error: "Display name cannot be empty." };
     }
 
     try {
         await prisma.user.update({
             where: { id: sessionData.user.id },
-            data: { username: newUsername },
+            data: {
+                username: newUsername,
+                displayName: newDisplayName
+            },
         });
     } catch (error: any) {
+        // Handle case where someone else already has that username
         if (error.code === "P2002") {
-            return { error: "That username is already taken by someone else." };
+            return { error: "That username is already taken." };
         }
         return { error: "Something went wrong. Please try again." };
     }
 
+    // This refreshes the page so you see the new name immediately
     revalidatePath("/", "layout");
     redirect("/profile");
 }

@@ -1,0 +1,41 @@
+"use client";
+
+import { useState, useRef } from "react";
+import { Camera } from "lucide-react";
+
+export default function ProfilePicture({ initialImage }: { initialImage?: string | null }) {
+    const [isHovering, setIsHovering] = useState(false);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
+    const handleContainerClick = () => {
+        fileInputRef.current?.click();
+    };
+    const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        alert(`You selected: ${file.name}. Ready to upload!`);
+    };
+    return (
+        <div
+            className="relative w-[300px] h-[300px] mb-6 cursor-pointer group"
+            onMouseEnter={() => setIsHovering(true)}
+            onMouseLeave={() => setIsHovering(false)}
+            onClick={handleContainerClick}
+        >
+            <div className="w-full h-full bg-[#ccc] rounded-full overflow-hidden flex items-center justify-center">
+                {initialImage && <img src={initialImage} alt="Profile" className="w-full h-full object-cover" />}
+            </div>
+            <div className={`absolute inset-0 bg-black/40 rounded-full flex flex-col items-center justify-center transition-opacity duration-200 ${isHovering ? 'opacity-100' : 'opacity-0'}`}>
+                <Camera className="text-white w-10 h-10 mb-2" />
+                <span className="text-white text-sm font-bold">Change Photo</span>
+            </div>
+            <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleFileChange}
+                className="hidden"
+                accept="image/*"
+            />
+        </div>
+    );
+}

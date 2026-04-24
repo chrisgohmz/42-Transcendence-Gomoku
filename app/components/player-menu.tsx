@@ -67,8 +67,8 @@ export default function UserMenu({ username }: UserMenuProps) {
         </DropdownMenuItem>
 
         <DropdownMenuItem variant="destructive" onClick={handleLogout} className="focus:bg-slate-200! cursor-pointer flex items-center gap-2 w-full">
-          <LogOut className="h-4 w-4" />
-          <span>Logout</span>
+          <LogOut className="h-4 w-4 text-red-700" />
+          <span className="text-red-700 font-semibold">Logout</span>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
