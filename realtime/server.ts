@@ -6,6 +6,8 @@ import { Server as Engine } from "@socket.io/bun-engine";
 import { config } from "dotenv";
 import { Server } from "socket.io";
 
+import { registerMatchSubscription } from "./handlers/match-subscription";
+
 const currentDirectory = dirname(fileURLToPath(import.meta.url));
 const rootEnvPath = resolve(currentDirectory, "../.env");
 
@@ -47,6 +49,9 @@ io.bind(engine);
 
 io.on("connection", (socket) => {
   console.log(`Socket.IO client connected: ${socket.id}`);
+  console.log(`[realtime] connected: ${socket.id}`);
+
+  registerMatchSubscription(socket);
 
   socket.on("disconnect", (reason) => {
     console.log(`Socket.IO client disconnected: ${socket.id} (${reason})`);
