@@ -15,9 +15,10 @@ import {
 
 interface UserMenuProps {
   username?: string;
+  avatarUrl?: string | null;
 }
 
-export default function UserMenu({ username }: UserMenuProps) {
+export default function UserMenu({ username, avatarUrl }: UserMenuProps) {
   const router = useRouter();
 
   const handleLogout = async () => {
@@ -35,7 +36,7 @@ export default function UserMenu({ username }: UserMenuProps) {
       <DropdownMenuTrigger asChild>
         <Button className="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 text-white border-0">
           <Avatar className="h-7 w-7">
-            <AvatarImage src="/icons/Login.svg" alt="User avatar" />
+            <AvatarImage src={avatarUrl || "/icons/Login.svg"} alt="User avatar" />
             <AvatarFallback>{username ? username.charAt(0).toUpperCase() : "U"}</AvatarFallback>
           </Avatar>
           <span className="hidden text-sm font-medium sm:inline capitalize">

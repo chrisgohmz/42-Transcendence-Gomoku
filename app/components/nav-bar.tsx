@@ -9,6 +9,7 @@ export default async function Navbar() {
   const sessionData = await getCurrentSession();
   const isLoggedIn = sessionData !== null;
   const realUsername = sessionData?.user.username;
+  const avatarUrl = sessionData?.user.avatarUrl;
 
   return (
     <header className="sticky top-0 z-50 border-b border-slate-700/40 bg-[#0b182d]/85 backdrop-blur">
@@ -75,7 +76,7 @@ export default async function Navbar() {
             </>
           ) : (
             <div className="flex items-center gap-4">
-              <UserMenu username={realUsername} />
+              <UserMenu username={realUsername} avatarUrl={avatarUrl} />
             </div>
           )}
         </div>
