@@ -2,6 +2,7 @@
 
 import { useState, useRef } from "react";
 import { Camera } from "lucide-react";
+import { uploadProfilePicture } from "./actions";
 
 export default function ProfilePicture({ initialImage }: { initialImage?: string | null }) {
     const [isHovering, setIsHovering] = useState(false);
@@ -10,11 +11,21 @@ export default function ProfilePicture({ initialImage }: { initialImage?: string
     const handleContainerClick = () => {
         fileInputRef.current?.click();
     };
+
     const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
-        alert(`You selected: ${file.name}. Ready to upload!`);
+
+        const formData = new FormData();
+        formData.append("file", file);
+
+        const result = await uploadProfilePicture(formData);
+
+        if (result?.error) {
+            alert(result.error);
+        }
     };
+
     return (
         <div
             className="relative w-[300px] h-[300px] mb-6 cursor-pointer group"
