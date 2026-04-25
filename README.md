@@ -72,6 +72,12 @@ docker compose -f docker-compose.yml -f docker-compose.dev.yml down -v
 docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d database
 ```
 
+PostgreSQL 18 stores container data below a major-versioned directory. If the
+database container exits with an `unused mount/volume` error for
+`/var/lib/postgresql/data`, reset the disposable local development volume with
+the same `down -v` command above. Preserve and migrate the volume with
+`pg_upgrade` instead if it contains data you need to keep.
+
 ### Run the full stack with containers
 
 ```bash
