@@ -1,7 +1,7 @@
 "use client";
 
-import { MessageSquare, Send, Search } from "lucide-react";
-import Link from "next/link";
+//import { MessageSquare, Send, Search } from "lucide-react";
+//import Link from "next/link";
 import { useState } from "react";
 
 export default function MessagesContent() {
