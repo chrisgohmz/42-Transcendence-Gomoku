@@ -6,19 +6,22 @@ import ProfilePicture from "./profile-picture";
 
 export default async function ProfilePage() {
     const sessionData = await getCurrentSession();
+
     if (!sessionData) {
         redirect("/login");
     }
+
     const realUser = sessionData.user;
 
     return (
         <main className="shell">
-            <section className="hero">
-                <h1 className="capitalize">
+            <section className="hero flex flex-col items-center text-center w-full mb-8 mt-4">
+                <h1 className="text-5xl font-bold capitalize m-0 mb-4">
                     {realUser.username}&apos;s Profile
                 </h1>
-                <p className="lede">Manage your details and view your Gomoku game statistics.</p>
+                <p className="text-slate-400 m-0">Manage your details and view your Gomoku game statistics.</p>
             </section>
+
             <section className="panel">
                 <div className="flex flex-row gap-8 items-stretch w-full">
                     <article className="card flex-1 flex flex-col items-center text-center overflow-hidden">
@@ -34,6 +37,7 @@ export default async function ProfilePage() {
                             </Link>
                         </div>
                     </article>
+
                     <div className="flex-2 flex flex-col gap-8">
                         <article className="card flex-1 flex flex-col">
                             <h2 className="text-2xl font-bold mb-6">Your Overall Statistics</h2>

@@ -1,25 +1,22 @@
 "use server";
 
-import { getCurrentSession } from "@/lib/auth";
+import { getCurrentSession, verifyPassword, hashPassword } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
 
-export async function updateProfile(formData: FormData) {
+export async function saveAccountSettings(formData: FormData) {
     const sessionData = await getCurrentSession();
 
     if (!sessionData) {
         return { error: "You must be logged in to do this." };
     }
 
-    const newUsername = formData.get("username") as string;
     const newDisplayName = formData.get("displayName") as string;
+    const currentPassword = formData.get("currentPassword") as string;
+    const newPassword = formData.get("newPassword") as string;
+    const confirmPassword = formData.get("confirmPassword") as string;
 
-    // Basic validation
-    if (!newUsername || newUsername.length < 3) {
-        return { error: "Username must be at least 3 characters long." };
-    }
-
+    // 1. Update Display Name
     if (!newDisplayName || newDisplayName.trim() === "") {
         return { error: "Display name cannot be empty." };
     }
@@ -27,20 +24,46 @@ export async function updateProfile(formData: FormData) {
     try {
         await prisma.user.update({
             where: { id: sessionData.user.id },
-            data: {
-                username: newUsername,
-                displayName: newDisplayName
-            },
+            data: { displayName: newDisplayName },
         });
-    } catch (error: any) {
-        // Handle case where someone else already has that username
-        if (error.code === "P2002") {
-            return { error: "That username is already taken." };
-        }
-        return { error: "Something went wrong. Please try again." };
+    } catch (error) {
+        return { error: "Something went wrong saving your profile." };
     }
 
-    // This refreshes the page so you see the new name immediately
+    // 2. Check if they want to change the password
+    const wantsToChangePassword = currentPassword || newPassword || confirmPassword;
+
+    if (wantsToChangePassword) {
+        if (!currentPassword || !newPassword || !confirmPassword) {
+            return { error: "Please fill in all three password fields to change it." };
+        }
+
+        if (newPassword !== confirmPassword) {
+            return { error: "New passwords do not match." };
+        }
+
+        if (newPassword.length < 8) {
+            return { error: "Password must be at least 8 characters long." };
+        }
+
+        const user = await prisma.user.findUnique({
+            where: { id: sessionData.user.id },
+        });
+
+        const isValid = user && (await verifyPassword(currentPassword, user.passwordHash ?? null));
+
+        if (!isValid) {
+            return { error: "Current password is incorrect." };
+        }
+
+        const newPasswordHash = await hashPassword(newPassword);
+
+        await prisma.user.update({
+            where: { id: sessionData.user.id },
+            data: { passwordHash: newPasswordHash },
+        });
+    }
+
     revalidatePath("/", "layout");
-    redirect("/profile");
+    return { success: "Changes saved successfully!" };
 }
