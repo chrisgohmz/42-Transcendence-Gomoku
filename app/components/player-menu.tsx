@@ -1,8 +1,8 @@
 "use client";
 
+import { User, Users, MessageSquare, LogOut } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { User, Users, MessageSquare, LogOut } from "lucide-react";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -34,42 +34,58 @@ export default function UserMenu({ username, avatarUrl }: UserMenuProps) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button className="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 text-white border-0">
+        <Button className="flex items-center gap-2 border-0 bg-slate-800 text-white hover:bg-slate-700">
           <Avatar className="h-7 w-7">
             <AvatarImage src={avatarUrl || "/icons/Login.svg"} alt="User avatar" />
             <AvatarFallback>{username ? username.charAt(0).toUpperCase() : "U"}</AvatarFallback>
           </Avatar>
-          <span className="hidden text-sm font-medium sm:inline capitalize">
+          <span className="hidden text-sm font-medium capitalize sm:inline">
             {username || "Player"}
           </span>
         </Button>
       </DropdownMenuTrigger>
 
-      <DropdownMenuContent align="start" className="w-48 bg-[#0b182d] text-slate-200 border-slate-700">
-        <DropdownMenuItem asChild className="text-slate-200 hover:bg-slate-700 focus:bg-slate-200 hover:text-white focus:text-white cursor-pointer">
-          <Link href="/profile" className="flex items-center gap-2 w-full">
+      <DropdownMenuContent
+        align="start"
+        className="w-48 border-slate-700 bg-[#0b182d] text-slate-200"
+      >
+        <DropdownMenuItem
+          asChild
+          className="cursor-pointer text-slate-200 hover:bg-slate-700 hover:text-white focus:bg-slate-200 focus:text-white"
+        >
+          <Link href="/profile" className="flex w-full items-center gap-2">
             <User className="h-4 w-4" />
             <span>View Profile</span>
           </Link>
         </DropdownMenuItem>
 
-        <DropdownMenuItem asChild className="text-slate-200 hover:bg-slate-700 focus:bg-slate-200 hover:text-white focus:text-white cursor-pointer">
-          <Link href="/friends" className="flex items-center gap-2 w-full">
+        <DropdownMenuItem
+          asChild
+          className="cursor-pointer text-slate-200 hover:bg-slate-700 hover:text-white focus:bg-slate-200 focus:text-white"
+        >
+          <Link href="/friends" className="flex w-full items-center gap-2">
             <Users className="h-4 w-4" />
             <span>Friends</span>
           </Link>
         </DropdownMenuItem>
 
-        <DropdownMenuItem asChild className="text-slate-200 hover:bg-slate-700 focus:bg-slate-200 hover:text-white focus:text-white cursor-pointer">
-          <Link href="/messages" className="flex items-center gap-2 w-full">
+        <DropdownMenuItem
+          asChild
+          className="cursor-pointer text-slate-200 hover:bg-slate-700 hover:text-white focus:bg-slate-200 focus:text-white"
+        >
+          <Link href="/messages" className="flex w-full items-center gap-2">
             <MessageSquare className="h-4 w-4" />
             <span>Messages</span>
           </Link>
         </DropdownMenuItem>
 
-        <DropdownMenuItem variant="destructive" onClick={handleLogout} className="focus:bg-slate-200! cursor-pointer flex items-center gap-2 w-full">
+        <DropdownMenuItem
+          variant="destructive"
+          onClick={handleLogout}
+          className="flex w-full cursor-pointer items-center gap-2 focus:bg-slate-200!"
+        >
           <LogOut className="h-4 w-4 text-red-700" />
-          <span className="text-red-700 font-semibold">Logout</span>
+          <span className="font-semibold text-red-700">Logout</span>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
