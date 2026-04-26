@@ -1,0 +1,95 @@
+name: Codex Code Review
+
+on:
+  pull_request:
+    types: [opened]
+
+concurrency:
+  group: codex-code-review-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  codex_review:
+    name: Run Codex Review
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    env:
+      HAS_OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY != '' }}
+    outputs:
+      final_message: ${{ steps.run_codex.outputs.final-message }}
+
+    steps:
+      - name: Check OpenAI API key
+        if: env.HAS_OPENAI_API_KEY != 'true'
+        run: |
+          echo "::notice::Skipping Codex review because OPENAI_API_KEY is not available."
+
+      - name: Checkout pull request merge commit
+        if: env.HAS_OPENAI_API_KEY == 'true'
+        uses: actions/checkout@v6
+        with:
+          ref: refs/pull/${{ github.event.pull_request.number }}/merge
+
+      - name: Fetch base and head refs
+        if: env.HAS_OPENAI_API_KEY == 'true'
+        env:
+          PR_BASE_REF: ${{ github.event.pull_request.base.ref }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          git fetch --no-tags origin \
+            "$PR_BASE_REF" \
+            "+refs/pull/$PR_NUMBER/head"
+
+      - name: Run Codex
+        id: run_codex
+        if: env.HAS_OPENAI_API_KEY == 'true'
+        uses: openai/codex-action@v1
+        with:
+          openai-api-key: ${{ secrets.OPENAI_API_KEY }}
+          model: gpt-5.5
+          sandbox: read-only
+          prompt: |
+            This is PR #${{ github.event.pull_request.number }} for ${{ github.repository }}.
+
+            Review only the changes introduced by this pull request. Use the local
+            git checkout and compare:
+
+              git diff --find-renames ${{ github.event.pull_request.base.sha }}...${{ github.event.pull_request.head.sha }}
+
+            Focus on correctness, security, reliability, performance, maintainability,
+            and test coverage risks introduced by the PR. Do not comment on unrelated
+            pre-existing issues or style nits unless they block understanding.
+
+            Return concise Markdown. Lead with actionable findings ordered by severity,
+            each with file and line references where possible. If there are no actionable
+            findings, say that clearly and mention any residual test risk.
+
+            Pull request title and body:
+            ----
+            ${{ github.event.pull_request.title }}
+            ${{ github.event.pull_request.body }}
+
+  post_feedback:
+    name: Post Codex Feedback
+    runs-on: ubuntu-latest
+    needs: codex_review
+    if: needs.codex_review.outputs.final_message != ''
+    permissions:
+      issues: write
+      pull-requests: write
+
+    steps:
+      - name: Report Codex feedback
+        uses: actions/github-script@v9
+        env:
+          CODEX_FINAL_MESSAGE: ${{ needs.codex_review.outputs.final_message }}
+        with:
+          github-token: ${{ github.token }}
+          script: |
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.pull_request.number,
+              body: `## Codex code review\n\n${process.env.CODEX_FINAL_MESSAGE}`,
+            });
