@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useState } from "react";
 
 export type CreatedMatchInfo = {
@@ -28,6 +29,8 @@ type ErrorResponse = {
 };
 
 export function MatchCreateButton({ onSuccess, onError }: MatchCreateButtonProps) {
+  const t = useTranslations("proto.create");
+  const proto = useTranslations("proto");
   const [isLoading, setIsLoading] = useState(false);
 
   async function handleClick() {
@@ -44,7 +47,7 @@ export function MatchCreateButton({ onSuccess, onError }: MatchCreateButtonProps
 
       if (!response.ok) {
         if (response.status === 401) {
-          onError("Please sign in before creating a match.");
+          onError(t("signInRequired"));
           return;
         }
         const errorPayload = (await response.json().catch(() => null)) as ErrorResponse | null;
@@ -52,7 +55,7 @@ export function MatchCreateButton({ onSuccess, onError }: MatchCreateButtonProps
           errorPayload?.message ??
           errorPayload?.detail ??
           errorPayload?.error ??
-          `Request failed with status ${response.status}`;
+          proto("requestFailed", { status: response.status });
         onError(message);
         return;
       }
@@ -62,12 +65,12 @@ export function MatchCreateButton({ onSuccess, onError }: MatchCreateButtonProps
       const participantId = result.participantId;
 
       if (!matchId) {
-        onError("Invalid response: matchId is missing");
+        onError(t("missingMatchId"));
         return;
       }
 
       if (!participantId) {
-        onError("Invalid response: participantId is missing");
+        onError(t("missingParticipantId"));
         return;
       }
 
@@ -78,7 +81,7 @@ export function MatchCreateButton({ onSuccess, onError }: MatchCreateButtonProps
         seat: result.seat,
       });
     } catch {
-      onError("Network error while creating match");
+      onError(t("networkError"));
     } finally {
       setIsLoading(false);
     }
@@ -86,7 +89,7 @@ export function MatchCreateButton({ onSuccess, onError }: MatchCreateButtonProps
 
   return (
     <button type="button" className="btn" onClick={handleClick} disabled={isLoading}>
-      {isLoading ? "Creating..." : "Create Match"}
+      {isLoading ? t("submitting") : t("submit")}
     </button>
   );
 }

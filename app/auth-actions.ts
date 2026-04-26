@@ -1,8 +1,10 @@
 "use server";
 
-import { redirect } from "next/navigation";
+import { getLocale, getTranslations } from "next-intl/server";
 
 import type { LoginActionState, SignupActionState } from "./auth-action-state";
+import { defaultLocale, locales, type Locale } from "./i18n/config";
+import { redirect } from "./i18n/navigation";
 import { clearSessionCookie, createSession, hashPassword, verifyPassword } from "./lib/auth";
 import { prisma } from "./lib/prisma";
 
@@ -23,10 +25,27 @@ function isUniqueConstraintError(error: unknown): boolean {
   return typeof error === "object" && error !== null && "code" in error && error.code === "P2002";
 }
 
+function isLocale(value: string | null | undefined): value is Locale {
+  return locales.some((locale) => locale === value);
+}
+
+async function getActionLocale(formData: FormData): Promise<Locale> {
+  const formLocale = getFormString(formData, "locale");
+
+  if (isLocale(formLocale)) {
+    return formLocale;
+  }
+
+  const requestLocale = await getLocale().catch(() => defaultLocale);
+  return isLocale(requestLocale) ? requestLocale : defaultLocale;
+}
+
 export async function loginAction(
   _previousState: LoginActionState,
   formData: FormData,
 ): Promise<LoginActionState> {
+  const locale = await getActionLocale(formData);
+  const t = await getTranslations({ locale, namespace: "auth.errors" });
   const email = getFormString(formData, "email");
   const password = getFormString(formData, "password").trim();
 
@@ -35,7 +54,7 @@ export async function loginAction(
 
     return {
       email,
-      message: "Invalid email or password.",
+      message: t("invalidCredentials"),
     };
   }
 
@@ -51,7 +70,7 @@ export async function loginAction(
 
       return {
         email,
-        message: "Invalid email or password.",
+        message: t("invalidCredentials"),
       };
     }
 
@@ -61,17 +80,19 @@ export async function loginAction(
 
     return {
       email,
-      message: "Unable to sign you in right now.",
+      message: t("loginUnavailable"),
     };
   }
 
-  redirect("/account");
+  return redirect({ href: "/account", locale });
 }
 
 export async function signupAction(
   _previousState: SignupActionState,
   formData: FormData,
 ): Promise<SignupActionState> {
+  const locale = await getActionLocale(formData);
+  const t = await getTranslations({ locale, namespace: "auth.errors" });
   const email = getFormString(formData, "email");
   const username = getFormString(formData, "username");
   const displayName = getFormString(formData, "displayName");
@@ -85,7 +106,7 @@ export async function signupAction(
     return {
       displayName,
       email,
-      message: "Email, username, and password are required.",
+      message: t("requiredSignupFields"),
       username,
     };
   }
@@ -94,7 +115,7 @@ export async function signupAction(
     return {
       displayName,
       email,
-      message: "Please enter a valid email address.",
+      message: t("invalidEmail"),
       username,
     };
   }
@@ -103,7 +124,7 @@ export async function signupAction(
     return {
       displayName,
       email,
-      message: "Username must be at least 3 characters long.",
+      message: t("shortUsername"),
       username,
     };
   }
@@ -112,7 +133,7 @@ export async function signupAction(
     return {
       displayName,
       email,
-      message: "Password must be at least 8 characters long.",
+      message: t("shortPassword"),
       username,
     };
   }
@@ -138,7 +159,7 @@ export async function signupAction(
       return {
         displayName,
         email,
-        message: "An account with that email or username already exists.",
+        message: t("duplicateAccount"),
         username,
       };
     }
@@ -148,10 +169,10 @@ export async function signupAction(
     return {
       displayName,
       email,
-      message: "Unable to create your account right now.",
+      message: t("signupUnavailable"),
       username,
     };
   }
 
-  redirect("/account");
+  return redirect({ href: "/account", locale });
 }

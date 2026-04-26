@@ -1,19 +1,26 @@
 "use client";
 
-import Link from "next/link";
+import { useLocale, useTranslations } from "next-intl";
 import { useActionState } from "react";
+
+import { Link } from "@/i18n/navigation";
 
 import { initialSignupActionState } from "../auth-action-state";
 import { signupAction } from "../auth-actions";
 
 export function SignupForm() {
+  const locale = useLocale();
+  const shared = useTranslations("auth.shared");
+  const signup = useTranslations("auth.signup");
   const [state, formAction, pending] = useActionState(signupAction, initialSignupActionState);
 
   return (
     <form className="form-grid" action={formAction}>
+      <input type="hidden" name="locale" value={locale} />
+
       <div className="field">
         <label className="field-label" htmlFor="username">
-          Username
+          {signup("username")}
         </label>
         <input
           id="username"
@@ -24,25 +31,25 @@ export function SignupForm() {
           minLength={3}
           required
         />
-        <p className="helper">Minimum 3 characters.</p>
+        <p className="helper">{signup("usernameHelper")}</p>
       </div>
 
       <div className="field">
         <label className="field-label" htmlFor="displayName">
-          Display name
+          {signup("displayName")}
         </label>
         <input
           id="displayName"
           name="displayName"
           className="text-input"
           defaultValue={state.displayName}
-          placeholder="How other players will see you"
+          placeholder={signup("displayNamePlaceholder")}
         />
       </div>
 
       <div className="field">
         <label className="field-label" htmlFor="email">
-          Email
+          {shared("email")}
         </label>
         <input
           id="email"
@@ -57,7 +64,7 @@ export function SignupForm() {
 
       <div className="field">
         <label className="field-label" htmlFor="password">
-          Password
+          {shared("password")}
         </label>
         <input
           id="password"
@@ -68,7 +75,7 @@ export function SignupForm() {
           required
           minLength={8}
         />
-        <p className="helper">At least 8 characters.</p>
+        <p className="helper">{shared("passwordHelper")}</p>
       </div>
 
       {state.message ? (
@@ -78,13 +85,13 @@ export function SignupForm() {
       ) : null}
 
       <button className="btn" type="submit" disabled={pending}>
-        {pending ? "Creating account..." : "Create account"}
+        {pending ? signup("submitting") : signup("submit")}
       </button>
 
       <div className="inline-links">
-        <span className="helper">Already have an account?</span>
+        <span className="helper">{signup("alreadyHaveAccount")}</span>
         <Link href="/login" className="text-link">
-          Sign in
+          {signup("signInLink")}
         </Link>
       </div>
     </form>

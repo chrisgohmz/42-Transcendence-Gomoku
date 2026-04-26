@@ -1,13 +1,15 @@
-"use client";
-
+import { useTranslations } from "next-intl";
 import Image from "next/image";
-import Link from "next/link";
 
+import { LocaleSwitcher } from "@/components/locale-switcher";
 import UserMenu from "@/components/player-menu";
 import { Button } from "@/components/ui/button";
+import { Link } from "@/i18n/navigation";
 
 export default function Navbar() {
   const isLoggedIn = true;
+  const brand = useTranslations("brand");
+  const nav = useTranslations("nav");
 
   return (
     <header className="sticky top-0 z-50 border-b border-slate-700/40 bg-[#0b182d]/85 backdrop-blur">
@@ -18,12 +20,12 @@ export default function Navbar() {
         >
           <Image
             src="/icons/Gomoku.png"
-            alt="Transcendence logo"
+            alt={brand("logoAlt")}
             width={42}
             height={42}
             className="rounded-md"
           />
-          <span className="text-lg font-semibold text-slate-50">五目並べヒーロー</span>
+          <span className="text-lg font-semibold text-slate-50">{brand("name")}</span>
         </Link>
 
         <div className="flex items-center gap-2 sm:gap-4">
@@ -31,45 +33,47 @@ export default function Navbar() {
             href="/"
             className="text-slate-30 rounded-md px-3 py-2 text-sm font-medium hover:bg-slate-800/70 hover:text-white"
           >
-            Home
+            {nav("home")}
           </Link>
 
           <Link
-            href="/vs AI"
+            href="/vs-ai"
             className="rounded-md px-3 py-2 text-sm font-medium text-slate-300 hover:bg-slate-800/70 hover:text-white"
           >
-            vs AI
+            {nav("vsAi")}
           </Link>
 
           <Link
-            href="/vs Human"
+            href="/vs-human"
             className="rounded-md px-3 py-2 text-sm font-medium text-slate-300 hover:bg-slate-800/70 hover:text-white"
           >
-            vs Human
+            {nav("vsHuman")}
           </Link>
 
           <Link
             href="/"
             className="rounded-md px-3 py-2 text-sm font-medium text-slate-300 hover:bg-slate-800/70 hover:text-white"
           >
-            Leaderboard
+            {nav("leaderboard")}
           </Link>
 
-          <Link
+          <a
             href="https://en.wikipedia.org/wiki/Gomoku"
             className="rounded-md px-3 py-2 text-sm font-medium text-slate-300 hover:bg-slate-800/70 hover:text-white"
           >
-            Rules
-          </Link>
+            {nav("rules")}
+          </a>
+
+          <LocaleSwitcher />
 
           {!isLoggedIn ? (
             <>
-              <Link href="login">
-                <Button>Log In</Button>
+              <Link href="/login">
+                <Button>{nav("login")}</Button>
               </Link>
 
-              <Link href="/Sign Up">
-                <Button>Sign Up</Button>
+              <Link href="/signup">
+                <Button>{nav("signup")}</Button>
               </Link>
             </>
           ) : (
