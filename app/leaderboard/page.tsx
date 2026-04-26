@@ -21,17 +21,6 @@ const entries = [
   },
 ];
 
-/* Use for testing the table with no entries*/
-const emptyEntries: {
-  playerId: number;
-  rank: number;
-  player: string;
-  rating: number;
-  wins: number;
-  losses: number;
-  winRate: string;
-}[] = [];
-
 export default function LeaderBoard() {
   return (
     <main className="min-h-screen bg-slate-950 px-6 py-10 text-white">

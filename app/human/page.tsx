@@ -1,13 +1,6 @@
 import CreateRoomCard from "@/components/create-room-card";
 import GameLobbyTable from "@/components/game-lobby-table";
 
-/* Use for testing the table with no entries*/
-const emptyEntries: {
-  roomId: number;
-  player: string;
-  requiresPassword: boolean;
-}[] = [];
-
 const entries = [
   {
     roomId: 1,
