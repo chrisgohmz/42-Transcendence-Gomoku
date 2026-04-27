@@ -3,8 +3,8 @@
 import { Camera } from "lucide-react";
 import { useTranslations } from "next-intl";
 import Image from "next/image";
-import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
+import { useState, useRef } from "react";
 
 import { uploadProfilePicture } from "./actions";
 
