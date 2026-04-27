@@ -25,14 +25,9 @@ export async function saveAccountSettings(formData: FormData) {
     return { error: t("displayNameRequired") };
   }
 
-  try {
-    await prisma.user.update({
-      where: { id: sessionData.user.id },
-      data: { displayName: newDisplayName },
-    });
-  } catch {
-    return { error: t("profileSaveFailed") };
-  }
+  const updateData: { displayName: string; passwordHash?: string } = {
+    displayName: newDisplayName,
+  };
 
   // 2. Check if they want to change the password
   const wantsToChangePassword = currentPassword || newPassword || confirmPassword;
@@ -60,12 +55,16 @@ export async function saveAccountSettings(formData: FormData) {
       return { error: t("currentPasswordIncorrect") };
     }
 
-    const newPasswordHash = await hashPassword(newPassword);
+    updateData.passwordHash = await hashPassword(newPassword);
+  }
 
+  try {
     await prisma.user.update({
       where: { id: sessionData.user.id },
-      data: { passwordHash: newPasswordHash },
+      data: updateData,
     });
+  } catch {
+    return { error: t("profileSaveFailed") };
   }
 
   revalidatePath("/", "layout");

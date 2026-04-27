@@ -4,6 +4,7 @@ import { Camera } from "lucide-react";
 import { useTranslations } from "next-intl";
 import Image from "next/image";
 import { useState, useRef } from "react";
+import { useRouter } from "next/navigation";
 
 import { uploadProfilePicture } from "./actions";
 
@@ -11,6 +12,7 @@ export default function ProfilePicture({ initialImage }: { initialImage?: string
   const [isHovering, setIsHovering] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const t = useTranslations("profile.picture");
+  const router = useRouter();
 
   const handleContainerClick = () => {
     fileInputRef.current?.click();
@@ -27,6 +29,8 @@ export default function ProfilePicture({ initialImage }: { initialImage?: string
 
     if (result?.error) {
       alert(result.error);
+    } else if (result?.success) {
+      router.refresh();
     }
   };
 
