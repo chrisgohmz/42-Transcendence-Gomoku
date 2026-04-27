@@ -1,4 +1,6 @@
 "use client";
+
+import { useTranslations } from "next-intl";
 import { useState } from "react";
 
 export type JoinedMatchInfo = {
@@ -34,6 +36,8 @@ export function MatchJoinButton({
   onSuccess,
   onError,
 }: MatchJoinButtonProps) {
+  const t = useTranslations("proto.join");
+  const proto = useTranslations("proto");
   const [isLoading, setIsLoading] = useState(false);
 
   async function handleClick() {
@@ -53,7 +57,7 @@ export function MatchJoinButton({
           errorPayload?.message ??
           errorPayload?.detail ??
           errorPayload?.error ??
-          `Request failed with status ${response.status}`;
+          proto("requestFailed", { status: response.status });
         onError(message);
         return;
       }
@@ -63,7 +67,7 @@ export function MatchJoinButton({
       const participantId = result.participantId;
 
       if (!participantId) {
-        onError("Invalid response: participantId is missing");
+        onError(t("missingParticipantId"));
         return;
       }
 
@@ -74,7 +78,7 @@ export function MatchJoinButton({
         seat: result.seat,
       });
     } catch {
-      onError("Network error while joining match");
+      onError(t("networkError"));
     } finally {
       setIsLoading(false);
     }
@@ -87,7 +91,7 @@ export function MatchJoinButton({
       onClick={handleClick}
       disabled={isLoading || !displayName}
     >
-      {isLoading ? "Joining..." : "Join Match"}
+      {isLoading ? t("submitting") : t("submit")}
     </button>
   );
 }

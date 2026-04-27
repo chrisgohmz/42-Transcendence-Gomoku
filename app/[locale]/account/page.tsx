@@ -1,8 +1,8 @@
-import Link from "next/link";
-import { redirect } from "next/navigation";
+import { getFormatter, getTranslations, setRequestLocale } from "next-intl/server";
 
-import { LogoutButton } from "../components/logout-button";
-import { getCurrentSession, refreshSessionIfNeeded, serializeUserForResponse } from "../lib/auth";
+import { LogoutButton } from "@/components/logout-button";
+import { Link, redirect } from "@/i18n/navigation";
+import { getCurrentSession, refreshSessionIfNeeded, serializeUserForResponse } from "@/lib/auth";
 
 type SessionPayload = {
   user: {
@@ -38,30 +38,37 @@ async function loadSession(): Promise<SessionPayload | null> {
   };
 }
 
-export default async function AccountPage() {
+type AccountPageProps = {
+  params: Promise<{
+    locale: string;
+  }>;
+};
+
+export default async function AccountPage({ params }: AccountPageProps) {
+  const { locale } = await params;
+  setRequestLocale(locale);
+
+  const t = await getTranslations({ locale, namespace: "account" });
+  const format = await getFormatter({ locale });
   let session: SessionPayload | null = null;
   let loadError: string | null = null;
 
   try {
     session = await loadSession();
   } catch (error) {
-    loadError = error instanceof Error ? error.message : "Unable to load your session.";
+    loadError = error instanceof Error ? error.message : t("loadError");
   }
 
   if (!session && !loadError) {
-    redirect("/login");
+    redirect({ href: "/login", locale });
   }
 
   return (
     <main className="shell">
       <section className="hero">
-        <p className="eyebrow">Private area</p>
-        <h1>{session ? session.user.displayName : "Account"}</h1>
-        <p className="lede">
-          {session
-            ? "You are signed in. Use this page to verify session state and exit securely."
-            : "Sign in to access your account details and protected pages."}
-        </p>
+        <p className="eyebrow">{t("eyebrow")}</p>
+        <h1>{session ? session.user.displayName : t("fallbackTitle")}</h1>
+        <p className="lede">{session ? t("signedInLede") : t("signedOutLede")}</p>
       </section>
 
       <section className="panel">
@@ -73,20 +80,23 @@ export default async function AccountPage() {
 
         {session ? (
           <div className="card">
-            <div className="label">Signed-in user</div>
+            <div className="label">{t("signedInUser")}</div>
             <div className="meta">
               <div>
-                <strong>Display name:</strong> {session.user.displayName}
+                <strong>{t("displayName")}</strong> {session.user.displayName}
               </div>
               <div>
-                <strong>Username:</strong> {session.user.username}
+                <strong>{t("username")}</strong> {session.user.username}
               </div>
               <div>
-                <strong>Email:</strong> {session.user.email ?? "Not provided"}
+                <strong>{t("email")}</strong> {session.user.email ?? t("emailMissing")}
               </div>
               <div>
-                <strong>Session expires:</strong>{" "}
-                {new Date(session.session.expiresAt).toLocaleString()}
+                <strong>{t("sessionExpires")}</strong>{" "}
+                {format.dateTime(new Date(session.session.expiresAt), {
+                  dateStyle: "medium",
+                  timeStyle: "short",
+                })}
               </div>
             </div>
             <div style={{ marginTop: "1rem" }}>
@@ -97,10 +107,10 @@ export default async function AccountPage() {
 
         <div className="inline-links">
           <Link href="/" className="text-link">
-            Back to home
+            {t("backHome")}
           </Link>
           <Link href="/proto" className="text-link">
-            Proto test room
+            {t("protoRoom")}
           </Link>
         </div>
       </section>

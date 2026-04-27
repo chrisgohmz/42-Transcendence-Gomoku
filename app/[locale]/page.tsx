@@ -1,61 +1,65 @@
-import Link from "next/link";
+import { useTranslations } from "next-intl";
+import { setRequestLocale } from "next-intl/server";
+import { use } from "react";
 
-import { ClickButtons } from "./components/click-buttons";
-import { StatusPanel } from "./components/status-panel";
+import { ClickButtons } from "@/components/click-buttons";
+import { StatusPanel } from "@/components/status-panel";
+import { Link } from "@/i18n/navigation";
 
 export const dynamic = "force-dynamic";
 
-export default function Home() {
+type HomeProps = {
+  params: Promise<{
+    locale: string;
+  }>;
+};
+
+export default function Home({ params }: HomeProps) {
+  const { locale } = use(params);
+  setRequestLocale(locale);
+
+  const home = useTranslations("home");
   const socketUrl = process.env["SOCKET_PUBLIC_URL"] ?? "http://localhost:3001";
 
   return (
     <main className="shell">
       <section className="hero">
-        <p className="eyebrow">42 Transcendence</p>
-        <h1>One command boots the full local stack.</h1>
-        <p className="lede">
-          One Next.js app now serves the UI, auth, API routes, and Prisma-backed data, while a
-          dedicated Bun realtime service handles Socket.IO.
-        </p>
+        <p className="eyebrow">{home("eyebrow")}</p>
+        <h1>{home("title")}</h1>
+        <p className="lede">{home("lede")}</p>
       </section>
       <section className="panel">
         <article className="card">
-          <div className="label">Client Toggle Demo</div>
-          <p className="meta">Click the button to flip local React state and update the UI.</p>
+          <div className="label">{home("toggle.label")}</div>
+          <p className="meta">{home("toggle.description")}</p>
           <ClickButtons />
         </article>
       </section>
 
       <section className="panel">
         <article className="card">
-          <div className="label">Authentication</div>
-          <p className="meta">
-            Sign up to create a session cookie, then visit the protected account page to verify
-            guards, server-side session checks, and logout flows.
-          </p>
+          <div className="label">{home("auth.label")}</div>
+          <p className="meta">{home("auth.description")}</p>
           <div className="inline-links">
             <Link className="text-link" href="/signup">
-              Create account
+              {home("auth.createAccount")}
             </Link>
             <Link className="text-link" href="/login">
-              Sign in
+              {home("auth.signIn")}
             </Link>
             <Link className="text-link" href="/account">
-              Account page
+              {home("auth.accountPage")}
             </Link>
           </div>
         </article>
       </section>
       <section className="panel">
         <article className="card">
-          <div className="label">Prototype</div>
-          <p className="meta">
-            Create waiting matches and inspect the current match list through the unified app
-            routes.
-          </p>
+          <div className="label">{home("proto.label")}</div>
+          <p className="meta">{home("proto.description")}</p>
           <div className="inline-links">
             <Link className="text-link" href="/proto">
-              Open prototype page
+              {home("proto.link")}
             </Link>
           </div>
         </article>

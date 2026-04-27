@@ -1,7 +1,7 @@
 "use client";
 
 import { User, Users, MessageSquare, LogOut } from "lucide-react";
-import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -12,6 +12,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Link } from "@/i18n/navigation";
 
 interface UserMenuProps {
   username?: string;
@@ -31,16 +32,18 @@ export default function UserMenu({ username, avatarUrl }: UserMenuProps) {
     }
   };
 
+  const t = useTranslations("nav.userMenu");
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button className="flex items-center gap-2 border-0 bg-slate-800 text-white hover:bg-slate-700">
           <Avatar className="h-7 w-7">
-            <AvatarImage src={avatarUrl || "/icons/Login.svg"} alt="User avatar" />
+            <AvatarImage src={avatarUrl || "/icons/Login.svg"} alt={t("avatarAlt")} />
             <AvatarFallback>{username ? username.charAt(0).toUpperCase() : "U"}</AvatarFallback>
           </Avatar>
           <span className="hidden text-sm font-medium capitalize sm:inline">
-            {username || "Player"}
+            {username || t("player")}
           </span>
         </Button>
       </DropdownMenuTrigger>
@@ -55,7 +58,7 @@ export default function UserMenu({ username, avatarUrl }: UserMenuProps) {
         >
           <Link href="/profile" className="flex w-full items-center gap-2">
             <User className="h-4 w-4" />
-            <span>View Profile</span>
+            <span>{t("profile")}</span>
           </Link>
         </DropdownMenuItem>
 
@@ -65,7 +68,7 @@ export default function UserMenu({ username, avatarUrl }: UserMenuProps) {
         >
           <Link href="/friends" className="flex w-full items-center gap-2">
             <Users className="h-4 w-4" />
-            <span>Friends</span>
+            <span>{t("friends")}</span>
           </Link>
         </DropdownMenuItem>
 
@@ -75,17 +78,16 @@ export default function UserMenu({ username, avatarUrl }: UserMenuProps) {
         >
           <Link href="/messages" className="flex w-full items-center gap-2">
             <MessageSquare className="h-4 w-4" />
-            <span>Messages</span>
+            <span>{t("messages")}</span>
           </Link>
         </DropdownMenuItem>
-
         <DropdownMenuItem
           variant="destructive"
           onClick={handleLogout}
           className="flex w-full cursor-pointer items-center gap-2 focus:bg-slate-200!"
         >
           <LogOut className="h-4 w-4 text-red-700" />
-          <span className="font-semibold text-red-700">Logout</span>
+          <span className="font-semibold text-red-700">{t("logout")}</span>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

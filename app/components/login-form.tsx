@@ -1,19 +1,26 @@
 "use client";
 
-import Link from "next/link";
+import { useLocale, useTranslations } from "next-intl";
 import { useActionState } from "react";
+
+import { Link } from "@/i18n/navigation";
 
 import { initialLoginActionState } from "../auth-action-state";
 import { loginAction } from "../auth-actions";
 
 export function LoginForm() {
+  const locale = useLocale();
+  const shared = useTranslations("auth.shared");
+  const login = useTranslations("auth.login");
   const [state, formAction, pending] = useActionState(loginAction, initialLoginActionState);
 
   return (
     <form className="form-grid" action={formAction}>
+      <input type="hidden" name="locale" value={locale} />
+
       <div className="field">
         <label className="field-label" htmlFor="email">
-          Email
+          {shared("email")}
         </label>
         <input
           id="email"
@@ -28,7 +35,7 @@ export function LoginForm() {
 
       <div className="field">
         <label className="field-label" htmlFor="password">
-          Password
+          {shared("password")}
         </label>
         <input
           id="password"
@@ -39,7 +46,7 @@ export function LoginForm() {
           required
           minLength={8}
         />
-        <p className="helper">At least 8 characters.</p>
+        <p className="helper">{shared("passwordHelper")}</p>
       </div>
 
       {state.message ? (
@@ -49,13 +56,13 @@ export function LoginForm() {
       ) : null}
 
       <button className="btn" type="submit" disabled={pending}>
-        {pending ? "Signing in..." : "Sign in"}
+        {pending ? login("submitting") : login("submit")}
       </button>
 
       <div className="inline-links">
-        <span className="helper">New here?</span>
+        <span className="helper">{login("newHere")}</span>
         <Link href="/signup" className="text-link">
-          Create an account
+          {login("signupLink")}
         </Link>
       </div>
     </form>

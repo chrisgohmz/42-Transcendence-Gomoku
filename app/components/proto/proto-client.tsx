@@ -1,11 +1,12 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useState } from "react";
 
-import { MatchJoinButton, type JoinedMatchInfo } from "@/components/proto/MatchJoinButton";
 import { useSocketGame } from "@/hooks/useSocketGame";
 
-import { MatchCreateButton, type CreatedMatchInfo } from "../components/proto/MatchCreateButton";
+import { MatchCreateButton, type CreatedMatchInfo } from "./MatchCreateButton";
+import { MatchJoinButton, type JoinedMatchInfo } from "./MatchJoinButton";
 
 type MatchParticipant = {
   displayName: string;
@@ -29,7 +30,8 @@ type MatchSession = {
   participantId: string;
 };
 
-export default function ProtoPage() {
+export function ProtoClient() {
+  const t = useTranslations("proto");
   const [createdMatch, setCreatedMatch] = useState<CreatedMatchInfo | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [matches, setMatches] = useState<Match[]>([]);
@@ -55,7 +57,7 @@ export default function ProtoPage() {
           errorPayload?.message ??
           errorPayload?.detail ??
           errorPayload?.error ??
-          `Request failed with status ${response.status}`;
+          t("requestFailed", { status: response.status });
 
         setListError(message);
         setMatches([]);
@@ -65,21 +67,12 @@ export default function ProtoPage() {
       const data = (await response.json()) as Match[];
       setMatches(data);
       setListError(null);
-    } catch (error) {
-      console.error("Error loading matches:", error);
-      setListError(error instanceof Error ? error.message : "Network error while loading matches");
+    } catch (loadError) {
+      console.error("Error loading matches:", loadError);
+      setListError(loadError instanceof Error ? loadError.message : t("networkLoadError"));
       setMatches([]);
     }
   }
-
-  // Memo: if we want to use useEffect for loadRooms
-  // Put this at the top of this code
-  // import { useState } from "react";
-  //
-  // and activate these hundler
-  // useEffect(() => {
-  //   void loadRooms();
-  // }, []);
 
   function handleSuccess(nextCreatedMatch: CreatedMatchInfo) {
     setCreatedMatch(nextCreatedMatch);
@@ -100,36 +93,62 @@ export default function ProtoPage() {
       <section className="panel">
         <article className="card">
           <MatchCreateButton onSuccess={handleSuccess} onError={handleError} />
-          {createdMatch ? <p>matchId: {createdMatch.matchId}</p> : null}
-          {createdMatch ? <p>participantId: {createdMatch.participantId}</p> : null}
-          {createdMatch?.role ? <p>role: {createdMatch.role}</p> : null}
-          {createdMatch && createdMatch.seat !== undefined ? (
-            <p>seat: {createdMatch.seat ?? "null"}</p>
+          {createdMatch ? (
+            <p>
+              {t("matchId")} {createdMatch.matchId}
+            </p>
           ) : null}
-          {error ? <p role="alert">error: {error}</p> : null}
+          {createdMatch ? (
+            <p>
+              {t("participantId")} {createdMatch.participantId}
+            </p>
+          ) : null}
+          {createdMatch?.role ? (
+            <p>
+              {t("role")} {createdMatch.role}
+            </p>
+          ) : null}
+          {createdMatch && createdMatch.seat !== undefined ? (
+            <p>
+              {t("seat")} {createdMatch.seat ?? t("nullValue")}
+            </p>
+          ) : null}
+          {error ? (
+            <p role="alert">
+              {t("errorLabel")} {error}
+            </p>
+          ) : null}
         </article>
 
         <article className="card">
           <button type="button" className="btn" onClick={loadMatches}>
-            Load Matches
+            {t("loadMatches")}
           </button>
-          <p>matches:</p>
-          {listError ? <p role="alert">error: {listError}</p> : null}
+          <p>{t("matches")}</p>
+          {listError ? (
+            <p role="alert">
+              {t("errorLabel")} {listError}
+            </p>
+          ) : null}
           <ul>
             {matches.map((match) => (
               <li key={match.matchId}>
                 <p>
                   {match.matchId}
-                  {match.matchId === createdMatch?.matchId ? " <- just created" : ""}
+                  {match.matchId === createdMatch?.matchId ? t("createdMarker") : ""}
                 </p>
-                {match.status ? <p>status: {match.status}</p> : null}
+                {match.status ? (
+                  <p>
+                    {t("status")} {match.status}
+                  </p>
+                ) : null}
                 {match.participants?.length ? (
                   <p>
-                    participants:{" "}
+                    {t("participants")}{" "}
                     {match.participants
                       .map(
                         (participant) =>
-                          `${participant.displayName} (${participant.seat ?? "null"})`,
+                          `${participant.displayName} (${participant.seat ?? t("nullValue")})`,
                       )
                       .join(", ")}
                   </p>
@@ -137,9 +156,9 @@ export default function ProtoPage() {
 
                 <input
                   type="text"
-                  placeholder="Your name"
+                  placeholder={t("namePlaceholder")}
                   value={displayName}
-                  onChange={(e) => setDisplayname(e.target.value)}
+                  onChange={(event) => setDisplayname(event.target.value)}
                 />
                 <MatchJoinButton
                   matchId={match.matchId}
@@ -152,23 +171,28 @@ export default function ProtoPage() {
                       participantId: info.participantId,
                     });
                   }}
-                  onError={(msg) => {
-                    setJoinError(msg);
+                  onError={(message) => {
+                    setJoinError(message);
                     setJoinedMatch(null);
                   }}
                 />
                 {joinedMatch?.matchId === match.matchId ? (
                   <p>
-                    seat: {joinedMatch.seat} / participantId: {joinedMatch.participantId}
+                    {t("seat")} {joinedMatch.seat} / {t("participantId")}{" "}
+                    {joinedMatch.participantId}
                   </p>
                 ) : null}
-                {joinError ? <p role="alert">error: {joinError}</p> : null}
+                {joinError ? (
+                  <p role="alert">
+                    {t("errorLabel")} {joinError}
+                  </p>
+                ) : null}
               </li>
             ))}
           </ul>
         </article>
         <article className="card">
-          <p>discription status: {status}</p>
+          <p>{t("descriptionStatus", { status })}</p>
         </article>
       </section>
     </main>

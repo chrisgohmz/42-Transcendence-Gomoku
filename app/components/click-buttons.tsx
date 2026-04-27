@@ -1,9 +1,10 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useState } from "react";
 
-// Minimal client component / click handler example.
 export function ClickButtons() {
+  const t = useTranslations("clickButtons");
   const [enabled, setEnabled] = useState(false);
   const [count, setCount] = useState(0);
 
@@ -27,14 +28,14 @@ export function ClickButtons() {
         aria-pressed={enabled}
         onClick={handleClick}
       >
-        {enabled ? "ON" : "OFF"}
+        {enabled ? t("on") : t("off")}
       </button>
 
       <button
         type="button"
         className="btn"
         onClick={handleClickCount}
-        aria-label={`Increment counter, current value ${count}`}
+        aria-label={t("incrementCounter", { count })}
       >
         {count}
       </button>
