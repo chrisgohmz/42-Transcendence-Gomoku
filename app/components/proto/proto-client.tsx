@@ -3,6 +3,7 @@
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 
+import { MatchMoveForm, type SubmittedMoveInfo } from "@/components/proto/MatchMoveForm";
 import { useSocketGame } from "@/hooks/useSocketGame";
 
 import { MatchCreateButton, type CreatedMatchInfo } from "./MatchCreateButton";
@@ -42,8 +43,13 @@ export function ProtoClient() {
   const [displayName, setDisplayname] = useState("");
 
   const [session, setSession] = useState<MatchSession | null>(null);
+  const { status, lastUpdate } = useSocketGame(
+    session?.matchId ?? null,
+    session?.participantId ?? null,
+  );
 
-  const { status } = useSocketGame(session?.matchId ?? null, session?.participantId ?? null);
+  const [submittedMove, setSubmittedMove] = useState<SubmittedMoveInfo | null>(null);
+  const [moveError, setMoveError] = useState<string | null>(null);
 
   async function loadMatches() {
     try {
@@ -192,7 +198,47 @@ export function ProtoClient() {
           </ul>
         </article>
         <article className="card">
-          <p>{t("descriptionStatus", { status })}</p>
+          <p>discription status: {status}</p>
+          {session ? <p>current match: {session.matchId}</p> : <p>Create or join a match first.</p>}
+
+          {session ? (
+            <MatchMoveForm
+              matchId={session.matchId}
+              participantId={session.participantId}
+              baseVersion={lastUpdate?.stateVersion ?? null}
+              onSuccess={(info) => {
+                setSubmittedMove(info);
+                setMoveError(null);
+              }}
+              onError={(msg) => {
+                setMoveError(msg);
+              }}
+            />
+          ) : null}
+
+          {submittedMove ? (
+            <p>
+              submitted: ({submittedMove.position.x}, {submittedMove.position.y} / requestId: )
+              {submittedMove.requestId ?? "null"}
+            </p>
+          ) : null}
+          {moveError ? <p role="alert">error: {moveError}</p> : null}
+
+          {lastUpdate ? (
+            <>
+              <p>game status: {lastUpdate.status}</p>
+              <p>stateVersion: {lastUpdate.stateVersion}</p>
+              <p>nextTurnSeat: {lastUpdate.nextTurnSeat ?? "null"}</p>
+              {lastUpdate.lastMove ? (
+                <p>
+                  lastMove: #{lastUpdate.lastMove.moveNumber} / {lastUpdate.lastMove.participantId}{" "}
+                  / ({lastUpdate.lastMove.position.x}, {lastUpdate.lastMove.position.y})
+                </p>
+              ) : (
+                <p>lastMove: none</p>
+              )}
+            </>
+          ) : null}
         </article>
       </section>
     </main>
