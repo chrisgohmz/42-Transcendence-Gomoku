@@ -1,9 +1,10 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
+import { useRouter } from "@/i18n/navigation";
 
 import { saveAccountSettings } from "./actions";
 
@@ -17,6 +18,7 @@ export default function EditProfileForm({
   const [error, setError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
   const router = useRouter();
+  const t = useTranslations("profile.edit");
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -49,11 +51,11 @@ export default function EditProfileForm({
       <div className="grid w-full grid-cols-1 gap-16 md:grid-cols-2">
         {/* Left Column: Profile Section */}
         <div className="flex flex-col gap-6">
-          <h2 className="m-0 text-xl font-bold text-white">Profile Details</h2>
+          <h2 className="m-0 text-xl font-bold text-white">{t("profileDetails")}</h2>
 
           <div className="flex flex-col gap-2">
             <label htmlFor="username" className="text-sm font-bold text-slate-300">
-              Username (Not editable)
+              {t("usernameReadonly")}
             </label>
             <input
               id="username"
@@ -67,7 +69,7 @@ export default function EditProfileForm({
 
           <div className="flex flex-col gap-2">
             <label htmlFor="displayName" className="text-sm font-bold text-slate-300">
-              Display Name
+              {t("displayName")}
             </label>
             <input
               id="displayName"
@@ -82,14 +84,12 @@ export default function EditProfileForm({
 
         {/* Right Column: Password Section */}
         <div className="flex flex-col gap-6">
-          <h2 className="m-0 text-xl font-bold text-white">Change Password</h2>
-          <p className="m-0 text-sm text-slate-400">
-            Leave these blank if you do not want to change your password.
-          </p>
+          <h2 className="m-0 text-xl font-bold text-white">{t("changePassword")}</h2>
+          <p className="m-0 text-sm text-slate-400">{t("passwordHelp")}</p>
 
           <div className="flex flex-col gap-2">
             <label htmlFor="currentPassword" className="text-sm font-bold text-slate-300">
-              Current Password
+              {t("currentPassword")}
             </label>
             <input
               id="currentPassword"
@@ -101,7 +101,7 @@ export default function EditProfileForm({
 
           <div className="flex flex-col gap-2">
             <label htmlFor="newPassword" className="text-sm font-bold text-slate-300">
-              New Password
+              {t("newPassword")}
             </label>
             <input
               id="newPassword"
@@ -113,7 +113,7 @@ export default function EditProfileForm({
 
           <div className="flex flex-col gap-2">
             <label htmlFor="confirmPassword" className="text-sm font-bold text-slate-300">
-              Confirm New Password
+              {t("confirmPassword")}
             </label>
             <input
               id="confirmPassword"
@@ -136,13 +136,13 @@ export default function EditProfileForm({
           className="border-slate-700/50 px-6 text-slate-300 hover:bg-slate-800"
           onClick={() => router.push("/profile")}
         >
-          Cancel
+          {t("cancel")}
         </Button>
         <Button
           type="submit"
           className="bg-[#4ee8c2] px-8 font-bold text-[#04131a] hover:bg-[#4ee8c2]/90"
         >
-          Save Changes
+          {t("saveChanges")}
         </Button>
       </div>
     </form>

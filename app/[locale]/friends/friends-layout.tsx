@@ -1,27 +1,30 @@
 "use client";
 
 import { MessageSquare, UserMinus, Check, X, Users } from "lucide-react";
-import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { useState } from "react";
+
+import { Link } from "@/i18n/navigation";
 
 export default function FriendsContent() {
   const [activeTab, setActiveTab] = useState("friends");
+  const t = useTranslations("friends");
 
   return (
     <main className="shell">
       <section className="mt-4 mb-12 flex flex-col items-center">
         <div className="mb-6 flex items-center gap-4">
           <Users className="h-12 w-12 text-[#4ee8c2]" />
-          <h1 className="m-0 text-5xl font-bold">Friends</h1>
+          <h1 className="m-0 text-5xl font-bold">{t("title")}</h1>
         </div>
         <div className="flex w-full max-w-md gap-3">
           <input
             type="text"
-            placeholder="Search by username..."
+            placeholder={t("searchPlaceholder")}
             className="flex-1 rounded-xl border border-slate-700/50 bg-[#0c1628] px-5 py-3 text-white transition-colors focus:border-[#4ee8c2] focus:outline-none"
           />
           <button className="rounded-xl bg-[#4ee8c2] px-6 py-3 font-bold tracking-wider text-[#04131a] uppercase transition-transform hover:-translate-y-0.5">
-            Search
+            {t("search")}
           </button>
         </div>
       </section>
@@ -31,19 +34,19 @@ export default function FriendsContent() {
             onClick={() => setActiveTab("friends")}
             className={`rounded-md px-4 py-2 font-bold transition-colors ${activeTab === "friends" ? "bg-[#4ee8c2] text-[#04131a]" : "text-slate-300 hover:bg-slate-800"}`}
           >
-            Friends
+            {t("tabs.friends")}
           </button>
           <button
             onClick={() => setActiveTab("pending")}
             className={`rounded-md px-4 py-2 font-bold transition-colors ${activeTab === "pending" ? "bg-[#4ee8c2] text-[#04131a]" : "text-slate-300 hover:bg-slate-800"}`}
           >
-            Pending Requests
+            {t("tabs.pending")}
           </button>
           <button
             onClick={() => setActiveTab("sent")}
             className={`rounded-md px-4 py-2 font-bold transition-colors ${activeTab === "sent" ? "bg-[#4ee8c2] text-[#04131a]" : "text-slate-300 hover:bg-slate-800"}`}
           >
-            Sent Requests
+            {t("tabs.sent")}
           </button>
         </div>
         <div className="flex flex-col gap-4">
@@ -52,13 +55,15 @@ export default function FriendsContent() {
               <table className="w-full border-collapse text-left">
                 <thead>
                   <tr className="border-b border-slate-700/50 bg-slate-800/50">
-                    <th className="p-4 font-bold text-slate-200">Rank</th>
-                    <th className="p-4 font-bold text-slate-200">Friend</th>
-                    <th className="p-4 font-bold text-slate-200">Rating</th>
-                    <th className="p-4 font-bold text-slate-200">Win Rate</th>
-                    <th className="p-4 font-bold text-slate-200">Wins</th>
-                    <th className="p-4 font-bold text-slate-200">Losses</th>
-                    <th className="p-4 text-right font-bold text-slate-200">Actions</th>
+                    <th className="p-4 font-bold text-slate-200">{t("table.rank")}</th>
+                    <th className="p-4 font-bold text-slate-200">{t("table.friend")}</th>
+                    <th className="p-4 font-bold text-slate-200">{t("table.rating")}</th>
+                    <th className="p-4 font-bold text-slate-200">{t("table.winRate")}</th>
+                    <th className="p-4 font-bold text-slate-200">{t("table.wins")}</th>
+                    <th className="p-4 font-bold text-slate-200">{t("table.losses")}</th>
+                    <th className="p-4 text-right font-bold text-slate-200">
+                      {t("table.actions")}
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
@@ -80,11 +85,11 @@ export default function FriendsContent() {
                         className="flex items-center gap-2 rounded-md bg-slate-800 px-3 py-1.5 text-sm font-bold transition-colors hover:bg-slate-700"
                       >
                         <MessageSquare className="h-4 w-4" />
-                        Chat
+                        {t("actions.chat")}
                       </Link>
                       <button className="flex items-center gap-2 rounded-md bg-red-500/10 px-3 py-1.5 text-sm font-bold text-red-400 transition-colors hover:bg-red-500/20">
                         <UserMinus className="h-4 w-4" />
-                        Remove
+                        {t("actions.remove")}
                       </button>
                     </td>
                   </tr>
@@ -97,8 +102,10 @@ export default function FriendsContent() {
               <table className="w-full border-collapse text-left">
                 <thead>
                   <tr className="border-b border-slate-700/50 bg-slate-800/50">
-                    <th className="p-4 font-bold text-slate-200">Pending Requests</th>
-                    <th className="p-4 text-right font-bold text-slate-200">Actions</th>
+                    <th className="p-4 font-bold text-slate-200">{t("tabs.pending")}</th>
+                    <th className="p-4 text-right font-bold text-slate-200">
+                      {t("table.actions")}
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
@@ -112,11 +119,11 @@ export default function FriendsContent() {
                     <td className="flex justify-end gap-2 p-4">
                       <button className="flex items-center gap-2 rounded-md bg-[#4ee8c2]/10 px-3 py-1.5 text-sm font-bold text-[#4ee8c2] transition-colors hover:bg-[#4ee8c2]/20">
                         <Check className="h-4 w-4" />
-                        Accept
+                        {t("actions.accept")}
                       </button>
                       <button className="flex items-center gap-2 rounded-md bg-red-500/10 px-3 py-1.5 text-sm font-bold text-red-400 transition-colors hover:bg-red-500/20">
                         <X className="h-4 w-4" />
-                        Decline
+                        {t("actions.decline")}
                       </button>
                     </td>
                   </tr>
@@ -129,8 +136,10 @@ export default function FriendsContent() {
               <table className="w-full border-collapse text-left">
                 <thead>
                   <tr className="border-b border-slate-700/50 bg-slate-800/50">
-                    <th className="p-4 font-bold text-slate-200">Sent Requests</th>
-                    <th className="p-4 text-right font-bold text-slate-200">Actions</th>
+                    <th className="p-4 font-bold text-slate-200">{t("tabs.sent")}</th>
+                    <th className="p-4 text-right font-bold text-slate-200">
+                      {t("table.actions")}
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
@@ -144,7 +153,7 @@ export default function FriendsContent() {
                     <td className="flex justify-end p-4">
                       <button className="flex items-center gap-2 rounded-md bg-slate-800 px-3 py-1.5 text-sm font-bold text-slate-300 transition-colors hover:bg-slate-700">
                         <X className="h-4 w-4" />
-                        Cancel Request
+                        {t("actions.cancelRequest")}
                       </button>
                     </td>
                   </tr>

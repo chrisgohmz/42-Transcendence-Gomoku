@@ -1,6 +1,8 @@
 "use client";
 
 import { Camera } from "lucide-react";
+import { useTranslations } from "next-intl";
+import Image from "next/image";
 import { useState, useRef } from "react";
 
 import { uploadProfilePicture } from "./actions";
@@ -8,6 +10,7 @@ import { uploadProfilePicture } from "./actions";
 export default function ProfilePicture({ initialImage }: { initialImage?: string | null }) {
   const [isHovering, setIsHovering] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const t = useTranslations("profile.picture");
 
   const handleContainerClick = () => {
     fileInputRef.current?.click();
@@ -34,16 +37,16 @@ export default function ProfilePicture({ initialImage }: { initialImage?: string
       onMouseLeave={() => setIsHovering(false)}
       onClick={handleContainerClick}
     >
-      <div className="flex h-full w-full items-center justify-center overflow-hidden rounded-full bg-[#ccc]">
+      <div className="relative flex h-full w-full items-center justify-center overflow-hidden rounded-full bg-[#ccc]">
         {initialImage && (
-          <img src={initialImage} alt="Profile" className="h-full w-full object-cover" />
+          <Image src={initialImage} alt={t("alt")} fill sizes="300px" className="object-cover" />
         )}
       </div>
       <div
         className={`absolute inset-0 flex flex-col items-center justify-center rounded-full bg-black/40 transition-opacity duration-200 ${isHovering ? "opacity-100" : "opacity-0"}`}
       >
         <Camera className="mb-2 h-10 w-10 text-white" />
-        <span className="text-sm font-bold text-white">Change Photo</span>
+        <span className="text-sm font-bold text-white">{t("changePhoto")}</span>
       </div>
       <input
         type="file"

@@ -1,4 +1,4 @@
-import { useTranslations } from "next-intl";
+import { getTranslations } from "next-intl/server";
 import Image from "next/image";
 
 import { LocaleSwitcher } from "@/components/locale-switcher";
@@ -8,12 +8,14 @@ import { Link } from "@/i18n/navigation";
 import { getCurrentSession } from "@/lib/auth";
 
 export default async function Navbar() {
-  const sessionData = await getCurrentSession();
+  const [sessionData, brand, nav] = await Promise.all([
+    getCurrentSession(),
+    getTranslations("brand"),
+    getTranslations("nav"),
+  ]);
   const isLoggedIn = sessionData !== null;
   const realUsername = sessionData?.user.username;
   const avatarUrl = sessionData?.user.avatarUrl;
-  const brand = useTranslations("brand");
-  const nav = useTranslations("nav");
 
   return (
     <header className="sticky top-0 z-50 border-b border-slate-700/40 bg-[#0b182d]/85 backdrop-blur">

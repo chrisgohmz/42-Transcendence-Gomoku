@@ -3,30 +3,33 @@
 import { writeFile, mkdir } from "fs/promises";
 import path from "path";
 
+import { getLocale, getTranslations } from "next-intl/server";
 import { revalidatePath } from "next/cache";
 
 import { getCurrentSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
 export async function uploadProfilePicture(formData: FormData) {
+  const locale = await getLocale();
+  const t = await getTranslations({ locale, namespace: "profile.errors" });
   const sessionData = await getCurrentSession();
 
   if (!sessionData) {
-    return { error: "You must be logged in to do this." };
+    return { error: t("loginRequired") };
   }
 
   const file = formData.get("file") as File;
 
   if (!file || file.size === 0) {
-    return { error: "No file was selected." };
+    return { error: t("noFile") };
   }
 
   if (!file.type.startsWith("image/")) {
-    return { error: "Please select a valid image file." };
+    return { error: t("invalidImage") };
   }
 
   if (file.size > 5 * 1024 * 1024) {
-    return { error: "Picture is too large. Please keep it under 5MB." };
+    return { error: t("imageTooLarge") };
   }
 
   try {
@@ -50,7 +53,7 @@ export async function uploadProfilePicture(formData: FormData) {
 
     revalidatePath("/");
     return { success: true };
-  } catch (error) {
-    return { error: "Something went wrong while saving the picture." };
+  } catch {
+    return { error: t("pictureSaveFailed") };
   }
 }
