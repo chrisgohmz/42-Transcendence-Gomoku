@@ -1,15 +1,21 @@
-import { useTranslations } from "next-intl";
+import { getTranslations } from "next-intl/server";
 import Image from "next/image";
 
 import { LocaleSwitcher } from "@/components/locale-switcher";
 import UserMenu from "@/components/player-menu";
 import { Button } from "@/components/ui/button";
 import { Link } from "@/i18n/navigation";
+import { getCurrentSession } from "@/lib/auth";
 
-export default function Navbar() {
-  const isLoggedIn = true;
-  const brand = useTranslations("brand");
-  const nav = useTranslations("nav");
+export default async function Navbar() {
+  const [sessionData, brand, nav] = await Promise.all([
+    getCurrentSession(),
+    getTranslations("brand"),
+    getTranslations("nav"),
+  ]);
+  const isLoggedIn = sessionData !== null;
+  const realUsername = sessionData?.user.username;
+  const avatarUrl = sessionData?.user.avatarUrl;
 
   return (
     <header className="sticky top-0 z-50 border-b border-slate-700/40 bg-[#0b182d]/85 backdrop-blur">
@@ -19,7 +25,7 @@ export default function Navbar() {
           className="flex items-center gap-3 rounded-md px-2 py-1 transition hover:bg-slate-800/70 active:scale-[0.98]"
         >
           <Image
-            src="/icons/Gomoku.png"
+            src="/icons/Gomoku.svg"
             alt={brand("logoAlt")}
             width={42}
             height={42}
@@ -44,14 +50,14 @@ export default function Navbar() {
           </Link>
 
           <Link
-            href="/vs-human"
+            href="/human"
             className="rounded-md px-3 py-2 text-sm font-medium text-slate-300 hover:bg-slate-800/70 hover:text-white"
           >
             {nav("vsHuman")}
           </Link>
 
           <Link
-            href="/"
+            href="/leaderboard"
             className="rounded-md px-3 py-2 text-sm font-medium text-slate-300 hover:bg-slate-800/70 hover:text-white"
           >
             {nav("leaderboard")}
@@ -77,7 +83,9 @@ export default function Navbar() {
               </Link>
             </>
           ) : (
-            <UserMenu />
+            <div className="flex items-center gap-4">
+              <UserMenu username={realUsername} avatarUrl={avatarUrl} />
+            </div>
           )}
         </div>
       </nav>
