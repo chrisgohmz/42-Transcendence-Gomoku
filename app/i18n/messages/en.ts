@@ -168,6 +168,16 @@ export const messages = {
       accept: "Accept",
       decline: "Decline",
       cancelRequest: "Cancel Request",
+	  add: "Add",
+    },
+	empty: {
+      friends: "No friends yet. Add someone above!",
+      pending: "No pending requests.",
+      sent: "No sent requests.",
+      search: "No players found.",
+    },
+    messages: {
+      requestSent: "Friend request sent to {name}!",
     },
   },
   human: {

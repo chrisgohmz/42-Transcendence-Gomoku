@@ -160,6 +160,16 @@ export const messages = {
       accept: "接受",
       decline: "拒绝",
       cancelRequest: "取消请求",
+	  add: "添加",
+    },
+	empty: {
+      friends: "暂无好友。在上面搜索并添加吧！",
+      pending: "暂无待处理请求。",
+      sent: "暂无已发送请求。",
+      search: "未找到玩家。",
+    },
+    messages: {
+      requestSent: "已向 {name} 发送好友请求！",
     },
   },
   human: {

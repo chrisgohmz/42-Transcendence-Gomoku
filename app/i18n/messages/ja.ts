@@ -161,6 +161,16 @@ export const messages = {
       accept: "承認",
       decline: "拒否",
       cancelRequest: "リクエストを取り消す",
+	  add: "追加",
+    },
+	empty: {
+      friends: "まだフレンドがいません。上で検索して追加しましょう！",
+      pending: "保留中のリクエストはありません。",
+      sent: "送信済みリクエストはありません。",
+      search: "プレイヤーが見つかりません。",
+    },
+    messages: {
+      requestSent: "{name} にフレンドリクエストを送信しました！",
     },
   },
   human: {
