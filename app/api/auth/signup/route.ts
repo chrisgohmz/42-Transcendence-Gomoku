@@ -1,85 +1,86 @@
+import { getTranslations } from "next-intl/server";
+
+import {
+  apiErrorResponse,
+  getErrorMessage,
+  getPrismaUniqueConstraintFields,
+  isPrismaUniqueConstraintError,
+} from "../../../lib/api-errors";
 import {
   clearSessionCookie,
   createSession,
-  handlePrismaUniqueError,
   hashPassword,
   serializeUserForResponse,
 } from "../../../lib/auth";
+import { resolveApiLocale } from "../../../lib/i18n/api";
 import { prisma } from "../../../lib/prisma";
+import { fieldIssuesToMap, validateSignupInput } from "../../../lib/validation/auth-profile";
 
 export const dynamic = "force-dynamic";
 
 type SignupBody = {
-  email?: string;
-  password?: string;
-  username?: string;
-  displayName?: string;
+  displayName?: unknown;
+  email?: unknown;
+  password?: unknown;
+  username?: unknown;
 };
 
-function getErrorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : "Unknown error";
-}
-
-function normalizeEmail(email: string): string {
-  return email.trim().toLowerCase();
-}
-
-function normalizeUsername(username: string): string {
-  return username.trim();
-}
-
-function validatePayload(body: SignupBody): { error?: string } {
-  const email = body.email?.trim();
-  const password = body.password?.trim();
-  const username = body.username?.trim();
-
-  if (!email || !password || !username) {
-    return { error: "Email, username, and password are required." };
+function getDuplicateSignupFields(
+  error: unknown,
+  t: (key: "duplicateAccount" | "duplicateEmail" | "duplicateUsername") => string,
+) {
+  if (!isPrismaUniqueConstraintError(error)) {
+    return {};
   }
 
-  if (!email.includes("@") || !email.includes(".")) {
-    return { error: "Please enter a valid email address." };
+  const targetFields = getPrismaUniqueConstraintFields(error);
+  const fields: Partial<Record<"email" | "username", string[]>> = {};
+
+  if (targetFields.includes("email")) {
+    fields.email = [t("duplicateEmail")];
   }
 
-  if (username.length < 3) {
-    return { error: "Username must be at least 3 characters long." };
+  if (targetFields.includes("username")) {
+    fields.username = [t("duplicateUsername")];
   }
 
-  if (password.length < 8) {
-    return { error: "Password must be at least 8 characters long." };
-  }
-
-  return {};
+  return Object.keys(fields).length > 0
+    ? fields
+    : {
+        email: [t("duplicateAccount")],
+        username: [t("duplicateAccount")],
+      };
 }
 
 export async function POST(request: Request) {
   const body = (await request.json().catch(() => null)) as SignupBody | null;
+  const t = await getTranslations({ locale: resolveApiLocale(request), namespace: "auth.errors" });
 
   if (!body) {
-    return Response.json(
-      { error: "invalid_request", message: "Invalid request body." },
-      { status: 400 },
+    return apiErrorResponse({ error: "invalid_request", message: t("invalidRequestBody") }, 400);
+  }
+
+  const validation = validateSignupInput(body);
+
+  if (!validation.ok) {
+    return apiErrorResponse(
+      {
+        error: "validation_failed",
+        fields: fieldIssuesToMap(validation.issues, t),
+        message: t("fixHighlightedFields"),
+      },
+      400,
     );
   }
 
-  const validation = validatePayload(body);
-
-  if (validation.error) {
-    return Response.json({ error: "invalid_request", message: validation.error }, { status: 400 });
-  }
-
-  const email = normalizeEmail(body.email!);
-  const username = normalizeUsername(body.username!);
-  const displayName = (body.displayName ?? username).trim() || username;
-
   try {
-    const passwordHash = await hashPassword(body.password!);
+    const passwordHash = await hashPassword(validation.data.password);
 
     const user = await prisma.user.create({
       data: {
-        email,
-        username,
-        displayName,
+        email: validation.data.email,
+        username: validation.data.username,
+        displayName: validation.data.displayName,
         passwordHash,
         profile: {
           create: {},
@@ -91,21 +92,26 @@ export async function POST(request: Request) {
 
     return Response.json({ user: serializeUserForResponse(user) }, { status: 201 });
   } catch (error) {
-    const duplicateResponse = handlePrismaUniqueError(error, ["email", "username"]);
-
-    if (duplicateResponse) {
-      return duplicateResponse;
+    if (isPrismaUniqueConstraintError(error)) {
+      return apiErrorResponse(
+        {
+          error: "duplicate_account",
+          fields: getDuplicateSignupFields(error, t),
+          message: t("duplicateAccount"),
+        },
+        409,
+      );
     }
 
     await clearSessionCookie();
 
-    return Response.json(
+    return apiErrorResponse(
       {
         error: "signup_failed",
-        message: "Unable to create your account right now.",
         detail: getErrorMessage(error),
+        message: t("signupUnavailable"),
       },
-      { status: 500 },
+      500,
     );
   }
 }

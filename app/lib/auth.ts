@@ -5,7 +5,7 @@ import { promisify } from "node:util";
 import { createId } from "@paralleldrive/cuid2";
 import { cookies, headers } from "next/headers";
 
-import type { Prisma, User, UserSession } from "../../generated/prisma/client";
+import type { User, UserSession } from "../../generated/prisma/client";
 import { prisma } from "./prisma";
 
 const SESSION_COOKIE_NAME = "gomoku_session";
@@ -178,24 +178,4 @@ export function serializeUserForResponse(user: User) {
     email: user.email,
     emailVerified: Boolean(user.emailVerifiedAt),
   };
-}
-
-export function handlePrismaUniqueError(error: unknown, fields?: string[]): Response | null {
-  const prismaError = error as Prisma.PrismaClientKnownRequestError;
-
-  if (prismaError?.code !== "P2002") {
-    return null;
-  }
-
-  const targetMeta = prismaError.meta?.["target"];
-  const target = Array.isArray(targetMeta) ? targetMeta.join(", ") : undefined;
-  const uniqueFields = fields?.join(", ") ?? target ?? "fields";
-
-  return Response.json(
-    {
-      error: "duplicate",
-      message: `An account with those ${uniqueFields} already exists.`,
-    },
-    { status: 409 },
-  );
 }
