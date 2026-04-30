@@ -123,7 +123,7 @@ function objectFromUnknown<Shape extends z.ZodRawShape>(shape: Shape) {
   );
 }
 
-const normalizedStringSchema = z.preprocess(getString, z.string());
+const normalizedStringSchema = z.unknown().optional().transform(getString);
 const normalizedEmailSchema = normalizedStringSchema.transform(normalizeEmail);
 const normalizedPasswordSchema = normalizedStringSchema.transform(normalizePassword);
 const normalizedUsernameSchema = normalizedStringSchema.transform(normalizeUsername);
@@ -135,7 +135,7 @@ function addZodIssue<Field extends string, Code extends string>(
   code: Code,
 ) {
   ctx.addIssue({
-    code: z.ZodIssueCode.custom,
+    code: "custom",
     message: code,
     path: [field],
   });
@@ -153,7 +153,7 @@ function hasKnownCode<Code extends string>(value: string, codes: readonly Code[]
 }
 
 function zodIssuesToValidationIssues<Field extends string, Code extends string>(
-  issues: z.ZodIssue[],
+  issues: z.core.$ZodIssue[],
   fields: readonly Field[],
   codes: readonly Code[],
 ): ValidationIssue<Field, Code>[] {
@@ -169,7 +169,7 @@ function zodIssuesToValidationIssues<Field extends string, Code extends string>(
 }
 
 function zodResultToValidationResult<Data, Field extends string, Code extends string>(
-  result: z.SafeParseReturnType<unknown, Data>,
+  result: z.ZodSafeParseResult<Data>,
   fields: readonly Field[],
   codes: readonly Code[],
 ): ValidationResult<Data, Field, Code> {

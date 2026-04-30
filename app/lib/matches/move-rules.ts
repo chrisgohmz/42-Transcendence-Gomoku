@@ -58,16 +58,16 @@ type MoveValidationInput = {
 
 const moveParticipantSchema = z.object({
   id: z.string(),
-  role: z.nativeEnum(Role),
-  seat: z.nativeEnum(Seat).nullable(),
+  role: z.enum(Role),
+  seat: z.enum(Seat).nullable(),
 });
 
 const moveMatchSnapshotSchema = z.object({
   boardSize: z.number().int(),
-  nextTurnSeat: z.nativeEnum(Seat).nullable(),
+  nextTurnSeat: z.enum(Seat).nullable(),
   participants: z.array(moveParticipantSchema),
   stateVersion: z.number().int(),
-  status: z.nativeEnum(MatchStatus),
+  status: z.enum(MatchStatus),
 });
 
 const moveValidationInputSchema = z.object({
