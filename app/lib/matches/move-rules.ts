@@ -1,9 +1,13 @@
+import { z } from "zod";
+
 import { MatchStatus, Role, Seat } from "../../../generated/prisma/enums";
 
-export type Position = {
-  x: number;
-  y: number;
-};
+export const positionSchema = z.object({
+  x: z.number().int(),
+  y: z.number().int(),
+});
+
+export type Position = z.infer<typeof positionSchema>;
 
 export type MoveParticipant = {
   id: string;
@@ -52,6 +56,29 @@ type MoveValidationInput = {
   isOccupied: boolean;
 };
 
+const moveParticipantSchema = z.object({
+  id: z.string(),
+  role: z.nativeEnum(Role),
+  seat: z.nativeEnum(Seat).nullable(),
+});
+
+const moveMatchSnapshotSchema = z.object({
+  boardSize: z.number().int(),
+  nextTurnSeat: z.nativeEnum(Seat).nullable(),
+  participants: z.array(moveParticipantSchema),
+  stateVersion: z.number().int(),
+  status: z.nativeEnum(MatchStatus),
+});
+
+const moveValidationInputSchema = z.object({
+  baseVersion: z.number().int().nullable(),
+  hasDuplicateRequest: z.boolean(),
+  isOccupied: z.boolean(),
+  match: moveMatchSnapshotSchema,
+  participantId: z.string(),
+  position: positionSchema,
+});
+
 function error(errorCode: MoveErrorCode, status: number): MoveValidationResult {
   return { ok: false, error: errorCode, status };
 }
@@ -88,40 +115,49 @@ function isPositionOnBoard(position: Position, boardSize: number): boolean {
 }
 
 export function validateMoveSubmission(input: MoveValidationInput): MoveValidationResult {
-  const statusValidation = statusError(input.match.status);
+  const parsedInput = moveValidationInputSchema.safeParse(input);
+
+  if (!parsedInput.success) {
+    return error("invalid_position", 400);
+  }
+
+  const moveInput = parsedInput.data;
+  const statusValidation = statusError(moveInput.match.status);
   if (statusValidation) {
     return statusValidation;
   }
 
-  const participant = input.match.participants.find((item) => item.id === input.participantId);
+  const participant = moveInput.match.participants.find(
+    (item) => item.id === moveInput.participantId,
+  );
   if (!participant || participant.role !== Role.PLAYER || !isKnownSeat(participant.seat)) {
     return error("not_a_player", 403);
   }
 
-  if (input.hasDuplicateRequest) {
+  if (moveInput.hasDuplicateRequest) {
     return error("duplicate_request", 409);
   }
 
-  if (!isPositionOnBoard(input.position, input.match.boardSize)) {
+  if (!isPositionOnBoard(moveInput.position, moveInput.match.boardSize)) {
     return error("invalid_position", 400);
   }
 
-  if (input.baseVersion !== null && input.baseVersion !== input.match.stateVersion) {
+  if (moveInput.baseVersion !== null && moveInput.baseVersion !== moveInput.match.stateVersion) {
     return error("stale_state", 409);
   }
 
-  if (participant.seat !== input.match.nextTurnSeat) {
+  if (participant.seat !== moveInput.match.nextTurnSeat) {
     return error("not_your_turn", 409);
   }
 
-  if (input.isOccupied) {
+  if (moveInput.isOccupied) {
     return error("occupied", 409);
   }
 
   return {
     ok: true,
     participant,
-    nextStateVersion: input.match.stateVersion + 1,
+    nextStateVersion: moveInput.match.stateVersion + 1,
     nextTurnSeat: nextSeatAfter(participant.seat),
   };
 }

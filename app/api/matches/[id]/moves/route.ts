@@ -1,32 +1,22 @@
+import { z } from "zod";
+
 import { Prisma } from "@/../generated/prisma/client";
-import { validateMoveSubmission, type Position } from "@/lib/matches/move-rules";
+import { positionSchema, validateMoveSubmission } from "@/lib/matches/move-rules";
 import { prisma } from "@/lib/prisma";
 
 import type { GameUpdatePayload } from "../../../../../shared/match-events";
 
 export const dynamic = "force-dynamic";
 
-type SubmitMoveRequest = {
-  participantId?: string;
-  position?: {
-    x?: number;
-    y?: number;
-  };
-  requestId?: string;
-  baseVersion?: number;
-};
+const submitMoveRequestSchema = z.object({
+  baseVersion: z.number().int().optional(),
+  participantId: z.string().min(1),
+  position: positionSchema,
+  requestId: z.string().optional(),
+});
 
 function getErrorMessage(error: unknown): string {
   return error instanceof Error ? error.message : "Unknown error";
-}
-
-function isValidPosition(value: SubmitMoveRequest["position"]): value is Position {
-  return (
-    typeof value?.x === "number" &&
-    Number.isInteger(value.x) &&
-    typeof value?.y === "number" &&
-    Number.isInteger(value.y)
-  );
 }
 
 function getUniqueConstraintFields(error: Prisma.PrismaClientKnownRequestError): string[] {
@@ -90,16 +80,17 @@ async function publishGameUpdate(
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id: matchId } = await params;
-    const body = (await request.json()) as SubmitMoveRequest;
+    const body = await request.json().catch(() => null);
+    const validation = submitMoveRequestSchema.safeParse(body);
 
-    if (!body.participantId || !isValidPosition(body.position)) {
+    if (!validation.success) {
       return Response.json({ error: "invalid_payload" }, { status: 400 });
     }
 
-    const participantId = body.participantId;
-    const position = body.position;
-    const requestId = typeof body.requestId === "string" ? body.requestId : null;
-    const baseVersion = typeof body.baseVersion === "number" ? body.baseVersion : null;
+    const participantId = validation.data.participantId;
+    const position = validation.data.position;
+    const requestId = validation.data.requestId ?? null;
+    const baseVersion = validation.data.baseVersion ?? null;
 
     const result = await prisma.$transaction(async (tx) => {
       const match = await tx.match.findUnique({
