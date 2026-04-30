@@ -3,6 +3,7 @@
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 
+import { MatchMoveForm, type SubmittedMoveInfo } from "@/components/proto/MatchMoveForm";
 import { useSocketGame } from "@/hooks/useSocketGame";
 
 import { MatchCreateButton, type CreatedMatchInfo } from "./MatchCreateButton";
@@ -42,8 +43,13 @@ export function ProtoClient() {
   const [displayName, setDisplayname] = useState("");
 
   const [session, setSession] = useState<MatchSession | null>(null);
+  const { status, lastUpdate } = useSocketGame(
+    session?.matchId ?? null,
+    session?.participantId ?? null,
+  );
 
-  const { status } = useSocketGame(session?.matchId ?? null, session?.participantId ?? null);
+  const [submittedMove, setSubmittedMove] = useState<SubmittedMoveInfo | null>(null);
+  const [moveError, setMoveError] = useState<string | null>(null);
 
   async function loadMatches() {
     try {
@@ -193,6 +199,57 @@ export function ProtoClient() {
         </article>
         <article className="card">
           <p>{t("descriptionStatus", { status })}</p>
+          {session ? (
+            <p>{t("currentMatch", { matchId: session.matchId })}</p>
+          ) : (
+            <p>{t("createOrJoinFirst")}</p>
+          )}
+
+          {session ? (
+            <MatchMoveForm
+              matchId={session.matchId}
+              participantId={session.participantId}
+              baseVersion={lastUpdate?.stateVersion ?? null}
+              onSuccess={(info) => {
+                setSubmittedMove(info);
+                setMoveError(null);
+              }}
+              onError={(msg) => {
+                setMoveError(msg);
+              }}
+            />
+          ) : null}
+
+          {submittedMove ? (
+            <p>
+              {t("submittedMove", {
+                x: submittedMove.position.x,
+                y: submittedMove.position.y,
+                requestId: submittedMove.requestId ?? t("nullValue"),
+              })}
+            </p>
+          ) : null}
+          {moveError ? <p role="alert">{t("moveError", { message: moveError })}</p> : null}
+
+          {lastUpdate ? (
+            <>
+              <p>{t("gameStatus", { status: lastUpdate.status })}</p>
+              <p>{t("stateVersion", { version: lastUpdate.stateVersion })}</p>
+              <p>{t("nextTurnSeat", { seat: lastUpdate.nextTurnSeat ?? t("nullValue") })}</p>
+              {lastUpdate.lastMove ? (
+                <p>
+                  {t("lastMove", {
+                    moveNumber: lastUpdate.lastMove.moveNumber,
+                    participantId: lastUpdate.lastMove.participantId,
+                    x: lastUpdate.lastMove.position.x,
+                    y: lastUpdate.lastMove.position.y,
+                  })}
+                </p>
+              ) : (
+                <p>{t("lastMoveNone")}</p>
+              )}
+            </>
+          ) : null}
         </article>
       </section>
     </main>

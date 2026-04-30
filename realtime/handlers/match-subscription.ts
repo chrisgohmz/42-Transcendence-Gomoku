@@ -1,6 +1,6 @@
 import type { Socket } from "socket.io";
 
-import type { MatchSubscribePayload } from "../../app/shared/match-events";
+import type { MatchSubscribePayload } from "../../shared/match-events";
 import { matchRoomId } from "../lib/rooms";
 
 function isMatchSubscribePayload(payload: unknown): payload is MatchSubscribePayload {

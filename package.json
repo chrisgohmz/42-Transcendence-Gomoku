@@ -21,7 +21,8 @@
     "lint:js": "bunx --bun oxlint .",
     "lint:js:fix": "bunx --bun oxlint --fix .",
     "lint:css": "bunx --bun stylelint \"app/**/*.css\" --cache",
-    "lint:css:fix": "bunx --bun stylelint \"app/**/*.css\" --fix --cache"
+    "lint:css:fix": "bunx --bun stylelint \"app/**/*.css\" --fix --cache",
+    "test": "bun test"
   },
   "dependencies": {
     "@paralleldrive/cuid2": "3.3.0",

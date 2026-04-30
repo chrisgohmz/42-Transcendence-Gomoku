@@ -3,16 +3,24 @@
 import { useEffect, useRef, useState } from "react";
 import { io, type Socket } from "socket.io-client";
 
+import type { GameUpdatePayload } from "../../shared/match-events";
+
 type SubscribeStatus = "idle" | "connecting" | "subscribed" | "error";
 
 export function useSocketGame(matchId: string | null, participantId: string | null) {
   const socketRef = useRef<Socket | null>(null);
   const [status, setStatus] = useState<SubscribeStatus>("idle");
+  const [lastUpdate, setLastUpdate] = useState<GameUpdatePayload | null>(null);
 
   useEffect(() => {
-    if (!matchId || !participantId) return;
+    if (!matchId || !participantId) {
+      setStatus("idle");
+      setLastUpdate(null);
+      return;
+    }
 
     setStatus("connecting");
+    setLastUpdate(null);
 
     const socket = io({ path: "/socket.io" });
     socketRef.current = socket;
@@ -27,8 +35,20 @@ export function useSocketGame(matchId: string | null, participantId: string | nu
       if (active) setStatus("subscribed");
     });
 
+    socket.on("game:update", (payload: GameUpdatePayload) => {
+      if (active) {
+        setLastUpdate(payload);
+      }
+    });
+
     socket.on("connect_error", () => {
       if (active) setStatus("error");
+    });
+
+    socket.on("error", () => {
+      if (active) {
+        setStatus("error");
+      }
     });
 
     return () => {
@@ -39,5 +59,5 @@ export function useSocketGame(matchId: string | null, participantId: string | nu
     };
   }, [matchId, participantId]);
 
-  return { status, socket: socketRef.current };
+  return { status, lastUpdate, socket: socketRef.current };
 }
