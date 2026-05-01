@@ -38,6 +38,9 @@ jobs:
       - name: Lint code
         run: bun run lint
 
+      - name: Run tests
+        run: bun test
+
       - name: Generate Prisma client
         run: bun run prisma:generate
 

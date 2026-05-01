@@ -1,19 +1,11 @@
-import { z } from "zod";
-
 import { Prisma } from "@/../generated/prisma/client";
-import { positionSchema, validateMoveSubmission } from "@/lib/matches/move-rules";
+import { submitMoveRequestSchema } from "@/lib/matches/move-request-validation";
+import { validateMoveSubmission } from "@/lib/matches/move-rules";
 import { prisma } from "@/lib/prisma";
 
 import type { GameUpdatePayload } from "../../../../../shared/match-events";
 
 export const dynamic = "force-dynamic";
-
-const submitMoveRequestSchema = z.object({
-  baseVersion: z.number().int().optional(),
-  participantId: z.string().min(1),
-  position: positionSchema,
-  requestId: z.string().optional(),
-});
 
 function getErrorMessage(error: unknown): string {
   return error instanceof Error ? error.message : "Unknown error";

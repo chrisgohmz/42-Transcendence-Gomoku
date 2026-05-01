@@ -6,7 +6,7 @@ import { useActionState, useEffect, useRef } from "react";
 import { FieldErrorList } from "@/components/field-error-list";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "@/i18n/navigation";
-import { authValidationLimits } from "@/lib/validation/auth-profile";
+import { authValidationLimits } from "@/lib/validation/auth-profile-limits";
 
 import { initialProfileSettingsActionState } from "./action-state";
 import { saveAccountSettings } from "./actions";

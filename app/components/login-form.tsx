@@ -5,7 +5,7 @@ import { useActionState } from "react";
 
 import { FieldErrorList } from "@/components/field-error-list";
 import { Link } from "@/i18n/navigation";
-import { authValidationLimits } from "@/lib/validation/auth-profile";
+import { authValidationLimits } from "@/lib/validation/auth-profile-limits";
 
 import { initialLoginActionState } from "../auth-action-state";
 import { loginAction } from "../auth-actions";
