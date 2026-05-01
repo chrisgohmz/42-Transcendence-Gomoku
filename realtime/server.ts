@@ -49,14 +49,30 @@ const io = new Server({
 
 io.bind(engine);
 
+const connectedUsers = new Map<string, string>();
+
 io.on("connection", (socket) => {
   console.log(`Socket.IO client connected: ${socket.id}`);
   console.log(`[realtime] connected: ${socket.id}`);
 
   registerMatchSubscription(socket);
 
+  socket.on("presence:subscribe", (username: string) => {
+    if (!username) return;
+
+    connectedUsers.set(socket.id, username);
+    const activeUsernames = Array.from(new Set(connectedUsers.values()));
+    io.emit("presence:update", activeUsernames);
+  });
+
   socket.on("disconnect", (reason) => {
     console.log(`Socket.IO client disconnected: ${socket.id} (${reason})`);
+
+    if (connectedUsers.has(socket.id)) {
+      connectedUsers.delete(socket.id);
+      const activeUsernames = Array.from(new Set(connectedUsers.values()));
+      io.emit("presence:update", activeUsernames);
+    }
   });
 });
 

@@ -4,6 +4,7 @@ import { MessageSquare, UserMinus, Check, X, Users, UserPlus } from "lucide-reac
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { Link } from "@/i18n/navigation";
+import { usePresence } from "@/components/presence-provider";
 import { removeFriend, respondToRequest, sendFriendRequest, searchUsers } from "./actions";
 
 type FriendData = {
@@ -22,12 +23,13 @@ type FriendsContentProps = {
 };
 
 export default function FriendsContent({
-  friends,
-  pendingRequests,
-  sentRequests,
-}: FriendsContentProps) {
-  const [activeTab, setActiveTab] = useState("friends");
-  const [searchQuery, setSearchQuery] = useState("");
+	friends,
+	pendingRequests,
+	sentRequests,
+  }: FriendsContentProps) {
+	const { onlineUsers } = usePresence();
+	const [activeTab, setActiveTab] = useState("friends");
+	const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [statusMessage, setStatusMessage] = useState<{ text: string; isError: boolean } | null>(null);
   const t = useTranslations("friends");
@@ -194,7 +196,20 @@ export default function FriendsContent({
                                   {friend.displayName.charAt(0)}
                                 </div>
                               )}
-                              <span className="font-bold text-white">{friend.displayName}</span>
+                              <div className="flex flex-col text-left">
+                                <span className="font-bold text-white">{friend.displayName}</span>
+                                {onlineUsers.includes(friend.username) ? (
+                                  <div className="flex items-center gap-1.5">
+                                    <span className="h-2 w-2 rounded-full bg-[#4ee8c2] shadow-[0_0_5px_#4ee8c2]"></span>
+                                    <span className="text-xs font-bold text-[#4ee8c2]">Online</span>
+                                  </div>
+                                ) : (
+                                  <div className="flex items-center gap-1.5">
+                                    <span className="h-2 w-2 rounded-full bg-red-500 shadow-[0_0_5px_#ef4444]"></span>
+                                    <span className="text-xs font-bold text-red-500">Offline</span>
+                                  </div>
+                                )}
+                              </div>
                             </div>
                           </td>
                           <td className="p-4 text-slate-300">{friend.stats?.rating || 0}</td>
@@ -244,9 +259,16 @@ export default function FriendsContent({
                     </tr>
                   ) : (
                     pendingRequests.map((request) => (
-                      <tr key={request.id} className="border-b border-slate-700/50 transition-colors hover:bg-slate-800/20">
+						<tr key={request.id} className="border-b border-slate-700/50 transition-colors hover:bg-slate-800/20">
                         <td className="p-4">
                           <div className="flex items-center gap-3">
+                            {request.avatarUrl ? (
+                              <img src={request.avatarUrl} alt={request.displayName} className="h-8 w-8 rounded-full object-cover" />
+                            ) : (
+                              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-600 font-bold uppercase text-white">
+                                {request.displayName.charAt(0)}
+                              </div>
+                            )}
                             <span className="font-bold text-white">{request.displayName}</span>
                           </div>
                         </td>
@@ -292,9 +314,16 @@ export default function FriendsContent({
                     </tr>
                   ) : (
                     sentRequests.map((request) => (
-                      <tr key={request.id} className="border-b border-slate-700/50 transition-colors hover:bg-slate-800/20">
+						<tr key={request.id} className="border-b border-slate-700/50 transition-colors hover:bg-slate-800/20">
                         <td className="p-4">
                           <div className="flex items-center gap-3">
+                            {request.avatarUrl ? (
+                              <img src={request.avatarUrl} alt={request.displayName} className="h-8 w-8 rounded-full object-cover" />
+                            ) : (
+                              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-600 font-bold uppercase text-white">
+                                {request.displayName.charAt(0)}
+                              </div>
+                            )}
                             <span className="font-bold text-white">{request.displayName}</span>
                           </div>
                         </td>
