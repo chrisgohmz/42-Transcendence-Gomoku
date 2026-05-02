@@ -224,7 +224,7 @@ export const messages = {
     send: "发送",
   },
   profile: {
-    title: "{username} 的个人资料",
+    "title": "<name>{username}的</name><br></br>个人资料",
     lede: "管理你的资料并查看五子棋比赛统计。",
     editProfile: "编辑资料",
     statsTitle: "总战绩",

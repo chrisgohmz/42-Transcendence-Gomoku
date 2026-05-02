@@ -225,7 +225,7 @@ export const messages = {
     send: "送信",
   },
   profile: {
-    title: "{username} のプロフィール",
+    "title": "<name>{username}の</name><br></br>プロフィール",
     lede: "詳細情報を管理し、五目並べの戦績を確認できます。",
     editProfile: "プロフィール編集",
     statsTitle: "総合戦績",

@@ -53,9 +53,7 @@ export default function FriendsContent({
     if (!searchQuery.trim()) return;
     setStatusMessage(null);
     setSearchResults([]);
-
     const result = await searchUsers(searchQuery.trim());
-
     if (result.error) {
       setStatusMessage({ text: result.error, isError: true });
     } else if (result.users?.length === 0) {
@@ -67,9 +65,7 @@ export default function FriendsContent({
 
   const handleSendRequest = async (targetUsername: string) => {
     setStatusMessage(null);
-
     const result = await sendFriendRequest(targetUsername);
-
     if (result?.error) {
       setStatusMessage({ text: result.error, isError: true });
     } else {
@@ -81,7 +77,7 @@ export default function FriendsContent({
   };
 
   const handleRespond = async (friendshipId: number, accept: boolean) => {
-    const request = pendingRequests.find((r) => r.id === friendshipId);
+    const request = pendingRequests.find((r) => r.id === friendshipId) || sentRequests.find((r) => r.id === friendshipId);
     await respondToRequest(friendshipId, accept);
     if (request) socket?.emit("friendship:notify", request.username);
     router.refresh();
@@ -125,15 +121,19 @@ export default function FriendsContent({
             {searchResults.map((user) => (
               <div key={user.id} className="flex items-center justify-between rounded-lg p-3 transition-colors hover:bg-slate-800/50">
                 <div className="flex items-center gap-3">
-                  {user.avatarUrl ? (
-                    <img src={user.avatarUrl} alt={user.displayName} className="h-8 w-8 rounded-full object-cover" />
-                  ) : (
-                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-600 font-bold uppercase text-white">
-                      {user.displayName.charAt(0)}
-                    </div>
-                  )}
+                  <Link href={`/profile/${user.username}`}>
+                    {user.avatarUrl ? (
+                      <img src={user.avatarUrl} alt={user.displayName} className="h-8 w-8 rounded-full object-cover transition-transform hover:scale-105" />
+                    ) : (
+                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-600 font-bold uppercase text-white transition-transform hover:scale-105">
+                        {user.displayName.charAt(0)}
+                      </div>
+                    )}
+                  </Link>
                   <div className="text-left">
-                    <span className="block font-bold text-white">{user.displayName}</span>
+                    <Link href={`/profile/${user.username}`} className="block font-bold text-white transition-colors hover:text-[#4ee8c2]">
+                      {user.displayName}
+                    </Link>
                     <span className="block text-xs text-slate-400">@{user.username}</span>
                   </div>
                 </div>
@@ -211,15 +211,19 @@ export default function FriendsContent({
                           <td className="p-4 text-slate-300">{index + 1}</td>
                           <td className="p-4">
                             <div className="flex items-center gap-3">
-                              {friend.avatarUrl ? (
-                                <img src={friend.avatarUrl} alt={friend.displayName} className="h-8 w-8 rounded-full object-cover" />
-                              ) : (
-                                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-600 font-bold text-white uppercase">
-                                  {friend.displayName.charAt(0)}
-                                </div>
-                              )}
+                              <Link href={`/profile/${friend.username}`}>
+                                {friend.avatarUrl ? (
+                                  <img src={friend.avatarUrl} alt={friend.displayName} className="h-8 w-8 rounded-full object-cover transition-transform hover:scale-105" />
+                                ) : (
+                                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-600 font-bold text-white uppercase transition-transform hover:scale-105">
+                                    {friend.displayName.charAt(0)}
+                                  </div>
+                                )}
+                              </Link>
                               <div className="flex flex-col text-left">
-                                <span className="font-bold text-white">{friend.displayName}</span>
+                                <Link href={`/profile/${friend.username}`} className="font-bold text-white transition-colors hover:text-[#4ee8c2]">
+                                  {friend.displayName}
+                                </Link>
                                 {onlineUsers.includes(friend.username) ? (
                                   <div className="flex items-center gap-1.5">
                                     <span className="h-2 w-2 rounded-full bg-[#4ee8c2] shadow-[0_0_5px_#4ee8c2]"></span>
@@ -284,14 +288,18 @@ export default function FriendsContent({
                         <tr key={request.id} className="border-b border-slate-700/50 transition-colors hover:bg-slate-800/20">
                         <td className="p-4">
                           <div className="flex items-center gap-3">
-                            {request.avatarUrl ? (
-                              <img src={request.avatarUrl} alt={request.displayName} className="h-8 w-8 rounded-full object-cover" />
-                            ) : (
-                              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-600 font-bold uppercase text-white">
-                                {request.displayName.charAt(0)}
-                              </div>
-                            )}
-                            <span className="font-bold text-white">{request.displayName}</span>
+                            <Link href={`/profile/${request.username}`}>
+                              {request.avatarUrl ? (
+                                <img src={request.avatarUrl} alt={request.displayName} className="h-8 w-8 rounded-full object-cover transition-transform hover:scale-105" />
+                              ) : (
+                                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-600 font-bold uppercase text-white transition-transform hover:scale-105">
+                                  {request.displayName.charAt(0)}
+                                </div>
+                              )}
+                            </Link>
+                            <Link href={`/profile/${request.username}`} className="font-bold text-white transition-colors hover:text-[#4ee8c2]">
+                              {request.displayName}
+                            </Link>
                           </div>
                         </td>
                         <td className="flex justify-end gap-2 p-4">
@@ -339,14 +347,18 @@ export default function FriendsContent({
                         <tr key={request.id} className="border-b border-slate-700/50 transition-colors hover:bg-slate-800/20">
                         <td className="p-4">
                           <div className="flex items-center gap-3">
-                            {request.avatarUrl ? (
-                              <img src={request.avatarUrl} alt={request.displayName} className="h-8 w-8 rounded-full object-cover" />
-                            ) : (
-                              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-600 font-bold uppercase text-white">
-                                {request.displayName.charAt(0)}
-                              </div>
-                            )}
-                            <span className="font-bold text-white">{request.displayName}</span>
+                            <Link href={`/profile/${request.username}`}>
+                              {request.avatarUrl ? (
+                                <img src={request.avatarUrl} alt={request.displayName} className="h-8 w-8 rounded-full object-cover transition-transform hover:scale-105" />
+                              ) : (
+                                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-600 font-bold uppercase text-white transition-transform hover:scale-105">
+                                  {request.displayName.charAt(0)}
+                                </div>
+                              )}
+                            </Link>
+                            <Link href={`/profile/${request.username}`} className="font-bold text-white transition-colors hover:text-[#4ee8c2]">
+                              {request.displayName}
+                            </Link>
                           </div>
                         </td>
                         <td className="flex justify-end p-4">
