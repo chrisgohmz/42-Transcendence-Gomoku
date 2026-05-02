@@ -4,10 +4,11 @@ import { createContext, useContext, useEffect, useRef, useState, ReactNode } fro
 import { io, type Socket } from "socket.io-client";
 
 type PresenceContextType = {
-  onlineUsers: string[];
-};
+	onlineUsers: string[];
+	socket: Socket | null;
+  };
 
-const PresenceContext = createContext<PresenceContextType>({ onlineUsers: [] });
+  const PresenceContext = createContext<PresenceContextType>({ onlineUsers: [], socket: null });
 
 export function PresenceProvider({
   children,
@@ -20,7 +21,6 @@ export function PresenceProvider({
   const socketRef = useRef<Socket | null>(null);
 
   useEffect(() => {
-    // If there is no username, they aren't logged in, so don't connect
     if (!currentUsername) return;
 
     const socket = io({ path: "/socket.io" });
@@ -42,7 +42,7 @@ export function PresenceProvider({
   }, [currentUsername]);
 
   return (
-    <PresenceContext.Provider value={{ onlineUsers }}>
+    <PresenceContext.Provider value={{ onlineUsers, socket: socketRef.current }}>
       {children}
     </PresenceContext.Provider>
   );

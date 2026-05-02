@@ -57,12 +57,18 @@ io.on("connection", (socket) => {
 
   registerMatchSubscription(socket);
 
-  socket.on("presence:subscribe", (username: string) => {
+socket.on("presence:subscribe", (username: string) => {
     if (!username) return;
+
+    socket.join(`user:${username}`);
 
     connectedUsers.set(socket.id, username);
     const activeUsernames = Array.from(new Set(connectedUsers.values()));
     io.emit("presence:update", activeUsernames);
+  });
+
+  socket.on("friendship:notify", (targetUsername: string) => {
+    io.to(`user:${targetUsername}`).emit("friendship:refresh");
   });
 
   socket.on("disconnect", (reason) => {

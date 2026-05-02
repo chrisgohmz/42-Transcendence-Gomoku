@@ -2,8 +2,9 @@
 
 import { MessageSquare, UserMinus, Check, X, Users, UserPlus } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "@/i18n/navigation";
+import { useRouter } from "next/navigation";
 import { usePresence } from "@/components/presence-provider";
 import { removeFriend, respondToRequest, sendFriendRequest, searchUsers } from "./actions";
 
@@ -27,7 +28,20 @@ export default function FriendsContent({
 	pendingRequests,
 	sentRequests,
   }: FriendsContentProps) {
-	const { onlineUsers } = usePresence();
+	const { onlineUsers, socket } = usePresence();
+	const router = useRouter();
+
+	useEffect(() => {
+	  if (!socket) return;
+
+	  socket.on("friendship:refresh", () => {
+		router.refresh();
+	  });
+
+	  return () => {
+		socket.off("friendship:refresh");
+	  };
+	}, [socket, router]);
 	const [activeTab, setActiveTab] = useState("friends");
 	const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<any[]>([]);
@@ -61,16 +75,23 @@ export default function FriendsContent({
       setStatusMessage({ text: t("messages.requestSent", { name: targetUsername }), isError: false });
       setSearchResults([]);
       setSearchQuery("");
+      socket?.emit("friendship:notify", targetUsername);
     }
   };
 
   const handleRespond = async (friendshipId: number, accept: boolean) => {
+    const request = pendingRequests.find((r) => r.id === friendshipId);
     await respondToRequest(friendshipId, accept);
+    if (request) socket?.emit("friendship:notify", request.username);
+    router.refresh();
   };
 
   const handleRemove = async (friendshipId: number) => {
     if (window.confirm("Are you sure you want to remove this friend?")) {
+      const friend = friends.find((f) => f.id === friendshipId);
       await removeFriend(friendshipId);
+      if (friend) socket?.emit("friendship:notify", friend.username);
+      router.refresh();
     }
   };
 
