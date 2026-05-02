@@ -30,6 +30,12 @@ export default function FriendsContent({
   }: FriendsContentProps) {
     const { onlineUsers, socket } = usePresence();
     const router = useRouter();
+    const t = useTranslations("friends");
+
+    const [activeTab, setActiveTab] = useState("friends");
+    const [searchQuery, setSearchQuery] = useState("");
+    const [searchResults, setSearchResults] = useState<any[]>([]);
+    const [statusMessage, setStatusMessage] = useState<{ text: string; isError: boolean } | null>(null);
 
     useEffect(() => {
       if (!socket) return;
@@ -43,11 +49,14 @@ export default function FriendsContent({
       };
     }, [socket, router]);
 
-    const [activeTab, setActiveTab] = useState("friends");
-    const [searchQuery, setSearchQuery] = useState("");
-  const [searchResults, setSearchResults] = useState<any[]>([]);
-  const [statusMessage, setStatusMessage] = useState<{ text: string; isError: boolean } | null>(null);
-  const t = useTranslations("friends");
+    useEffect(() => {
+      if (statusMessage) {
+        const timer = setTimeout(() => {
+          setStatusMessage(null);
+        }, 1000);
+        return () => clearTimeout(timer);
+      }
+    }, [statusMessage]);
 
   const handleSearch = async () => {
     if (!searchQuery.trim()) return;

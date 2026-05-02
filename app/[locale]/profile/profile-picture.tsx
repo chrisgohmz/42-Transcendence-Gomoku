@@ -61,12 +61,12 @@ export default function ProfilePicture({ initialImage }: { initialImage?: string
       )}
 
       <div
-        className="group relative mb-6 h-[300px] w-[300px] cursor-pointer"
+        className="group relative mb-6 h-[300px] w-[300px] cursor-pointer rounded-full shadow-lg shadow-[#000000]/50"
         onMouseEnter={() => setIsHovering(true)}
         onMouseLeave={() => setIsHovering(false)}
         onClick={handleContainerClick}
       >
-        <div className="relative flex h-full w-full items-center justify-center overflow-hidden rounded-full bg-[#ccc]">
+        <div className={`relative flex h-full w-full items-center justify-center overflow-hidden rounded-full ${initialImage ? "bg-transparent" : "bg-slate-600"}`}>
           {initialImage && (
             <Image src={initialImage} alt={t("alt")} fill sizes="300px" className="object-cover" />
           )}

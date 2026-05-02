@@ -232,10 +232,11 @@ export const messages = {
     send: "Send",
   },
   profile: {
-    "title": "<name>{username}'s</name><br></br>Profile",
+    "title": "Profile",
     lede: "Manage your details and view your Gomoku game statistics.",
     editProfile: "Edit Profile",
     statsTitle: "Your Overall Statistics",
+	"friendStatsTitle": "Overall Statistics",
     stats: {
       rating: "Rating",
       winRate: "Win Rate",
