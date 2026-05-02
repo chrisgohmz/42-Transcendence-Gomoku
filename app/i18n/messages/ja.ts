@@ -172,6 +172,10 @@ export const messages = {
     messages: {
       requestSent: "{name} にフレンドリクエストを送信しました！",
     },
+	status: {
+		online: "オンライン",
+		offline: "オフライン",
+	},
   },
   human: {
     createRoom: {

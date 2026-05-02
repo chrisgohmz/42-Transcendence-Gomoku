@@ -179,6 +179,10 @@ export const messages = {
     messages: {
       requestSent: "Friend request sent to {name}!",
     },
+	status: {
+		online: "Online",
+		offline: "Offline",
+	},
   },
   human: {
     createRoom: {

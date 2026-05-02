@@ -24,26 +24,27 @@ type FriendsContentProps = {
 };
 
 export default function FriendsContent({
-	friends,
-	pendingRequests,
-	sentRequests,
+    friends,
+    pendingRequests,
+    sentRequests,
   }: FriendsContentProps) {
-	const { onlineUsers, socket } = usePresence();
-	const router = useRouter();
+    const { onlineUsers, socket } = usePresence();
+    const router = useRouter();
 
-	useEffect(() => {
-	  if (!socket) return;
+    useEffect(() => {
+      if (!socket) return;
 
-	  socket.on("friendship:refresh", () => {
-		router.refresh();
-	  });
+      socket.on("friendship:refresh", () => {
+        router.refresh();
+      });
 
-	  return () => {
-		socket.off("friendship:refresh");
-	  };
-	}, [socket, router]);
-	const [activeTab, setActiveTab] = useState("friends");
-	const [searchQuery, setSearchQuery] = useState("");
+      return () => {
+        socket.off("friendship:refresh");
+      };
+    }, [socket, router]);
+
+    const [activeTab, setActiveTab] = useState("friends");
+    const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [statusMessage, setStatusMessage] = useState<{ text: string; isError: boolean } | null>(null);
   const t = useTranslations("friends");
@@ -222,12 +223,12 @@ export default function FriendsContent({
                                 {onlineUsers.includes(friend.username) ? (
                                   <div className="flex items-center gap-1.5">
                                     <span className="h-2 w-2 rounded-full bg-[#4ee8c2] shadow-[0_0_5px_#4ee8c2]"></span>
-                                    <span className="text-xs font-bold text-[#4ee8c2]">Online</span>
+                                    <span className="text-xs font-bold text-[#4ee8c2]">{t("status.online")}</span>
                                   </div>
                                 ) : (
                                   <div className="flex items-center gap-1.5">
                                     <span className="h-2 w-2 rounded-full bg-red-500 shadow-[0_0_5px_#ef4444]"></span>
-                                    <span className="text-xs font-bold text-red-500">Offline</span>
+                                    <span className="text-xs font-bold text-red-500">{t("status.offline")}</span>
                                   </div>
                                 )}
                               </div>
@@ -280,7 +281,7 @@ export default function FriendsContent({
                     </tr>
                   ) : (
                     pendingRequests.map((request) => (
-						<tr key={request.id} className="border-b border-slate-700/50 transition-colors hover:bg-slate-800/20">
+                        <tr key={request.id} className="border-b border-slate-700/50 transition-colors hover:bg-slate-800/20">
                         <td className="p-4">
                           <div className="flex items-center gap-3">
                             {request.avatarUrl ? (
@@ -335,7 +336,7 @@ export default function FriendsContent({
                     </tr>
                   ) : (
                     sentRequests.map((request) => (
-						<tr key={request.id} className="border-b border-slate-700/50 transition-colors hover:bg-slate-800/20">
+                        <tr key={request.id} className="border-b border-slate-700/50 transition-colors hover:bg-slate-800/20">
                         <td className="p-4">
                           <div className="flex items-center gap-3">
                             {request.avatarUrl ? (

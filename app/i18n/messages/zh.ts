@@ -171,6 +171,10 @@ export const messages = {
     messages: {
       requestSent: "已向 {name} 发送好友请求！",
     },
+	status: {
+		online: "在线",
+		offline: "离线",
+	},
   },
   human: {
     createRoom: {
