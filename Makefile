@@ -1,94 +1,57 @@
+COMPOSE_BASE = docker-compose.yml
+COMPOSE_DEV = docker-compose.dev.yml
+COMPOSE = docker compose -f $(COMPOSE_BASE) -f $(COMPOSE_DEV)
 
-COMPOSE = docker compose -f $(COMPOSE_FILE) -f $(COMPOSE_FILE_DEV)
-COMPOSE_FILE = docker-compose.yml
-COMPOSE_FILE_DEV = docker-compose.dev.yml
-
-
-.DEFAULT_GOAL := all
+.DEFAULT_GOAL := help
 
 dev:
 	$(COMPOSE) up --build
 
-# Clean + remove images related to the project
+dev-detached:
+	$(COMPOSE) up --build -d
+
+stop:
+	$(COMPOSE) stop
+
+down:
+	$(COMPOSE) down
+
+logs:
+	$(COMPOSE) logs -f
+
+ps:
+	$(COMPOSE) ps
+
+restart:
+	$(COMPOSE) restart
+
+clean:
+	$(COMPOSE) down --remove-orphans
+
 fclean:
 	$(COMPOSE) down -v --rmi all --remove-orphans
 
+db-reset:
+	$(COMPOSE) down -v
+	$(COMPOSE) up --build
 
-# # Build the images + start containers
-# all: $(DATA_DIR) build up print_art_alive
-# 	@echo '$(START_MESSAGE)'
+help:
+	@echo "Targets:"
+	@echo "  make dev           Build and run the dev stack in the foreground"
+	@echo "  make dev-detached  Build and run the dev stack in the background"
+	@echo "  make logs          Follow logs from all dev stack containers"
+	@echo "  make ps            Show dev stack container status"
+	@echo "  make stop          Stop containers without removing them"
+	@echo "  make down          Stop and remove containers, preserving volumes"
+	@echo "  make restart       Restart existing containers"
+	@echo "  make clean         Stop and remove containers plus orphan containers"
+	@echo "  make fclean        Remove containers, volumes, images, and orphans"
+	@echo "  make db-reset      Remove volumes, then rebuild and start dev stack"
+	@echo ""
+	@echo "Notes:"
+	@echo "  dev runs in the foreground; press Ctrl+C to stop it."
+	@echo "  dev-detached runs in the background; use make logs to inspect output."
+	@echo "  fclean and db-reset are destructive because they remove volumes,"
+	@echo "  including the PostgreSQL database volume."
 
-# # Build the docker images
-# build:
-# 	$(COMPOSE) build
-
-# # Start the containers. -d to start in detached mode to run the containers
-# # in the background
-# up:
-# 	$(COMPOSE) up -d
-
-# # Remove containers + networks but preserve the volumes
-# down: print_art_dead
-# 	$(COMPOSE) down
-
-# # Stop running the containers without removing them. Think "pause"
-# stop:
-# 	$(COMPOSE) stop
-
-# # Remove containers + networks + volumes
-# clean:
-# 	$(COMPOSE) down -v
-
-# # Clean + remove images related to the project
-# fclean:
-# 	$(COMPOSE) down -v --rmi all --remove-orphans
-
-# # # fclean then make all
-# # re: fclean all
-
-# # Docker Compose Process Status
-# ps: print_art_ps
-# 	$(COMPOSE) ps
-
-# print_art_alive:
-# 	@echo "       ."
-# 	@echo "      \":\""
-# 	@echo "    ___:____     |\"\\/\"|"
-# 	@echo "  ,'        \`.    \\  /"
-# 	@echo "  |  O        \\___/  |"
-# 	@echo "~^~^~^~^~^~^~^~^~^~^~^~^~"
-
-# print_art_dead:
-# 	@echo "       ."
-# 	@echo "      \":\""
-# 	@echo "    ___:____     |\"\\/\"|"
-# 	@echo "  ,'        \`.    \\  /"
-# 	@echo "  |  X        \\___/  |"
-# 	@echo "~^~^~^~^~^~^~^~^~^~^~^~^~"
-
-# print_art_ps:
-# 	@echo "            ~     ~"
-# 	@echo "       .        ~"
-# 	@echo "      \":\""
-# 	@echo "    ___:____     |\"\\/\"|    ~"
-# 	@echo "  ,'        \`.    \\  /"
-# 	@echo "  |  O        \\___/  |~~~"
-# 	@echo "   \\   ~~~            /"
-# 	@echo "    \\      ~~~        /"
-# 	@echo "     \`-._________.-\'"
-# 	@echo "        ~  ~  ~   ~"
-# 	@echo "~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~"
-
-# help:
-# 	@echo "make		→ build images + run containers"
-# 	@echo "make down	→ stop and remove containers"
-# 	@echo "make build	→ build the docker images"
-# 	@echo "make stop	→ stop the containers (pause)"
-# 	@echo "make clean	→ remove containers + volumes"
-# 	@echo "make fclean	→ remove containers + volumes + images"
-# 	@echo "make re		→ fclean + all"
-# 	@echo "make ps		→ check the status of the containers for this project"
-
-.PHONY: all build up down stop clean fclean re print_art_alive print_art_dead help
-
-
+.PHONY: dev dev-detached stop down logs ps restart clean fclean db-reset help
