@@ -9,10 +9,10 @@ import {
 describe("auth/profile validation", () => {
   test("normalizes valid signup input", () => {
     const result = validateSignupInput({
-      displayName: "  Max  ",
-      email: "  MAX@example.COM ",
+      displayName: "Max",
+      email: "MAX@example.COM",
       password: "password123",
-      username: " max_player ",
+      username: "max_player",
     });
 
     expect(result).toMatchObject({
@@ -21,6 +21,85 @@ describe("auth/profile validation", () => {
         email: "max@example.com",
         password: "password123",
         username: "max_player",
+      },
+      ok: true,
+    });
+  });
+
+  test("preserves display name whitespace", () => {
+    const signupResult = validateSignupInput({
+      displayName: "  Max  ",
+      email: "max@example.com",
+      password: "password123",
+      username: "max_player",
+    });
+    const profileResult = validateProfileSettingsInput({
+      displayName: "  Max J  ",
+    });
+
+    expect(signupResult).toMatchObject({
+      data: {
+        displayName: "  Max  ",
+      },
+      ok: true,
+    });
+    expect(profileResult).toMatchObject({
+      data: {
+        displayName: "  Max J  ",
+      },
+      ok: true,
+    });
+  });
+
+  test("rejects usernames with surrounding whitespace", () => {
+    const result = validateSignupInput({
+      displayName: "Max",
+      email: "max@example.com",
+      password: "password123",
+      username: " max_player ",
+    });
+
+    expect(result).toMatchObject({
+      issues: [{ code: "invalidUsername", field: "username" }],
+      ok: false,
+    });
+  });
+
+  test("rejects emails with surrounding whitespace", () => {
+    const result = validateSignupInput({
+      displayName: "Max",
+      email: " max@example.com ",
+      password: "password123",
+      username: "max_player",
+    });
+
+    expect(result).toMatchObject({
+      issues: [{ code: "invalidEmail", field: "email" }],
+      ok: false,
+    });
+  });
+
+  test("preserves leading and trailing password spaces", () => {
+    const signupResult = validateSignupInput({
+      displayName: "Max",
+      email: "max@example.com",
+      password: "  password123  ",
+      username: "max_player",
+    });
+    const loginResult = validateLoginInput({
+      email: "max@example.com",
+      password: "  password123  ",
+    });
+
+    expect(signupResult).toMatchObject({
+      data: {
+        password: "  password123  ",
+      },
+      ok: true,
+    });
+    expect(loginResult).toMatchObject({
+      data: {
+        password: "  password123  ",
       },
       ok: true,
     });
@@ -52,7 +131,7 @@ describe("auth/profile validation", () => {
     expect(result).toMatchObject({
       issues: [
         { code: "emailRequired", field: "email" },
-        { code: "passwordRequired", field: "password" },
+        { code: "shortPassword", field: "password" },
       ],
       ok: false,
     });
@@ -60,7 +139,7 @@ describe("auth/profile validation", () => {
 
   test("allows profile updates without a password change", () => {
     const result = validateProfileSettingsInput({
-      displayName: "  Max J  ",
+      displayName: "Max J",
     });
 
     expect(result).toMatchObject({

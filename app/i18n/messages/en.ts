@@ -126,8 +126,6 @@ export const messages = {
       loginUnavailable: "Unable to sign you in right now.",
       requiredSignupFields: "Email, username, and password are required.",
       emailRequired: "Email is required.",
-      passwordRequired: "Password is required.",
-      usernameRequired: "Username is required.",
       invalidEmail: "Please enter a valid email address.",
       emailTooLong: "Email must be 254 characters or fewer.",
       shortUsername: "Username must be at least 3 characters long.",

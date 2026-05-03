@@ -119,8 +119,6 @@ export const messages = {
       loginUnavailable: "現在ログインできません。",
       requiredSignupFields: "メール、ユーザー名、パスワードは必須です。",
       emailRequired: "メールアドレスは必須です。",
-      passwordRequired: "パスワードは必須です。",
-      usernameRequired: "ユーザー名は必須です。",
       invalidEmail: "有効なメールアドレスを入力してください。",
       emailTooLong: "メールアドレスは 254 文字以内にしてください。",
       shortUsername: "ユーザー名は 3 文字以上にしてください。",

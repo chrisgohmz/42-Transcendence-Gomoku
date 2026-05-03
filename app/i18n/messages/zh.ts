@@ -118,8 +118,6 @@ export const messages = {
       loginUnavailable: "现在无法登录。",
       requiredSignupFields: "邮箱、用户名和密码为必填项。",
       emailRequired: "邮箱为必填项。",
-      passwordRequired: "密码为必填项。",
-      usernameRequired: "用户名为必填项。",
       invalidEmail: "请输入有效的邮箱地址。",
       emailTooLong: "邮箱不能超过 254 个字符。",
       shortUsername: "用户名至少需要 3 个字符。",

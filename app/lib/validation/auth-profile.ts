@@ -2,7 +2,6 @@ import { z } from "zod";
 
 import { authValidationLimits } from "./auth-profile-limits";
 
-const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const usernamePattern = /^[A-Za-z0-9_-]+$/;
 
 export type AuthField = "displayName" | "email" | "password" | "username";
@@ -18,11 +17,9 @@ export type AuthValidationIssueCode =
   | "emailTooLong"
   | "invalidEmail"
   | "invalidUsername"
-  | "passwordRequired"
   | "passwordTooLong"
   | "shortPassword"
   | "shortUsername"
-  | "usernameRequired"
   | "usernameTooLong";
 
 export type ProfileSettingsValidationIssueCode =
@@ -75,11 +72,9 @@ const authIssueCodes: readonly AuthValidationIssueCode[] = [
   "emailTooLong",
   "invalidEmail",
   "invalidUsername",
-  "passwordRequired",
   "passwordTooLong",
   "shortPassword",
   "shortUsername",
-  "usernameRequired",
   "usernameTooLong",
 ];
 const profileSettingsIssueCodes: readonly ProfileSettingsValidationIssueCode[] = [
@@ -97,18 +92,6 @@ function getString(value: unknown): string {
   return typeof value === "string" ? value : "";
 }
 
-export function normalizeEmail(email: string): string {
-  return email.trim().toLowerCase();
-}
-
-export function normalizeUsername(username: string): string {
-  return username.trim();
-}
-
-function normalizePassword(password: unknown): string {
-  return getString(password).trim();
-}
-
 function objectFromUnknown<Shape extends z.ZodRawShape>(shape: Shape) {
   return z.preprocess(
     (value) => (typeof value === "object" && value !== null && !Array.isArray(value) ? value : {}),
@@ -116,11 +99,44 @@ function objectFromUnknown<Shape extends z.ZodRawShape>(shape: Shape) {
   );
 }
 
-const normalizedStringSchema = z.unknown().optional().transform(getString);
-const normalizedEmailSchema = normalizedStringSchema.transform(normalizeEmail);
-const normalizedPasswordSchema = normalizedStringSchema.transform(normalizePassword);
-const normalizedUsernameSchema = normalizedStringSchema.transform(normalizeUsername);
-const trimmedStringSchema = normalizedStringSchema.transform((value) => value.trim());
+const stringFromUnknownSchema = z.unknown().optional().transform(getString);
+const optionalDisplayNameSchema = stringFromUnknownSchema.pipe(
+  z.string().max(authValidationLimits.displayNameMaxLength, {
+    abort: true,
+    error: "displayNameTooLong",
+  }),
+);
+const requiredDisplayNameSchema = stringFromUnknownSchema.pipe(
+  z
+    .string()
+    .min(1, { abort: true, error: "displayNameRequired" })
+    .max(authValidationLimits.displayNameMaxLength, {
+      abort: true,
+      error: "displayNameTooLong",
+    }),
+);
+const emailSchema = stringFromUnknownSchema.pipe(
+  z
+    .string()
+    .min(1, { abort: true, error: "emailRequired" })
+    .max(authValidationLimits.emailMaxLength, { abort: true, error: "emailTooLong" })
+    .toLowerCase()
+    .pipe(z.email({ error: "invalidEmail" })),
+);
+const loginPasswordSchema = stringFromUnknownSchema.pipe(
+  z
+    .string()
+    .min(authValidationLimits.passwordMinLength, { abort: true, error: "shortPassword" })
+    .max(authValidationLimits.passwordMaxLength, { abort: true, error: "passwordTooLong" }),
+);
+const profilePasswordSchema = stringFromUnknownSchema;
+const usernameSchema = stringFromUnknownSchema.pipe(
+  z
+    .string()
+    .min(authValidationLimits.usernameMinLength, { abort: true, error: "shortUsername" })
+    .max(authValidationLimits.usernameMaxLength, { abort: true, error: "usernameTooLong" })
+    .regex(usernamePattern, { error: "invalidUsername" }),
+);
 
 function addZodIssue<Field extends string, Code extends string>(
   ctx: z.RefinementCtx,
@@ -177,88 +193,32 @@ function zodResultToValidationResult<Data, Field extends string, Code extends st
 }
 
 const loginInputSchema = objectFromUnknown({
-  email: normalizedEmailSchema,
-  password: normalizedPasswordSchema,
-}).superRefine((input, ctx) => {
-  if (!input.email) {
-    addZodIssue(ctx, "email", "emailRequired");
-  } else if (input.email.length > authValidationLimits.emailMaxLength) {
-    addZodIssue(ctx, "email", "emailTooLong");
-  } else if (!emailPattern.test(input.email)) {
-    addZodIssue(ctx, "email", "invalidEmail");
-  }
-
-  if (!input.password) {
-    addZodIssue(ctx, "password", "passwordRequired");
-  } else if (input.password.length < authValidationLimits.passwordMinLength) {
-    addZodIssue(ctx, "password", "shortPassword");
-  } else if (input.password.length > authValidationLimits.passwordMaxLength) {
-    addZodIssue(ctx, "password", "passwordTooLong");
-  }
+  email: emailSchema,
+  password: loginPasswordSchema,
 });
 
 const signupInputSchema = objectFromUnknown({
-  displayName: trimmedStringSchema,
-  email: normalizedEmailSchema,
-  password: normalizedPasswordSchema,
-  username: normalizedUsernameSchema,
-})
-  .superRefine((input, ctx) => {
-    const displayName = input.displayName || input.username;
-
-    if (!input.email) {
-      addZodIssue(ctx, "email", "emailRequired");
-    } else if (input.email.length > authValidationLimits.emailMaxLength) {
-      addZodIssue(ctx, "email", "emailTooLong");
-    } else if (!emailPattern.test(input.email)) {
-      addZodIssue(ctx, "email", "invalidEmail");
-    }
-
-    if (!input.username) {
-      addZodIssue(ctx, "username", "usernameRequired");
-    } else if (input.username.length < authValidationLimits.usernameMinLength) {
-      addZodIssue(ctx, "username", "shortUsername");
-    } else if (input.username.length > authValidationLimits.usernameMaxLength) {
-      addZodIssue(ctx, "username", "usernameTooLong");
-    } else if (!usernamePattern.test(input.username)) {
-      addZodIssue(ctx, "username", "invalidUsername");
-    }
-
-    if (displayName.length > authValidationLimits.displayNameMaxLength) {
-      addZodIssue(ctx, "displayName", "displayNameTooLong");
-    }
-
-    if (!input.password) {
-      addZodIssue(ctx, "password", "passwordRequired");
-    } else if (input.password.length < authValidationLimits.passwordMinLength) {
-      addZodIssue(ctx, "password", "shortPassword");
-    } else if (input.password.length > authValidationLimits.passwordMaxLength) {
-      addZodIssue(ctx, "password", "passwordTooLong");
-    }
-  })
-  .transform((input) => ({
-    displayName: input.displayName || input.username,
-    email: input.email,
-    password: input.password,
-    username: input.username,
-  }));
+  email: emailSchema,
+  username: usernameSchema,
+  displayName: optionalDisplayNameSchema,
+  password: loginPasswordSchema,
+}).transform((input) => ({
+  displayName: input.displayName || input.username,
+  email: input.email,
+  password: input.password,
+  username: input.username,
+}));
 
 const profileSettingsInputSchema = objectFromUnknown({
-  confirmPassword: normalizedPasswordSchema,
-  currentPassword: normalizedPasswordSchema,
-  displayName: trimmedStringSchema,
-  newPassword: normalizedPasswordSchema,
+  displayName: requiredDisplayNameSchema,
+  currentPassword: profilePasswordSchema,
+  newPassword: profilePasswordSchema,
+  confirmPassword: profilePasswordSchema,
 })
   .superRefine((input, ctx) => {
     const wantsToChangePassword = Boolean(
       input.currentPassword || input.newPassword || input.confirmPassword,
     );
-
-    if (!input.displayName) {
-      addZodIssue(ctx, "displayName", "displayNameRequired");
-    } else if (input.displayName.length > authValidationLimits.displayNameMaxLength) {
-      addZodIssue(ctx, "displayName", "displayNameTooLong");
-    }
 
     if (!wantsToChangePassword) {
       return;
