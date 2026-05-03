@@ -2,6 +2,9 @@ import { notFound } from "next/navigation";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { prisma } from "@/lib/prisma";
 import { User } from "lucide-react";
+import ProfilePresence from "./profile-presence";
+import ProfileActions from "./profile-actions";
+import { getCurrentSession } from "@/lib/auth";
 
 type ProfilePageProps = {
   params: Promise<{
@@ -27,6 +30,39 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
     notFound();
   }
 
+  const session = await getCurrentSession();
+  const loggedInUserId = session?.user?.id;
+
+  let relationshipState: "NOT_FRIENDS" | "FRIENDS" | "REQUEST_SENT" | "REQUEST_RECEIVED" | "SELF" = "NOT_FRIENDS";
+
+  if (loggedInUserId) {
+    if (loggedInUserId === userProfile.id) {
+      relationshipState = "SELF";
+    } else {
+      const userLowId = loggedInUserId < userProfile.id ? loggedInUserId : userProfile.id;
+      const userHighId = loggedInUserId < userProfile.id ? userProfile.id : loggedInUserId;
+
+      const friendship = await prisma.friendship.findUnique({
+        where: {
+          userLowId_userHighId: {
+            userLowId,
+            userHighId,
+          },
+        },
+      });
+
+      if (friendship) {
+        if (friendship.status === "ACCEPTED") {
+          relationshipState = "FRIENDS";
+        } else if (friendship.status === "PENDING") {
+          relationshipState = friendship.requestedById === loggedInUserId
+            ? "REQUEST_SENT"
+            : "REQUEST_RECEIVED";
+        }
+      }
+    }
+  }
+
   const statsList = userProfile.gameStats || [];
   const wins = statsList.reduce((total, stat) => total + stat.wins, 0);
   const losses = statsList.reduce((total, stat) => total + stat.losses, 0);
@@ -37,7 +73,7 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
 
   return (
     <main className="shell">
-      <section className="mt-4 mb-12 flex flex-col items-center">
+      <section className="mt-4 mb-2 flex flex-col items-center">
         <div className="mb-6 flex items-center gap-4">
           <User className="h-12 w-12 text-[#4ee8c2]" />
           <h1 className="m-0 text-5xl font-bold">{t("title")}</h1>
@@ -52,17 +88,31 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
               <img
                 src={userProfile.avatarUrl}
                 alt={userProfile.displayName}
-                className="mb-6 h-48 w-48 rounded-full object-cover shadow-lg shadow-[#000000]/50"
+                className="mb-6 h-[300px] w-[300px] rounded-full object-cover bg-transparent shadow-lg shadow-[#000000]/50"
               />
             ) : (
-              <div className="flex h-48 w-48 items-center justify-center rounded-full bg-slate-600 text-6xl font-bold uppercase text-white shadow-lg shadow-[#000000]/50">
+              <div className="mb-6 flex h-[300px] w-[300px] items-center justify-center rounded-full bg-slate-600 text-8xl font-bold uppercase text-white shadow-lg shadow-[#000000]/50">
                 {userProfile.displayName.charAt(0)}
               </div>
             )}
-            <h2 className="m-0 px-4 text-2xl font-bold capitalize">
+            <h2 className="m-0 mb-1 px-4 text-2xl font-bold capitalize">
               {userProfile.displayName}
             </h2>
-            <p className="meta m-0 text-sm text-slate-400">@{userProfile.username}</p>
+            <div className="flex items-center justify-center gap-4">
+              <p className="meta m-0 text-sm text-slate-400">@{userProfile.username}</p>
+
+              {(relationshipState === "FRIENDS" || relationshipState === "SELF") && (
+                <ProfilePresence username={userProfile.username} />
+              )}
+
+            </div>
+
+            <ProfileActions
+              targetUserId={userProfile.id}
+              targetUsername={userProfile.username}
+              initialState={relationshipState}
+            />
+
           </article>
 
           <div className="flex flex-2 flex-col gap-8">
