@@ -1,6 +1,6 @@
 import { createId } from "@paralleldrive/cuid2";
 
-import { hashPassword } from "../app/lib/auth";
+import { hashPassword } from "../app/lib/password";
 import { prisma } from "../app/lib/prisma";
 import {
   ConversationKind,

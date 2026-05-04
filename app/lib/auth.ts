@@ -1,19 +1,14 @@
 import "server-only";
-import { randomBytes, scrypt as nodeScrypt, timingSafeEqual } from "node:crypto";
-import { promisify } from "node:util";
-
 import { createId } from "@paralleldrive/cuid2";
 import { cookies, headers } from "next/headers";
 
 import type { Prisma, User, UserSession } from "../../generated/prisma/client";
+export { hashPassword, verifyPassword } from "./password";
 import { prisma } from "./prisma";
 
 const SESSION_COOKIE_NAME = "gomoku_session";
 const SESSION_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
 const SESSION_REFRESH_THRESHOLD_MS = 24 * 60 * 60 * 1000; // 1 day
-const HASH_LENGTH = 64;
-const SALT_LENGTH = 16;
-const scrypt = promisify(nodeScrypt);
 
 type AuthContext = {
   user: User;
@@ -45,38 +40,6 @@ async function getRequestHeaders(request?: Request): Promise<Headers> {
   }
 
   return new Headers(await headers());
-}
-
-export async function hashPassword(password: string): Promise<string> {
-  const salt = randomBytes(SALT_LENGTH);
-  const derivedKey = (await scrypt(password, salt, HASH_LENGTH)) as Buffer;
-
-  return `${salt.toString("base64")}:${derivedKey.toString("base64")}`;
-}
-
-export async function verifyPassword(
-  password: string,
-  passwordHash: string | null,
-): Promise<boolean> {
-  if (!passwordHash) {
-    return false;
-  }
-
-  const [salt, storedHash] = passwordHash.split(":");
-
-  if (!salt || !storedHash) {
-    return false;
-  }
-
-  const saltBuffer = Buffer.from(salt, "base64");
-  const storedHashBuffer = Buffer.from(storedHash, "base64");
-  const derivedKey = (await scrypt(password, saltBuffer, storedHashBuffer.length)) as Buffer;
-
-  if (derivedKey.length !== storedHashBuffer.length) {
-    return false;
-  }
-
-  return timingSafeEqual(storedHashBuffer, derivedKey);
 }
 
 async function setSessionCookie(token: string, expiresAt: Date) {
