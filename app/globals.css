@@ -261,11 +261,39 @@ h1 {
   color: var(--danger);
 }
 
+.field-errors {
+  display: grid;
+  gap: 0.2rem;
+  padding: 0;
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--danger);
+  list-style: none;
+}
+
 .inline-links {
   display: flex;
   flex-wrap: wrap;
   gap: 0.75rem;
   align-items: center;
+}
+
+.locale-switcher select {
+  padding: 0.45rem 0.65rem;
+  font: inherit;
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--text);
+  cursor: pointer;
+  color-scheme: dark;
+  background: rgb(166 194 255 / 10%);
+  border: 1px solid rgb(166 194 255 / 24%);
+  border-radius: 8px;
+}
+
+.locale-switcher select:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 @media (width <= 640px) {

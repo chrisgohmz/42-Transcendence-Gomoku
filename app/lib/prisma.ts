@@ -31,6 +31,8 @@ function getPrisma(): PrismaClient {
   const adapter = new PrismaPg(pool);
   const cuidModels = new Set([
     "User",
+    "Account",
+    "Verification",
     "OAuthAccount",
     "UserSession",
     "Conversation",

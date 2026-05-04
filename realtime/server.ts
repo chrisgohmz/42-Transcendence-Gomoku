@@ -6,6 +6,10 @@ import { Server as Engine } from "@socket.io/bun-engine";
 import { config } from "dotenv";
 import { Server } from "socket.io";
 
+import { isGameUpdatePayload } from "../shared/match-events-validation";
+import { registerMatchSubscription } from "./handlers/match-subscription";
+import { matchRoomId } from "./lib/rooms";
+
 const currentDirectory = dirname(fileURLToPath(import.meta.url));
 const rootEnvPath = resolve(currentDirectory, "../.env");
 
@@ -47,6 +51,9 @@ io.bind(engine);
 
 io.on("connection", (socket) => {
   console.log(`Socket.IO client connected: ${socket.id}`);
+  console.log(`[realtime] connected: ${socket.id}`);
+
+  registerMatchSubscription(socket);
 
   socket.on("disconnect", (reason) => {
     console.log(`Socket.IO client disconnected: ${socket.id} (${reason})`);
@@ -54,6 +61,24 @@ io.on("connection", (socket) => {
 });
 
 const engineHandler = engine.handler();
+
+async function handleInternalGameUpdate(request: Request) {
+  let payload: unknown;
+  try {
+    payload = await request.json();
+  } catch {
+    return Response.json({ error: "invalid_payload" }, { status: 400 });
+  }
+
+  if (!isGameUpdatePayload(payload)) {
+    return Response.json({ error: "invalid_payload" }, { status: 400 });
+  }
+
+  const room = matchRoomId(payload.matchId);
+  io.to(room).emit("game:update", payload);
+  console.log(`[realtime] broadcast game:update to ${room}`);
+  return Response.json({ ok: true, room });
+}
 
 Bun.serve({
   hostname,
@@ -67,6 +92,10 @@ Bun.serve({
         status: "ok",
         checkedAt: new Date().toISOString(),
       });
+    }
+
+    if (url.pathname === "/internal/game-update" && request.method === "POST") {
+      return handleInternalGameUpdate(request);
     }
 
     if (url.pathname === socketPath) {

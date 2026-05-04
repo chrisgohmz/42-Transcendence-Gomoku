@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 import { io } from "socket.io-client";
 
@@ -48,14 +49,21 @@ function toneForStatus(status: PanelStatus): Tone {
   return "down";
 }
 
-function getErrorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : "Unknown error";
+function getErrorMessage(error: unknown, fallback: string): string {
+  return error instanceof Error ? error.message : fallback;
 }
 
 export function StatusPanel({ socketUrl }: StatusPanelProps) {
+  const t = useTranslations("statusPanel");
+  const awaitingSocket = t("awaitingSocket");
+  const unknownError = t("unknownError");
   const [health, setHealth] = useState<AppHealth | null>(null);
   const [socketState, setSocketState] = useState<PanelStatus>("connecting");
-  const [lastSignal, setLastSignal] = useState("Awaiting socket activity");
+  const [lastSignal, setLastSignal] = useState(awaitingSocket);
+
+  useEffect(() => {
+    setLastSignal(awaitingSocket);
+  }, [awaitingSocket]);
 
   useEffect(() => {
     let active = true;
@@ -73,7 +81,7 @@ export function StatusPanel({ socketUrl }: StatusPanelProps) {
           setHealth({
             status: "degraded",
             database: "unreachable",
-            error: getErrorMessage(error),
+            error: getErrorMessage(error, unknownError),
           });
         }
       }
@@ -88,7 +96,7 @@ export function StatusPanel({ socketUrl }: StatusPanelProps) {
       active = false;
       clearInterval(timer);
     };
-  }, []);
+  }, [unknownError]);
 
   useEffect(() => {
     const socket = io(socketUrl, {
@@ -97,17 +105,21 @@ export function StatusPanel({ socketUrl }: StatusPanelProps) {
 
     socket.on("connect", () => {
       setSocketState("connected");
-      setLastSignal("Connected to realtime service");
+      setLastSignal(t("connected"));
     });
 
     socket.on("disconnect", (reason) => {
       setSocketState("disconnected");
-      setLastSignal(`Disconnected: ${reason}`);
+      setLastSignal(t("disconnected", { reason }));
     });
 
     socket.on("connect_error", (error) => {
       setSocketState("error");
-      setLastSignal(`Connection error: ${getErrorMessage(error)}`);
+      setLastSignal(
+        t("connectionError", {
+          message: getErrorMessage(error, unknownError),
+        }),
+      );
     });
 
     socket.on("welcome", (payload: WelcomePayload) => {
@@ -115,13 +127,13 @@ export function StatusPanel({ socketUrl }: StatusPanelProps) {
     });
 
     socket.on("heartbeat", (payload: HeartbeatPayload) => {
-      setLastSignal(`Heartbeat at ${payload.timestamp}`);
+      setLastSignal(t("heartbeat", { timestamp: payload.timestamp }));
     });
 
     return () => {
       socket.close();
     };
-  }, [socketUrl]);
+  }, [socketUrl, t, unknownError]);
 
   const appStatus = health?.status ?? "checking";
   const databaseStatus = health?.database ?? "checking";
@@ -130,23 +142,31 @@ export function StatusPanel({ socketUrl }: StatusPanelProps) {
     <section className="panel">
       <div className="panel-grid">
         <article className="card">
-          <div className="label">App</div>
-          <div className={`value ${toneForStatus(appStatus)}`}>{appStatus}</div>
+          <div className="label">{t("app")}</div>
+          <div className={`value ${toneForStatus(appStatus)}`}>{t(`statuses.${appStatus}`)}</div>
         </article>
         <article className="card">
-          <div className="label">Database</div>
-          <div className={`value ${toneForStatus(databaseStatus)}`}>{databaseStatus}</div>
+          <div className="label">{t("database")}</div>
+          <div className={`value ${toneForStatus(databaseStatus)}`}>
+            {t(`statuses.${databaseStatus}`)}
+          </div>
         </article>
         <article className="card">
-          <div className="label">Socket.IO</div>
-          <div className={`value ${toneForStatus(socketState)}`}>{socketState}</div>
+          <div className="label">{t("socket")}</div>
+          <div className={`value ${toneForStatus(socketState)}`}>
+            {t(`statuses.${socketState}`)}
+          </div>
         </article>
       </div>
       <div className="meta">
-        <div>Socket target: {socketUrl}</div>
-        <div>Last signal: {lastSignal}</div>
-        {health?.error ? <div>Last health error: {health.error}</div> : null}
-        <div>Health checked: {health?.checkedAt ?? "Waiting for first response"}</div>
+        <div>{t("socketTarget", { socketUrl })}</div>
+        <div>{t("lastSignal", { signal: lastSignal })}</div>
+        {health?.error ? <div>{t("lastHealthError", { error: health.error })}</div> : null}
+        <div>
+          {t("healthChecked", {
+            checkedAt: health?.checkedAt ?? t("waitingForFirstResponse"),
+          })}
+        </div>
       </div>
     </section>
   );

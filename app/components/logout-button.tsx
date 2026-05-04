@@ -1,7 +1,9 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useState } from "react";
+
+import { useRouter } from "@/i18n/navigation";
 
 type LogoutError = {
   message?: string;
@@ -11,6 +13,7 @@ type LogoutError = {
 
 export const LogoutButton = () => {
   const router = useRouter();
+  const t = useTranslations("logout");
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -25,8 +28,7 @@ export const LogoutButton = () => {
 
       if (!response.ok) {
         const payload = (await response.json().catch(() => null)) as LogoutError | null;
-        const message =
-          payload?.message ?? payload?.detail ?? "Unable to end your session right now.";
+        const message = payload?.message ?? payload?.detail ?? t("unavailable");
         setError(message);
         return;
       }
@@ -34,10 +36,7 @@ export const LogoutButton = () => {
       router.push("/login");
       router.refresh();
     } catch (unknownError) {
-      const message =
-        unknownError instanceof Error
-          ? unknownError.message
-          : "Unexpected error while logging out.";
+      const message = unknownError instanceof Error ? unknownError.message : t("unexpected");
       setError(message);
     } finally {
       setPending(false);
@@ -47,7 +46,7 @@ export const LogoutButton = () => {
   return (
     <div className="form-grid">
       <button type="button" className="btn btn-off" onClick={handleLogout} disabled={pending}>
-        {pending ? "Signing out…" : "Sign out"}
+        {pending ? t("submitting") : t("submit")}
       </button>
       {error ? (
         <p className="error-text" role="alert">
