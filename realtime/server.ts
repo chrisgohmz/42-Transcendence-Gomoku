@@ -1,11 +1,9 @@
 import { existsSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-
 import { Server as Engine } from "@socket.io/bun-engine";
 import { config } from "dotenv";
 import { Server } from "socket.io";
-
 import { isGameUpdatePayload } from "../shared/match-events-validation";
 import { registerMatchSubscription } from "./handlers/match-subscription";
 import { matchRoomId } from "./lib/rooms";
@@ -23,15 +21,14 @@ const socketPath = process.env["SOCKET_PATH"] ?? "/socket.io/";
 
 function readCorsOrigins(): string[] {
   const configuredOrigins = process.env["SOCKET_CORS_ORIGIN"];
-
   if (!configuredOrigins) {
     return ["http://localhost:3000", "https://localhost:8443"];
   }
-
   return configuredOrigins.split(",").map((origin) => origin.trim());
 }
 
 const corsOrigins = readCorsOrigins();
+
 const engine = new Engine({
   path: socketPath,
   cors: {
@@ -39,6 +36,7 @@ const engine = new Engine({
     methods: ["GET", "POST"],
   },
 });
+
 const io = new Server({
   path: socketPath,
   cors: {
@@ -57,11 +55,9 @@ io.on("connection", (socket) => {
 
   registerMatchSubscription(socket);
 
-socket.on("presence:subscribe", (username: string) => {
+  socket.on("presence:subscribe", (username: string) => {
     if (!username) return;
-
-    socket.join(`user:${username}`);
-
+    void socket.join(`user:${username}`);
     connectedUsers.set(socket.id, username);
     const activeUsernames = Array.from(new Set(connectedUsers.values()));
     io.emit("presence:update", activeUsernames);
@@ -73,7 +69,6 @@ socket.on("presence:subscribe", (username: string) => {
 
   socket.on("disconnect", (reason) => {
     console.log(`Socket.IO client disconnected: ${socket.id} (${reason})`);
-
     if (connectedUsers.has(socket.id)) {
       connectedUsers.delete(socket.id);
       const activeUsernames = Array.from(new Set(connectedUsers.values()));

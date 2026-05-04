@@ -53,7 +53,7 @@ export async function processFriendAction(targetUserId: string, action: "ADD" | 
     revalidatePath("/[locale]/profile/[username]", "page");
     return { success: true };
 
-  } catch (error) {
+  } catch {
     return { error: "Something went wrong." };
   }
 }

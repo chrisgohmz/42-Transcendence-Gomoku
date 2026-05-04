@@ -5,6 +5,7 @@ import { User } from "lucide-react";
 import ProfilePresence from "./profile-presence";
 import ProfileActions from "./profile-actions";
 import { getCurrentSession } from "@/lib/auth";
+import Image from "next/image";
 
 type ProfilePageProps = {
   params: Promise<{
@@ -15,7 +16,6 @@ type ProfilePageProps = {
 
 export default async function ProfilePage({ params }: ProfilePageProps) {
   const { locale, username } = await params;
-
   setRequestLocale(locale);
   const t = await getTranslations({ locale, namespace: "profile" });
 
@@ -67,7 +67,6 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
   const wins = statsList.reduce((total, stat) => total + stat.wins, 0);
   const losses = statsList.reduce((total, stat) => total + stat.losses, 0);
   const played = statsList.reduce((total, stat) => total + stat.matchesPlayed, 0);
-
   const rating = statsList.length > 0 ? Math.max(...statsList.map(s => s.rating || 0)) : 0;
   const winRate = played > 0 ? Math.round((wins / played) * 100) : 0;
 
@@ -82,12 +81,13 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
 
       <section className="panel">
         <div className="flex w-full flex-row items-stretch gap-8">
-
           <article className="card flex flex-1 flex-col items-center overflow-hidden text-center py-8">
             {userProfile.avatarUrl ? (
-              <img
+              <Image
                 src={userProfile.avatarUrl}
                 alt={userProfile.displayName}
+                width={300}
+                height={300}
                 className="mb-6 h-[300px] w-[300px] rounded-full object-cover bg-transparent shadow-lg shadow-[#000000]/50"
               />
             ) : (
@@ -100,19 +100,15 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
             </h2>
             <div className="flex items-center justify-center gap-4">
               <p className="meta m-0 text-sm text-slate-400">@{userProfile.username}</p>
-
               {(relationshipState === "FRIENDS" || relationshipState === "SELF") && (
                 <ProfilePresence username={userProfile.username} />
               )}
-
             </div>
-
             <ProfileActions
               targetUserId={userProfile.id}
               targetUsername={userProfile.username}
               initialState={relationshipState}
             />
-
           </article>
 
           <div className="flex flex-2 flex-col gap-8">
@@ -138,7 +134,6 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
               </div>
             </article>
           </div>
-
         </div>
       </section>
     </main>

@@ -25,12 +25,11 @@ export default async function EditProfilePage({ params }: EditProfilePageProps) 
   const t = await getTranslations({ locale, namespace: "profile.edit" });
 
   return (
-    <main className="shell">
-      <section className="hero mt-4 mb-8 flex w-full flex-col items-center text-center">
-	  	<h1 className="m-0 mb-12 text-5xl font-bold whitespace-nowrap">{t("title")}</h1>
-        <p className="m-0 text-slate-400">{t("lede")}</p>
+    <main className="shell flex flex-col items-center">
+      <section className="hero mt-4 mb-8 flex w-full flex-col items-center justify-center text-center">
+	  	<h1 className="m-0 mb-8 text-5xl font-bold">{t("title")}</h1>
+        <p className="m-0 mt-4 text-slate-400">{t("lede")}</p>
       </section>
-
       <section className="mx-auto w-full max-w-4xl">
         <EditProfileForm
           currentUsername={sessionData.user.username}
