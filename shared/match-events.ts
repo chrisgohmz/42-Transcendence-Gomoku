@@ -8,6 +8,9 @@ export type MatchSubscribedPayload = {
 };
 
 export type Seat = "BLACK" | "WHITE";
+
+export type Cell = { occupied: false } | { occupied: true; seat: Seat; moveNumber: number };
+
 export type MatchStatus = "WAITING" | "IN_PROGRESS" | "FINISHED" | "CANCELLED";
 
 export interface ParticipantSummary {
@@ -28,14 +31,14 @@ export interface LastMove {
 export interface GameUpdatePayload {
   matchId: string;
   status: MatchStatus;
-  // visibility: "PUBLIC" | "PRIVATE";
+  visibility: "PUBLIC" | "PRIVATE";
   // ruleType: "GOMOKU" | "RENJU";
-  // boardSize: number;
+  boardSize: number;
   stateVersion: number;
   nextTurnSeat: Seat | null;
-  // winningSeat: Seat | null;
-  // endReason: string | null;
-  // participants: ParticipantSummary[];
+  winningSeat: Seat | null;
+  endReason: string | null;
+  participants: ParticipantSummary[];
   lastMove: LastMove | null;
-  // board: (Seat | null)[][];
+  board: Cell[][];
 }

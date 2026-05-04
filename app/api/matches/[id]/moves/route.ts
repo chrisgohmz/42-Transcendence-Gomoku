@@ -1,4 +1,5 @@
-import { Prisma } from "@/../generated/prisma/client";
+import { Prisma, MatchParticipant } from "@/../generated/prisma/client";
+import { buildBoard } from "@/lib/game/state-builder";
 import { validateMoveSubmission, type Position } from "@/lib/matches/move-rules";
 import { prisma } from "@/lib/prisma";
 
@@ -104,7 +105,10 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     const result = await prisma.$transaction(async (tx) => {
       const match = await tx.match.findUnique({
         where: { id: matchId },
-        include: { participants: true },
+        include: {
+          participants: true,
+          moves: true,
+        },
       });
 
       if (!match) {
@@ -183,6 +187,8 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
         payload: {
           match: updatedMatch,
           move,
+          participants: match.participants,
+          allmoves: [...match.moves, move],
         },
       };
     });
@@ -191,11 +197,28 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       return Response.json({ error: result.payload.error }, { status: result.payload.status });
     }
 
+    const board = buildBoard(
+      result.payload.match.boardSize,
+      result.payload.participants,
+      result.payload.allmoves,
+    );
+
     const gameUpdate: GameUpdatePayload = {
       matchId,
       status: result.payload.match.status,
+      visibility: result.payload.match.visibility,
+      boardSize: result.payload.match.boardSize,
       stateVersion: result.payload.match.stateVersion,
       nextTurnSeat: result.payload.match.nextTurnSeat,
+      winningSeat: result.payload.match.winningSeat,
+      endReason: result.payload.match.endReason,
+      participants: result.payload.participants.map((p: MatchParticipant) => ({
+        participantId: p.id,
+        displayName: p.displayNameSnapshot,
+        role: p.role,
+        seat: p.seat,
+      })),
+      board,
       lastMove: {
         moveNumber: result.payload.move.moveNumber,
         participantId: result.payload.move.participantId,

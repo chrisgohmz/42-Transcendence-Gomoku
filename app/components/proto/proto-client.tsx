@@ -6,12 +6,14 @@ import { useState } from "react";
 import { MatchMoveForm, type SubmittedMoveInfo } from "@/components/proto/MatchMoveForm";
 import { useSocketGame } from "@/hooks/useSocketGame";
 
+import type { Seat } from "../../../shared/match-events";
 import { MatchCreateButton, type CreatedMatchInfo } from "./MatchCreateButton";
 import { MatchJoinButton, type JoinedMatchInfo } from "./MatchJoinButton";
+import { MiniBoard } from "./MiniBoard";
 
 type MatchParticipant = {
   displayName: string;
-  seat: string | null;
+  seat: Seat | null;
 };
 
 type Match = {
@@ -248,6 +250,18 @@ export function ProtoClient() {
               ) : (
                 <p>{t("lastMoveNone")}</p>
               )}
+
+              {lastUpdate.board ? (
+                <MiniBoard
+                  board={lastUpdate.board}
+                  mySeat={session ? (createdMatch?.seat ?? joinedMatch?.seat ?? null) : null}
+                  nextTurnSeat={lastUpdate.nextTurnSeat}
+                  onCellClick={(x, y) => {
+                    void x;
+                    void y;
+                  }}
+                />
+              ) : null}
             </>
           ) : null}
         </article>
