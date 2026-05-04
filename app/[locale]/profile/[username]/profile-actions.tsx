@@ -44,7 +44,7 @@ export default function ProfileActions({ targetUserId, targetUsername, initialSt
   };
 
   const handleMessage = () => {
-    router.push(`/chat/${targetUsername}`);
+    router.push(`/messages?user=${targetUsername}`);
   };
 
   return (
