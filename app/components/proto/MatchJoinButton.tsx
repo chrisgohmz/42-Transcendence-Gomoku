@@ -3,11 +3,13 @@
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 
+import type { Seat } from "../../../shared/match-events";
+
 export type JoinedMatchInfo = {
   matchId: string;
   participantId: string;
   role?: string;
-  seat?: string | null;
+  seat?: Seat | null;
 };
 
 type MatchJoinButtonProps = {
@@ -21,7 +23,7 @@ type JoinMatchResponse = {
   matchId?: string;
   participantId?: string;
   role?: string;
-  seat?: string | null;
+  seat?: Seat | null;
 };
 
 type ErrorResponse = {

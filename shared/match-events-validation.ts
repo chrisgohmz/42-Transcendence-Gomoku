@@ -4,6 +4,21 @@ import type { GameUpdatePayload, MatchSubscribePayload } from "./match-events";
 
 const seatSchema = z.enum(["BLACK", "WHITE"]);
 const matchStatusSchema = z.enum(["WAITING", "IN_PROGRESS", "FINISHED", "CANCELLED"]);
+const visibilitySchema = z.enum(["PUBLIC", "PRIVATE"]);
+const participantSummarySchema = z.object({
+  participantId: z.string(),
+  displayName: z.string(),
+  role: z.enum(["PLAYER", "SPECTATOR"]),
+  seat: seatSchema.nullable(),
+});
+const cellSchema = z.discriminatedUnion("occupied", [
+  z.object({ occupied: z.literal(false) }),
+  z.object({
+    occupied: z.literal(true),
+    seat: seatSchema,
+    moveNumber: z.number().int(),
+  }),
+]);
 const movePositionSchema = z.object({
   x: z.number().int(),
   y: z.number().int(),
@@ -17,11 +32,17 @@ const lastMoveSchema = z.object({
 });
 
 export const gameUpdatePayloadSchema = z.object({
+  board: z.array(z.array(cellSchema)),
+  boardSize: z.number().int(),
+  endReason: z.string().nullable(),
   lastMove: lastMoveSchema.nullable(),
   matchId: z.string(),
   nextTurnSeat: seatSchema.nullable(),
+  participants: z.array(participantSummarySchema),
   stateVersion: z.number().int(),
   status: matchStatusSchema,
+  visibility: visibilitySchema,
+  winningSeat: seatSchema.nullable(),
 });
 
 export const matchSubscribePayloadSchema = z.object({
