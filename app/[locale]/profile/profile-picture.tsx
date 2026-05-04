@@ -66,7 +66,9 @@ export default function ProfilePicture({ initialImage }: { initialImage?: string
         onMouseLeave={() => setIsHovering(false)}
         onClick={handleContainerClick}
       >
-        <div className={`relative flex h-full w-full items-center justify-center overflow-hidden rounded-full ${initialImage ? "bg-transparent" : "bg-slate-600"}`}>
+        <div
+          className={`relative flex h-full w-full items-center justify-center overflow-hidden rounded-full ${initialImage ? "bg-transparent" : "bg-slate-600"}`}
+        >
           {initialImage && (
             <Image src={initialImage} alt={t("alt")} fill sizes="300px" className="object-cover" />
           )}

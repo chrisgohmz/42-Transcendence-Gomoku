@@ -1,13 +1,12 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+
 import { getCurrentSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
 function getLowHighIds(id1: string, id2: string) {
-  return id1 < id2
-    ? { userLowId: id1, userHighId: id2 }
-    : { userLowId: id2, userHighId: id1 };
+  return id1 < id2 ? { userLowId: id1, userHighId: id2 } : { userLowId: id2, userHighId: id1 };
 }
 
 export async function sendFriendRequest(targetUsername: string) {
@@ -99,7 +98,7 @@ export async function searchUsers(query: string) {
       username: true,
       displayName: true,
       avatarUrl: true,
-    }
+    },
   });
 
   return { users };

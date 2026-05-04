@@ -2,10 +2,12 @@
 
 import { UserPlus, UserMinus, UserCheck, X, MessageSquare, Loader2 } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { useTransition, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { processFriendAction } from "./actions";
+import { useTransition, useEffect } from "react";
+
 import { usePresence } from "@/components/presence-provider";
+
+import { processFriendAction } from "./actions";
 
 type ProfileActionsProps = {
   targetUserId: string;
@@ -13,7 +15,11 @@ type ProfileActionsProps = {
   initialState: "NOT_FRIENDS" | "FRIENDS" | "REQUEST_SENT" | "REQUEST_RECEIVED" | "SELF";
 };
 
-export default function ProfileActions({ targetUserId, targetUsername, initialState }: ProfileActionsProps) {
+export default function ProfileActions({
+  targetUserId,
+  targetUsername,
+  initialState,
+}: ProfileActionsProps) {
   const t = useTranslations("friends");
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -48,14 +54,18 @@ export default function ProfileActions({ targetUserId, targetUsername, initialSt
   };
 
   return (
-    <div className="mt-6 flex flex-col gap-3 w-full max-w-[200px]">
+    <div className="mt-6 flex w-full max-w-[200px] flex-col gap-3">
       {initialState === "NOT_FRIENDS" && (
         <button
           onClick={() => handleAction("ADD")}
           disabled={isPending}
           className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#4ee8c2] px-4 py-2.5 text-sm font-bold text-[#04131a] transition-transform hover:-translate-y-0.5 disabled:opacity-50 disabled:hover:translate-y-0"
         >
-          {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <UserPlus className="h-4 w-4" />}
+          {isPending ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <UserPlus className="h-4 w-4" />
+          )}
           <span>{t("actions.add")}</span>
         </button>
       )}
@@ -78,13 +88,17 @@ export default function ProfileActions({ targetUserId, targetUsername, initialSt
             disabled={isPending}
             className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-[#4ee8c2] px-4 py-2.5 text-sm font-bold text-[#04131a] transition-transform hover:-translate-y-0.5 disabled:opacity-50 disabled:hover:translate-y-0"
           >
-            {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <UserCheck className="h-4 w-4" />}
+            {isPending ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <UserCheck className="h-4 w-4" />
+            )}
             <span>{t("actions.accept")}</span>
           </button>
           <button
             onClick={() => handleAction("DECLINE")}
             disabled={isPending}
-            className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-red-500/20 text-red-500 px-4 py-2.5 text-sm font-bold transition-transform hover:-translate-y-0.5 disabled:opacity-50 disabled:hover:translate-y-0"
+            className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-red-500/20 px-4 py-2.5 text-sm font-bold text-red-500 transition-transform hover:-translate-y-0.5 disabled:opacity-50 disabled:hover:translate-y-0"
           >
             {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <X className="h-4 w-4" />}
           </button>
@@ -103,9 +117,13 @@ export default function ProfileActions({ targetUserId, targetUsername, initialSt
           <button
             onClick={() => handleAction("REMOVE")}
             disabled={isPending}
-            className="flex w-full items-center justify-center gap-2 rounded-xl bg-transparent border border-slate-700 px-4 py-2.5 text-sm font-bold text-slate-400 transition-transform hover:-translate-y-0.5 hover:text-red-400 hover:border-red-400 disabled:opacity-50 disabled:hover:translate-y-0"
+            className="flex w-full items-center justify-center gap-2 rounded-xl border border-slate-700 bg-transparent px-4 py-2.5 text-sm font-bold text-slate-400 transition-transform hover:-translate-y-0.5 hover:border-red-400 hover:text-red-400 disabled:opacity-50 disabled:hover:translate-y-0"
           >
-            {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <UserMinus className="h-4 w-4" />}
+            {isPending ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <UserMinus className="h-4 w-4" />
+            )}
             <span>{t("actions.remove")}</span>
           </button>
         </>

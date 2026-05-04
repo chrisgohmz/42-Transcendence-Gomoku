@@ -1,14 +1,16 @@
 "use client";
 
+import { Pencil } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useActionState, useEffect, useRef, useState } from "react";
+
 import { FieldErrorList } from "@/components/field-error-list";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "@/i18n/navigation";
 import { authValidationLimits } from "@/lib/validation/auth-profile-limits";
+
 import { initialProfileSettingsActionState } from "./action-state";
 import { changeAccountPassword, saveDisplayName } from "./actions";
-import { Pencil } from "lucide-react";
 
 export default function EditProfileForm({
   currentUsername,
@@ -54,9 +56,13 @@ export default function EditProfileForm({
       const timer = setTimeout(() => setIsEditingPassword(false), 1500);
       const form = passwordFormRef.current;
       if (form) {
-        const currentPassword = form.elements.namedItem("currentPassword") as HTMLInputElement | null;
+        const currentPassword = form.elements.namedItem(
+          "currentPassword",
+        ) as HTMLInputElement | null;
         const newPassword = form.elements.namedItem("newPassword") as HTMLInputElement | null;
-        const confirmPassword = form.elements.namedItem("confirmPassword") as HTMLInputElement | null;
+        const confirmPassword = form.elements.namedItem(
+          "confirmPassword",
+        ) as HTMLInputElement | null;
 
         if (currentPassword) currentPassword.value = "";
         if (newPassword) newPassword.value = "";
@@ -75,7 +81,6 @@ export default function EditProfileForm({
   return (
     <div className="mt-8 flex w-full flex-col gap-8 rounded-xl border border-slate-700/50 bg-[#08101F] p-8 text-left shadow-2xl">
       <div className="grid w-full grid-cols-1 gap-16 md:grid-cols-2">
-
         {/* Left Column: Display Name Form */}
         <form action={displayNameAction} className="flex h-full flex-col gap-6">
           <div className="flex items-center gap-3">
@@ -126,7 +131,10 @@ export default function EditProfileForm({
                   aria-invalid={Boolean(displayNameState.fields.displayName)}
                   required
                 />
-                <FieldErrorList id={displayNameErrorId} errors={displayNameState.fields.displayName} />
+                <FieldErrorList
+                  id={displayNameErrorId}
+                  errors={displayNameState.fields.displayName}
+                />
               </>
             ) : (
               <div className="rounded-xl border border-slate-700/50 bg-[#0c1628] px-4 py-3 text-white">
@@ -188,9 +196,7 @@ export default function EditProfileForm({
 
           {!isEditingPassword ? (
             <div className="flex flex-col gap-2">
-              <label className="text-sm font-bold text-slate-300">
-                {t("passwordReadonly")}
-              </label>
+              <label className="text-sm font-bold text-slate-300">{t("passwordReadonly")}</label>
               <div className="rounded-xl border border-slate-700/50 bg-[#0c1628] px-4 py-3 tracking-widest text-white">
                 ••••••••••••
               </div>
@@ -230,7 +236,9 @@ export default function EditProfileForm({
                   minLength={authValidationLimits.passwordMinLength}
                   maxLength={authValidationLimits.passwordMaxLength}
                   className="rounded-xl border border-slate-700/50 bg-[#0c1628] px-4 py-3 text-white transition-colors focus:border-[#4ee8c2] focus:outline-none"
-                  aria-describedby={passwordState.fields.newPassword ? newPasswordErrorId : undefined}
+                  aria-describedby={
+                    passwordState.fields.newPassword ? newPasswordErrorId : undefined
+                  }
                   aria-invalid={Boolean(passwordState.fields.newPassword)}
                 />
                 <FieldErrorList id={newPasswordErrorId} errors={passwordState.fields.newPassword} />

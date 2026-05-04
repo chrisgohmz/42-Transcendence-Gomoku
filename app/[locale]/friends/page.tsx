@@ -1,4 +1,5 @@
 import { setRequestLocale } from "next-intl/server";
+
 import { redirect } from "@/i18n/navigation";
 import { getCurrentSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -54,12 +55,14 @@ export default async function FriendsPage({ params }: FriendsPageProps) {
       username: otherUser.username,
       displayName: otherUser.displayName,
       avatarUrl: otherUser.avatarUrl,
-      stats: rawStats ? {
-        wins: rawStats.wins,
-        losses: rawStats.losses,
-        matchesPlayed: rawStats.matchesPlayed,
-        rating: rawStats.rating
-      } : null,
+      stats: rawStats
+        ? {
+            wins: rawStats.wins,
+            losses: rawStats.losses,
+            matchesPlayed: rawStats.matchesPlayed,
+            rating: rawStats.rating,
+          }
+        : null,
     };
 
     if (friendship.status === "ACCEPTED") {

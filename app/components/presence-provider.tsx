@@ -4,15 +4,15 @@ import { createContext, useContext, useEffect, useRef, useState, ReactNode } fro
 import { io, type Socket } from "socket.io-client";
 
 type PresenceContextType = {
-	onlineUsers: string[];
-	socket: Socket | null;
-  };
+  onlineUsers: string[];
+  socket: Socket | null;
+};
 
-  const PresenceContext = createContext<PresenceContextType>({ onlineUsers: [], socket: null });
+const PresenceContext = createContext<PresenceContextType>({ onlineUsers: [], socket: null });
 
 export function PresenceProvider({
   children,
-  currentUsername
+  currentUsername,
 }: {
   children: ReactNode;
   currentUsername?: string;

@@ -1,10 +1,14 @@
 "use server";
 
-import { prisma } from "@/lib/prisma";
-import { getCurrentSession } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 
-export async function processFriendAction(targetUserId: string, action: "ADD" | "ACCEPT" | "DECLINE" | "REMOVE" | "CANCEL") {
+import { getCurrentSession } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
+
+export async function processFriendAction(
+  targetUserId: string,
+  action: "ADD" | "ACCEPT" | "DECLINE" | "REMOVE" | "CANCEL",
+) {
   const session = await getCurrentSession();
   const loggedInUserId = session?.user?.id;
 
@@ -52,7 +56,6 @@ export async function processFriendAction(targetUserId: string, action: "ADD" | 
 
     revalidatePath("/[locale]/profile/[username]", "page");
     return { success: true };
-
   } catch {
     return { error: "Something went wrong." };
   }

@@ -1,5 +1,6 @@
 import { Pencil, User } from "lucide-react";
 import { getTranslations, setRequestLocale } from "next-intl/server";
+
 import { Link, redirect } from "@/i18n/navigation";
 import { getCurrentSession } from "@/lib/auth";
 

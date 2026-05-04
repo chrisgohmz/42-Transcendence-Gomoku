@@ -2,12 +2,14 @@
 
 import { MessageSquare, UserMinus, Check, X, Users, UserPlus } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { useState, useEffect } from "react";
-import { Link } from "@/i18n/navigation";
-import { useRouter } from "next/navigation";
-import { usePresence } from "@/components/presence-provider";
-import { removeFriend, respondToRequest, sendFriendRequest, searchUsers } from "./actions";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
+
+import { usePresence } from "@/components/presence-provider";
+import { Link } from "@/i18n/navigation";
+
+import { removeFriend, respondToRequest, sendFriendRequest, searchUsers } from "./actions";
 
 type FriendData = {
   id: number;
@@ -25,36 +27,38 @@ type FriendsContentProps = {
 };
 
 export default function FriendsContent({
-    friends,
-    pendingRequests,
-    sentRequests,
-  }: FriendsContentProps) {
-    const { onlineUsers, socket } = usePresence();
-    const router = useRouter();
-    const t = useTranslations("friends");
-    const [activeTab, setActiveTab] = useState("friends");
-    const [searchQuery, setSearchQuery] = useState("");
-    const [searchResults, setSearchResults] = useState<any[]>([]);
-    const [statusMessage, setStatusMessage] = useState<{ text: string; isError: boolean } | null>(null);
+  friends,
+  pendingRequests,
+  sentRequests,
+}: FriendsContentProps) {
+  const { onlineUsers, socket } = usePresence();
+  const router = useRouter();
+  const t = useTranslations("friends");
+  const [activeTab, setActiveTab] = useState("friends");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [statusMessage, setStatusMessage] = useState<{ text: string; isError: boolean } | null>(
+    null,
+  );
 
-    useEffect(() => {
-      if (!socket) return;
-      socket.on("friendship:refresh", () => {
-        router.refresh();
-      });
-      return () => {
-        socket.off("friendship:refresh");
-      };
-    }, [socket, router]);
+  useEffect(() => {
+    if (!socket) return;
+    socket.on("friendship:refresh", () => {
+      router.refresh();
+    });
+    return () => {
+      socket.off("friendship:refresh");
+    };
+  }, [socket, router]);
 
-    useEffect(() => {
-      if (statusMessage) {
-        const timer = setTimeout(() => {
-          setStatusMessage(null);
-        }, 1000);
-        return () => clearTimeout(timer);
-      }
-    }, [statusMessage]);
+  useEffect(() => {
+    if (statusMessage) {
+      const timer = setTimeout(() => {
+        setStatusMessage(null);
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [statusMessage]);
 
   const handleSearch = async () => {
     if (!searchQuery.trim()) return;
@@ -77,7 +81,10 @@ export default function FriendsContent({
     if (result?.error) {
       setStatusMessage({ text: result.error, isError: true });
     } else {
-      setStatusMessage({ text: t("messages.requestSent", { name: targetUsername }), isError: false });
+      setStatusMessage({
+        text: t("messages.requestSent", { name: targetUsername }),
+        isError: false,
+      });
       setSearchResults([]);
       setSearchQuery("");
       socket?.emit("friendship:notify", targetUsername);
@@ -85,7 +92,9 @@ export default function FriendsContent({
   };
 
   const handleRespond = async (friendshipId: number, accept: boolean) => {
-    const request = pendingRequests.find((r) => r.id === friendshipId) || sentRequests.find((r) => r.id === friendshipId);
+    const request =
+      pendingRequests.find((r) => r.id === friendshipId) ||
+      sentRequests.find((r) => r.id === friendshipId);
     await respondToRequest(friendshipId, accept);
     if (request) socket?.emit("friendship:notify", request.username);
     router.refresh();
@@ -126,19 +135,31 @@ export default function FriendsContent({
         {searchResults.length > 0 && (
           <div className="mt-4 w-full max-w-md rounded-xl border border-slate-700/50 bg-[#08101F] p-2 shadow-lg shadow-blue-500/10">
             {searchResults.map((user) => (
-              <div key={user.id} className="flex items-center justify-between rounded-lg p-3 transition-colors hover:bg-slate-800/50">
+              <div
+                key={user.id}
+                className="flex items-center justify-between rounded-lg p-3 transition-colors hover:bg-slate-800/50"
+              >
                 <div className="flex items-center gap-3">
                   <Link href={`/profile/${user.username}`}>
                     {user.avatarUrl ? (
-                      <Image src={user.avatarUrl} alt={user.displayName} width={32} height={32} className="h-8 w-8 rounded-full object-cover transition-transform hover:scale-105" />
+                      <Image
+                        src={user.avatarUrl}
+                        alt={user.displayName}
+                        width={32}
+                        height={32}
+                        className="h-8 w-8 rounded-full object-cover transition-transform hover:scale-105"
+                      />
                     ) : (
-                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-600 font-bold uppercase text-white transition-transform hover:scale-105">
+                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-600 font-bold text-white uppercase transition-transform hover:scale-105">
                         {user.displayName.charAt(0)}
                       </div>
                     )}
                   </Link>
                   <div className="text-left">
-                    <Link href={`/profile/${user.username}`} className="block font-bold text-white transition-colors hover:text-[#4ee8c2]">
+                    <Link
+                      href={`/profile/${user.username}`}
+                      className="block font-bold text-white transition-colors hover:text-[#4ee8c2]"
+                    >
                       {user.displayName}
                     </Link>
                     <span className="block text-xs text-slate-400">@{user.username}</span>
@@ -157,7 +178,9 @@ export default function FriendsContent({
         )}
 
         {statusMessage && (
-          <p className={`mt-3 text-sm font-bold ${statusMessage.isError ? "text-red-400" : "text-[#4ee8c2]"}`}>
+          <p
+            className={`mt-3 text-sm font-bold ${statusMessage.isError ? "text-red-400" : "text-[#4ee8c2]"}`}
+          >
             {statusMessage.text}
           </p>
         )}
@@ -205,7 +228,9 @@ export default function FriendsContent({
                 <tbody>
                   {friends.length === 0 ? (
                     <tr>
-                      <td colSpan={7} className="p-8 text-center text-slate-400">{t("empty.friends")}</td>
+                      <td colSpan={7} className="p-8 text-center text-slate-400">
+                        {t("empty.friends")}
+                      </td>
                     </tr>
                   ) : (
                     friends.map((friend, index) => {
@@ -214,13 +239,22 @@ export default function FriendsContent({
                       const winRate = played > 0 ? Math.round((wins / played) * 100) : 0;
 
                       return (
-                        <tr key={friend.id} className="border-b border-slate-700/50 transition-colors hover:bg-slate-800/20">
+                        <tr
+                          key={friend.id}
+                          className="border-b border-slate-700/50 transition-colors hover:bg-slate-800/20"
+                        >
                           <td className="p-4 text-slate-300">{index + 1}</td>
                           <td className="p-4">
                             <div className="flex items-center gap-3">
                               <Link href={`/profile/${friend.username}`}>
                                 {friend.avatarUrl ? (
-                                  <Image src={friend.avatarUrl} alt={friend.displayName} width={32} height={32} className="h-8 w-8 rounded-full object-cover transition-transform hover:scale-105" />
+                                  <Image
+                                    src={friend.avatarUrl}
+                                    alt={friend.displayName}
+                                    width={32}
+                                    height={32}
+                                    className="h-8 w-8 rounded-full object-cover transition-transform hover:scale-105"
+                                  />
                                 ) : (
                                   <div className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-600 font-bold text-white uppercase transition-transform hover:scale-105">
                                     {friend.displayName.charAt(0)}
@@ -228,18 +262,25 @@ export default function FriendsContent({
                                 )}
                               </Link>
                               <div className="flex flex-col text-left">
-                                <Link href={`/profile/${friend.username}`} className="font-bold text-white transition-colors hover:text-[#4ee8c2]">
+                                <Link
+                                  href={`/profile/${friend.username}`}
+                                  className="font-bold text-white transition-colors hover:text-[#4ee8c2]"
+                                >
                                   {friend.displayName}
                                 </Link>
                                 {onlineUsers.includes(friend.username) ? (
                                   <div className="flex items-center gap-1.5">
                                     <span className="h-2 w-2 rounded-full bg-[#4ee8c2] shadow-[0_0_5px_#4ee8c2]"></span>
-                                    <span className="text-xs font-bold text-[#4ee8c2]">{t("status.online")}</span>
+                                    <span className="text-xs font-bold text-[#4ee8c2]">
+                                      {t("status.online")}
+                                    </span>
                                   </div>
                                 ) : (
                                   <div className="flex items-center gap-1.5">
                                     <span className="h-2 w-2 rounded-full bg-red-500 shadow-[0_0_5px_#ef4444]"></span>
-                                    <span className="text-xs font-bold text-red-500">{t("status.offline")}</span>
+                                    <span className="text-xs font-bold text-red-500">
+                                      {t("status.offline")}
+                                    </span>
                                   </div>
                                 )}
                               </div>
@@ -250,7 +291,7 @@ export default function FriendsContent({
                           <td className="p-4 text-slate-300">{wins}</td>
                           <td className="p-4 text-slate-300">{friend.stats?.losses || 0}</td>
                           <td className="flex justify-end gap-2 p-4">
-                              <Link
+                            <Link
                               href="/messages"
                               className="flex items-center gap-2 rounded-md bg-slate-800 px-3 py-1.5 text-sm font-bold transition-colors hover:bg-slate-700"
                             >
@@ -288,23 +329,37 @@ export default function FriendsContent({
                 <tbody>
                   {pendingRequests.length === 0 ? (
                     <tr>
-                      <td colSpan={2} className="p-8 text-center text-slate-400">{t("empty.pending")}</td>
+                      <td colSpan={2} className="p-8 text-center text-slate-400">
+                        {t("empty.pending")}
+                      </td>
                     </tr>
                   ) : (
                     pendingRequests.map((request) => (
-                        <tr key={request.id} className="border-b border-slate-700/50 transition-colors hover:bg-slate-800/20">
+                      <tr
+                        key={request.id}
+                        className="border-b border-slate-700/50 transition-colors hover:bg-slate-800/20"
+                      >
                         <td className="p-4">
                           <div className="flex items-center gap-3">
                             <Link href={`/profile/${request.username}`}>
                               {request.avatarUrl ? (
-                                <Image src={request.avatarUrl} alt={request.displayName} width={32} height={32} className="h-8 w-8 rounded-full object-cover transition-transform hover:scale-105" />
+                                <Image
+                                  src={request.avatarUrl}
+                                  alt={request.displayName}
+                                  width={32}
+                                  height={32}
+                                  className="h-8 w-8 rounded-full object-cover transition-transform hover:scale-105"
+                                />
                               ) : (
-                                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-600 font-bold uppercase text-white transition-transform hover:scale-105">
+                                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-600 font-bold text-white uppercase transition-transform hover:scale-105">
                                   {request.displayName.charAt(0)}
                                 </div>
                               )}
                             </Link>
-                            <Link href={`/profile/${request.username}`} className="font-bold text-white transition-colors hover:text-[#4ee8c2]">
+                            <Link
+                              href={`/profile/${request.username}`}
+                              className="font-bold text-white transition-colors hover:text-[#4ee8c2]"
+                            >
                               {request.displayName}
                             </Link>
                           </div>
@@ -347,23 +402,37 @@ export default function FriendsContent({
                 <tbody>
                   {sentRequests.length === 0 ? (
                     <tr>
-                      <td colSpan={2} className="p-8 text-center text-slate-400">{t("empty.sent")}</td>
+                      <td colSpan={2} className="p-8 text-center text-slate-400">
+                        {t("empty.sent")}
+                      </td>
                     </tr>
                   ) : (
                     sentRequests.map((request) => (
-                        <tr key={request.id} className="border-b border-slate-700/50 transition-colors hover:bg-slate-800/20">
+                      <tr
+                        key={request.id}
+                        className="border-b border-slate-700/50 transition-colors hover:bg-slate-800/20"
+                      >
                         <td className="p-4">
                           <div className="flex items-center gap-3">
                             <Link href={`/profile/${request.username}`}>
                               {request.avatarUrl ? (
-                                <Image src={request.avatarUrl} alt={request.displayName} width={32} height={32} className="h-8 w-8 rounded-full object-cover transition-transform hover:scale-105" />
+                                <Image
+                                  src={request.avatarUrl}
+                                  alt={request.displayName}
+                                  width={32}
+                                  height={32}
+                                  className="h-8 w-8 rounded-full object-cover transition-transform hover:scale-105"
+                                />
                               ) : (
-                                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-600 font-bold uppercase text-white transition-transform hover:scale-105">
+                                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-600 font-bold text-white uppercase transition-transform hover:scale-105">
                                   {request.displayName.charAt(0)}
                                 </div>
                               )}
                             </Link>
-                            <Link href={`/profile/${request.username}`} className="font-bold text-white transition-colors hover:text-[#4ee8c2]">
+                            <Link
+                              href={`/profile/${request.username}`}
+                              className="font-bold text-white transition-colors hover:text-[#4ee8c2]"
+                            >
                               {request.displayName}
                             </Link>
                           </div>

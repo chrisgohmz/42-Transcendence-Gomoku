@@ -1,11 +1,13 @@
-import { notFound } from "next/navigation";
-import { getTranslations, setRequestLocale } from "next-intl/server";
-import { prisma } from "@/lib/prisma";
 import { User } from "lucide-react";
-import ProfilePresence from "./profile-presence";
-import ProfileActions from "./profile-actions";
-import { getCurrentSession } from "@/lib/auth";
+import { getTranslations, setRequestLocale } from "next-intl/server";
 import Image from "next/image";
+import { notFound } from "next/navigation";
+
+import { getCurrentSession } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
+
+import ProfileActions from "./profile-actions";
+import ProfilePresence from "./profile-presence";
 
 type ProfilePageProps = {
   params: Promise<{
@@ -33,7 +35,8 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
   const session = await getCurrentSession();
   const loggedInUserId = session?.user?.id;
 
-  let relationshipState: "NOT_FRIENDS" | "FRIENDS" | "REQUEST_SENT" | "REQUEST_RECEIVED" | "SELF" = "NOT_FRIENDS";
+  let relationshipState: "NOT_FRIENDS" | "FRIENDS" | "REQUEST_SENT" | "REQUEST_RECEIVED" | "SELF" =
+    "NOT_FRIENDS";
 
   if (loggedInUserId) {
     if (loggedInUserId === userProfile.id) {
@@ -55,9 +58,8 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
         if (friendship.status === "ACCEPTED") {
           relationshipState = "FRIENDS";
         } else if (friendship.status === "PENDING") {
-          relationshipState = friendship.requestedById === loggedInUserId
-            ? "REQUEST_SENT"
-            : "REQUEST_RECEIVED";
+          relationshipState =
+            friendship.requestedById === loggedInUserId ? "REQUEST_SENT" : "REQUEST_RECEIVED";
         }
       }
     }
@@ -67,7 +69,7 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
   const wins = statsList.reduce((total, stat) => total + stat.wins, 0);
   const losses = statsList.reduce((total, stat) => total + stat.losses, 0);
   const played = statsList.reduce((total, stat) => total + stat.matchesPlayed, 0);
-  const rating = statsList.length > 0 ? Math.max(...statsList.map(s => s.rating || 0)) : 0;
+  const rating = statsList.length > 0 ? Math.max(...statsList.map((s) => s.rating || 0)) : 0;
   const winRate = played > 0 ? Math.round((wins / played) * 100) : 0;
 
   return (
@@ -81,17 +83,17 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
 
       <section className="panel">
         <div className="flex w-full flex-row items-stretch gap-8">
-          <article className="card flex flex-1 flex-col items-center overflow-hidden text-center py-8">
+          <article className="card flex flex-1 flex-col items-center overflow-hidden py-8 text-center">
             {userProfile.avatarUrl ? (
               <Image
                 src={userProfile.avatarUrl}
                 alt={userProfile.displayName}
                 width={300}
                 height={300}
-                className="mb-6 h-[300px] w-[300px] rounded-full object-cover bg-transparent shadow-lg shadow-[#000000]/50"
+                className="mb-6 h-[300px] w-[300px] rounded-full bg-transparent object-cover shadow-lg shadow-[#000000]/50"
               />
             ) : (
-              <div className="mb-6 flex h-[300px] w-[300px] items-center justify-center rounded-full bg-slate-600 text-8xl font-bold uppercase text-white shadow-lg shadow-[#000000]/50">
+              <div className="mb-6 flex h-[300px] w-[300px] items-center justify-center rounded-full bg-slate-600 text-8xl font-bold text-white uppercase shadow-lg shadow-[#000000]/50">
                 {userProfile.displayName.charAt(0)}
               </div>
             )}

@@ -13,8 +13,8 @@ import Footer from "@/components/footer";
 import Navbar from "@/components/nav-bar";
 import { PresenceProvider } from "@/components/presence-provider";
 import { routing } from "@/i18n/routing";
-import { cn } from "@/lib/utils";
 import { getCurrentSession } from "@/lib/auth";
+import { cn } from "@/lib/utils";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 
@@ -44,22 +44,22 @@ export async function generateMetadata({ params }: MetadataProps): Promise<Metad
 }
 
 export default async function RootLayout({ children, params }: RootLayoutProps) {
-	const { locale } = await params;
+  const { locale } = await params;
 
-	if (!hasLocale(routing.locales, locale)) {
-	  notFound();
-	}
+  if (!hasLocale(routing.locales, locale)) {
+    notFound();
+  }
 
-	setRequestLocale(locale);
-	const context = await getCurrentSession();
-	const username = context?.user?.username;
+  setRequestLocale(locale);
+  const context = await getCurrentSession();
+  const username = context?.user?.username;
 
-	return (
-	  <html lang={locale} className={cn("font-sans", inter.variable)}>
-		<body className="bg-slate-100 text-slate-900">
-		  <NextIntlClientProvider>
-			<PresenceProvider currentUsername={username}>
-			  <Navbar />
+  return (
+    <html lang={locale} className={cn("font-sans", inter.variable)}>
+      <body className="bg-slate-100 text-slate-900">
+        <NextIntlClientProvider>
+          <PresenceProvider currentUsername={username}>
+            <Navbar />
 
             <main className="pt-16">{children}</main>
 
