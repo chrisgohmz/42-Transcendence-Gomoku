@@ -1,72 +1,115 @@
 "use server";
 
+import { isAPIError } from "better-auth/api";
 import { getLocale, getTranslations } from "next-intl/server";
 import { revalidatePath } from "next/cache";
+import { headers } from "next/headers";
 
-import { getCurrentSession, verifyPassword, hashPassword } from "@/lib/auth";
+import { auth, getCurrentSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import {
+  fieldIssuesToMap,
+  type ProfileSettingsField,
+  type ProfileSettingsValidationIssueCode,
+  validateProfileDisplayNameInput,
+  validateProfilePasswordInput,
+} from "@/lib/validation/auth-profile";
 
-export async function saveAccountSettings(formData: FormData) {
+import type { ProfileSettingsActionState } from "./action-state";
+
+function translateProfileIssues(
+  issues: { code: ProfileSettingsValidationIssueCode; field: ProfileSettingsField }[],
+  t: (key: ProfileSettingsValidationIssueCode) => string,
+) {
+  return fieldIssuesToMap(issues, t);
+}
+
+export async function saveDisplayName(
+  _previousState: ProfileSettingsActionState,
+  formData: FormData,
+): Promise<ProfileSettingsActionState> {
   const locale = await getLocale();
   const t = await getTranslations({ locale, namespace: "profile.errors" });
   const sessionData = await getCurrentSession();
 
   if (!sessionData) {
-    return { error: t("loginRequired") };
+    return { fields: {}, message: t("loginRequired"), successMessage: null };
   }
 
-  const newDisplayName = formData.get("displayName") as string;
-  const currentPassword = formData.get("currentPassword") as string;
-  const newPassword = formData.get("newPassword") as string;
-  const confirmPassword = formData.get("confirmPassword") as string;
+  const validation = validateProfileDisplayNameInput({
+    displayName: formData.get("displayName"),
+  });
 
-  // 1. Update Display Name
-  if (!newDisplayName || newDisplayName.trim() === "") {
-    return { error: t("displayNameRequired") };
-  }
-
-  const updateData: { displayName: string; passwordHash?: string } = {
-    displayName: newDisplayName,
-  };
-
-  // 2. Check if they want to change the password
-  const wantsToChangePassword = currentPassword || newPassword || confirmPassword;
-
-  if (wantsToChangePassword) {
-    if (!currentPassword || !newPassword || !confirmPassword) {
-      return { error: t("incompletePassword") };
-    }
-
-    if (newPassword !== confirmPassword) {
-      return { error: t("passwordMismatch") };
-    }
-
-    if (newPassword.length < 8) {
-      return { error: t("shortPassword") };
-    }
-
-    const user = await prisma.user.findUnique({
-      where: { id: sessionData.user.id },
-    });
-
-    const isValid = user && (await verifyPassword(currentPassword, user.passwordHash ?? null));
-
-    if (!isValid) {
-      return { error: t("currentPasswordIncorrect") };
-    }
-
-    updateData.passwordHash = await hashPassword(newPassword);
+  if (!validation.ok) {
+    return {
+      fields: translateProfileIssues(validation.issues, t),
+      message: t("fixHighlightedFields"),
+      successMessage: null,
+    };
   }
 
   try {
     await prisma.user.update({
       where: { id: sessionData.user.id },
-      data: updateData,
+      data: {
+        displayName: validation.data.displayName,
+      },
     });
   } catch {
-    return { error: t("profileSaveFailed") };
+    return { fields: {}, message: t("profileSaveFailed"), successMessage: null };
   }
 
   revalidatePath("/", "layout");
-  return { success: t("saveSuccess") };
+  return { fields: {}, message: null, successMessage: t("saveSuccess") };
+}
+
+export async function changeAccountPassword(
+  _previousState: ProfileSettingsActionState,
+  formData: FormData,
+): Promise<ProfileSettingsActionState> {
+  const locale = await getLocale();
+  const t = await getTranslations({ locale, namespace: "profile.errors" });
+  const sessionData = await getCurrentSession();
+
+  if (!sessionData) {
+    return { fields: {}, message: t("loginRequired"), successMessage: null };
+  }
+
+  const validation = validateProfilePasswordInput({
+    confirmPassword: formData.get("confirmPassword"),
+    currentPassword: formData.get("currentPassword"),
+    newPassword: formData.get("newPassword"),
+  });
+
+  if (!validation.ok) {
+    return {
+      fields: translateProfileIssues(validation.issues, t),
+      message: t("fixHighlightedFields"),
+      successMessage: null,
+    };
+  }
+
+  try {
+    await auth.api.changePassword({
+      body: {
+        currentPassword: validation.data.currentPassword,
+        newPassword: validation.data.newPassword,
+        revokeOtherSessions: false,
+      },
+      headers: await headers(),
+    });
+  } catch (error) {
+    if (isAPIError(error)) {
+      return {
+        fields: { currentPassword: [t("currentPasswordIncorrect")] },
+        message: t("fixHighlightedFields"),
+        successMessage: null,
+      };
+    }
+
+    return { fields: {}, message: t("profileSaveFailed"), successMessage: null };
+  }
+
+  revalidatePath("/", "layout");
+  return { fields: {}, message: null, successMessage: t("saveSuccess") };
 }

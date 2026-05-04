@@ -1,111 +1,136 @@
+import { isAPIError } from "better-auth/api";
+import { getTranslations } from "next-intl/server";
+
+import { apiErrorResponse, getErrorMessage } from "../../../lib/api-errors";
 import {
-  clearSessionCookie,
-  createSession,
-  handlePrismaUniqueError,
-  hashPassword,
+  auth,
+  getDuplicateSignupFields as findDuplicateSignupFields,
   serializeUserForResponse,
 } from "../../../lib/auth";
+import {
+  getDuplicateSignupFieldErrors,
+  hasDuplicateSignupFields,
+} from "../../../lib/auth-duplicate-fields";
+import { resolveApiLocale } from "../../../lib/i18n/api";
 import { prisma } from "../../../lib/prisma";
+import { fieldIssuesToMap, validateSignupInput } from "../../../lib/validation/auth-profile";
 
 export const dynamic = "force-dynamic";
 
 type SignupBody = {
-  email?: string;
-  password?: string;
-  username?: string;
-  displayName?: string;
+  displayName?: unknown;
+  email?: unknown;
+  password?: unknown;
+  username?: unknown;
 };
-
-function getErrorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : "Unknown error";
-}
-
-function normalizeEmail(email: string): string {
-  return email.trim().toLowerCase();
-}
-
-function normalizeUsername(username: string): string {
-  return username.trim();
-}
-
-function validatePayload(body: SignupBody): { error?: string } {
-  const email = body.email?.trim();
-  const password = body.password?.trim();
-  const username = body.username?.trim();
-
-  if (!email || !password || !username) {
-    return { error: "Email, username, and password are required." };
-  }
-
-  if (!email.includes("@") || !email.includes(".")) {
-    return { error: "Please enter a valid email address." };
-  }
-
-  if (username.length < 3) {
-    return { error: "Username must be at least 3 characters long." };
-  }
-
-  if (password.length < 8) {
-    return { error: "Password must be at least 8 characters long." };
-  }
-
-  return {};
-}
 
 export async function POST(request: Request) {
   const body = (await request.json().catch(() => null)) as SignupBody | null;
+  const t = await getTranslations({ locale: resolveApiLocale(request), namespace: "auth.errors" });
 
   if (!body) {
-    return Response.json(
-      { error: "invalid_request", message: "Invalid request body." },
-      { status: 400 },
+    return apiErrorResponse({ error: "invalid_request", message: t("invalidRequestBody") }, 400);
+  }
+
+  const validation = validateSignupInput(body);
+
+  if (!validation.ok) {
+    return apiErrorResponse(
+      {
+        error: "validation_failed",
+        fields: fieldIssuesToMap(validation.issues, t),
+        message: t("fixHighlightedFields"),
+      },
+      400,
     );
   }
 
-  const validation = validatePayload(body);
-
-  if (validation.error) {
-    return Response.json({ error: "invalid_request", message: validation.error }, { status: 400 });
-  }
-
-  const email = normalizeEmail(body.email!);
-  const username = normalizeUsername(body.username!);
-  const displayName = (body.displayName ?? username).trim() || username;
-
   try {
-    const passwordHash = await hashPassword(body.password!);
+    const duplicateFields = await findDuplicateSignupFields(
+      validation.data.email,
+      validation.data.username,
+    );
 
-    const user = await prisma.user.create({
-      data: {
-        email,
-        username,
-        displayName,
-        passwordHash,
-        profile: {
-          create: {},
+    if (hasDuplicateSignupFields(duplicateFields)) {
+      return apiErrorResponse(
+        {
+          error: "duplicate_account",
+          fields: getDuplicateSignupFieldErrors(duplicateFields, t),
+          message: t("duplicateAccount"),
         },
-      },
-    });
-
-    await createSession(user.id, request);
-
-    return Response.json({ user: serializeUserForResponse(user) }, { status: 201 });
-  } catch (error) {
-    const duplicateResponse = handlePrismaUniqueError(error, ["email", "username"]);
-
-    if (duplicateResponse) {
-      return duplicateResponse;
+        409,
+      );
     }
 
-    await clearSessionCookie();
+    const { headers, response } = await auth.api.signUpEmail({
+      body: {
+        email: validation.data.email,
+        name: validation.data.displayName,
+        password: validation.data.password,
+        username: validation.data.username,
+      },
+      headers: request.headers,
+      request,
+      returnHeaders: true,
+    });
 
-    return Response.json(
+    const user = await prisma.user.findUnique({
+      where: { id: response.user.id },
+    });
+
+    if (!user) {
+      return apiErrorResponse(
+        {
+          error: "signup_failed",
+          message: t("signupUnavailable"),
+        },
+        500,
+      );
+    }
+
+    return Response.json({ user: serializeUserForResponse(user) }, { headers, status: 201 });
+  } catch (error) {
+    if (isAPIError(error)) {
+      const duplicateFields = await findDuplicateSignupFields(
+        validation.data.email,
+        validation.data.username,
+      ).catch(() => ({}));
+
+      if (hasDuplicateSignupFields(duplicateFields)) {
+        return apiErrorResponse(
+          {
+            error: "duplicate_account",
+            fields: getDuplicateSignupFieldErrors(duplicateFields, t),
+            message: t("duplicateAccount"),
+          },
+          409,
+        );
+      }
+    }
+
+    if (error instanceof Error && error.message.includes("Unique constraint")) {
+      const duplicateFields = await findDuplicateSignupFields(
+        validation.data.email,
+        validation.data.username,
+      ).catch(() => ({}));
+
+      return apiErrorResponse(
+        {
+          error: "duplicate_account",
+          fields: getDuplicateSignupFieldErrors(duplicateFields, t),
+          message: t("duplicateAccount"),
+        },
+        409,
+      );
+    }
+
+    return apiErrorResponse(
       {
         error: "signup_failed",
-        message: "Unable to create your account right now.",
         detail: getErrorMessage(error),
+        message: t("signupUnavailable"),
       },
-      { status: 500 },
+      500,
     );
   }
 }

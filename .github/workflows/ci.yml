@@ -41,11 +41,18 @@ jobs:
       - name: Generate Prisma client
         run: bun run prisma:generate
 
+      - name: Run tests
+        run: bun test
+
       - name: Build app
+        env:
+          BETTER_AUTH_SECRET: ci_better_auth_secret_change_me_32_chars
+          BETTER_AUTH_URL: http://localhost:3000
         run: bun run build
 
       - name: Validate Compose config
         env:
+          BETTER_AUTH_SECRET: ci_better_auth_secret_change_me_32_chars
           POSTGRES_PASSWORD: ci-password
         run: docker compose -f docker-compose.yml -f docker-compose.dev.yml config
 

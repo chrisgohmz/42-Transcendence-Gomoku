@@ -1,6 +1,6 @@
 import { createId } from "@paralleldrive/cuid2";
+import { hashPassword } from "better-auth/crypto";
 
-import { hashPassword } from "../app/lib/auth";
 import { prisma } from "../app/lib/prisma";
 import {
   ConversationKind,
@@ -27,36 +27,66 @@ type SeededUsers = {
 
 const seedUsers = async (): Promise<SeededUsers> => {
   const hashedPassword = await hashPassword("password123");
+  const aliceId = createId();
+  const bobId = createId();
+  const carolId = createId();
 
   const [alice, bob, carol] = await Promise.all([
     prisma.user.create({
       data: {
+        id: aliceId,
         username: "alice",
         displayName: "Alice Demo",
         email: "alice@example.com",
+        emailVerified: true,
         emailVerifiedAt: new Date(),
-        passwordHash: hashedPassword,
         statusMessage: "Ready for ranked matches",
+        accounts: {
+          create: {
+            id: createId(),
+            accountId: aliceId,
+            providerId: "credential",
+            password: hashedPassword,
+          },
+        },
       },
     }),
     prisma.user.create({
       data: {
+        id: bobId,
         username: "bob",
         displayName: "Bob Demo",
         email: "bob@example.com",
+        emailVerified: true,
         emailVerifiedAt: new Date(),
-        passwordHash: hashedPassword,
         statusMessage: "Send me a challenge",
+        accounts: {
+          create: {
+            id: createId(),
+            accountId: bobId,
+            providerId: "credential",
+            password: hashedPassword,
+          },
+        },
       },
     }),
     prisma.user.create({
       data: {
+        id: carolId,
         username: "carol",
         displayName: "Carol Demo",
         email: "carol@example.com",
+        emailVerified: true,
         emailVerifiedAt: new Date(),
-        passwordHash: hashedPassword,
         statusMessage: "Spectating and learning",
+        accounts: {
+          create: {
+            id: createId(),
+            accountId: carolId,
+            providerId: "credential",
+            password: hashedPassword,
+          },
+        },
       },
     }),
   ]);
