@@ -1,7 +1,7 @@
 import { Prisma, MatchParticipant } from "@/../generated/prisma/client";
 import { buildBoard } from "@/lib/game/state-builder";
-import { validateMoveSubmission, type Position } from "@/lib/matches/move-rules";
 import { submitMoveRequestSchema } from "@/lib/matches/move-request-validation";
+import { validateMoveSubmission } from "@/lib/matches/move-rules";
 import { prisma } from "@/lib/prisma";
 
 import type { GameUpdatePayload } from "../../../../../shared/match-events";
