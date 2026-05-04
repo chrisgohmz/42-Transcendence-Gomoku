@@ -1,25 +1,27 @@
-import type { Cell } from "../../../shared/match-events";
+import type { Cell, Seat } from "../../../shared/match-events";
 
 type Props = {
   board: Cell[][];
-  mySeat: "BLACK" | "WHITE" | null;
-  nextTurnSeat: "BLACK" | "WHITE" | null;
+  disabled?: boolean;
+  mySeat: Seat | null;
+  nextTurnSeat: Seat | null;
   onCellClick: (x: number, y: number) => void;
 };
 
-export function MiniBoard({ board, mySeat, nextTurnSeat, onCellClick }: Props) {
+export function MiniBoard({ board, disabled = false, mySeat, nextTurnSeat, onCellClick }: Props) {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
       {board.map((row, y) => (
         <div key={y} style={{ display: "flex", gap: 4 }}>
           {row.map((cell, x) => {
-            const isMyTurn = mySeat === nextTurnSeat;
-            const clickable = isMyTurn && !cell.occupied;
+            const isMyTurn = mySeat !== null && mySeat === nextTurnSeat;
+            const clickable = !disabled && isMyTurn && !cell.occupied;
 
             return (
               <button
                 key={x}
-                onClick={() => clickable && onCellClick(x, 0)}
+                type="button"
+                onClick={() => clickable && onCellClick(x, y)}
                 disabled={!clickable}
                 style={{
                   width: 48,

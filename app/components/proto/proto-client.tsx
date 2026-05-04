@@ -3,7 +3,8 @@
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 
-import { MatchMoveForm, type SubmittedMoveInfo } from "@/components/proto/MatchMoveForm";
+import { MatchMoveForm } from "@/components/proto/MatchMoveForm";
+import { submitMove, type SubmittedMoveInfo } from "@/components/proto/submit-move";
 import { useSocketGame } from "@/hooks/useSocketGame";
 
 import type { Seat } from "../../../shared/match-events";
@@ -52,6 +53,32 @@ export function ProtoClient() {
 
   const [submittedMove, setSubmittedMove] = useState<SubmittedMoveInfo | null>(null);
   const [moveError, setMoveError] = useState<string | null>(null);
+  const [isSubmittingBoardMove, setIsSubmittingBoardMove] = useState(false);
+
+  async function handleBoardCellClick(x: number, y: number) {
+    if (!session) {
+      return;
+    }
+
+    setIsSubmittingBoardMove(true);
+    setMoveError(null);
+
+    try {
+      const nextSubmittedMove = await submitMove({
+        matchId: session.matchId,
+        participantId: session.participantId,
+        position: { x, y },
+        baseVersion: lastUpdate?.stateVersion ?? null,
+      });
+      setSubmittedMove(nextSubmittedMove);
+    } catch (submitError) {
+      setMoveError(
+        submitError instanceof Error ? submitError.message : "Network error while submitting move",
+      );
+    } finally {
+      setIsSubmittingBoardMove(false);
+    }
+  }
 
   async function loadMatches() {
     try {
@@ -254,11 +281,11 @@ export function ProtoClient() {
               {lastUpdate.board ? (
                 <MiniBoard
                   board={lastUpdate.board}
+                  disabled={isSubmittingBoardMove}
                   mySeat={session ? (createdMatch?.seat ?? joinedMatch?.seat ?? null) : null}
                   nextTurnSeat={lastUpdate.nextTurnSeat}
                   onCellClick={(x, y) => {
-                    void x;
-                    void y;
+                    void handleBoardCellClick(x, y);
                   }}
                 />
               ) : null}

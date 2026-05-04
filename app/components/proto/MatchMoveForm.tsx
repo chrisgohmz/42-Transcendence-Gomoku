@@ -3,11 +3,9 @@
 import type { ChangeEventHandler, SubmitEventHandler } from "react";
 import { useState } from "react";
 
-export type SubmittedMoveInfo = {
-  accepted: boolean;
-  requestId: string | null;
-  position: { x: number; y: number };
-};
+import { submitMove, type SubmittedMoveInfo } from "./submit-move";
+
+export type { SubmittedMoveInfo } from "./submit-move";
 
 type MatchMoveFormProps = {
   matchId: string;
@@ -15,18 +13,6 @@ type MatchMoveFormProps = {
   baseVersion?: number | null;
   onSuccess: (submittedMove: SubmittedMoveInfo) => void;
   onError: (message: string) => void;
-};
-
-type SubmitMoveResponse = {
-  ok?: boolean;
-  accepted?: boolean;
-  requestId?: string | null;
-};
-
-type ErrorResponse = {
-  message?: string;
-  detail?: string;
-  error?: string;
 };
 
 export function MatchMoveForm({
@@ -62,41 +48,17 @@ export function MatchMoveForm({
     setIsLoading(true);
 
     try {
-      const requestId = crypto.randomUUID();
-      const response = await fetch(`/api/matches/${matchId}/moves`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          participantId,
-          position: { x: parsedX, y: parsedY },
-          requestId,
-          baseVersion,
-        }),
-      });
-
-      if (!response.ok) {
-        const errorPayload = (await response.json().catch(() => null)) as ErrorResponse | null;
-        const message =
-          errorPayload?.message ??
-          errorPayload?.detail ??
-          errorPayload?.error ??
-          `Request failed with status ${response.status}`;
-
-        onError(message);
-        return;
-      }
-
-      const result = (await response.json()) as SubmitMoveResponse;
-
-      onSuccess({
-        accepted: result.accepted === true,
-        requestId: result.requestId ?? requestId,
+      const submittedMove = await submitMove({
+        matchId,
+        participantId,
         position: { x: parsedX, y: parsedY },
+        baseVersion,
       });
-    } catch {
-      onError("Network error while submitting move");
+      onSuccess(submittedMove);
+    } catch (submitError) {
+      onError(
+        submitError instanceof Error ? submitError.message : "Network error while submitting move",
+      );
     } finally {
       setIsLoading(false);
     }
