@@ -3,7 +3,9 @@
 import { useLocale, useTranslations } from "next-intl";
 import { useActionState } from "react";
 
+import { FieldErrorList } from "@/components/field-error-list";
 import { Link } from "@/i18n/navigation";
+import { authValidationLimits } from "@/lib/validation/auth-profile-limits";
 
 import { initialLoginActionState } from "../auth-action-state";
 import { loginAction } from "../auth-actions";
@@ -13,6 +15,8 @@ export function LoginForm() {
   const shared = useTranslations("auth.shared");
   const login = useTranslations("auth.login");
   const [state, formAction, pending] = useActionState(loginAction, initialLoginActionState);
+  const emailErrorId = "login-email-errors";
+  const passwordErrorId = "login-password-errors";
 
   return (
     <form className="form-grid" action={formAction}>
@@ -29,8 +33,12 @@ export function LoginForm() {
           autoComplete="email"
           className="text-input"
           defaultValue={state.email}
+          maxLength={authValidationLimits.emailMaxLength}
+          aria-describedby={state.fields.email ? emailErrorId : undefined}
+          aria-invalid={Boolean(state.fields.email)}
           required
         />
+        <FieldErrorList id={emailErrorId} errors={state.fields.email} />
       </div>
 
       <div className="field">
@@ -44,9 +52,13 @@ export function LoginForm() {
           autoComplete="current-password"
           className="text-input"
           required
-          minLength={8}
+          minLength={authValidationLimits.passwordMinLength}
+          maxLength={authValidationLimits.passwordMaxLength}
+          aria-describedby={state.fields.password ? passwordErrorId : undefined}
+          aria-invalid={Boolean(state.fields.password)}
         />
         <p className="helper">{shared("passwordHelper")}</p>
+        <FieldErrorList id={passwordErrorId} errors={state.fields.password} />
       </div>
 
       {state.message ? (

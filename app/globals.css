@@ -261,6 +261,16 @@ h1 {
   color: var(--danger);
 }
 
+.field-errors {
+  display: grid;
+  gap: 0.2rem;
+  padding: 0;
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--danger);
+  list-style: none;
+}
+
 .inline-links {
   display: flex;
   flex-wrap: wrap;

@@ -5,9 +5,45 @@ import path from "path";
 
 import { getLocale, getTranslations } from "next-intl/server";
 import { revalidatePath } from "next/cache";
+import { z } from "zod";
 
 import { getCurrentSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+
+const maxProfilePictureBytes = 5 * 1024 * 1024;
+const profilePictureFileSchema = z
+  .custom<File>((value) => typeof File !== "undefined" && value instanceof File, {
+    message: "noFile",
+  })
+  .refine((file) => file.size > 0, { message: "noFile" })
+  .refine((file) => file.size <= maxProfilePictureBytes, { message: "imageTooLarge" });
+
+function isSupportedProfileImageBuffer(buffer: Buffer): boolean {
+  const isJPEG =
+    buffer.length > 2 && buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff;
+  const isPNG =
+    buffer.length > 8 &&
+    buffer[0] === 0x89 &&
+    buffer[1] === 0x50 &&
+    buffer[2] === 0x4e &&
+    buffer[3] === 0x47;
+  const isWebP =
+    buffer.length > 12 &&
+    buffer[0] === 0x52 &&
+    buffer[1] === 0x49 &&
+    buffer[2] === 0x46 &&
+    buffer[3] === 0x46 &&
+    buffer[8] === 0x57 &&
+    buffer[9] === 0x45 &&
+    buffer[10] === 0x42 &&
+    buffer[11] === 0x50;
+
+  return isJPEG || isPNG || isWebP;
+}
+
+const profilePictureBufferSchema = z
+  .custom<Buffer>((value) => Buffer.isBuffer(value), { message: "invalidImage" })
+  .refine(isSupportedProfileImageBuffer, { message: "invalidImage" });
 
 export async function uploadProfilePicture(formData: FormData) {
   const locale = await getLocale();
@@ -18,40 +54,20 @@ export async function uploadProfilePicture(formData: FormData) {
     return { error: t("loginRequired") };
   }
 
-  const file = formData.get("file") as File;
+  const fileValidation = profilePictureFileSchema.safeParse(formData.get("file"));
 
-  if (!file || file.size === 0) {
-    return { error: t("noFile") };
-  }
-
-  if (file.size > 5 * 1024 * 1024) {
-    return { error: t("imageTooLarge") };
+  if (!fileValidation.success) {
+    const issue = fileValidation.error.issues[0]?.message;
+    return { error: t(issue === "imageTooLarge" ? "imageTooLarge" : "noFile") };
   }
 
   try {
+    const file = fileValidation.data;
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
+    const bufferValidation = profilePictureBufferSchema.safeParse(buffer);
 
-    const isJPEG =
-      buffer.length > 2 && buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff;
-    const isPNG =
-      buffer.length > 8 &&
-      buffer[0] === 0x89 &&
-      buffer[1] === 0x50 &&
-      buffer[2] === 0x4e &&
-      buffer[3] === 0x47;
-    const isWebP =
-      buffer.length > 12 &&
-      buffer[0] === 0x52 &&
-      buffer[1] === 0x49 &&
-      buffer[2] === 0x46 &&
-      buffer[3] === 0x46 &&
-      buffer[8] === 0x57 &&
-      buffer[9] === 0x45 &&
-      buffer[10] === 0x42 &&
-      buffer[11] === 0x50;
-
-    if (!isJPEG && !isPNG && !isWebP) {
+    if (!bufferValidation.success) {
       return { error: t("invalidImage") };
     }
 

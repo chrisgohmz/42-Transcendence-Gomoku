@@ -1,73 +1,84 @@
-import {
-  clearSessionCookie,
-  createSession,
-  serializeUserForResponse,
-  verifyPassword,
-} from "../../../lib/auth";
+import { isAPIError } from "better-auth/api";
+import { getTranslations } from "next-intl/server";
+
+import { apiErrorResponse, getErrorMessage } from "../../../lib/api-errors";
+import { auth, serializeUserForResponse } from "../../../lib/auth";
+import { resolveApiLocale } from "../../../lib/i18n/api";
 import { prisma } from "../../../lib/prisma";
+import { fieldIssuesToMap, validateLoginInput } from "../../../lib/validation/auth-profile";
 
 export const dynamic = "force-dynamic";
 
 type LoginBody = {
-  email?: string;
-  password?: string;
+  email?: unknown;
+  password?: unknown;
 };
-
-function getErrorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : "Unknown error";
-}
-
-function normalizeEmail(email: string): string {
-  return email.trim().toLowerCase();
-}
 
 export async function POST(request: Request) {
   const body = (await request.json().catch(() => null)) as LoginBody | null;
+  const t = await getTranslations({ locale: resolveApiLocale(request), namespace: "auth.errors" });
 
-  if (!body?.email || !body.password) {
-    return Response.json(
+  if (!body) {
+    return apiErrorResponse({ error: "invalid_request", message: t("invalidRequestBody") }, 400);
+  }
+
+  const validation = validateLoginInput(body);
+
+  if (!validation.ok) {
+    return apiErrorResponse(
       {
-        error: "invalid_credentials",
-        message: "Invalid email or password.",
+        error: "validation_failed",
+        fields: fieldIssuesToMap(validation.issues, t),
+        message: t("fixHighlightedFields"),
       },
-      { status: 401 },
+      400,
     );
   }
 
-  const email = normalizeEmail(body.email);
-  const password = body.password.trim();
-
   try {
-    const user = await prisma.user.findUnique({
-      where: { email },
+    const { headers, response } = await auth.api.signInEmail({
+      body: {
+        email: validation.data.email,
+        password: validation.data.password,
+      },
+      headers: request.headers,
+      request,
+      returnHeaders: true,
     });
 
-    const isValid = user && (await verifyPassword(password, user.passwordHash ?? null));
+    const user = await prisma.user.findUnique({
+      where: { id: response.user.id },
+    });
 
-    if (!user || !isValid) {
-      await clearSessionCookie();
-      return Response.json(
+    if (!user) {
+      return apiErrorResponse(
         {
-          error: "invalid_credentials",
-          message: "Invalid email or password.",
+          error: "login_failed",
+          message: t("loginUnavailable"),
         },
-        { status: 401 },
+        500,
       );
     }
 
-    await createSession(user.id, request);
-
-    return Response.json({ user: serializeUserForResponse(user) });
+    return Response.json({ user: serializeUserForResponse(user) }, { headers });
   } catch (error) {
-    await clearSessionCookie();
+    if (isAPIError(error)) {
+      return apiErrorResponse(
+        {
+          error: "invalid_credentials",
+          message: t("invalidCredentials"),
+        },
+        401,
+      );
+    }
 
-    return Response.json(
+    return apiErrorResponse(
       {
         error: "login_failed",
-        message: "Unable to sign you in right now.",
         detail: getErrorMessage(error),
+        message: t("loginUnavailable"),
       },
-      { status: 500 },
+      500,
     );
   }
 }

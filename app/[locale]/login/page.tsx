@@ -1,8 +1,8 @@
-import { useTranslations } from "next-intl";
-import { setRequestLocale } from "next-intl/server";
-import { use } from "react";
+import { getTranslations, setRequestLocale } from "next-intl/server";
 
 import { LoginForm } from "@/components/login-form";
+import { redirect } from "@/i18n/navigation";
+import { getCurrentSession } from "@/lib/auth";
 
 type LoginPageProps = {
   params: Promise<{
@@ -10,12 +10,18 @@ type LoginPageProps = {
   }>;
 };
 
-export default function LoginPage({ params }: LoginPageProps) {
-  const { locale } = use(params);
+export default async function LoginPage({ params }: LoginPageProps) {
+  const { locale } = await params;
   setRequestLocale(locale);
 
-  const shared = useTranslations("auth.shared");
-  const login = useTranslations("auth.login");
+  const session = await getCurrentSession();
+
+  if (session) {
+    redirect({ href: "/account", locale });
+  }
+
+  const shared = await getTranslations({ locale, namespace: "auth.shared" });
+  const login = await getTranslations({ locale, namespace: "auth.login" });
 
   return (
     <main className="shell">

@@ -86,8 +86,8 @@ model User {
   username        String    @unique
   displayName     String
   email           String?   @unique
+  emailVerified   Boolean   @default(false)
   emailVerifiedAt DateTime?
-  passwordHash    String?
   avatarUrl       String?
   bio             String?
   statusMessage   String?
@@ -96,6 +96,7 @@ model User {
   lastSeenAt      DateTime?
 
   profile           UserProfile?
+  accounts          Account[]
   oauthAccounts     OAuthAccount[]
   sessions          UserSession[]
   conversations     ConversationParticipant[]
@@ -167,12 +168,34 @@ model OAuthAccount {
   @@index([userId])
 }
 
+model Account {
+  id                    String    @id @default(cuid(2))
+  accountId             String
+  providerId            String
+  userId                String
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([providerId, accountId])
+  @@index([userId])
+}
+
 model UserSession {
   id           String    @id @default(cuid(2))
   userId       String
   sessionToken String    @unique
   expiresAt    DateTime
   createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
   revokedAt    DateTime?
   ipAddress    String?
   userAgent    String?
@@ -181,6 +204,17 @@ model UserSession {
   analyticsEvents AnalyticsEvent[]
 
   @@index([userId])
+}
+
+model Verification {
+  id         String   @id @default(cuid(2))
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([identifier])
 }
 
 model Friendship {

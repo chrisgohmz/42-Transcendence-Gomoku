@@ -1,173 +1,136 @@
 import "server-only";
-import { randomBytes, scrypt as nodeScrypt, timingSafeEqual } from "node:crypto";
-import { promisify } from "node:util";
+import { betterAuth } from "better-auth";
+import { prismaAdapter } from "better-auth/adapters/prisma";
+import { nextCookies } from "better-auth/next-js";
+import { headers } from "next/headers";
+import { z } from "zod";
 
-import { createId } from "@paralleldrive/cuid2";
-import { cookies, headers } from "next/headers";
-
-import type { Prisma, User, UserSession } from "../../generated/prisma/client";
+import type { User } from "../../generated/prisma/client";
+import type { DuplicateSignupFields } from "./auth-duplicate-fields";
 import { prisma } from "./prisma";
+import { authValidationLimits } from "./validation/auth-profile-limits";
 
-const SESSION_COOKIE_NAME = "gomoku_session";
-const SESSION_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
-const SESSION_REFRESH_THRESHOLD_MS = 24 * 60 * 60 * 1000; // 1 day
-const HASH_LENGTH = 64;
-const SALT_LENGTH = 16;
-const scrypt = promisify(nodeScrypt);
+const SESSION_TTL_SECONDS = 7 * 24 * 60 * 60;
+const SESSION_REFRESH_SECONDS = 24 * 60 * 60;
+const usernamePattern = /^[A-Za-z0-9_-]+$/;
 
-type AuthContext = {
+export const auth = betterAuth({
+  appName: "42 Transcendence Gomoku",
+  baseURL: process.env["BETTER_AUTH_URL"],
+  secret: process.env["BETTER_AUTH_SECRET"],
+  database: prismaAdapter(prisma, {
+    provider: "postgresql",
+  }),
+  emailAndPassword: {
+    enabled: true,
+    minPasswordLength: authValidationLimits.passwordMinLength,
+    maxPasswordLength: authValidationLimits.passwordMaxLength,
+  },
+  user: {
+    modelName: "User",
+    fields: {
+      image: "avatarUrl",
+      name: "displayName",
+    },
+    additionalFields: {
+      username: {
+        type: "string",
+        required: true,
+        validator: {
+          input: z
+            .string()
+            .min(authValidationLimits.usernameMinLength)
+            .max(authValidationLimits.usernameMaxLength)
+            .regex(usernamePattern),
+        },
+      },
+    },
+  },
+  session: {
+    modelName: "UserSession",
+    fields: {
+      token: "sessionToken",
+    },
+    expiresIn: SESSION_TTL_SECONDS,
+    updateAge: SESSION_REFRESH_SECONDS,
+    freshAge: 0,
+  },
+  account: {
+    modelName: "Account",
+  },
+  verification: {
+    modelName: "Verification",
+  },
+  databaseHooks: {
+    user: {
+      create: {
+        after: async (user) => {
+          await prisma.userProfile
+            .create({
+              data: { userId: user.id },
+            })
+            .catch(() => null);
+        },
+      },
+    },
+  },
+  plugins: [nextCookies()],
+});
+
+type BetterAuthSessionData = NonNullable<Awaited<ReturnType<typeof auth.api.getSession>>>;
+
+export type AuthContext = {
+  session: BetterAuthSessionData["session"];
   user: User;
-  session: UserSession;
 };
 
-function readCookieDomain(): string | undefined {
-  const domain = process.env["AUTH_COOKIE_DOMAIN"]?.trim();
-  return domain ? domain : undefined;
-}
-
-function isSecure(): boolean {
-  return process.env["NODE_ENV"] === "production";
-}
-
-function getClientIp(headersList: Headers): string | undefined {
-  const forwarded = headersList.get("x-forwarded-for");
-  if (forwarded) {
-    return forwarded.split(",")[0]?.trim() || undefined;
-  }
-
-  const direct = headersList.get("x-real-ip");
-  return direct ?? undefined;
-}
-
-async function getRequestHeaders(request?: Request): Promise<Headers> {
-  if (request) {
-    return request.headers;
-  }
-
-  return new Headers(await headers());
-}
-
-export async function hashPassword(password: string): Promise<string> {
-  const salt = randomBytes(SALT_LENGTH);
-  const derivedKey = (await scrypt(password, salt, HASH_LENGTH)) as Buffer;
-
-  return `${salt.toString("base64")}:${derivedKey.toString("base64")}`;
-}
-
-export async function verifyPassword(
-  password: string,
-  passwordHash: string | null,
-): Promise<boolean> {
-  if (!passwordHash) {
-    return false;
-  }
-
-  const [salt, storedHash] = passwordHash.split(":");
-
-  if (!salt || !storedHash) {
-    return false;
-  }
-
-  const saltBuffer = Buffer.from(salt, "base64");
-  const storedHashBuffer = Buffer.from(storedHash, "base64");
-  const derivedKey = (await scrypt(password, saltBuffer, storedHashBuffer.length)) as Buffer;
-
-  if (derivedKey.length !== storedHashBuffer.length) {
-    return false;
-  }
-
-  return timingSafeEqual(storedHashBuffer, derivedKey);
-}
-
-async function setSessionCookie(token: string, expiresAt: Date) {
-  const store = await cookies();
-
-  store.set(SESSION_COOKIE_NAME, token, {
-    httpOnly: true,
-    secure: isSecure(),
-    sameSite: "lax",
-    expires: expiresAt,
-    path: "/",
-    domain: readCookieDomain(),
+export async function getCurrentSession(): Promise<AuthContext | null> {
+  const sessionData = await auth.api.getSession({
+    headers: await headers(),
   });
-}
 
-export async function clearSessionCookie() {
-  const store = await cookies();
+  if (!sessionData) {
+    return null;
+  }
 
-  store.set(SESSION_COOKIE_NAME, "", {
-    httpOnly: true,
-    secure: isSecure(),
-    sameSite: "lax",
-    maxAge: 0,
-    path: "/",
-    domain: readCookieDomain(),
+  const user = await prisma.user.findUnique({
+    where: { id: sessionData.user.id },
   });
+
+  if (!user) {
+    return null;
+  }
+
+  return { session: sessionData.session, user };
 }
 
-export async function createSession(userId: string, request?: Request) {
-  const expiresAt = new Date(Date.now() + SESSION_TTL_MS);
-  const sessionToken = createId();
-  const requestHeaders = await getRequestHeaders(request);
-
-  await prisma.userSession.create({
-    data: {
-      userId,
-      sessionToken,
-      expiresAt,
-      ipAddress: getClientIp(requestHeaders),
-      userAgent: requestHeaders.get("user-agent") ?? undefined,
+export async function getDuplicateSignupFields(
+  email: string,
+  username: string,
+): Promise<DuplicateSignupFields> {
+  const users = await prisma.user.findMany({
+    where: {
+      OR: [{ email }, { username }],
+    },
+    select: {
+      email: true,
+      username: true,
     },
   });
 
-  await setSessionCookie(sessionToken, expiresAt);
-}
+  const fields: DuplicateSignupFields = {};
 
-export async function revokeSession(sessionToken: string) {
-  await prisma.userSession.updateMany({
-    where: { sessionToken, revokedAt: null },
-    data: { revokedAt: new Date() },
-  });
-}
+  for (const user of users) {
+    if (user.email === email) {
+      fields.email = true;
+    }
 
-export async function getCurrentSession(): Promise<AuthContext | null> {
-  const sessionToken = (await cookies()).get(SESSION_COOKIE_NAME)?.value;
-
-  if (!sessionToken) {
-    return null;
+    if (user.username === username) {
+      fields.username = true;
+    }
   }
 
-  const session = await prisma.userSession.findUnique({
-    where: { sessionToken },
-    include: { user: true },
-  });
-
-  if (!session || session.revokedAt) {
-    return null;
-  }
-
-  if (session.expiresAt.getTime() <= Date.now()) {
-    return null;
-  }
-
-  return { user: session.user, session };
-}
-
-export async function refreshSessionIfNeeded(context: AuthContext): Promise<void> {
-  const remainingMs = context.session.expiresAt.getTime() - Date.now();
-
-  if (remainingMs > SESSION_REFRESH_THRESHOLD_MS) {
-    return;
-  }
-
-  const nextExpiry = new Date(Date.now() + SESSION_TTL_MS);
-
-  await prisma.userSession.update({
-    where: { id: context.session.id },
-    data: { expiresAt: nextExpiry },
-  });
-
-  await setSessionCookie(context.session.sessionToken, nextExpiry);
+  return fields;
 }
 
 export function serializeUserForResponse(user: User) {
@@ -176,26 +139,6 @@ export function serializeUserForResponse(user: User) {
     username: user.username,
     displayName: user.displayName,
     email: user.email,
-    emailVerified: Boolean(user.emailVerifiedAt),
+    emailVerified: user.emailVerified || Boolean(user.emailVerifiedAt),
   };
-}
-
-export function handlePrismaUniqueError(error: unknown, fields?: string[]): Response | null {
-  const prismaError = error as Prisma.PrismaClientKnownRequestError;
-
-  if (prismaError?.code !== "P2002") {
-    return null;
-  }
-
-  const targetMeta = prismaError.meta?.["target"];
-  const target = Array.isArray(targetMeta) ? targetMeta.join(", ") : undefined;
-  const uniqueFields = fields?.join(", ") ?? target ?? "fields";
-
-  return Response.json(
-    {
-      error: "duplicate",
-      message: `An account with those ${uniqueFields} already exists.`,
-    },
-    { status: 409 },
-  );
 }

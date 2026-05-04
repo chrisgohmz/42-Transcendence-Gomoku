@@ -1,8 +1,17 @@
+import { z } from "zod";
+
 import { Prisma } from "@/../generated/prisma/client";
-import { Role, Seat, MatchStatus } from "@/../generated/prisma/enums";
+import { MatchStatus, Role, Seat } from "@/../generated/prisma/enums";
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
+
+const joinMatchRequestSchema = z.preprocess(
+  (value) => (typeof value === "object" && value !== null && !Array.isArray(value) ? value : {}),
+  z.object({
+    displayName: z.string().trim().min(1).max(80).optional(),
+  }),
+);
 
 function getErrorMessage(error: unknown): string {
   return error instanceof Error ? error.message : "Unknown error";
@@ -11,8 +20,14 @@ function getErrorMessage(error: unknown): string {
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id: matchId } = await params;
-    const body = (await request.json()) as { displayName?: string };
-    const displayName = body.displayName ?? "Player 2";
+    const body = await request.json().catch(() => ({}));
+    const validation = joinMatchRequestSchema.safeParse(body);
+
+    if (!validation.success) {
+      return Response.json({ error: "invalid_payload" }, { status: 400 });
+    }
+
+    const displayName = validation.data.displayName ?? "Player 2";
 
     const match = await prisma.match.findUnique({
       where: { id: matchId },
