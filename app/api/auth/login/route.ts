@@ -1,12 +1,8 @@
+import { isAPIError } from "better-auth/api";
 import { getTranslations } from "next-intl/server";
 
 import { apiErrorResponse, getErrorMessage } from "../../../lib/api-errors";
-import {
-  clearSessionCookie,
-  createSession,
-  serializeUserForResponse,
-  verifyPassword,
-} from "../../../lib/auth";
+import { auth, serializeUserForResponse } from "../../../lib/auth";
 import { resolveApiLocale } from "../../../lib/i18n/api";
 import { prisma } from "../../../lib/prisma";
 import { fieldIssuesToMap, validateLoginInput } from "../../../lib/validation/auth-profile";
@@ -40,15 +36,33 @@ export async function POST(request: Request) {
   }
 
   try {
-    const user = await prisma.user.findUnique({
-      where: { email: validation.data.email },
+    const { headers, response } = await auth.api.signInEmail({
+      body: {
+        email: validation.data.email,
+        password: validation.data.password,
+      },
+      headers: request.headers,
+      request,
+      returnHeaders: true,
     });
 
-    const isValid =
-      user && (await verifyPassword(validation.data.password, user.passwordHash ?? null));
+    const user = await prisma.user.findUnique({
+      where: { id: response.user.id },
+    });
 
-    if (!user || !isValid) {
-      await clearSessionCookie();
+    if (!user) {
+      return apiErrorResponse(
+        {
+          error: "login_failed",
+          message: t("loginUnavailable"),
+        },
+        500,
+      );
+    }
+
+    return Response.json({ user: serializeUserForResponse(user) }, { headers });
+  } catch (error) {
+    if (isAPIError(error)) {
       return apiErrorResponse(
         {
           error: "invalid_credentials",
@@ -57,12 +71,6 @@ export async function POST(request: Request) {
         401,
       );
     }
-
-    await createSession(user.id, request);
-
-    return Response.json({ user: serializeUserForResponse(user) });
-  } catch (error) {
-    await clearSessionCookie();
 
     return apiErrorResponse(
       {

@@ -2,7 +2,7 @@ import { getFormatter, getTranslations, setRequestLocale } from "next-intl/serve
 
 import { LogoutButton } from "@/components/logout-button";
 import { Link, redirect } from "@/i18n/navigation";
-import { getCurrentSession, refreshSessionIfNeeded, serializeUserForResponse } from "@/lib/auth";
+import { getCurrentSession, serializeUserForResponse } from "@/lib/auth";
 
 type SessionPayload = {
   user: {
@@ -25,8 +25,6 @@ async function loadSession(): Promise<SessionPayload | null> {
   if (!context) {
     return null;
   }
-
-  await refreshSessionIfNeeded(context);
 
   return {
     user: serializeUserForResponse(context.user),

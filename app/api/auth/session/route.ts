@@ -1,11 +1,7 @@
 import { getTranslations } from "next-intl/server";
 
 import { apiErrorResponse } from "../../../lib/api-errors";
-import {
-  getCurrentSession,
-  refreshSessionIfNeeded,
-  serializeUserForResponse,
-} from "../../../lib/auth";
+import { getCurrentSession, serializeUserForResponse } from "../../../lib/auth";
 import { resolveApiLocale } from "../../../lib/i18n/api";
 
 export const dynamic = "force-dynamic";
@@ -17,8 +13,6 @@ export async function GET(request: Request) {
   if (!context) {
     return apiErrorResponse({ error: "unauthorized", message: t("unauthorized") }, 401);
   }
-
-  await refreshSessionIfNeeded(context);
 
   return Response.json({
     user: serializeUserForResponse(context.user),

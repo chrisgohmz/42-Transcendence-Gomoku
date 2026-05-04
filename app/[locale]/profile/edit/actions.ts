@@ -1,9 +1,11 @@
 "use server";
 
+import { isAPIError } from "better-auth/api";
 import { getLocale, getTranslations } from "next-intl/server";
 import { revalidatePath } from "next/cache";
+import { headers } from "next/headers";
 
-import { getCurrentSession, hashPassword, verifyPassword } from "@/lib/auth";
+import { auth, getCurrentSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import {
   fieldIssuesToMap,
@@ -48,19 +50,26 @@ export async function saveAccountSettings(
     };
   }
 
-  const updateData: { displayName: string; passwordHash?: string } = {
-    displayName: validation.data.displayName,
-  };
+  try {
+    if (validation.data.wantsToChangePassword) {
+      await auth.api.changePassword({
+        body: {
+          currentPassword: validation.data.currentPassword,
+          newPassword: validation.data.newPassword,
+          revokeOtherSessions: false,
+        },
+        headers: await headers(),
+      });
+    }
 
-  if (validation.data.wantsToChangePassword) {
-    const user = await prisma.user.findUnique({
+    await prisma.user.update({
       where: { id: sessionData.user.id },
+      data: {
+        displayName: validation.data.displayName,
+      },
     });
-
-    const isValid =
-      user && (await verifyPassword(validation.data.currentPassword, user.passwordHash ?? null));
-
-    if (!isValid) {
+  } catch (error) {
+    if (validation.data.wantsToChangePassword && isAPIError(error)) {
       return {
         fields: { currentPassword: [t("currentPasswordIncorrect")] },
         message: t("fixHighlightedFields"),
@@ -68,15 +77,6 @@ export async function saveAccountSettings(
       };
     }
 
-    updateData.passwordHash = await hashPassword(validation.data.newPassword);
-  }
-
-  try {
-    await prisma.user.update({
-      where: { id: sessionData.user.id },
-      data: updateData,
-    });
-  } catch {
     return { fields: {}, message: t("profileSaveFailed"), successMessage: null };
   }
 

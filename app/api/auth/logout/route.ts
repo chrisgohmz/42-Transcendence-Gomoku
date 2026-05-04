@@ -1,15 +1,19 @@
-import { clearSessionCookie, getCurrentSession, revokeSession } from "../../../lib/auth";
+import { headers } from "next/headers";
+
+import { auth } from "../../../lib/auth";
 
 export const dynamic = "force-dynamic";
 
 export async function POST() {
-  const context = await getCurrentSession();
+  const authResponse = await auth.api
+    .signOut({
+      headers: await headers(),
+      returnHeaders: true,
+    })
+    .catch(() => null);
 
-  if (context) {
-    await revokeSession(context.session.sessionToken);
-  }
-
-  await clearSessionCookie();
-
-  return Response.json({ success: true });
+  return Response.json(
+    { success: true },
+    authResponse ? { headers: authResponse.headers } : undefined,
+  );
 }

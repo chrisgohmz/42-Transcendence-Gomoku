@@ -36,7 +36,7 @@ export function SignupForm() {
           defaultValue={state.username}
           minLength={authValidationLimits.usernameMinLength}
           maxLength={authValidationLimits.usernameMaxLength}
-          pattern="[A-Za-z0-9_-]+"
+          pattern="(?:[A-Za-z0-9_]|-)+"
           aria-describedby={state.fields.username ? usernameErrorId : undefined}
           aria-invalid={Boolean(state.fields.username)}
           required

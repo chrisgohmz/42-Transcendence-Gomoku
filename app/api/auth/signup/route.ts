@@ -1,16 +1,12 @@
+import { isAPIError } from "better-auth/api";
 import { getTranslations } from "next-intl/server";
 
+import { apiErrorResponse, getErrorMessage } from "../../../lib/api-errors";
 import {
-  apiErrorResponse,
-  getErrorMessage,
-  getPrismaUniqueConstraintFields,
-  isPrismaUniqueConstraintError,
-} from "../../../lib/api-errors";
-import {
-  clearSessionCookie,
-  createSession,
-  hashPassword,
+  auth,
+  getDuplicateSignupFields as findDuplicateSignupFields,
   serializeUserForResponse,
+  type DuplicateSignupFields,
 } from "../../../lib/auth";
 import { resolveApiLocale } from "../../../lib/i18n/api";
 import { prisma } from "../../../lib/prisma";
@@ -26,21 +22,16 @@ type SignupBody = {
 };
 
 function getDuplicateSignupFields(
-  error: unknown,
+  duplicateFields: DuplicateSignupFields,
   t: (key: "duplicateAccount" | "duplicateEmail" | "duplicateUsername") => string,
 ) {
-  if (!isPrismaUniqueConstraintError(error)) {
-    return {};
-  }
-
-  const targetFields = getPrismaUniqueConstraintFields(error);
   const fields: Partial<Record<"email" | "username", string[]>> = {};
 
-  if (targetFields.includes("email")) {
+  if (duplicateFields.email) {
     fields.email = [t("duplicateEmail")];
   }
 
-  if (targetFields.includes("username")) {
+  if (duplicateFields.username) {
     fields.username = [t("duplicateUsername")];
   }
 
@@ -50,6 +41,10 @@ function getDuplicateSignupFields(
         email: [t("duplicateAccount")],
         username: [t("duplicateAccount")],
       };
+}
+
+function hasDuplicateSignupFields(fields: DuplicateSignupFields): boolean {
+  return Boolean(fields.email || fields.username);
 }
 
 export async function POST(request: Request) {
@@ -74,36 +69,83 @@ export async function POST(request: Request) {
   }
 
   try {
-    const passwordHash = await hashPassword(validation.data.password);
+    const duplicateFields = await findDuplicateSignupFields(
+      validation.data.email,
+      validation.data.username,
+    );
 
-    const user = await prisma.user.create({
-      data: {
-        email: validation.data.email,
-        username: validation.data.username,
-        displayName: validation.data.displayName,
-        passwordHash,
-        profile: {
-          create: {},
-        },
-      },
-    });
-
-    await createSession(user.id, request);
-
-    return Response.json({ user: serializeUserForResponse(user) }, { status: 201 });
-  } catch (error) {
-    if (isPrismaUniqueConstraintError(error)) {
+    if (hasDuplicateSignupFields(duplicateFields)) {
       return apiErrorResponse(
         {
           error: "duplicate_account",
-          fields: getDuplicateSignupFields(error, t),
+          fields: getDuplicateSignupFields(duplicateFields, t),
           message: t("duplicateAccount"),
         },
         409,
       );
     }
 
-    await clearSessionCookie();
+    const { headers, response } = await auth.api.signUpEmail({
+      body: {
+        email: validation.data.email,
+        name: validation.data.displayName,
+        password: validation.data.password,
+        username: validation.data.username,
+      },
+      headers: request.headers,
+      request,
+      returnHeaders: true,
+    });
+
+    const user = await prisma.user.findUnique({
+      where: { id: response.user.id },
+    });
+
+    if (!user) {
+      return apiErrorResponse(
+        {
+          error: "signup_failed",
+          message: t("signupUnavailable"),
+        },
+        500,
+      );
+    }
+
+    return Response.json({ user: serializeUserForResponse(user) }, { headers, status: 201 });
+  } catch (error) {
+    if (isAPIError(error)) {
+      const duplicateFields = await findDuplicateSignupFields(
+        validation.data.email,
+        validation.data.username,
+      ).catch(() => ({}));
+
+      if (hasDuplicateSignupFields(duplicateFields)) {
+        return apiErrorResponse(
+          {
+            error: "duplicate_account",
+            fields: getDuplicateSignupFields(duplicateFields, t),
+            message: t("duplicateAccount"),
+          },
+          409,
+        );
+      }
+    }
+
+    if (error instanceof Error && error.message.includes("Unique constraint")) {
+      const duplicateFields = await findDuplicateSignupFields(
+        validation.data.email,
+        validation.data.username,
+      ).catch(() => ({}));
+
+      return apiErrorResponse(
+        {
+          error: "duplicate_account",
+          fields: getDuplicateSignupFields(duplicateFields, t),
+          message: t("duplicateAccount"),
+        },
+        409,
+      );
+    }
 
     return apiErrorResponse(
       {
