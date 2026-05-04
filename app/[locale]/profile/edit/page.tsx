@@ -27,7 +27,7 @@ export default async function EditProfilePage({ params }: EditProfilePageProps) 
   return (
     <main className="shell">
       <section className="hero mt-4 mb-8 flex w-full flex-col items-center text-center">
-        <h1 className="m-0 mb-4 text-5xl font-bold">{t("title")}</h1>
+	  	<h1 className="m-0 mb-12 text-5xl font-bold whitespace-nowrap">{t("title")}</h1>
         <p className="m-0 text-slate-400">{t("lede")}</p>
       </section>
 
