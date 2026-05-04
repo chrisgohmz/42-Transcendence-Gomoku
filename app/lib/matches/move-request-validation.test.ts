@@ -47,4 +47,22 @@ describe("submitMoveRequestSchema", () => {
 
     expect(result.success).toBe(false);
   });
+
+  test("rejects coordinates outside the database integer range", () => {
+    const result = submitMoveRequestSchema.safeParse({
+      participantId: "black-player",
+      position: { x: 2_147_483_648, y: 4 },
+    });
+
+    expect(result.success).toBe(false);
+  });
+
+  test("rejects negative coordinates before route processing", () => {
+    const result = submitMoveRequestSchema.safeParse({
+      participantId: "black-player",
+      position: { x: -1, y: 4 },
+    });
+
+    expect(result.success).toBe(false);
+  });
 });

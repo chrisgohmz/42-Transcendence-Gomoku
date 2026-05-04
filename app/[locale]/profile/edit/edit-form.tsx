@@ -9,7 +9,7 @@ import { useRouter } from "@/i18n/navigation";
 import { authValidationLimits } from "@/lib/validation/auth-profile-limits";
 
 import { initialProfileSettingsActionState } from "./action-state";
-import { saveAccountSettings } from "./actions";
+import { changeAccountPassword, saveDisplayName } from "./actions";
 
 export default function EditProfileForm({
   currentUsername,
@@ -18,25 +18,30 @@ export default function EditProfileForm({
   currentUsername: string;
   currentDisplayName: string;
 }) {
-  const [state, formAction, pending] = useActionState(
-    saveAccountSettings,
+  const [displayNameState, displayNameAction, displayNamePending] = useActionState(
+    saveDisplayName,
     initialProfileSettingsActionState,
   );
-  const formRef = useRef<HTMLFormElement>(null);
+  const [passwordState, passwordAction, passwordPending] = useActionState(
+    changeAccountPassword,
+    initialProfileSettingsActionState,
+  );
+  const passwordFormRef = useRef<HTMLFormElement>(null);
   const router = useRouter();
   const t = useTranslations("profile.edit");
   const displayNameErrorId = "displayName-errors";
   const currentPasswordErrorId = "currentPassword-errors";
   const newPasswordErrorId = "newPassword-errors";
   const confirmPasswordErrorId = "confirmPassword-errors";
+  const successMessage = displayNameState.successMessage ?? passwordState.successMessage;
 
   useEffect(() => {
-    if (!state.successMessage) {
+    if (!successMessage) {
       return;
     }
 
-    const form = formRef.current;
-    if (form) {
+    const form = passwordFormRef.current;
+    if (passwordState.successMessage && form) {
       const currentPassword = form.elements.namedItem("currentPassword") as HTMLInputElement | null;
       const newPassword = form.elements.namedItem("newPassword") as HTMLInputElement | null;
       const confirmPassword = form.elements.namedItem("confirmPassword") as HTMLInputElement | null;
@@ -58,17 +63,12 @@ export default function EditProfileForm({
     }, 1500);
 
     return () => window.clearTimeout(timeoutId);
-  }, [router, state.successMessage]);
+  }, [passwordState.successMessage, router, successMessage]);
 
   return (
-    <form
-      ref={formRef}
-      action={formAction}
-      className="mt-8 flex w-full flex-col gap-8 rounded-xl border border-slate-700/50 bg-[#08101F] p-8 text-left shadow-2xl"
-    >
+    <div className="mt-8 flex w-full flex-col gap-8 rounded-xl border border-slate-700/50 bg-[#08101F] p-8 text-left shadow-2xl">
       <div className="grid w-full grid-cols-1 gap-16 md:grid-cols-2">
-        {/* Left Column: Profile Section */}
-        <div className="flex flex-col gap-6">
+        <form action={displayNameAction} className="flex flex-col gap-6">
           <h2 className="m-0 text-xl font-bold text-white">{t("profileDetails")}</h2>
 
           <div className="flex flex-col gap-2">
@@ -96,16 +96,36 @@ export default function EditProfileForm({
               defaultValue={currentDisplayName}
               maxLength={authValidationLimits.displayNameMaxLength}
               className="rounded-xl border border-slate-700/50 bg-[#0c1628] px-4 py-3 text-white transition-colors focus:border-[#4ee8c2] focus:outline-none"
-              aria-describedby={state.fields.displayName ? displayNameErrorId : undefined}
-              aria-invalid={Boolean(state.fields.displayName)}
+              aria-describedby={
+                displayNameState.fields.displayName ? displayNameErrorId : undefined
+              }
+              aria-invalid={Boolean(displayNameState.fields.displayName)}
               required
             />
-            <FieldErrorList id={displayNameErrorId} errors={state.fields.displayName} />
+            <FieldErrorList id={displayNameErrorId} errors={displayNameState.fields.displayName} />
           </div>
-        </div>
 
-        {/* Right Column: Password Section */}
-        <div className="flex flex-col gap-6">
+          {displayNameState.message ? (
+            <p className="m-0 text-sm text-red-400" role="alert">
+              {displayNameState.message}
+            </p>
+          ) : null}
+          {displayNameState.successMessage ? (
+            <p className="m-0 text-sm text-[#4ee8c2]" role="status">
+              {displayNameState.successMessage}
+            </p>
+          ) : null}
+
+          <Button
+            type="submit"
+            className="mt-auto w-fit bg-[#4ee8c2] px-8 font-bold text-[#04131a] hover:bg-[#4ee8c2]/90"
+            disabled={displayNamePending}
+          >
+            {displayNamePending ? t("savingChanges") : t("saveChanges")}
+          </Button>
+        </form>
+
+        <form ref={passwordFormRef} action={passwordAction} className="flex flex-col gap-6">
           <h2 className="m-0 text-xl font-bold text-white">{t("changePassword")}</h2>
           <p className="m-0 text-sm text-slate-400">{t("passwordHelp")}</p>
 
@@ -118,10 +138,15 @@ export default function EditProfileForm({
               name="currentPassword"
               type="password"
               className="rounded-xl border border-slate-700/50 bg-[#0c1628] px-4 py-3 text-white transition-colors focus:border-[#4ee8c2] focus:outline-none"
-              aria-describedby={state.fields.currentPassword ? currentPasswordErrorId : undefined}
-              aria-invalid={Boolean(state.fields.currentPassword)}
+              aria-describedby={
+                passwordState.fields.currentPassword ? currentPasswordErrorId : undefined
+              }
+              aria-invalid={Boolean(passwordState.fields.currentPassword)}
             />
-            <FieldErrorList id={currentPasswordErrorId} errors={state.fields.currentPassword} />
+            <FieldErrorList
+              id={currentPasswordErrorId}
+              errors={passwordState.fields.currentPassword}
+            />
           </div>
 
           <div className="flex flex-col gap-2">
@@ -135,10 +160,10 @@ export default function EditProfileForm({
               minLength={authValidationLimits.passwordMinLength}
               maxLength={authValidationLimits.passwordMaxLength}
               className="rounded-xl border border-slate-700/50 bg-[#0c1628] px-4 py-3 text-white transition-colors focus:border-[#4ee8c2] focus:outline-none"
-              aria-describedby={state.fields.newPassword ? newPasswordErrorId : undefined}
-              aria-invalid={Boolean(state.fields.newPassword)}
+              aria-describedby={passwordState.fields.newPassword ? newPasswordErrorId : undefined}
+              aria-invalid={Boolean(passwordState.fields.newPassword)}
             />
-            <FieldErrorList id={newPasswordErrorId} errors={state.fields.newPassword} />
+            <FieldErrorList id={newPasswordErrorId} errors={passwordState.fields.newPassword} />
           </div>
 
           <div className="flex flex-col gap-2">
@@ -152,27 +177,39 @@ export default function EditProfileForm({
               minLength={authValidationLimits.passwordMinLength}
               maxLength={authValidationLimits.passwordMaxLength}
               className="rounded-xl border border-slate-700/50 bg-[#0c1628] px-4 py-3 text-white transition-colors focus:border-[#4ee8c2] focus:outline-none"
-              aria-describedby={state.fields.confirmPassword ? confirmPasswordErrorId : undefined}
-              aria-invalid={Boolean(state.fields.confirmPassword)}
+              aria-describedby={
+                passwordState.fields.confirmPassword ? confirmPasswordErrorId : undefined
+              }
+              aria-invalid={Boolean(passwordState.fields.confirmPassword)}
             />
-            <FieldErrorList id={confirmPasswordErrorId} errors={state.fields.confirmPassword} />
+            <FieldErrorList
+              id={confirmPasswordErrorId}
+              errors={passwordState.fields.confirmPassword}
+            />
           </div>
-        </div>
+
+          {passwordState.message ? (
+            <p className="m-0 text-sm text-red-400" role="alert">
+              {passwordState.message}
+            </p>
+          ) : null}
+          {passwordState.successMessage ? (
+            <p className="m-0 text-sm text-[#4ee8c2]" role="status">
+              {passwordState.successMessage}
+            </p>
+          ) : null}
+
+          <Button
+            type="submit"
+            className="mt-auto w-fit bg-[#4ee8c2] px-8 font-bold text-[#04131a] hover:bg-[#4ee8c2]/90"
+            disabled={passwordPending}
+          >
+            {passwordPending ? t("savingChanges") : t("saveChanges")}
+          </Button>
+        </form>
       </div>
 
-      {state.message ? (
-        <p className="m-0 text-center text-sm text-red-400" role="alert">
-          {state.message}
-        </p>
-      ) : null}
-      {state.successMessage ? (
-        <p className="m-0 text-center text-sm text-[#4ee8c2]" role="status">
-          {state.successMessage}
-        </p>
-      ) : null}
-
-      {/* Single Main Button Group */}
-      <div className="mt-2 flex justify-end gap-4">
+      <div className="mt-2 flex justify-end">
         <Button
           type="button"
           variant="outline"
@@ -181,14 +218,7 @@ export default function EditProfileForm({
         >
           {t("cancel")}
         </Button>
-        <Button
-          type="submit"
-          className="bg-[#4ee8c2] px-8 font-bold text-[#04131a] hover:bg-[#4ee8c2]/90"
-          disabled={pending}
-        >
-          {pending ? t("savingChanges") : t("saveChanges")}
-        </Button>
       </div>
-    </form>
+    </div>
   );
 }

@@ -6,8 +6,11 @@ import {
   auth,
   getDuplicateSignupFields as findDuplicateSignupFields,
   serializeUserForResponse,
-  type DuplicateSignupFields,
 } from "../../../lib/auth";
+import {
+  getDuplicateSignupFieldErrors,
+  hasDuplicateSignupFields,
+} from "../../../lib/auth-duplicate-fields";
 import { resolveApiLocale } from "../../../lib/i18n/api";
 import { prisma } from "../../../lib/prisma";
 import { fieldIssuesToMap, validateSignupInput } from "../../../lib/validation/auth-profile";
@@ -20,32 +23,6 @@ type SignupBody = {
   password?: unknown;
   username?: unknown;
 };
-
-function getDuplicateSignupFields(
-  duplicateFields: DuplicateSignupFields,
-  t: (key: "duplicateAccount" | "duplicateEmail" | "duplicateUsername") => string,
-) {
-  const fields: Partial<Record<"email" | "username", string[]>> = {};
-
-  if (duplicateFields.email) {
-    fields.email = [t("duplicateEmail")];
-  }
-
-  if (duplicateFields.username) {
-    fields.username = [t("duplicateUsername")];
-  }
-
-  return Object.keys(fields).length > 0
-    ? fields
-    : {
-        email: [t("duplicateAccount")],
-        username: [t("duplicateAccount")],
-      };
-}
-
-function hasDuplicateSignupFields(fields: DuplicateSignupFields): boolean {
-  return Boolean(fields.email || fields.username);
-}
 
 export async function POST(request: Request) {
   const body = (await request.json().catch(() => null)) as SignupBody | null;
@@ -78,7 +55,7 @@ export async function POST(request: Request) {
       return apiErrorResponse(
         {
           error: "duplicate_account",
-          fields: getDuplicateSignupFields(duplicateFields, t),
+          fields: getDuplicateSignupFieldErrors(duplicateFields, t),
           message: t("duplicateAccount"),
         },
         409,
@@ -123,7 +100,7 @@ export async function POST(request: Request) {
         return apiErrorResponse(
           {
             error: "duplicate_account",
-            fields: getDuplicateSignupFields(duplicateFields, t),
+            fields: getDuplicateSignupFieldErrors(duplicateFields, t),
             message: t("duplicateAccount"),
           },
           409,
@@ -140,7 +117,7 @@ export async function POST(request: Request) {
       return apiErrorResponse(
         {
           error: "duplicate_account",
-          fields: getDuplicateSignupFields(duplicateFields, t),
+          fields: getDuplicateSignupFieldErrors(duplicateFields, t),
           message: t("duplicateAccount"),
         },
         409,

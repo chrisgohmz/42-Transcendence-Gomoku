@@ -7,11 +7,11 @@ import { headers } from "next/headers";
 import type { LoginActionState, SignupActionState } from "./auth-action-state";
 import { defaultLocale, locales, type Locale } from "./i18n/config";
 import { redirect } from "./i18n/navigation";
+import { auth, getDuplicateSignupFields as findDuplicateSignupFields } from "./lib/auth";
 import {
-  auth,
-  getDuplicateSignupFields as findDuplicateSignupFields,
-  type DuplicateSignupFields,
-} from "./lib/auth";
+  getDuplicateSignupFieldErrors,
+  hasDuplicateSignupFields,
+} from "./lib/auth-duplicate-fields";
 import {
   fieldIssuesToMap,
   type AuthField,
@@ -45,32 +45,6 @@ function translateAuthIssues(
   t: (key: AuthValidationIssueCode) => string,
 ) {
   return fieldIssuesToMap(issues, t);
-}
-
-function getDuplicateSignupFields(
-  duplicateFields: DuplicateSignupFields,
-  t: (key: "duplicateAccount" | "duplicateEmail" | "duplicateUsername") => string,
-): Partial<Record<AuthField, string[]>> {
-  const fields: Partial<Record<AuthField, string[]>> = {};
-
-  if (duplicateFields.email) {
-    fields.email = [t("duplicateEmail")];
-  }
-
-  if (duplicateFields.username) {
-    fields.username = [t("duplicateUsername")];
-  }
-
-  return Object.keys(fields).length > 0
-    ? fields
-    : {
-        email: [t("duplicateAccount")],
-        username: [t("duplicateAccount")],
-      };
-}
-
-function hasDuplicateSignupFields(fields: DuplicateSignupFields): boolean {
-  return Boolean(fields.email || fields.username);
 }
 
 export async function loginAction(
@@ -156,7 +130,7 @@ export async function signupAction(
       return {
         displayName,
         email,
-        fields: getDuplicateSignupFields(duplicateFields, t),
+        fields: getDuplicateSignupFieldErrors(duplicateFields, t),
         message: t("duplicateAccount"),
         username,
       };
@@ -182,7 +156,7 @@ export async function signupAction(
         return {
           displayName,
           email,
-          fields: getDuplicateSignupFields(duplicateFields, t),
+          fields: getDuplicateSignupFieldErrors(duplicateFields, t),
           message: t("duplicateAccount"),
           username,
         };
@@ -198,7 +172,7 @@ export async function signupAction(
       return {
         displayName,
         email,
-        fields: getDuplicateSignupFields(duplicateFields, t),
+        fields: getDuplicateSignupFieldErrors(duplicateFields, t),
         message: t("duplicateAccount"),
         username,
       };

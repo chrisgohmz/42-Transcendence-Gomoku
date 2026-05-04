@@ -2,7 +2,8 @@ import { describe, expect, test } from "bun:test";
 
 import {
   validateLoginInput,
-  validateProfileSettingsInput,
+  validateProfileDisplayNameInput,
+  validateProfilePasswordInput,
   validateSignupInput,
 } from "./auth-profile";
 
@@ -33,7 +34,7 @@ describe("auth/profile validation", () => {
       password: "password123",
       username: "max_player",
     });
-    const profileResult = validateProfileSettingsInput({
+    const profileResult = validateProfileDisplayNameInput({
       displayName: "  Max J  ",
     });
 
@@ -137,32 +138,40 @@ describe("auth/profile validation", () => {
     });
   });
 
-  test("allows profile updates without a password change", () => {
-    const result = validateProfileSettingsInput({
+  test("validates profile display-name updates independently from password fields", () => {
+    const result = validateProfileDisplayNameInput({
       displayName: "Max J",
     });
 
     expect(result).toMatchObject({
       data: {
         displayName: "Max J",
-        wantsToChangePassword: false,
       },
       ok: true,
     });
   });
 
-  test("reports profile password field issues", () => {
-    const result = validateProfileSettingsInput({
+  test("requires all password fields when changing a profile password", () => {
+    const result = validateProfilePasswordInput({
+      currentPassword: "password123",
+      newPassword: "password999",
+    });
+
+    expect(result).toMatchObject({
+      issues: [{ code: "confirmPasswordRequired", field: "confirmPassword" }],
+      ok: false,
+    });
+  });
+
+  test("reports profile password mismatches", () => {
+    const result = validateProfilePasswordInput({
       confirmPassword: "password999",
-      displayName: "Max",
+      currentPassword: "password000",
       newPassword: "password123",
     });
 
     expect(result).toMatchObject({
-      issues: [
-        { code: "currentPasswordRequired", field: "currentPassword" },
-        { code: "passwordMismatch", field: "confirmPassword" },
-      ],
+      issues: [{ code: "passwordMismatch", field: "confirmPassword" }],
       ok: false,
     });
   });

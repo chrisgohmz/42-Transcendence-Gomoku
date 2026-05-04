@@ -6,6 +6,7 @@ import { headers } from "next/headers";
 import { z } from "zod";
 
 import type { User } from "../../generated/prisma/client";
+import type { DuplicateSignupFields } from "./auth-duplicate-fields";
 import { prisma } from "./prisma";
 import { authValidationLimits } from "./validation/auth-profile-limits";
 
@@ -82,8 +83,6 @@ export type AuthContext = {
   session: BetterAuthSessionData["session"];
   user: User;
 };
-
-export type DuplicateSignupFields = Partial<Record<"email" | "username", true>>;
 
 export async function getCurrentSession(): Promise<AuthContext | null> {
   const sessionData = await auth.api.getSession({

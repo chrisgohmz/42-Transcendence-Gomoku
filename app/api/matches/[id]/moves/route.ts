@@ -109,6 +109,22 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
           })
         : null;
 
+      const validation = validateMoveSubmission({
+        match,
+        participantId,
+        position,
+        baseVersion,
+        hasDuplicateRequest: duplicateRequestMove !== null,
+        isOccupied: false,
+      });
+
+      if (!validation.ok) {
+        return {
+          kind: "error" as const,
+          payload: { error: validation.error, status: validation.status },
+        };
+      }
+
       const occupiedMove = await tx.matchMove.findUnique({
         where: {
           matchId_x_y: {
@@ -120,19 +136,10 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
         select: { id: true },
       });
 
-      const validation = validateMoveSubmission({
-        match,
-        participantId,
-        position,
-        baseVersion,
-        hasDuplicateRequest: duplicateRequestMove !== null,
-        isOccupied: occupiedMove !== null,
-      });
-
-      if (!validation.ok) {
+      if (occupiedMove) {
         return {
           kind: "error" as const,
-          payload: { error: validation.error, status: validation.status },
+          payload: { error: "occupied", status: 409 },
         };
       }
 

@@ -2,9 +2,11 @@ import { z } from "zod";
 
 import { MatchStatus, Role, Seat } from "../../../generated/prisma/enums";
 
+const maxPrismaInt = 2_147_483_647;
+
 export const positionSchema = z.object({
-  x: z.number().int(),
-  y: z.number().int(),
+  x: z.number().int().min(0).max(maxPrismaInt),
+  y: z.number().int().min(0).max(maxPrismaInt),
 });
 
 export type Position = z.infer<typeof positionSchema>;
