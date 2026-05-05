@@ -10,10 +10,19 @@ type FriendsPageProps = {
   params: Promise<{
     locale: string;
   }>;
+  searchParams: Promise<{
+    query?: string | string[];
+  }>;
 };
 
-export default async function FriendsPage({ params }: FriendsPageProps) {
+function getSearchQuery(query: string | string[] | undefined) {
+  const rawQuery = Array.isArray(query) ? query[0] : query;
+  return rawQuery?.trim() ?? "";
+}
+
+export default async function FriendsPage({ params, searchParams }: FriendsPageProps) {
   const { locale } = await params;
+  const { query } = await searchParams;
   setRequestLocale(locale);
 
   const sessionData = await getCurrentSession();
@@ -24,6 +33,7 @@ export default async function FriendsPage({ params }: FriendsPageProps) {
   }
 
   const currentUserId = sessionData.user.id;
+  const searchQuery = getSearchQuery(query);
 
   const friendships = await prisma.friendship.findMany({
     where: {
@@ -38,6 +48,26 @@ export default async function FriendsPage({ params }: FriendsPageProps) {
       },
     },
   });
+
+  const searchResults =
+    searchQuery.length > 0
+      ? await prisma.user.findMany({
+          where: {
+            OR: [
+              { username: { contains: searchQuery, mode: "insensitive" } },
+              { displayName: { contains: searchQuery, mode: "insensitive" } },
+            ],
+            NOT: { id: currentUserId },
+          },
+          take: 5,
+          select: {
+            id: true,
+            username: true,
+            displayName: true,
+            avatarUrl: true,
+          },
+        })
+      : [];
 
   const friends = [];
   const pendingRequests = [];
@@ -81,6 +111,8 @@ export default async function FriendsPage({ params }: FriendsPageProps) {
       friends={friends}
       pendingRequests={pendingRequests}
       sentRequests={sentRequests}
+      searchQuery={searchQuery}
+      searchResults={searchResults}
     />
   );
 }

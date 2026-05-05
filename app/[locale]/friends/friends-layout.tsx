@@ -3,13 +3,14 @@
 /* eslint-disable @next/next/no-img-element */
 import { MessageSquare, UserMinus, Check, X, Users, UserPlus } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { useRouter } from "next/navigation";
+import Form from "next/form";
+import { usePathname, useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 
 import { usePresence } from "@/components/presence-provider";
 import { Link } from "@/i18n/navigation";
 
-import { removeFriend, respondToRequest, sendFriendRequest, searchUsers } from "./actions";
+import { removeFriend, respondToRequest, sendFriendRequest } from "./actions";
 
 type FriendData = {
   id: number;
@@ -20,23 +21,33 @@ type FriendData = {
   stats: any;
 };
 
+type SearchUser = {
+  id: string;
+  username: string;
+  displayName: string;
+  avatarUrl: string | null;
+};
+
 type FriendsContentProps = {
   friends: FriendData[];
   pendingRequests: FriendData[];
   sentRequests: FriendData[];
+  searchQuery: string;
+  searchResults: SearchUser[];
 };
 
 export default function FriendsContent({
   friends,
   pendingRequests,
   sentRequests,
+  searchQuery,
+  searchResults,
 }: FriendsContentProps) {
   const { onlineUsers, socket } = usePresence();
   const router = useRouter();
+  const pathname = usePathname();
   const t = useTranslations("friends");
   const [activeTab, setActiveTab] = useState("friends");
-  const [searchQuery, setSearchQuery] = useState("");
-  const [searchResults, setSearchResults] = useState<any[]>([]);
   const [statusMessage, setStatusMessage] = useState<{ text: string; isError: boolean } | null>(
     null,
   );
@@ -60,21 +71,6 @@ export default function FriendsContent({
     }
   }, [statusMessage]);
 
-  const handleSearch = async () => {
-    if (!searchQuery.trim()) return;
-    setStatusMessage(null);
-    // Removed setSearchResults([]); to prevent the flicker!
-
-    const result = await searchUsers(searchQuery.trim());
-    if (result.error) {
-      setStatusMessage({ text: result.error, isError: true });
-    } else if (result.users?.length === 0) {
-      setStatusMessage({ text: t("empty.search"), isError: true });
-    } else {
-      setSearchResults(result.users || []);
-    }
-  };
-
   const handleSendRequest = async (targetUsername: string) => {
     setStatusMessage(null);
     const result = await sendFriendRequest(targetUsername);
@@ -85,9 +81,8 @@ export default function FriendsContent({
         text: t("messages.requestSent", { name: targetUsername }),
         isError: false,
       });
-      setSearchResults([]);
-      setSearchQuery("");
       socket?.emit("friendship:notify", targetUsername);
+      router.replace(pathname, { scroll: false });
     }
   };
 
@@ -116,21 +111,22 @@ export default function FriendsContent({
           <Users className="h-12 w-12 text-[#4ee8c2]" />
           <h1 className="m-0 text-5xl font-bold">{t("title")}</h1>
         </div>
-        <div className="flex w-full max-w-md gap-3">
+        <Form action="" scroll={false} className="flex w-full max-w-md gap-3">
           <input
+            key={searchQuery}
+            name="query"
             type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            defaultValue={searchQuery}
             placeholder={t("searchPlaceholder")}
             className="flex-1 rounded-xl border border-slate-700/50 bg-[#0c1628] px-5 py-3 text-white transition-colors focus:border-[#4ee8c2] focus:outline-none"
           />
           <button
-            onClick={handleSearch}
+            type="submit"
             className="rounded-xl bg-[#4ee8c2] px-6 py-3 font-bold tracking-wider text-[#04131a] uppercase transition-transform hover:-translate-y-0.5"
           >
             {t("search")}
           </button>
-        </div>
+        </Form>
 
         {searchResults.length > 0 && (
           <div className="mt-4 w-full max-w-md rounded-xl border border-slate-700/50 bg-[#08101F] p-2 shadow-lg shadow-blue-500/10">
@@ -173,6 +169,10 @@ export default function FriendsContent({
               </div>
             ))}
           </div>
+        )}
+
+        {!statusMessage && searchQuery.length > 0 && searchResults.length === 0 && (
+          <p className="mt-3 text-sm font-bold text-red-400">{t("empty.search")}</p>
         )}
 
         {statusMessage && (

@@ -92,29 +92,3 @@ export async function removeFriend(friendshipId: number) {
   revalidatePath("/");
   return { success: true };
 }
-
-export async function searchUsers(query: string) {
-  const session = await getCurrentSession();
-  if (!session) return { error: "Please sign in." };
-
-  if (!query || query.trim().length === 0) return { users: [] };
-
-  const users = await prisma.user.findMany({
-    where: {
-      OR: [
-        { username: { contains: query, mode: "insensitive" } },
-        { displayName: { contains: query, mode: "insensitive" } },
-      ],
-      NOT: { id: session.user.id },
-    },
-    take: 5,
-    select: {
-      id: true,
-      username: true,
-      displayName: true,
-      avatarUrl: true,
-    },
-  });
-
-  return { users };
-}
