@@ -1,11 +1,10 @@
 "use client";
 
+/* eslint-disable @next/next/no-img-element */
 import { MessageSquare, UserMinus, Check, X, Users, UserPlus } from "lucide-react";
 import { useTranslations } from "next-intl";
-import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
-
 import { usePresence } from "@/components/presence-provider";
 import { Link } from "@/i18n/navigation";
 
@@ -63,7 +62,7 @@ export default function FriendsContent({
   const handleSearch = async () => {
     if (!searchQuery.trim()) return;
     setStatusMessage(null);
-    setSearchResults([]);
+    // Removed setSearchResults([]); to prevent the flicker!
 
     const result = await searchUsers(searchQuery.trim());
     if (result.error) {
@@ -142,11 +141,9 @@ export default function FriendsContent({
                 <div className="flex items-center gap-3">
                   <Link href={`/profile/${user.username}`}>
                     {user.avatarUrl ? (
-                      <Image
+                      <img
                         src={user.avatarUrl}
                         alt={user.displayName}
-                        width={32}
-                        height={32}
                         className="h-8 w-8 rounded-full object-cover transition-transform hover:scale-105"
                       />
                     ) : (
@@ -248,11 +245,9 @@ export default function FriendsContent({
                             <div className="flex items-center gap-3">
                               <Link href={`/profile/${friend.username}`}>
                                 {friend.avatarUrl ? (
-                                  <Image
+                                  <img
                                     src={friend.avatarUrl}
                                     alt={friend.displayName}
-                                    width={32}
-                                    height={32}
                                     className="h-8 w-8 rounded-full object-cover transition-transform hover:scale-105"
                                   />
                                 ) : (
@@ -292,7 +287,7 @@ export default function FriendsContent({
                           <td className="p-4 text-slate-300">{friend.stats?.losses || 0}</td>
                           <td className="flex justify-end gap-2 p-4">
                             <Link
-                              href="/messages"
+                              href={`/messages?user=${friend.username}`}
                               className="flex items-center gap-2 rounded-md bg-slate-800 px-3 py-1.5 text-sm font-bold transition-colors hover:bg-slate-700"
                             >
                               <MessageSquare className="h-4 w-4" />
@@ -343,11 +338,9 @@ export default function FriendsContent({
                           <div className="flex items-center gap-3">
                             <Link href={`/profile/${request.username}`}>
                               {request.avatarUrl ? (
-                                <Image
+                                <img
                                   src={request.avatarUrl}
                                   alt={request.displayName}
-                                  width={32}
-                                  height={32}
                                   className="h-8 w-8 rounded-full object-cover transition-transform hover:scale-105"
                                 />
                               ) : (
@@ -416,11 +409,9 @@ export default function FriendsContent({
                           <div className="flex items-center gap-3">
                             <Link href={`/profile/${request.username}`}>
                               {request.avatarUrl ? (
-                                <Image
+                                <img
                                   src={request.avatarUrl}
                                   alt={request.displayName}
-                                  width={32}
-                                  height={32}
                                   className="h-8 w-8 rounded-full object-cover transition-transform hover:scale-105"
                                 />
                               ) : (

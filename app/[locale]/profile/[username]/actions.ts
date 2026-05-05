@@ -20,7 +20,13 @@ export async function processFriendAction(
   const userHighId = loggedInUserId < targetUserId ? targetUserId : loggedInUserId;
 
   try {
+    const existing = await prisma.friendship.findUnique({
+      where: { userLowId_userHighId: { userLowId, userHighId } },
+    });
+
     if (action === "ADD") {
+      if (existing) return { error: "Already friends or request pending" };
+
       await prisma.friendship.create({
         data: {
           userLowId,
@@ -31,7 +37,11 @@ export async function processFriendAction(
       });
     }
 
-    if (action === "ACCEPT") {
+    else if (action === "ACCEPT") {
+      if (!existing || existing.status !== "PENDING" || existing.requestedById === loggedInUserId) {
+        return { error: "Invalid transition" };
+      }
+
       await prisma.friendship.update({
         where: { userLowId_userHighId: { userLowId, userHighId } },
         data: {
@@ -42,13 +52,9 @@ export async function processFriendAction(
       });
     }
 
-    if (action === "DECLINE") {
-      await prisma.friendship.delete({
-        where: { userLowId_userHighId: { userLowId, userHighId } },
-      });
-    }
+    else if (action === "DECLINE" || action === "REMOVE" || action === "CANCEL") {
+      if (!existing) return { error: "Not found" };
 
-    if (action === "REMOVE" || action === "CANCEL") {
       await prisma.friendship.delete({
         where: { userLowId_userHighId: { userLowId, userHighId } },
       });
@@ -56,6 +62,7 @@ export async function processFriendAction(
 
     revalidatePath("/[locale]/profile/[username]", "page");
     return { success: true };
+
   } catch {
     return { error: "Something went wrong." };
   }

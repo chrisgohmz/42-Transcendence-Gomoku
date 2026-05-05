@@ -9,6 +9,8 @@ import { Server } from "socket.io";
 import { isGameUpdatePayload } from "../shared/match-events-validation";
 import { registerMatchSubscription } from "./handlers/match-subscription";
 import { matchRoomId } from "./lib/rooms";
+import { auth } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
 
 const currentDirectory = dirname(fileURLToPath(import.meta.url));
 const rootEnvPath = resolve(currentDirectory, "../.env");
@@ -49,7 +51,40 @@ const io = new Server({
 
 io.bind(engine);
 
+// 1. Secure Authentication Middleware
+io.use(async (socket, next) => {
+  try {
+    const webHeaders = new Headers();
+    for (const [key, value] of Object.entries(socket.request.headers)) {
+      if (typeof value === "string") {
+        webHeaders.append(key, value);
+      } else if (Array.isArray(value)) {
+        value.forEach((v) => webHeaders.append(key, v));
+      }
+    }
+
+    const sessionData = await auth.api.getSession({
+      headers: webHeaders,
+    });
+
+    if (!sessionData) {
+      return next(new Error("unauthorized"));
+    }
+
+    socket.data.user = sessionData.user;
+    next();
+  } catch {
+    next(new Error("unauthorized"));
+  }
+});
+
 const connectedUsers = new Map<string, string>();
+
+type QueuedPlayer = {
+  socketId: string;
+  userId: string;
+};
+let matchQueue: QueuedPlayer[] = [];
 
 io.on("connection", (socket) => {
   console.log(`Socket.IO client connected: ${socket.id}`);
@@ -57,20 +92,85 @@ io.on("connection", (socket) => {
 
   registerMatchSubscription(socket);
 
-  socket.on("presence:subscribe", (username: string) => {
+  socket.on("presence:subscribe", () => {
+    const username = socket.data.user?.username;
     if (!username) return;
+
     void socket.join(`user:${username}`);
     connectedUsers.set(socket.id, username);
     const activeUsernames = Array.from(new Set(connectedUsers.values()));
     io.emit("presence:update", activeUsernames);
   });
 
-  socket.on("friendship:notify", (targetUsername: string) => {
-    io.to(`user:${targetUsername}`).emit("friendship:refresh");
+  socket.on("friendship:notify", async (targetUsername: string) => {
+    const senderId = socket.data.user?.id;
+    if (!senderId) return;
+
+    try {
+      const target = await prisma.user.findUnique({ where: { username: targetUsername } });
+      if (!target) return;
+
+      const userLowId = senderId < target.id ? senderId : target.id;
+      const userHighId = senderId < target.id ? target.id : senderId;
+
+      const friendship = await prisma.friendship.findUnique({
+        where: { userLowId_userHighId: { userLowId, userHighId } },
+      });
+
+      if (friendship) {
+        io.to(`user:${targetUsername}`).emit("friendship:refresh");
+      }
+    } catch (error) {
+      console.error("Failed to verify friendship notification", error);
+    }
+  });
+
+  socket.on("queue:join", async (userId: string) => {
+    if (!userId) return;
+
+    if (matchQueue.some((player) => player.userId === userId)) {
+      return;
+    }
+
+    matchQueue.push({ socketId: socket.id, userId });
+    console.log(`Player ${userId} joined the queue. Total waiting: ${matchQueue.length}`);
+
+    if (matchQueue.length >= 2) {
+      const player1 = matchQueue.shift()!;
+      const player2 = matchQueue.shift()!;
+
+      try {
+        const match = await prisma.match.create({
+          data: {
+            status: "IN_PROGRESS",
+            nextTurnSeat: "BLACK",
+            participants: {
+              create: [
+                { userId: player1.userId, displayNameSnapshot: "Player 1", role: "PLAYER", seat: "BLACK" },
+                { userId: player2.userId, displayNameSnapshot: "Player 2", role: "PLAYER", seat: "WHITE" },
+              ],
+            },
+          },
+        });
+
+        io.to(player1.socketId).emit("queue:matched", { matchId: match.id });
+        io.to(player2.socketId).emit("queue:matched", { matchId: match.id });
+        console.log(`Created match ${match.id} for ${player1.userId} and ${player2.userId}`);
+      } catch (error) {
+        console.error("Failed to create match from queue", error);
+      }
+    }
+  });
+
+  socket.on("queue:leave", () => {
+    matchQueue = matchQueue.filter((player) => player.socketId !== socket.id);
   });
 
   socket.on("disconnect", (reason) => {
     console.log(`Socket.IO client disconnected: ${socket.id} (${reason})`);
+
+    matchQueue = matchQueue.filter((player) => player.socketId !== socket.id);
+
     if (connectedUsers.has(socket.id)) {
       connectedUsers.delete(socket.id);
       const activeUsernames = Array.from(new Set(connectedUsers.values()));

@@ -1,11 +1,9 @@
+/* eslint-disable @next/next/no-img-element */
 import { User } from "lucide-react";
 import { getTranslations, setRequestLocale } from "next-intl/server";
-import Image from "next/image";
 import { notFound } from "next/navigation";
-
 import { getCurrentSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-
 import ProfileActions from "./profile-actions";
 import ProfilePresence from "./profile-presence";
 
@@ -85,11 +83,9 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
         <div className="flex w-full flex-row items-stretch gap-8">
           <article className="card flex flex-1 flex-col items-center overflow-hidden py-8 text-center">
             {userProfile.avatarUrl ? (
-              <Image
+              <img
                 src={userProfile.avatarUrl}
                 alt={userProfile.displayName}
-                width={300}
-                height={300}
                 className="mb-6 h-[300px] w-[300px] rounded-full bg-transparent object-cover shadow-lg shadow-[#000000]/50"
               />
             ) : (

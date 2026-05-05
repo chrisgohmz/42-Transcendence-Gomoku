@@ -3,12 +3,10 @@
 import { Pencil } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useActionState, useEffect, useRef, useState } from "react";
-
 import { FieldErrorList } from "@/components/field-error-list";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "@/i18n/navigation";
 import { authValidationLimits } from "@/lib/validation/auth-profile-limits";
-
 import { initialProfileSettingsActionState } from "./action-state";
 import { changeAccountPassword, saveDisplayName } from "./actions";
 
@@ -203,8 +201,6 @@ export default function EditProfileForm({
             </div>
           ) : (
             <>
-              <p className="m-0 text-sm text-slate-400">{t("passwordHelp")}</p>
-
               <div className="flex flex-col gap-2">
                 <label htmlFor="currentPassword" className="text-sm font-bold text-slate-300">
                   {t("currentPassword")}
@@ -299,8 +295,6 @@ export default function EditProfileForm({
           )}
         </form>
       </div>
-
-      {/* Global Bottom-Centre Button */}
       <div className="mt-4 flex w-full justify-center border-t border-slate-700/50 pt-8">
         <Button
           type="button"
