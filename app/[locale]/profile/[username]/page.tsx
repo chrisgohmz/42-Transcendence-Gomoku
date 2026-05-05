@@ -2,8 +2,10 @@
 import { User } from "lucide-react";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { notFound } from "next/navigation";
+
 import { getCurrentSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+
 import ProfileActions from "./profile-actions";
 import ProfilePresence from "./profile-presence";
 

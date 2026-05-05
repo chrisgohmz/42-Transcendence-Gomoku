@@ -6,11 +6,12 @@ import { Server as Engine } from "@socket.io/bun-engine";
 import { config } from "dotenv";
 import { Server } from "socket.io";
 
+import { auth } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
+
 import { isGameUpdatePayload } from "../shared/match-events-validation";
 import { registerMatchSubscription } from "./handlers/match-subscription";
 import { matchRoomId } from "./lib/rooms";
-import { auth } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
 
 const currentDirectory = dirname(fileURLToPath(import.meta.url));
 const rootEnvPath = resolve(currentDirectory, "../.env");
@@ -146,8 +147,18 @@ io.on("connection", (socket) => {
             nextTurnSeat: "BLACK",
             participants: {
               create: [
-                { userId: player1.userId, displayNameSnapshot: "Player 1", role: "PLAYER", seat: "BLACK" },
-                { userId: player2.userId, displayNameSnapshot: "Player 2", role: "PLAYER", seat: "WHITE" },
+                {
+                  userId: player1.userId,
+                  displayNameSnapshot: "Player 1",
+                  role: "PLAYER",
+                  seat: "BLACK",
+                },
+                {
+                  userId: player2.userId,
+                  displayNameSnapshot: "Player 2",
+                  role: "PLAYER",
+                  seat: "WHITE",
+                },
               ],
             },
           },

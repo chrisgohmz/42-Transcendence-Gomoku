@@ -35,9 +35,7 @@ export async function processFriendAction(
           status: "PENDING",
         },
       });
-    }
-
-    else if (action === "ACCEPT") {
+    } else if (action === "ACCEPT") {
       if (!existing || existing.status !== "PENDING" || existing.requestedById === loggedInUserId) {
         return { error: "Invalid transition" };
       }
@@ -50,9 +48,7 @@ export async function processFriendAction(
           respondedAt: new Date(),
         },
       });
-    }
-
-    else if (action === "DECLINE" || action === "REMOVE" || action === "CANCEL") {
+    } else if (action === "DECLINE" || action === "REMOVE" || action === "CANCEL") {
       if (!existing) return { error: "Not found" };
 
       await prisma.friendship.delete({
@@ -62,7 +58,6 @@ export async function processFriendAction(
 
     revalidatePath("/[locale]/profile/[username]", "page");
     return { success: true };
-
   } catch {
     return { error: "Something went wrong." };
   }
