@@ -2,24 +2,31 @@
 
 import { io } from "socket.io-client";
 
-function resolveSocketUrl(configuredUrl?: string) {
+type SocketLocation = Pick<Location, "hostname" | "port">;
+
+export function resolveSocketUrl(
+  configuredUrl?: string,
+  location: SocketLocation | undefined = typeof window === "undefined"
+    ? undefined
+    : window.location,
+) {
   if (configuredUrl) {
     return configuredUrl;
   }
 
   if (
-    typeof window !== "undefined" &&
-    (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") &&
-    window.location.port === "3000"
+    location &&
+    (location.hostname === "localhost" || location.hostname === "127.0.0.1") &&
+    location.port === "3000"
   ) {
-    return `http://${window.location.hostname}:3001`;
+    return `http://${location.hostname}:3001`;
   }
 
   return undefined;
 }
 
-export function createSocket(configuredUrl?: string) {
-  const socketUrl = resolveSocketUrl(configuredUrl);
+export function createSocket(configuredUrl?: string, location?: SocketLocation) {
+  const socketUrl = resolveSocketUrl(configuredUrl, location);
   const options = {
     path: "/socket.io",
     withCredentials: true,
