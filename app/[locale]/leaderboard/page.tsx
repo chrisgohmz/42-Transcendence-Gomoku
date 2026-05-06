@@ -1,5 +1,3 @@
-import { getTranslations, setRequestLocale } from "next-intl/server";
-
 import LeaderboardTable from "@/components/leaderboardtable";
 import { prisma } from "@/lib/prisma";
 
