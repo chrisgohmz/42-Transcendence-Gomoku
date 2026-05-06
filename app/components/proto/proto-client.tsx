@@ -5,6 +5,7 @@ import { useState } from "react";
 
 import { MatchMoveForm } from "@/components/proto/MatchMoveForm";
 import { submitMove, type SubmittedMoveInfo } from "@/components/proto/submit-move";
+import { useMatchInitialize, type StoredMatchSession } from "@/hooks/useMatchInitialize";
 import { useSocketGame } from "@/hooks/useSocketGame";
 
 import type { Seat } from "../../../shared/match-events";
@@ -34,6 +35,18 @@ type MatchSession = {
   participantId: string;
 };
 
+const STORAGE_PREFIX = "proto:matchSession:";
+
+function saveMatchSession(
+  session: Omit<StoredMatchSession, "displayName"> & { displayName?: string },
+) {
+  const withDisplayName: StoredMatchSession = {
+    displayName: session.displayName || "Player",
+    ...session,
+  };
+  sessionStorage.setItem(`${STORAGE_PREFIX}${session.matchId}`, JSON.stringify(withDisplayName));
+}
+
 export function ProtoClient() {
   const t = useTranslations("proto");
   const [createdMatch, setCreatedMatch] = useState<CreatedMatchInfo | null>(null);
@@ -46,9 +59,18 @@ export function ProtoClient() {
   const [displayName, setDisplayname] = useState("");
 
   const [session, setSession] = useState<MatchSession | null>(null);
+
+  const {
+    session: restoredSession,
+    state: restoredState,
+    isLoading: initLoading,
+  } = useMatchInitialize();
+
+  const resolvedSession = session || restoredSession;
+
   const { status, lastUpdate } = useSocketGame(
-    session?.matchId ?? null,
-    session?.participantId ?? null,
+    resolvedSession?.matchId ?? null,
+    resolvedSession?.participantId ?? null,
   );
 
   const [submittedMove, setSubmittedMove] = useState<SubmittedMoveInfo | null>(null);
@@ -110,12 +132,18 @@ export function ProtoClient() {
   }
 
   function handleSuccess(nextCreatedMatch: CreatedMatchInfo) {
-    setCreatedMatch(nextCreatedMatch);
-    setError(null);
-    setSession({
+    const nextSession = {
       matchId: nextCreatedMatch.matchId,
       participantId: nextCreatedMatch.participantId,
-    });
+      role: nextCreatedMatch.role,
+      seat: nextCreatedMatch.seat,
+    };
+
+    saveMatchSession(nextSession);
+
+    setCreatedMatch(nextCreatedMatch);
+    setError(null);
+    setSession(nextSession);
   }
 
   function handleError(message: string) {
@@ -199,12 +227,16 @@ export function ProtoClient() {
                   matchId={match.matchId}
                   displayName={displayName}
                   onSuccess={(info) => {
-                    setJoinedMatch(info);
-                    setJoinError(null);
-                    setSession({
+                    const nextSession = {
                       matchId: info.matchId,
                       participantId: info.participantId,
-                    });
+                      role: info.role,
+                      seat: info.seat,
+                    };
+
+                    setJoinedMatch(info);
+                    setJoinError(null);
+                    setSession(nextSession);
                   }}
                   onError={(message) => {
                     setJoinError(message);
