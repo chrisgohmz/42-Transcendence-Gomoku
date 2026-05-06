@@ -377,6 +377,7 @@ model UserGameStats {
 
   @@unique([userId, ruleType, boardSize])
   @@index([userId])
+  @@index([ruleType, boardSize, rating, wins, losses])
 }
 
 model AchievementDefinition {

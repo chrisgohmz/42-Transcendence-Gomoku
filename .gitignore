@@ -1,4 +1,5 @@
 node_modules
+next-env.d.ts
 .stylelintcache
 bun-debug.log*
 npm-debug.log*
