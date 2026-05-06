@@ -179,6 +179,20 @@ export const messages = {
       accept: "Accept",
       decline: "Decline",
       cancelRequest: "Cancel Request",
+      add: "Add",
+    },
+    empty: {
+      friends: "No friends yet. Add someone above!",
+      pending: "No pending requests.",
+      sent: "No sent requests.",
+      search: "No players found.",
+    },
+    messages: {
+      requestSent: "Friend request sent to {name}!",
+    },
+    status: {
+      online: "Online",
+      offline: "Offline",
     },
   },
   human: {
@@ -229,10 +243,11 @@ export const messages = {
     send: "Send",
   },
   profile: {
-    title: "{username}'s Profile",
+    title: "Profile",
     lede: "Manage your details and view your Gomoku game statistics.",
     editProfile: "Edit Profile",
     statsTitle: "Your Overall Statistics",
+    friendStatsTitle: "Overall Statistics",
     stats: {
       rating: "Rating",
       winRate: "Win Rate",
@@ -257,6 +272,11 @@ export const messages = {
       cancel: "Cancel",
       saveChanges: "Save Changes",
       savingChanges: "Saving...",
+      editNameAria: "Edit Name",
+      editPasswordAria: "Edit Password",
+      passwordReadonly: "Password",
+      updatePassword: "Update Password",
+      returnToProfile: "Return to Profile",
     },
     errors: {
       loginRequired: "You must be logged in to do this.",

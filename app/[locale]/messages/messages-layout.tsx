@@ -2,13 +2,23 @@
 
 import { MessageSquare, Send /*Search*/ } from "lucide-react";
 import { useTranslations } from "next-intl";
-//import Link from "next/link";
-import { useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { useState, useEffect } from "react";
 
 export default function MessagesContent() {
-  const [activeChat, setActiveChat] = useState("MJ");
+  const searchParams = useSearchParams();
+  const initialUser = searchParams.get("user") || "MJ";
+
+  const [activeChat, setActiveChat] = useState(initialUser);
   const [messageText, setMessageText] = useState("");
   const t = useTranslations("messagesPage");
+
+  useEffect(() => {
+    const userParam = searchParams.get("user");
+    if (userParam) {
+      setActiveChat(userParam);
+    }
+  }, [searchParams]);
 
   return (
     <main className="shell">

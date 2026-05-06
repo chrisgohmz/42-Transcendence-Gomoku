@@ -11,7 +11,9 @@ import type { ReactNode } from "react";
 
 import Footer from "@/components/footer";
 import Navbar from "@/components/nav-bar";
+import { PresenceProvider } from "@/components/presence-provider";
 import { routing } from "@/i18n/routing";
+import { getCurrentSession } from "@/lib/auth";
 import { cn } from "@/lib/utils";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
@@ -49,16 +51,20 @@ export default async function RootLayout({ children, params }: RootLayoutProps) 
   }
 
   setRequestLocale(locale);
+  const context = await getCurrentSession();
+  const username = context?.user?.username;
 
   return (
     <html lang={locale} className={cn("font-sans", inter.variable)}>
       <body className="bg-slate-100 text-slate-900">
         <NextIntlClientProvider>
-          <Navbar />
+          <PresenceProvider currentUsername={username}>
+            <Navbar />
 
-          <main className="pt-16">{children}</main>
+            <main className="pt-16">{children}</main>
 
-          <Footer />
+            <Footer />
+          </PresenceProvider>
         </NextIntlClientProvider>
       </body>
     </html>

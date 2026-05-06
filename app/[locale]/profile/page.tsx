@@ -1,4 +1,4 @@
-import { Pencil } from "lucide-react";
+import { Pencil, User } from "lucide-react";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 
 import { Link, redirect } from "@/i18n/navigation";
@@ -28,10 +28,11 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
 
   return (
     <main className="shell">
-      <section className="hero mt-4 mb-8 flex w-full flex-col items-center text-center">
-        <h1 className="m-0 mb-4 text-5xl font-bold capitalize">
-          {t("title", { username: realUser.username })}
-        </h1>
+      <section className="mt-4 mb-12 flex flex-col items-center">
+        <div className="mb-6 flex items-center gap-4">
+          <User className="h-12 w-12 text-[#4ee8c2]" />
+          <h1 className="m-0 text-5xl font-bold">{t("title")}</h1>
+        </div>
         <p className="m-0 text-slate-400">{t("lede")}</p>
       </section>
 
