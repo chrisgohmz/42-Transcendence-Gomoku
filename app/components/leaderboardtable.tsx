@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/table";
 
 type LeaderboardEntry = {
-  playerId: number;
+  playerId: string;
   rank: number;
   player: string;
   rating: number;

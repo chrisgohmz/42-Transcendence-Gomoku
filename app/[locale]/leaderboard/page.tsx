@@ -1,27 +1,9 @@
 import { getTranslations, setRequestLocale } from "next-intl/server";
 
 import LeaderboardTable from "@/components/leaderboardtable";
+import { getLeaderboardEntries } from "@/lib/leaderboard";
 
-const entries = [
-  {
-    playerId: 1,
-    rank: 1,
-    player: "tan ah kao",
-    rating: 9001,
-    wins: 76,
-    losses: 67,
-    winRate: "53.15%",
-  },
-  {
-    playerId: 2,
-    rank: 2,
-    player: "lim ah kao",
-    rating: 9000,
-    wins: 76,
-    losses: 68,
-    winRate: "52.78%",
-  },
-];
+export const dynamic = "force-dynamic";
 
 type LeaderBoardProps = {
   params: Promise<{
@@ -32,7 +14,11 @@ type LeaderBoardProps = {
 export default async function LeaderBoard({ params }: LeaderBoardProps) {
   const { locale } = await params;
   setRequestLocale(locale);
-  const t = await getTranslations({ locale, namespace: "leaderboard" });
+
+  const [t, entries] = await Promise.all([
+    getTranslations({ locale, namespace: "leaderboard" }),
+    getLeaderboardEntries(),
+  ]);
 
   return (
     <main className="min-h-screen bg-slate-950 px-6 py-10 text-white">

@@ -1,24 +1,57 @@
-NAME = transcendence
-COMPOSE_FILE = docker-compose.yml
-COMPOSE_FILE_DEV = docker-compose.dev.yml
-COMPOSE = docker compose -f $(COMPOSE_FILE) -f $(COMPOSE_FILE_DEV)
+COMPOSE_BASE = docker-compose.yml
+COMPOSE_DEV = docker-compose.dev.yml
+COMPOSE = docker compose -f $(COMPOSE_BASE) -f $(COMPOSE_DEV)
 
-all:
-	@echo "Starting project..."
+.DEFAULT_GOAL := help
+
+dev:
 	$(COMPOSE) up --build
 
+dev-detached:
+	$(COMPOSE) up --build -d
+
+stop:
+	$(COMPOSE) stop
+
 down:
-	@echo "Stopping project..."
 	$(COMPOSE) down
 
-clean: down
-	@echo "Cleaning volumes..."
-	$(COMPOSE) down -v
+logs:
+	$(COMPOSE) logs -f
 
-fclean: clean
-	@echo "Full cleaning project images..."
+ps:
+	$(COMPOSE) ps
+
+restart:
+	$(COMPOSE) restart
+
+clean:
+	$(COMPOSE) down --remove-orphans
+
+fclean:
 	$(COMPOSE) down -v --rmi all --remove-orphans
 
-re: fclean all
+db-reset:
+	$(COMPOSE) down -v
+	$(COMPOSE) up --build
 
-.PHONY: all down clean fclean re
+help:
+	@echo "Targets:"
+	@echo "  make dev           Build and run the dev stack in the foreground"
+	@echo "  make dev-detached  Build and run the dev stack in the background"
+	@echo "  make logs          Follow logs from all dev stack containers"
+	@echo "  make ps            Show dev stack container status"
+	@echo "  make stop          Stop containers without removing them"
+	@echo "  make down          Stop and remove containers, preserving volumes"
+	@echo "  make restart       Restart existing containers"
+	@echo "  make clean         Stop and remove containers plus orphan containers"
+	@echo "  make fclean        Remove containers, volumes, images, and orphans"
+	@echo "  make db-reset      Remove volumes, then rebuild and start dev stack"
+	@echo ""
+	@echo "Notes:"
+	@echo "  dev runs in the foreground; press Ctrl+C to stop it."
+	@echo "  dev-detached runs in the background; use make logs to inspect output."
+	@echo "  fclean and db-reset are destructive because they remove volumes,"
+	@echo "  including the PostgreSQL database volume."
+
+.PHONY: dev dev-detached stop down logs ps restart clean fclean db-reset help
