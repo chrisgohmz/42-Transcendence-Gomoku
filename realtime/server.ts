@@ -39,6 +39,7 @@ const engine = new Engine({
   cors: {
     origin: corsOrigins,
     methods: ["GET", "POST"],
+    credentials: true,
   },
 });
 
@@ -47,6 +48,7 @@ const io = new Server({
   cors: {
     origin: corsOrigins,
     methods: ["GET", "POST"],
+    credentials: true,
   },
 });
 

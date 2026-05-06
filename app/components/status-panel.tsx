@@ -2,7 +2,8 @@
 
 import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
-import { io } from "socket.io-client";
+
+import { createSocket } from "@/lib/socket-client";
 
 const HEALTH_REFRESH_MS = 10000;
 
@@ -99,9 +100,7 @@ export function StatusPanel({ socketUrl }: StatusPanelProps) {
   }, [unknownError]);
 
   useEffect(() => {
-    const socket = io(socketUrl, {
-      transports: ["websocket", "polling"],
-    });
+    const socket = createSocket(socketUrl);
 
     socket.on("connect", () => {
       setSocketState("connected");

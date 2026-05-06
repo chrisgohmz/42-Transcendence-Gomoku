@@ -53,12 +53,13 @@ export default async function RootLayout({ children, params }: RootLayoutProps) 
   setRequestLocale(locale);
   const context = await getCurrentSession();
   const username = context?.user?.username;
+  const socketUrl = process.env["SOCKET_PUBLIC_URL"];
 
   return (
     <html lang={locale} className={cn("font-sans", inter.variable)}>
       <body className="bg-slate-100 text-slate-900">
         <NextIntlClientProvider>
-          <PresenceProvider currentUsername={username}>
+          <PresenceProvider currentUsername={username} socketUrl={socketUrl}>
             <Navbar />
 
             <main className="pt-16">{children}</main>
