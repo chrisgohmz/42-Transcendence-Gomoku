@@ -1,5 +1,5 @@
-import { Button } from "@/components/ui/button";
 import PlayerBar from "@/components/player-bar";
+import { Button } from "@/components/ui/button";
 
 const BOARD_SIZE = 15;
 
@@ -9,13 +9,9 @@ export default function GamePage() {
       <section className="mx-auto flex w-full max-w-7xl flex-1 flex-col justify-center gap-8">
         <div className="grid items-center gap-6 lg:grid-cols-[160px_minmax(0,1fr)_160px]">
           <aside className="flex justify-center gap-3 lg:flex-col lg:items-stretch">
-            <Button>
-              Undo
-            </Button>
+            <Button>Undo</Button>
 
-            <Button>
-              Restart
-            </Button>
+            <Button>Restart</Button>
           </aside>
 
           <div className="flex justify-center">
@@ -36,11 +32,7 @@ export default function GamePage() {
           <div className="hidden lg:block" />
         </div>
 
-        <PlayerBar
-          blackName="Player 1"
-          whiteName="wrong"
-          timer="10:00"
-          />
+        <PlayerBar blackName="Player 1" whiteName="wrong" timer="10:00" />
       </section>
     </main>
   );
