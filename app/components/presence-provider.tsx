@@ -1,7 +1,9 @@
 "use client";
 
-import { createContext, useContext, useEffect, useRef, useState, ReactNode } from "react";
-import { io, type Socket } from "socket.io-client";
+import { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import type { Socket } from "socket.io-client";
+
+import { createSocket } from "@/lib/socket-client";
 
 type PresenceContextType = {
   onlineUsers: string[];
@@ -13,38 +15,45 @@ const PresenceContext = createContext<PresenceContextType>({ onlineUsers: [], so
 export function PresenceProvider({
   children,
   currentUsername,
+  socketUrl,
 }: {
   children: ReactNode;
   currentUsername?: string;
+  socketUrl?: string;
 }) {
   const [onlineUsers, setOnlineUsers] = useState<string[]>([]);
-  const socketRef = useRef<Socket | null>(null);
+  const [socket, setSocket] = useState<Socket | null>(null);
 
   useEffect(() => {
-    if (!currentUsername) return;
+    if (!currentUsername) {
+      setOnlineUsers([]);
+      setSocket(null);
+      return;
+    }
 
-    const socket = io({ path: "/socket.io" });
-    socketRef.current = socket;
+    const nextSocket = createSocket(socketUrl);
+    setSocket(nextSocket);
 
-    socket.on("connect", () => {
-      // Send the username to the server when connecting
-      socket.emit("presence:subscribe", currentUsername);
+    nextSocket.on("connect", () => {
+      nextSocket.emit("presence:subscribe");
     });
 
-    socket.on("presence:update", (users: string[]) => {
+    nextSocket.on("presence:update", (users: string[]) => {
       setOnlineUsers(users);
     });
 
+    nextSocket.on("connect_error", () => {
+      setOnlineUsers([]);
+    });
+
     return () => {
-      socket.disconnect();
-      socketRef.current = null;
+      nextSocket.disconnect();
+      setSocket(null);
     };
-  }, [currentUsername]);
+  }, [currentUsername, socketUrl]);
 
   return (
-    <PresenceContext.Provider value={{ onlineUsers, socket: socketRef.current }}>
-      {children}
-    </PresenceContext.Provider>
+    <PresenceContext.Provider value={{ onlineUsers, socket }}>{children}</PresenceContext.Provider>
   );
 }
 

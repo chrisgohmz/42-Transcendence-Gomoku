@@ -6,12 +6,13 @@ import { Server as Engine } from "@socket.io/bun-engine";
 import { config } from "dotenv";
 import { Server } from "socket.io";
 
-import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
 import { isGameUpdatePayload } from "../shared/match-events-validation";
 import { registerMatchSubscription } from "./handlers/match-subscription";
+import { removePresenceConnection, subscribeToPresence, type ConnectedUsers } from "./lib/presence";
 import { matchRoomId } from "./lib/rooms";
+import { authenticateSocketSession } from "./lib/socket-auth";
 
 const currentDirectory = dirname(fileURLToPath(import.meta.url));
 const rootEnvPath = resolve(currentDirectory, "../.env");
@@ -39,6 +40,7 @@ const engine = new Engine({
   cors: {
     origin: corsOrigins,
     methods: ["GET", "POST"],
+    credentials: true,
   },
 });
 
@@ -47,39 +49,15 @@ const io = new Server({
   cors: {
     origin: corsOrigins,
     methods: ["GET", "POST"],
+    credentials: true,
   },
 });
 
 io.bind(engine);
 
-// 1. Secure Authentication Middleware
-io.use(async (socket, next) => {
-  try {
-    const webHeaders = new Headers();
-    for (const [key, value] of Object.entries(socket.request.headers)) {
-      if (typeof value === "string") {
-        webHeaders.append(key, value);
-      } else if (Array.isArray(value)) {
-        value.forEach((v) => webHeaders.append(key, v));
-      }
-    }
+io.use(authenticateSocketSession);
 
-    const sessionData = await auth.api.getSession({
-      headers: webHeaders,
-    });
-
-    if (!sessionData) {
-      return next(new Error("unauthorized"));
-    }
-
-    socket.data.user = sessionData.user;
-    next();
-  } catch {
-    next(new Error("unauthorized"));
-  }
-});
-
-const connectedUsers = new Map<string, string>();
+const connectedUsers: ConnectedUsers = new Map();
 
 type QueuedPlayer = {
   socketId: string;
@@ -94,13 +72,7 @@ io.on("connection", (socket) => {
   registerMatchSubscription(socket);
 
   socket.on("presence:subscribe", () => {
-    const username = socket.data.user?.username;
-    if (!username) return;
-
-    void socket.join(`user:${username}`);
-    connectedUsers.set(socket.id, username);
-    const activeUsernames = Array.from(new Set(connectedUsers.values()));
-    io.emit("presence:update", activeUsernames);
+    subscribeToPresence(socket, io, connectedUsers);
   });
 
   socket.on("friendship:notify", async (targetUsername: string) => {
@@ -182,11 +154,7 @@ io.on("connection", (socket) => {
 
     matchQueue = matchQueue.filter((player) => player.socketId !== socket.id);
 
-    if (connectedUsers.has(socket.id)) {
-      connectedUsers.delete(socket.id);
-      const activeUsernames = Array.from(new Set(connectedUsers.values()));
-      io.emit("presence:update", activeUsernames);
-    }
+    removePresenceConnection(socket, io, connectedUsers);
   });
 });
 

@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { io, type Socket } from "socket.io-client";
+import type { Socket } from "socket.io-client";
+
+import { createSocket } from "@/lib/socket-client";
 
 import type { GameUpdatePayload } from "../../shared/match-events";
 
@@ -22,7 +24,7 @@ export function useSocketGame(matchId: string | null, participantId: string | nu
     setStatus("connecting");
     setLastUpdate(null);
 
-    const socket = io({ path: "/socket.io" });
+    const socket = createSocket();
     socketRef.current = socket;
 
     let active = true;
