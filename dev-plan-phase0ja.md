@@ -84,19 +84,22 @@ Phase 0 ではプレイヤー 2 人対戦だけを対象にするため、通常
 `participantId` は、マッチ作成または参加の成功時に API サーバーが返す `MatchParticipant.id` を指す。フロントエンドはこれを **`sessionStorage`** に保持する。
 
 - 対象: `matchId`, `participantId`, `role`, `seat`, `displayName`
+- アクティブセッションのポインタ: `proto:matchSession:v1:active` に現在の `matchId` を保持する
 - 理由: タブ内リロードには耐えたいが、永続ログインの責務までは持たせないため
 - スコープ: 同一タブの一時セッション
 
 保存イメージ:
 
 ```ts
-sessionStorage["proto:matchSession:<matchId>"] = JSON.stringify({
+sessionStorage["proto:matchSession:v1:<matchId>"] = JSON.stringify({
   matchId,
   participantId,
   role,
   seat,
   displayName,
+  updatedAt,
 });
+sessionStorage["proto:matchSession:v1:active"] = matchId;
 ```
 
 Phase 0 では以下の扱いとする。
@@ -360,7 +363,7 @@ Player1     Frontend1       App            DB        Realtime      Frontend2
 ### 状態取得 API
 
 ```ts
-// GET /api/matches/:id/state
+// GET /api/matches/:id/state?participantId=<MatchParticipant.id>
 
 {
   matchId: string,
@@ -372,10 +375,8 @@ Player1     Frontend1       App            DB        Realtime      Frontend2
   nextTurnSeat: "BLACK" | "WHITE" | null,
   winningSeat: "BLACK" | "WHITE" | null,
   endReason: string | null,
-  createdByUserId: string | null,
   participants: Array<{
     participantId: string,
-    userId: string | null,
     displayName: string, // MatchParticipant.displayNameSnapshot を返す
     role: "PLAYER" | "SPECTATOR",
     seat: "BLACK" | "WHITE" | null,

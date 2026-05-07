@@ -7,9 +7,14 @@ function getErrorMessage(error: unknown): string {
   return error instanceof Error ? error.message : "Unknown error";
 }
 
-export async function GET(_request: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id: matchId } = await params;
+    const participantId = new URL(request.url).searchParams.get("participantId");
+
+    if (!participantId) {
+      return Response.json({ error: "missing_participant_id" }, { status: 400 });
+    }
 
     const match = await prisma.match.findUnique({
       where: { id: matchId },
@@ -25,6 +30,11 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
       return Response.json({ error: "match_not_found" }, { status: 404 });
     }
 
+    const participant = match.participants.find((item) => item.id === participantId);
+    if (!participant) {
+      return Response.json({ error: "participant_not_found" }, { status: 403 });
+    }
+
     const board = buildBoard(match.boardSize, match.participants, match.moves);
 
     return Response.json({
@@ -36,10 +46,8 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
       nextTurnSeat: match.nextTurnSeat,
       winningSeat: match.winningSeat,
       endReason: match.endReason,
-      createdByUserId: match.createdByUserId,
       participants: match.participants.map((participant) => ({
         participantId: participant.id,
-        userId: participant.userId,
         displayName: participant.displayNameSnapshot,
         role: participant.role,
         seat: participant.seat,

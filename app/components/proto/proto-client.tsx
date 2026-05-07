@@ -5,10 +5,17 @@ import { useState } from "react";
 
 import { MatchMoveForm } from "@/components/proto/MatchMoveForm";
 import { submitMove, type SubmittedMoveInfo } from "@/components/proto/submit-move";
-import { useMatchInitialize, type StoredMatchSession } from "@/hooks/useMatchInitialize";
+import { useMatchInitialize } from "@/hooks/useMatchInitialize";
 import { useSocketGame } from "@/hooks/useSocketGame";
+import type { StoredMatchSession } from "@/lib/proto/match-session-storage";
+import { saveStoredMatchSession } from "@/lib/proto/match-session-storage";
+import {
+  getGameUpdateForSession,
+  getSessionSeat,
+  toInitialGameUpdate,
+} from "@/lib/proto/match-state";
 
-import type { GameUpdatePayload, Seat } from "../../../shared/match-events";
+import type { Seat } from "../../../shared/match-events";
 import { MatchCreateButton, type CreatedMatchInfo } from "./MatchCreateButton";
 import { MatchJoinButton, type JoinedMatchInfo } from "./MatchJoinButton";
 import { MiniBoard } from "./MiniBoard";
@@ -35,8 +42,6 @@ type MatchSession = {
   participantId: string;
 };
 
-const STORAGE_PREFIX = "proto:matchSession:";
-
 function saveMatchSession(
   session: Omit<StoredMatchSession, "displayName"> & { displayName?: string },
 ) {
@@ -44,7 +49,7 @@ function saveMatchSession(
     displayName: session.displayName || "Player",
     ...session,
   };
-  sessionStorage.setItem(`${STORAGE_PREFIX}${session.matchId}`, JSON.stringify(withDisplayName));
+  saveStoredMatchSession(withDisplayName);
 }
 
 export function ProtoClient() {
@@ -69,45 +74,19 @@ export function ProtoClient() {
     activeSession?.participantId ?? null,
   );
 
-  const restoredLastMove = restoredState?.moves[restoredState.moves.length - 1] ?? null;
-
-  const initialUpdate: GameUpdatePayload | null = restoredState
-    ? {
-        matchId: restoredState.matchId,
-        status: restoredState.status,
-        visibility: restoredState.visibility,
-        boardSize: restoredState.boardSize,
-        stateVersion: restoredState.stateVersion,
-        nextTurnSeat: restoredState.nextTurnSeat,
-        winningSeat: restoredState.winningSeat,
-        endReason: restoredState.endReason,
-        participants: restoredState.participants.map((p) => ({
-          participantId: p.participantId,
-          displayName: p.displayName,
-          role: p.role,
-          seat: p.seat,
-        })),
-        lastMove: restoredLastMove
-          ? {
-              moveNumber: restoredLastMove.moveNumber,
-              participantId: restoredLastMove.participantId,
-              position: restoredLastMove.position,
-              requestId: restoredLastMove.requestId,
-              stateVersion: restoredLastMove.stateVersion,
-            }
-          : null,
-        board: restoredState.board,
-      }
-    : null;
-
-  const effectiveUpdate: GameUpdatePayload | null = lastUpdate ?? initialUpdate;
+  const initialUpdate = toInitialGameUpdate(restoredState, activeSession);
+  const activeLastUpdate = getGameUpdateForSession(lastUpdate, activeSession);
+  const effectiveUpdate = activeLastUpdate ?? initialUpdate;
+  const createdSeat =
+    activeSession && createdMatch?.matchId === activeSession.matchId
+      ? (createdMatch.seat ?? null)
+      : null;
+  const joinedSeat =
+    activeSession && joinedMatch?.matchId === activeSession.matchId
+      ? (joinedMatch.seat ?? null)
+      : null;
   const activeSeat: Seat | null =
-    createdMatch?.seat ??
-    joinedMatch?.seat ??
-    restoredState?.participants.find(
-      (participant) => participant.participantId === activeSession?.participantId,
-    )?.seat ??
-    null;
+    createdSeat ?? joinedSeat ?? getSessionSeat(restoredState, activeSession);
 
   const [submittedMove, setSubmittedMove] = useState<SubmittedMoveInfo | null>(null);
   const [moveError, setMoveError] = useState<string | null>(null);

@@ -84,19 +84,22 @@ Phase 0 targets only two-player matches, so in normal cases we only handle parti
 `participantId` refers to the `MatchParticipant.id` returned by the API server when match creation or join succeeds. The frontend stores this in **`sessionStorage`**.
 
 - Stored fields: `matchId`, `participantId`, `role`, `seat`, `displayName`
+- Active-session pointer: `proto:matchSession:v1:active` stores the active `matchId`
 - Reason: we want reloads within the same tab to work, but we do not want to take on the responsibility of persistent login yet
 - Scope: a temporary session tied to the same tab
 
 Storage image:
 
 ```ts
-sessionStorage["proto:matchSession:<matchId>"] = JSON.stringify({
+sessionStorage["proto:matchSession:v1:<matchId>"] = JSON.stringify({
   matchId,
   participantId,
   role,
   seat,
   displayName,
+  updatedAt,
 });
+sessionStorage["proto:matchSession:v1:active"] = matchId;
 ```
 
 In Phase 0, the behavior is:
@@ -360,7 +363,7 @@ Also, `occupied` should be protected not only by an application-layer pre-check,
 ### State Retrieval API
 
 ```ts
-// GET /api/matches/:id/state
+// GET /api/matches/:id/state?participantId=<MatchParticipant.id>
 
 {
   matchId: string,
@@ -372,10 +375,8 @@ Also, `occupied` should be protected not only by an application-layer pre-check,
   nextTurnSeat: "BLACK" | "WHITE" | null,
   winningSeat: "BLACK" | "WHITE" | null,
   endReason: string | null,
-  createdByUserId: string | null,
   participants: Array<{
     participantId: string,
-    userId: string | null,
     displayName: string, // returns MatchParticipant.displayNameSnapshot
     role: "PLAYER" | "SPECTATOR",
     seat: "BLACK" | "WHITE" | null,
