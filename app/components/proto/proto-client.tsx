@@ -5,9 +5,10 @@ import { useState } from "react";
 
 import { MatchMoveForm } from "@/components/proto/MatchMoveForm";
 import { submitMove, type SubmittedMoveInfo } from "@/components/proto/submit-move";
+import { useMatchInitialize, type StoredMatchSession } from "@/hooks/useMatchInitialize";
 import { useSocketGame } from "@/hooks/useSocketGame";
 
-import type { Seat } from "../../../shared/match-events";
+import type { GameUpdatePayload, Seat } from "../../../shared/match-events";
 import { MatchCreateButton, type CreatedMatchInfo } from "./MatchCreateButton";
 import { MatchJoinButton, type JoinedMatchInfo } from "./MatchJoinButton";
 import { MiniBoard } from "./MiniBoard";
@@ -34,6 +35,18 @@ type MatchSession = {
   participantId: string;
 };
 
+const STORAGE_PREFIX = "proto:matchSession:";
+
+function saveMatchSession(
+  session: Omit<StoredMatchSession, "displayName"> & { displayName?: string },
+) {
+  const withDisplayName: StoredMatchSession = {
+    displayName: session.displayName || "Player",
+    ...session,
+  };
+  sessionStorage.setItem(`${STORAGE_PREFIX}${session.matchId}`, JSON.stringify(withDisplayName));
+}
+
 export function ProtoClient() {
   const t = useTranslations("proto");
   const [createdMatch, setCreatedMatch] = useState<CreatedMatchInfo | null>(null);
@@ -43,20 +56,65 @@ export function ProtoClient() {
 
   const [joinedMatch, setJoinedMatch] = useState<JoinedMatchInfo | null>(null);
   const [joinError, setJoinError] = useState<string | null>(null);
-  const [displayName, setDisplayname] = useState("");
+  const [displayName, setDisplayName] = useState("");
 
   const [session, setSession] = useState<MatchSession | null>(null);
+
+  const { session: restoredSession, state: restoredState } = useMatchInitialize();
+
+  const activeSession = session || restoredSession;
+
   const { status, lastUpdate } = useSocketGame(
-    session?.matchId ?? null,
-    session?.participantId ?? null,
+    activeSession?.matchId ?? null,
+    activeSession?.participantId ?? null,
   );
+
+  const restoredLastMove = restoredState?.moves[restoredState.moves.length - 1] ?? null;
+
+  const initialUpdate: GameUpdatePayload | null = restoredState
+    ? {
+        matchId: restoredState.matchId,
+        status: restoredState.status,
+        visibility: restoredState.visibility,
+        boardSize: restoredState.boardSize,
+        stateVersion: restoredState.stateVersion,
+        nextTurnSeat: restoredState.nextTurnSeat,
+        winningSeat: restoredState.winningSeat,
+        endReason: restoredState.endReason,
+        participants: restoredState.participants.map((p) => ({
+          participantId: p.participantId,
+          displayName: p.displayName,
+          role: p.role,
+          seat: p.seat,
+        })),
+        lastMove: restoredLastMove
+          ? {
+              moveNumber: restoredLastMove.moveNumber,
+              participantId: restoredLastMove.participantId,
+              position: restoredLastMove.position,
+              requestId: restoredLastMove.requestId,
+              stateVersion: restoredLastMove.stateVersion,
+            }
+          : null,
+        board: restoredState.board,
+      }
+    : null;
+
+  const effectiveUpdate: GameUpdatePayload | null = lastUpdate ?? initialUpdate;
+  const activeSeat: Seat | null =
+    createdMatch?.seat ??
+    joinedMatch?.seat ??
+    restoredState?.participants.find(
+      (participant) => participant.participantId === activeSession?.participantId,
+    )?.seat ??
+    null;
 
   const [submittedMove, setSubmittedMove] = useState<SubmittedMoveInfo | null>(null);
   const [moveError, setMoveError] = useState<string | null>(null);
   const [isSubmittingBoardMove, setIsSubmittingBoardMove] = useState(false);
 
   async function handleBoardCellClick(x: number, y: number) {
-    if (!session) {
+    if (!activeSession) {
       return;
     }
 
@@ -65,10 +123,10 @@ export function ProtoClient() {
 
     try {
       const nextSubmittedMove = await submitMove({
-        matchId: session.matchId,
-        participantId: session.participantId,
+        matchId: activeSession.matchId,
+        participantId: activeSession.participantId,
         position: { x, y },
-        baseVersion: lastUpdate?.stateVersion ?? null,
+        baseVersion: effectiveUpdate?.stateVersion ?? null,
       });
       setSubmittedMove(nextSubmittedMove);
     } catch (submitError) {
@@ -110,6 +168,14 @@ export function ProtoClient() {
   }
 
   function handleSuccess(nextCreatedMatch: CreatedMatchInfo) {
+    const nextSession = {
+      matchId: nextCreatedMatch.matchId,
+      participantId: nextCreatedMatch.participantId,
+      role: (nextCreatedMatch.role as "PLAYER" | "SPECTATOR") ?? "PLAYER",
+      seat: nextCreatedMatch.seat ?? null,
+    };
+    saveMatchSession(nextSession);
+
     setCreatedMatch(nextCreatedMatch);
     setError(null);
     setSession({
@@ -193,12 +259,19 @@ export function ProtoClient() {
                   type="text"
                   placeholder={t("namePlaceholder")}
                   value={displayName}
-                  onChange={(event) => setDisplayname(event.target.value)}
+                  onChange={(event) => setDisplayName(event.target.value)}
                 />
                 <MatchJoinButton
                   matchId={match.matchId}
                   displayName={displayName}
                   onSuccess={(info) => {
+                    const nextSession = {
+                      matchId: info.matchId,
+                      participantId: info.participantId,
+                      role: (info.role as "PLAYER" | "SPECTATOR") ?? "PLAYER",
+                      seat: info.seat ?? null,
+                    };
+                    saveMatchSession(nextSession);
                     setJoinedMatch(info);
                     setJoinError(null);
                     setSession({
@@ -228,17 +301,17 @@ export function ProtoClient() {
         </article>
         <article className="card">
           <p>{t("descriptionStatus", { status })}</p>
-          {session ? (
-            <p>{t("currentMatch", { matchId: session.matchId })}</p>
+          {activeSession ? (
+            <p>{t("currentMatch", { matchId: activeSession.matchId })}</p>
           ) : (
             <p>{t("createOrJoinFirst")}</p>
           )}
 
-          {session ? (
+          {activeSession ? (
             <MatchMoveForm
-              matchId={session.matchId}
-              participantId={session.participantId}
-              baseVersion={lastUpdate?.stateVersion ?? null}
+              matchId={activeSession.matchId}
+              participantId={activeSession.participantId}
+              baseVersion={effectiveUpdate?.stateVersion ?? null}
               onSuccess={(info) => {
                 setSubmittedMove(info);
                 setMoveError(null);
@@ -260,30 +333,30 @@ export function ProtoClient() {
           ) : null}
           {moveError ? <p role="alert">{t("moveError", { message: moveError })}</p> : null}
 
-          {lastUpdate ? (
+          {effectiveUpdate ? (
             <>
-              <p>{t("gameStatus", { status: lastUpdate.status })}</p>
-              <p>{t("stateVersion", { version: lastUpdate.stateVersion })}</p>
-              <p>{t("nextTurnSeat", { seat: lastUpdate.nextTurnSeat ?? t("nullValue") })}</p>
-              {lastUpdate.lastMove ? (
+              <p>{t("gameStatus", { status: effectiveUpdate.status })}</p>
+              <p>{t("stateVersion", { version: effectiveUpdate.stateVersion })}</p>
+              <p>{t("nextTurnSeat", { seat: effectiveUpdate.nextTurnSeat ?? t("nullValue") })}</p>
+              {effectiveUpdate.lastMove ? (
                 <p>
                   {t("lastMove", {
-                    moveNumber: lastUpdate.lastMove.moveNumber,
-                    participantId: lastUpdate.lastMove.participantId,
-                    x: lastUpdate.lastMove.position.x,
-                    y: lastUpdate.lastMove.position.y,
+                    moveNumber: effectiveUpdate.lastMove.moveNumber,
+                    participantId: effectiveUpdate.lastMove.participantId,
+                    x: effectiveUpdate.lastMove.position.x,
+                    y: effectiveUpdate.lastMove.position.y,
                   })}
                 </p>
               ) : (
                 <p>{t("lastMoveNone")}</p>
               )}
 
-              {lastUpdate.board ? (
+              {effectiveUpdate.board ? (
                 <MiniBoard
-                  board={lastUpdate.board}
+                  board={effectiveUpdate.board}
                   disabled={isSubmittingBoardMove}
-                  mySeat={session ? (createdMatch?.seat ?? joinedMatch?.seat ?? null) : null}
-                  nextTurnSeat={lastUpdate.nextTurnSeat}
+                  mySeat={activeSeat}
+                  nextTurnSeat={effectiveUpdate.nextTurnSeat}
                   onCellClick={(x, y) => {
                     void handleBoardCellClick(x, y);
                   }}

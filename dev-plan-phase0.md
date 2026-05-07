@@ -72,18 +72,18 @@ In this design, both the player who placed a stone and the opponent update their
 In the current schema, display names, match participant IDs, and authenticated user IDs are treated as distinct things.
 
 - Display use: `displayName` in the API, and `MatchParticipant.displayNameSnapshot` in the DB
-- Internal identifier: `playerId`. In the API, `playerId` is treated as an alias for `MatchParticipant.id`
+- Internal identifier: `participantId`. In the API, `participantId` is treated as an alias for `MatchParticipant.id`
 - Auth linkage: `userId`. If logged in, it connects to `MatchParticipant.userId` and `Match.createdByUserId`
 - Role: `role` (`PLAYER` / `SPECTATOR`)
 - Seat information: `seat` (`BLACK` / `WHITE` / `null`)
 
 Phase 0 targets only two-player matches, so in normal cases we only handle participants with `role = PLAYER` and `seat != null`. However, the schema is already designed with spectating and authentication integration in mind, so the documentation should also stay aligned around `MatchParticipant`.
 
-#### Strategy for Keeping `playerId` in Phase 0
+#### Strategy for Keeping `participantId` in Phase 0
 
-`playerId` refers to the `MatchParticipant.id` returned by the API server when match creation or join succeeds. The frontend stores this in **`sessionStorage`**.
+`participantId` refers to the `MatchParticipant.id` returned by the API server when match creation or join succeeds. The frontend stores this in **`sessionStorage`**.
 
-- Stored fields: `matchId`, `playerId`, `role`, `seat`, `displayName`
+- Stored fields: `matchId`, `participantId`, `role`, `seat`, `displayName`
 - Reason: we want reloads within the same tab to work, but we do not want to take on the responsibility of persistent login yet
 - Scope: a temporary session tied to the same tab
 
@@ -92,7 +92,7 @@ Storage image:
 ```ts
 sessionStorage["proto:matchSession:<matchId>"] = JSON.stringify({
   matchId,
-  playerId,
+  participantId,
   role,
   seat,
   displayName,
@@ -101,7 +101,7 @@ sessionStorage["proto:matchSession:<matchId>"] = JSON.stringify({
 
 In Phase 0, the behavior is:
 
-- If data exists in `sessionStorage`, reconnect with that `playerId`
+- If data exists in `sessionStorage`, reconnect with that `participantId`
 - If no data exists, treat a reload as requiring rejoin or new creation
 - Integration with `userId` and auth sessions is handled in Phase 1 and later
 
@@ -166,7 +166,7 @@ When submitting a move:
      - Example: it is not your turn
   3. Send POST /api/matches/:id/moves
   4. app validates:
-     - whether playerId is a valid MatchParticipant inside the match
+     - whether participantId is a valid MatchParticipant inside the match
      - whether role is PLAYER
      - whether seat matches the current turn
      - whether the position is valid
@@ -262,7 +262,7 @@ The public URL is based on `caddy` at `https://localhost:8443`. All `/api/*` rou
 // Response
 {
   matchId: string,
-  playerId: string, // MatchParticipant.id
+  participantId: string, // MatchParticipant.id
   role: "PLAYER",
   seat: "BLACK"
 }
@@ -279,7 +279,7 @@ Implementation notes at the current stage:
 
 - `POST` in `app/api/matches/route.ts` assumes a logged-in session
 - The `displayName` input is not wired yet, and a temporary fixed value is currently saved
-- In the actual implementation, `playerId` is returned under the name `participantId` (its meaning is still `MatchParticipant.id`)
+- In the actual implementation, `participantId` is returned as `MatchParticipant.id`
 
 ### Join Match API
 
@@ -294,7 +294,7 @@ Implementation notes at the current stage:
 // Response
 {
   matchId: string,
-  playerId: string, // MatchParticipant.id
+  participantId: string, // MatchParticipant.id
   role: "PLAYER",
   seat: "WHITE"
 }
@@ -316,7 +316,7 @@ The start of the game is expressed not with a dedicated `match:started`, but thr
 
 // Request
 {
-  playerId: string,
+  participantId: string,
   position: { x: number, y: number },
   requestId?: string,
   baseVersion?: number
@@ -374,7 +374,7 @@ Also, `occupied` should be protected not only by an application-layer pre-check,
   endReason: string | null,
   createdByUserId: string | null,
   participants: Array<{
-    playerId: string,
+    participantId: string,
     userId: string | null,
     displayName: string, // returns MatchParticipant.displayNameSnapshot
     role: "PLAYER" | "SPECTATOR",
@@ -384,7 +384,7 @@ Also, `occupied` should be protected not only by an application-layer pre-check,
   }>,
   moves: Array<{
     moveNumber: number,
-    playerId: string, // API representation of MatchMove.participantId
+    participantId: string, // API representation of MatchMove.participantId
     position: { x: number, y: number },
     requestId: string | null,
     baseVersion: number | null,
@@ -422,14 +422,14 @@ These events are used from the browser by connecting to `https://localhost:8443/
   winningSeat: "BLACK" | "WHITE" | null,
   endReason: string | null,
   participants: Array<{
-    playerId: string,
+    participantId: string,
     displayName: string,
     role: "PLAYER" | "SPECTATOR",
     seat: "BLACK" | "WHITE" | null
-  }>,
+  }),
   lastMove: {
     moveNumber: number,
-    playerId: string,
+    participantId: string,
     position: { x: number, y: number },
     stateVersion: number
   } | null,
@@ -571,7 +571,7 @@ model Match {
 }
 
 model MatchParticipant {
-  id                  String       @id @default(cuid(2)) // playerId in Phase 0.2 API
+  id                  String       @id @default(cuid(2)) // participantId in Phase 0.2 API
   matchId             String
   userId              String?
   displayNameSnapshot String
@@ -738,7 +738,7 @@ Slice 0: minimal create_match connectivity (done)
   - Save: store MatchParticipant(role=PLAYER, seat=BLACK) for the creator
   - Front: Create Match button only
   - API: POST /api/matches
-  - Confirm: matchId and playerId (currently participantId in the implementation) appear on screen
+  - Confirm: matchId and participantId appear on screen
 
 Slice 1: add list_matches (done)
   - API: GET /api/matches
@@ -785,7 +785,7 @@ Slice 7: add stateBuilder
 Slice 8: add GET /state
   - API: add GET /api/matches/:id/state to `app`
   - Front: implement initial sync after reload
-  - Front: restore the local seat information using playerId from sessionStorage
+  - Front: restore the local seat information using participantId from sessionStorage
   - Note: `realtime` is not used as the state store for reconnection; REST remains the source of truth for initial sync
   - Confirm: after reload, the same board state returns
 
@@ -810,7 +810,7 @@ Do not build the whole `moveValidator` upfront. First get "can save" and "can br
 
 - Player 1 can create a match
 - Player 2 can view the match list and join
-- `MatchParticipant.id` can be kept as `playerId` and used for resync
+- `MatchParticipant.id` can be kept as `participantId` and used for resync
 - Both players can subscribe to the same match
 - Both REST and Socket.IO are reachable through the single origin `https://localhost:8443`
 - Move confirmation goes through API-side legal validation and DB persistence
