@@ -50,6 +50,34 @@ jobs:
           BETTER_AUTH_URL: http://localhost:3000
         run: bun run build
 
+      - name: Install Playwright browsers
+        run: bun run pw:install --with-deps chromium
+
+      - name: Run Playwright E2E tests
+        env:
+          BETTER_AUTH_SECRET: ci_better_auth_secret_change_me_32_chars
+          BETTER_AUTH_URL: http://localhost:3000
+          PLAYWRIGHT_WEB_SERVER_COMMAND: bun run start
+        run: bun run test:e2e
+
+      - name: Upload Playwright report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+          if-no-files-found: ignore
+          retention-days: 7
+
+      - name: Upload Playwright test results
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-test-results
+          path: test-results/
+          if-no-files-found: ignore
+          retention-days: 7
+
       - name: Validate Compose config
         env:
           BETTER_AUTH_SECRET: ci_better_auth_secret_change_me_32_chars
