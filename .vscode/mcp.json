@@ -1,0 +1,15 @@
+{
+  "servers": {
+    "playwright": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["@playwright/mcp@latest", "--caps=testing,storage,devtools"]
+    },
+    "playwright-test": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["playwright", "run-test-mcp-server"]
+    }
+  },
+  "inputs": []
+}

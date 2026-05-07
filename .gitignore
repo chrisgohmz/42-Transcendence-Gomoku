@@ -11,3 +11,6 @@ tsconfig.tsbuildinfo
 .env
 caddy-local-root.crt
 public/uploads
+.playwright-browsers
+playwright-report
+test-results

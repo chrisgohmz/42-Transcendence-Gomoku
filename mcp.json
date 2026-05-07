@@ -1,5 +1,13 @@
 {
   "better-auth": {
     "url": "https://mcp.better-auth.com/mcp"
+  },
+  "playwright": {
+    "command": "npx",
+    "args": ["@playwright/mcp@latest", "--caps=testing,storage,devtools"]
+  },
+  "playwright-test": {
+    "command": "npx",
+    "args": ["playwright", "run-test-mcp-server"]
   }
 }
