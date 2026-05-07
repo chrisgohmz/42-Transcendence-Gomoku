@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 
+import type { Cell, Seat } from "../../shared/match-events";
+
 export type StoredMatchSession = {
   matchId: string;
   participantId: string;
@@ -16,8 +18,8 @@ export type MatchStateResponse = {
   visibility: "PUBLIC" | "PRIVATE";
   boardSize: number;
   stateVersion: number;
-  nextTurnSeat: "BLACK" | "WHITE" | null;
-  winningSeat: "BLACK" | "WHITE" | null;
+  nextTurnSeat: Seat | null;
+  winningSeat: Seat | null;
   endReason: string | null;
   createdByUserId: string | null;
   participants: Array<{
@@ -25,7 +27,7 @@ export type MatchStateResponse = {
     userId: string | null;
     displayName: string;
     role: "PLAYER" | "SPECTATOR";
-    seat: "BLACK" | "WHITE" | null;
+    seat: Seat | null;
     joinedAt: string;
     leftAt: string | null;
   }>;
@@ -37,7 +39,7 @@ export type MatchStateResponse = {
     baseVersion: number | null;
     stateVersion: number;
   }>;
-  board: Array<Array<string | null>>;
+  board: Cell[][];
 };
 
 const STORAGE_PREFIX = "proto:matchSession:";
