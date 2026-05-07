@@ -20,7 +20,12 @@ services:
   realtime:
     build:
       target: dev
-    command: ["sh", "-c", "bun install --frozen-lockfile && bun run dev:realtime"]
+    command: ["bun", "run", "dev:realtime"]
+    depends_on:
+      app:
+        condition: service_healthy
+      database:
+        condition: service_healthy
     environment:
       NODE_ENV: development
       SOCKET_HOST: 0.0.0.0
