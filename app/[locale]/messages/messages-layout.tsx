@@ -1,123 +1,158 @@
 "use client";
 
-import { MessageSquare, Send /*Search*/ } from "lucide-react";
+import { MessageSquare, Search, Send, Sparkles } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useSearchParams } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
+import type { FormEvent } from "react";
+
+const chats = [
+  { id: "MJ", rank: "五段", status: "online", accent: "mint" },
+  { id: "Alex", rank: "三段", status: "studying", accent: "brass" },
+] as const;
 
 export default function MessagesContent() {
   const searchParams = useSearchParams();
   const initialUser = searchParams.get("user") || "MJ";
-
   const [activeChat, setActiveChat] = useState(initialUser);
   const [messageText, setMessageText] = useState("");
+  const [query, setQuery] = useState("");
   const t = useTranslations("messagesPage");
 
   useEffect(() => {
     const userParam = searchParams.get("user");
-    if (userParam) {
-      setActiveChat(userParam);
-    }
+    if (userParam) setActiveChat(userParam);
   }, [searchParams]);
+
+  const visibleChats = useMemo(
+    () => chats.filter((chat) => chat.id.toLowerCase().includes(query.toLowerCase())),
+    [query],
+  );
+
+  const handleSend = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setMessageText("");
+  };
 
   return (
     <main className="app-shell app-shell-wide">
-      <section className="mt-4 mb-12 flex flex-col items-center">
-        <div className="mb-6 flex items-center gap-4">
-          <MessageSquare aria-hidden="true" className="h-12 w-12 text-[var(--brass)]" />
-          <h1 className="page-title">{t("title")}</h1>
-        </div>
-
-        <div className="flex w-full max-w-md gap-3">
-          <input
-            type="text"
-            name="messageSearch"
-            autoComplete="off"
-            aria-label={t("search")}
-            placeholder={t("searchPlaceholder")}
-            className="text-input flex-1"
-          />
-          <button type="button" className="btn m-0 px-6 py-3">
-            {t("search")}
-          </button>
+      <section className="command-panel mb-5">
+        <div className="grid gap-4 lg:grid-cols-[1fr_360px] lg:items-end">
+          <div>
+            <p className="eyebrow">Social Table</p>
+            <h1 className="page-title">{t("title")}</h1>
+            <p className="lede">
+              A match-first inbox for rivals, rematches, and live room invites.
+            </p>
+          </div>
+          <label className="grid gap-2">
+            <span className="field-label">{t("search")}</span>
+            <span className="field-shell">
+              <Search aria-hidden="true" className="size-4 text-[var(--brass)]" />
+              <input
+                type="text"
+                name="messageSearch"
+                autoComplete="off"
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+                placeholder={t("searchPlaceholder")}
+                className="text-input field-input"
+              />
+            </span>
+          </label>
         </div>
       </section>
 
-      <section className="panel overflow-hidden p-0">
-        <div className="flex h-[700px] w-full flex-row">
-          <div className="flex w-1/3 min-w-[250px] flex-col border-r border-[var(--panel-border-soft)] bg-[#07100d] pt-2">
-            <div className="flex flex-1 flex-col gap-1 overflow-y-auto p-2">
+      <section className="grid min-h-[720px] overflow-hidden rounded-lg border border-[var(--panel-border-soft)] bg-[#050807]/90 shadow-[0_30px_90px_rgba(0,0,0,0.4)] lg:grid-cols-[320px_minmax(0,1fr)]">
+        <aside className="border-b border-[var(--panel-border-soft)] bg-[#07100d] p-3 lg:border-r lg:border-b-0">
+          <div className="mb-3 flex items-center gap-2 px-2 py-1">
+            <Sparkles aria-hidden="true" className="size-4 text-[var(--mint)]" />
+            <p className="m-0 text-xs font-black tracking-[0.16em] text-[var(--muted-text)] uppercase">
+              Conversations
+            </p>
+          </div>
+          <div className="grid gap-2">
+            {visibleChats.map((chat) => (
               <button
+                key={chat.id}
                 type="button"
-                onClick={() => setActiveChat("MJ")}
-                className={`flex items-center gap-3 rounded-md p-3 transition-colors focus-visible:ring-3 focus-visible:ring-[var(--mint)]/25 focus-visible:outline-none ${activeChat === "MJ" ? "bg-[var(--mint-soft)]" : "hover:bg-white/[0.06]"}`}
+                onClick={() => setActiveChat(chat.id)}
+                className={`grid grid-cols-[auto_1fr_auto] items-center gap-3 rounded-md border p-3 text-left transition-[background-color,border-color] focus-visible:ring-3 focus-visible:ring-[var(--mint)]/25 focus-visible:outline-none ${
+                  activeChat === chat.id
+                    ? "border-[var(--mint)]/35 bg-[var(--mint-soft)]"
+                    : "border-transparent bg-white/[0.035] hover:border-[var(--panel-border-soft)] hover:bg-white/[0.06]"
+                }`}
               >
-                <div className="h-10 w-10 shrink-0 rounded-full bg-white/[0.08]"></div>
-                <div className="flex-1 overflow-hidden text-left">
-                  <h3 className="m-0 font-bold text-white">MJ</h3>
-                  <p className="m-0 truncate text-sm text-[var(--muted-text)]">
-                    {t("previews.mj")}
-                  </p>
-                </div>
+                <span className="grid size-11 place-items-center rounded-full border border-[var(--panel-border-soft)] bg-white/[0.08] font-black">
+                  {chat.id.charAt(0)}
+                </span>
+                <span className="min-w-0">
+                  <span className="block truncate font-black">{chat.id}</span>
+                  <span className="block truncate text-sm text-[var(--muted-text)]">
+                    {chat.id === "MJ" ? t("previews.mj") : t("previews.alex")}
+                  </span>
+                </span>
+                <span className="text-xs font-black text-[var(--brass)]">{chat.rank}</span>
               </button>
-              <button
-                type="button"
-                onClick={() => setActiveChat("Alex")}
-                className={`flex items-center gap-3 rounded-md p-3 transition-colors focus-visible:ring-3 focus-visible:ring-[var(--mint)]/25 focus-visible:outline-none ${activeChat === "Alex" ? "bg-[var(--mint-soft)]" : "hover:bg-white/[0.06]"}`}
-              >
-                <div className="h-10 w-10 shrink-0 rounded-full bg-white/[0.08]"></div>
-                <div className="flex-1 overflow-hidden text-left">
-                  <h3 className="m-0 font-bold text-white">Alex</h3>
-                  <p className="m-0 truncate text-sm text-[var(--muted-text)]">
-                    {t("previews.alex")}
-                  </p>
-                </div>
-              </button>
+            ))}
+          </div>
+        </aside>
+
+        <div className="grid min-w-0 grid-rows-[auto_1fr_auto]">
+          <header className="flex items-center justify-between gap-4 border-b border-[var(--panel-border-soft)] bg-[#07100d] p-4">
+            <div className="flex min-w-0 items-center gap-3">
+              <span className="grid size-12 place-items-center rounded-full border border-[var(--mint)]/35 bg-[var(--mint-soft)] font-black">
+                {activeChat.charAt(0)}
+              </span>
+              <div className="min-w-0">
+                <h2 className="m-0 truncate font-serif text-2xl font-bold">{activeChat}</h2>
+                <p className="m-0 text-sm text-[var(--muted-text)]">Ready for rematch invites</p>
+              </div>
+            </div>
+            <MessageSquare aria-hidden="true" className="size-5 text-[var(--brass)]" />
+          </header>
+
+          <div className="grid content-end gap-4 overflow-y-auto p-5 sm:p-8">
+            <div className="flex max-w-[82%] gap-3">
+              <span className="mt-auto grid size-9 shrink-0 place-items-center rounded-full bg-white/[0.08] font-black">
+                {activeChat.charAt(0)}
+              </span>
+              <div className="rounded-lg rounded-bl-sm border border-[var(--panel-border-soft)] bg-white/[0.08] p-4 text-[var(--muted-strong)]">
+                <p className="m-0">{t("thread.incoming")}</p>
+              </div>
+            </div>
+            <div className="flex max-w-[82%] flex-row-reverse gap-3 justify-self-end">
+              <div className="rounded-lg rounded-br-sm bg-[var(--mint)] p-4 text-[var(--primary-foreground)]">
+                <p className="m-0 font-bold">{t("thread.outgoing")}</p>
+              </div>
             </div>
           </div>
 
-          <div className="flex min-w-0 flex-1 flex-col bg-[#08110e]">
-            <div className="flex items-center gap-4 border-b border-[var(--panel-border-soft)] bg-[#07100d] p-4">
-              <div className="h-10 w-10 shrink-0 rounded-full bg-white/[0.08]"></div>
-              <h2 className="m-0 text-xl font-bold text-white">{activeChat}</h2>
+          <form
+            onSubmit={handleSend}
+            className="border-t border-[var(--panel-border-soft)] bg-[#07100d] p-4"
+          >
+            <div className="grid grid-cols-[1fr_auto] gap-3">
+              <input
+                type="text"
+                name="message"
+                autoComplete="off"
+                aria-label={t("composerPlaceholder", { name: activeChat })}
+                value={messageText}
+                onChange={(event) => setMessageText(event.target.value)}
+                placeholder={t("composerPlaceholder", { name: activeChat })}
+                className="text-input"
+              />
+              <button
+                type="submit"
+                className="btn m-0 px-5"
+                disabled={messageText.trim().length === 0}
+              >
+                <Send aria-hidden="true" className="size-4" />
+                <span className="hidden sm:inline">{t("send")}</span>
+              </button>
             </div>
-
-            <div className="flex flex-1 flex-col gap-4 overflow-y-auto p-6">
-              <div className="flex max-w-[80%] gap-3">
-                <div className="mt-auto h-8 w-8 shrink-0 rounded-full bg-white/[0.08]"></div>
-                <div className="rounded-lg rounded-bl-sm bg-white/[0.08] p-3 text-[var(--muted-strong)]">
-                  <p className="m-0">{t("thread.incoming")}</p>
-                </div>
-              </div>
-              <div className="flex max-w-[80%] flex-row-reverse gap-3 self-end">
-                <div className="rounded-lg rounded-br-sm bg-[var(--mint)] p-3 text-[var(--primary-foreground)]">
-                  <p className="m-0 font-medium">{t("thread.outgoing")}</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="border-t border-[var(--panel-border-soft)] bg-[#07100d] p-4">
-              <div className="flex gap-3">
-                <input
-                  type="text"
-                  name="message"
-                  autoComplete="off"
-                  aria-label={t("composerPlaceholder", { name: activeChat })}
-                  value={messageText}
-                  onChange={(e) => setMessageText(e.target.value)}
-                  placeholder={t("composerPlaceholder", { name: activeChat })}
-                  className="text-input flex-1"
-                />
-                <button
-                  type="button"
-                  className="btn m-0 flex shrink-0 items-center gap-2 px-6 py-3"
-                >
-                  <Send aria-hidden="true" className="h-4 w-4" />
-                  <span className="hidden sm:inline">{t("send")}</span>
-                </button>
-              </div>
-            </div>
-          </div>
+          </form>
         </div>
       </section>
     </main>

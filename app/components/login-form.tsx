@@ -1,5 +1,6 @@
 "use client";
 
+import { LockKeyhole, Mail } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useActionState } from "react";
 
@@ -19,26 +20,29 @@ export function LoginForm() {
   const passwordErrorId = "login-password-errors";
 
   return (
-    <form className="form-grid" action={formAction}>
+    <form className="grid gap-5" action={formAction}>
       <input type="hidden" name="locale" value={locale} />
 
       <div className="field">
         <label className="field-label" htmlFor="email">
           {shared("email")}
         </label>
-        <input
-          id="email"
-          name="email"
-          type="email"
-          autoComplete="email"
-          spellCheck={false}
-          className="text-input"
-          defaultValue={state.email}
-          maxLength={authValidationLimits.emailMaxLength}
-          aria-describedby={state.fields.email ? emailErrorId : undefined}
-          aria-invalid={Boolean(state.fields.email)}
-          required
-        />
+        <div className="field-shell">
+          <Mail aria-hidden="true" className="size-4 text-[var(--brass)]" />
+          <input
+            id="email"
+            name="email"
+            type="email"
+            autoComplete="email"
+            spellCheck={false}
+            className="text-input field-input"
+            defaultValue={state.email}
+            maxLength={authValidationLimits.emailMaxLength}
+            aria-describedby={state.fields.email ? emailErrorId : undefined}
+            aria-invalid={Boolean(state.fields.email)}
+            required
+          />
+        </div>
         <FieldErrorList id={emailErrorId} errors={state.fields.email} />
       </div>
 
@@ -46,18 +50,21 @@ export function LoginForm() {
         <label className="field-label" htmlFor="password">
           {shared("password")}
         </label>
-        <input
-          id="password"
-          name="password"
-          type="password"
-          autoComplete="current-password"
-          className="text-input"
-          required
-          minLength={authValidationLimits.passwordMinLength}
-          maxLength={authValidationLimits.passwordMaxLength}
-          aria-describedby={state.fields.password ? passwordErrorId : undefined}
-          aria-invalid={Boolean(state.fields.password)}
-        />
+        <div className="field-shell">
+          <LockKeyhole aria-hidden="true" className="size-4 text-[var(--brass)]" />
+          <input
+            id="password"
+            name="password"
+            type="password"
+            autoComplete="current-password"
+            className="text-input field-input"
+            required
+            minLength={authValidationLimits.passwordMinLength}
+            maxLength={authValidationLimits.passwordMaxLength}
+            aria-describedby={state.fields.password ? passwordErrorId : undefined}
+            aria-invalid={Boolean(state.fields.password)}
+          />
+        </div>
         <p className="helper">{shared("passwordHelper")}</p>
         <FieldErrorList id={passwordErrorId} errors={state.fields.password} />
       </div>
@@ -68,7 +75,7 @@ export function LoginForm() {
         </p>
       ) : null}
 
-      <button className="btn" type="submit" disabled={pending}>
+      <button className="btn m-0 w-full" type="submit" disabled={pending}>
         {pending ? login("submitting") : login("submit")}
       </button>
 

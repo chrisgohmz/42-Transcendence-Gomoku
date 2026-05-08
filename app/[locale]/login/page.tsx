@@ -1,5 +1,5 @@
+import { ShieldCheck, Sparkles } from "lucide-react";
 import { getTranslations, setRequestLocale } from "next-intl/server";
-import Image from "next/image";
 
 import GomokuBoard from "@/components/gomoku-board";
 import { LoginForm } from "@/components/login-form";
@@ -27,35 +27,48 @@ export default async function LoginPage({ params }: LoginPageProps) {
 
   return (
     <main className="app-shell">
-      <section className="grid overflow-hidden rounded-lg border border-[var(--panel-border-soft)] bg-[#08110e]/90 shadow-[0_30px_90px_rgba(0,0,0,0.42)] lg:grid-cols-[minmax(0,0.85fr)_minmax(320px,1fr)]">
-        <div className="hidden min-h-[660px] border-r border-[var(--panel-border-soft)] bg-[#050807] p-8 lg:grid">
-          <div className="flex flex-col justify-between">
-            <div className="flex items-center gap-3">
-              <Image src="/icons/Gomoku.svg" alt="" width={48} height={48} className="rounded-lg" />
-              <div>
-                <p className="font-black" translate="no">
-                  五目並べヒーロー
-                </p>
-                <p className="text-xs tracking-[0.24em] text-[var(--brass)] uppercase">
-                  Transcendence
-                </p>
-              </div>
+      <section className="grid overflow-hidden rounded-lg border border-[var(--panel-border-soft)] bg-[#050807]/88 shadow-[0_34px_100px_rgba(0,0,0,0.46)] lg:grid-cols-[minmax(360px,0.9fr)_minmax(360px,0.72fr)]">
+        <div className="board-room min-h-[650px] content-between rounded-none border-0 border-r border-[var(--panel-border-soft)] p-5 sm:p-8">
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <p className="eyebrow mb-2">{shared("eyebrow")}</p>
+              <h1 className="font-serif text-5xl leading-none font-black text-pretty">
+                Return to the table.
+              </h1>
             </div>
-            <GomokuBoard className="mx-auto w-full max-w-sm" />
-            <p className="font-serif text-3xl leading-tight text-pretty">
-              Read the line before the line reads you.
-            </p>
+            <div className="hidden rounded-md border border-[var(--mint)]/30 bg-[var(--mint-soft)] px-3 py-2 text-right sm:block">
+              <p className="m-0 text-xs font-black tracking-[0.14em] text-[var(--muted-strong)] uppercase">
+                Session
+              </p>
+              <p className="m-0 text-lg font-black text-[var(--mint)]">Secure</p>
+            </div>
+          </div>
+
+          <GomokuBoard className="mx-auto w-full max-w-[560px]" />
+
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="kpi-card">
+              <ShieldCheck aria-hidden="true" className="mb-4 size-5 text-[var(--mint)]" />
+              <p className="m-0 font-black">Protected account rooms</p>
+              <p className="mt-2 text-sm leading-6 text-[var(--muted-text)]">
+                Your rooms, profile, and social queue unlock after sign in.
+              </p>
+            </div>
+            <div className="kpi-card">
+              <Sparkles aria-hidden="true" className="mb-4 size-5 text-[var(--brass)]" />
+              <p className="m-0 font-black">Ranked-ready shell</p>
+              <p className="mt-2 text-sm leading-6 text-[var(--muted-text)]">
+                Move from practice board to human lobby without losing context.
+              </p>
+            </div>
           </div>
         </div>
 
-        <div className="p-6 sm:p-10">
-          <section className="hero">
+        <div className="grid content-center p-6 sm:p-10">
+          <section className="command-panel">
             <p className="eyebrow">{shared("eyebrow")}</p>
-            <h1>{login("title")}</h1>
-            <p className="lede">{login("lede")}</p>
-          </section>
-
-          <section className="surface-card">
+            <h2 className="font-serif text-4xl leading-none font-black">{login("title")}</h2>
+            <p className="mt-4 mb-7 leading-7 text-[var(--muted-text)]">{login("lede")}</p>
             <LoginForm />
           </section>
         </div>

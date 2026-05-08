@@ -50,7 +50,7 @@ export default function UserMenu({ username, avatarUrl }: UserMenuProps) {
 
       <DropdownMenuContent
         align="start"
-        className="w-52 rounded-lg border-[var(--panel-border-soft)] bg-[#08110e] text-[var(--text)] shadow-[0_24px_60px_rgba(0,0,0,0.42)]"
+        className="w-52 border-[var(--panel-border)] !bg-[var(--panel-solid)] text-[var(--text)] shadow-[0_24px_70px_rgba(0,0,0,0.58)]"
       >
         <DropdownMenuItem
           asChild

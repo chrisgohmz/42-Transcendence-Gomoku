@@ -9,8 +9,7 @@ import "../../node_modules/tw-animate-css/dist/tw-animate.css";
 import "../globals.css";
 import type { ReactNode } from "react";
 
-import Footer from "@/components/footer";
-import Navbar from "@/components/nav-bar";
+import AppSidebar from "@/components/app-sidebar";
 import { PresenceProvider } from "@/components/presence-provider";
 import { routing } from "@/i18n/routing";
 import { getCurrentSession } from "@/lib/auth";
@@ -63,13 +62,12 @@ export default async function RootLayout({ children, params }: RootLayoutProps) 
             <a className="skip-link" href="#app-main">
               Skip to Content
             </a>
-            <Navbar />
-
-            <div id="app-main" className="min-h-[calc(100vh-8rem)] pt-16">
-              {children}
+            <div className="app-frame">
+              <AppSidebar />
+              <div id="app-main" className="app-content">
+                {children}
+              </div>
             </div>
-
-            <Footer />
           </PresenceProvider>
         </NextIntlClientProvider>
       </body>

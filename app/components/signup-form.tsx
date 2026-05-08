@@ -1,5 +1,6 @@
 "use client";
 
+import { LockKeyhole, Mail, Signature, UserRound } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useActionState } from "react";
 
@@ -21,27 +22,30 @@ export function SignupForm() {
   const passwordErrorId = "signup-password-errors";
 
   return (
-    <form className="form-grid" action={formAction}>
+    <form className="grid gap-5" action={formAction}>
       <input type="hidden" name="locale" value={locale} />
 
       <div className="field">
         <label className="field-label" htmlFor="username">
           {signup("username")}
         </label>
-        <input
-          id="username"
-          name="username"
-          className="text-input"
-          autoComplete="username"
-          spellCheck={false}
-          defaultValue={state.username}
-          minLength={authValidationLimits.usernameMinLength}
-          maxLength={authValidationLimits.usernameMaxLength}
-          pattern="(?:[A-Za-z0-9_]|-)+"
-          aria-describedby={state.fields.username ? usernameErrorId : undefined}
-          aria-invalid={Boolean(state.fields.username)}
-          required
-        />
+        <div className="field-shell">
+          <UserRound aria-hidden="true" className="size-4 text-[var(--brass)]" />
+          <input
+            id="username"
+            name="username"
+            className="text-input field-input"
+            autoComplete="username"
+            spellCheck={false}
+            defaultValue={state.username}
+            minLength={authValidationLimits.usernameMinLength}
+            maxLength={authValidationLimits.usernameMaxLength}
+            pattern="(?:[A-Za-z0-9_]|-)+"
+            aria-describedby={state.fields.username ? usernameErrorId : undefined}
+            aria-invalid={Boolean(state.fields.username)}
+            required
+          />
+        </div>
         <p className="helper">{signup("usernameHelper")}</p>
         <FieldErrorList id={usernameErrorId} errors={state.fields.username} />
       </div>
@@ -50,16 +54,19 @@ export function SignupForm() {
         <label className="field-label" htmlFor="displayName">
           {signup("displayName")}
         </label>
-        <input
-          id="displayName"
-          name="displayName"
-          className="text-input"
-          defaultValue={state.displayName}
-          maxLength={authValidationLimits.displayNameMaxLength}
-          placeholder={signup("displayNamePlaceholder")}
-          aria-describedby={state.fields.displayName ? displayNameErrorId : undefined}
-          aria-invalid={Boolean(state.fields.displayName)}
-        />
+        <div className="field-shell">
+          <Signature aria-hidden="true" className="size-4 text-[var(--brass)]" />
+          <input
+            id="displayName"
+            name="displayName"
+            className="text-input field-input"
+            defaultValue={state.displayName}
+            maxLength={authValidationLimits.displayNameMaxLength}
+            placeholder={signup("displayNamePlaceholder")}
+            aria-describedby={state.fields.displayName ? displayNameErrorId : undefined}
+            aria-invalid={Boolean(state.fields.displayName)}
+          />
+        </div>
         <FieldErrorList id={displayNameErrorId} errors={state.fields.displayName} />
       </div>
 
@@ -67,19 +74,22 @@ export function SignupForm() {
         <label className="field-label" htmlFor="email">
           {shared("email")}
         </label>
-        <input
-          id="email"
-          name="email"
-          type="email"
-          autoComplete="email"
-          spellCheck={false}
-          className="text-input"
-          defaultValue={state.email}
-          maxLength={authValidationLimits.emailMaxLength}
-          aria-describedby={state.fields.email ? emailErrorId : undefined}
-          aria-invalid={Boolean(state.fields.email)}
-          required
-        />
+        <div className="field-shell">
+          <Mail aria-hidden="true" className="size-4 text-[var(--brass)]" />
+          <input
+            id="email"
+            name="email"
+            type="email"
+            autoComplete="email"
+            spellCheck={false}
+            className="text-input field-input"
+            defaultValue={state.email}
+            maxLength={authValidationLimits.emailMaxLength}
+            aria-describedby={state.fields.email ? emailErrorId : undefined}
+            aria-invalid={Boolean(state.fields.email)}
+            required
+          />
+        </div>
         <FieldErrorList id={emailErrorId} errors={state.fields.email} />
       </div>
 
@@ -87,18 +97,21 @@ export function SignupForm() {
         <label className="field-label" htmlFor="password">
           {shared("password")}
         </label>
-        <input
-          id="password"
-          name="password"
-          type="password"
-          autoComplete="new-password"
-          className="text-input"
-          required
-          minLength={authValidationLimits.passwordMinLength}
-          maxLength={authValidationLimits.passwordMaxLength}
-          aria-describedby={state.fields.password ? passwordErrorId : undefined}
-          aria-invalid={Boolean(state.fields.password)}
-        />
+        <div className="field-shell">
+          <LockKeyhole aria-hidden="true" className="size-4 text-[var(--brass)]" />
+          <input
+            id="password"
+            name="password"
+            type="password"
+            autoComplete="new-password"
+            className="text-input field-input"
+            required
+            minLength={authValidationLimits.passwordMinLength}
+            maxLength={authValidationLimits.passwordMaxLength}
+            aria-describedby={state.fields.password ? passwordErrorId : undefined}
+            aria-invalid={Boolean(state.fields.password)}
+          />
+        </div>
         <p className="helper">{shared("passwordHelper")}</p>
         <FieldErrorList id={passwordErrorId} errors={state.fields.password} />
       </div>
@@ -109,7 +122,7 @@ export function SignupForm() {
         </p>
       ) : null}
 
-      <button className="btn" type="submit" disabled={pending}>
+      <button className="btn m-0 w-full" type="submit" disabled={pending}>
         {pending ? signup("submitting") : signup("submit")}
       </button>
 
