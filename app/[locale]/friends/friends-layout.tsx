@@ -105,11 +105,11 @@ export default function FriendsContent({
   };
 
   return (
-    <main className="shell">
+    <main className="app-shell app-shell-wide">
       <section className="mt-4 mb-12 flex flex-col items-center">
         <div className="mb-6 flex items-center gap-4">
-          <Users className="h-12 w-12 text-[#4ee8c2]" />
-          <h1 className="m-0 text-5xl font-bold">{t("title")}</h1>
+          <Users aria-hidden="true" className="h-12 w-12 text-[var(--brass)]" />
+          <h1 className="page-title">{t("title")}</h1>
         </div>
         <Form action="" scroll={false} className="flex w-full max-w-md gap-3">
           <input
@@ -117,23 +117,22 @@ export default function FriendsContent({
             name="query"
             type="text"
             defaultValue={searchQuery}
+            aria-label={t("search")}
             placeholder={t("searchPlaceholder")}
-            className="flex-1 rounded-xl border border-slate-700/50 bg-[#0c1628] px-5 py-3 text-white transition-colors focus:border-[#4ee8c2] focus:outline-none"
+            autoComplete="off"
+            className="text-input flex-1"
           />
-          <button
-            type="submit"
-            className="rounded-xl bg-[#4ee8c2] px-6 py-3 font-bold tracking-wider text-[#04131a] uppercase transition-transform hover:-translate-y-0.5"
-          >
+          <button type="submit" className="btn m-0 px-6 py-3">
             {t("search")}
           </button>
         </Form>
 
         {searchResults.length > 0 && (
-          <div className="mt-4 w-full max-w-md rounded-xl border border-slate-700/50 bg-[#08101F] p-2 shadow-lg shadow-blue-500/10">
+          <div className="mt-4 w-full max-w-md rounded-lg border border-[var(--panel-border-soft)] bg-[#08110e] p-2 shadow-lg">
             {searchResults.map((user) => (
               <div
                 key={user.id}
-                className="flex items-center justify-between rounded-lg p-3 transition-colors hover:bg-slate-800/50"
+                className="flex items-center justify-between rounded-md p-3 transition-colors hover:bg-white/[0.06]"
               >
                 <div className="flex items-center gap-3">
                   <Link href={`/profile/${user.username}`}>
@@ -141,10 +140,13 @@ export default function FriendsContent({
                       <img
                         src={user.avatarUrl}
                         alt={user.displayName}
+                        width={32}
+                        height={32}
+                        loading="lazy"
                         className="h-8 w-8 rounded-full object-cover transition-transform hover:scale-105"
                       />
                     ) : (
-                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-600 font-bold text-white uppercase transition-transform hover:scale-105">
+                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-white/[0.08] font-bold text-white uppercase transition-transform hover:scale-105">
                         {user.displayName.charAt(0)}
                       </div>
                     )}
@@ -152,18 +154,19 @@ export default function FriendsContent({
                   <div className="text-left">
                     <Link
                       href={`/profile/${user.username}`}
-                      className="block font-bold text-white transition-colors hover:text-[#4ee8c2]"
+                      className="block font-bold text-white transition-colors hover:text-[var(--mint)]"
                     >
                       {user.displayName}
                     </Link>
-                    <span className="block text-xs text-slate-400">@{user.username}</span>
+                    <span className="block text-xs text-[var(--muted-text)]">@{user.username}</span>
                   </div>
                 </div>
                 <button
+                  type="button"
                   onClick={() => handleSendRequest(user.username)}
-                  className="flex items-center gap-2 rounded-md bg-[#4ee8c2]/10 px-3 py-1.5 text-sm font-bold text-[#4ee8c2] transition-colors hover:bg-[#4ee8c2]/20"
+                  className="flex items-center gap-2 rounded-md bg-[var(--mint-soft)] px-3 py-1.5 text-sm font-bold text-[var(--mint)] transition-colors hover:bg-[rgb(121_220_138_/_0.2)] focus-visible:ring-3 focus-visible:ring-[var(--mint)]/25 focus-visible:outline-none"
                 >
-                  <UserPlus className="h-4 w-4" />
+                  <UserPlus aria-hidden="true" className="h-4 w-4" />
                   {t("actions.add")}
                 </button>
               </div>
@@ -172,12 +175,12 @@ export default function FriendsContent({
         )}
 
         {!statusMessage && searchQuery.length > 0 && searchResults.length === 0 && (
-          <p className="mt-3 text-sm font-bold text-red-400">{t("empty.search")}</p>
+          <p className="mt-3 text-sm font-bold text-[var(--danger)]">{t("empty.search")}</p>
         )}
 
         {statusMessage && (
           <p
-            className={`mt-3 text-sm font-bold ${statusMessage.isError ? "text-red-400" : "text-[#4ee8c2]"}`}
+            className={`mt-3 text-sm font-bold ${statusMessage.isError ? "text-[var(--danger)]" : "text-[var(--mint)]"}`}
           >
             {statusMessage.text}
           </p>
@@ -185,22 +188,25 @@ export default function FriendsContent({
       </section>
 
       <section className="panel">
-        <div className="mb-8 flex justify-center gap-4 border-b border-slate-700/50 pb-4">
+        <div className="mb-8 flex flex-wrap justify-center gap-3 border-b border-[var(--panel-border-soft)] pb-4">
           <button
+            type="button"
             onClick={() => setActiveTab("friends")}
-            className={`rounded-md px-4 py-2 font-bold transition-colors ${activeTab === "friends" ? "bg-[#4ee8c2] text-[#04131a]" : "text-slate-300 hover:bg-slate-800"}`}
+            className={`rounded-md px-4 py-2 font-bold transition-colors focus-visible:ring-3 focus-visible:ring-[var(--mint)]/25 focus-visible:outline-none ${activeTab === "friends" ? "bg-[var(--mint)] text-[var(--primary-foreground)]" : "text-[var(--muted-text)] hover:bg-white/[0.06]"}`}
           >
             {t("tabs.friends")} ({friends.length})
           </button>
           <button
+            type="button"
             onClick={() => setActiveTab("pending")}
-            className={`rounded-md px-4 py-2 font-bold transition-colors ${activeTab === "pending" ? "bg-[#4ee8c2] text-[#04131a]" : "text-slate-300 hover:bg-slate-800"}`}
+            className={`rounded-md px-4 py-2 font-bold transition-colors focus-visible:ring-3 focus-visible:ring-[var(--mint)]/25 focus-visible:outline-none ${activeTab === "pending" ? "bg-[var(--mint)] text-[var(--primary-foreground)]" : "text-[var(--muted-text)] hover:bg-white/[0.06]"}`}
           >
             {t("tabs.pending")} ({pendingRequests.length})
           </button>
           <button
+            type="button"
             onClick={() => setActiveTab("sent")}
-            className={`rounded-md px-4 py-2 font-bold transition-colors ${activeTab === "sent" ? "bg-[#4ee8c2] text-[#04131a]" : "text-slate-300 hover:bg-slate-800"}`}
+            className={`rounded-md px-4 py-2 font-bold transition-colors focus-visible:ring-3 focus-visible:ring-[var(--mint)]/25 focus-visible:outline-none ${activeTab === "sent" ? "bg-[var(--mint)] text-[var(--primary-foreground)]" : "text-[var(--muted-text)] hover:bg-white/[0.06]"}`}
           >
             {t("tabs.sent")} ({sentRequests.length})
           </button>
@@ -208,17 +214,25 @@ export default function FriendsContent({
 
         <div className="flex flex-col gap-4">
           {activeTab === "friends" && (
-            <div className="overflow-hidden rounded-xl border border-slate-700/50 bg-[#08101F] shadow-lg shadow-blue-500/10">
+            <div className="overflow-hidden rounded-lg border border-[var(--panel-border-soft)] bg-[#08110e] shadow-lg">
               <table className="w-full border-collapse text-left">
                 <thead>
-                  <tr className="border-b border-slate-700/50 bg-slate-800/50">
-                    <th className="p-4 font-bold text-slate-200">{t("table.rank")}</th>
-                    <th className="p-4 font-bold text-slate-200">{t("table.friend")}</th>
-                    <th className="p-4 font-bold text-slate-200">{t("table.rating")}</th>
-                    <th className="p-4 font-bold text-slate-200">{t("table.winRate")}</th>
-                    <th className="p-4 font-bold text-slate-200">{t("table.wins")}</th>
-                    <th className="p-4 font-bold text-slate-200">{t("table.losses")}</th>
-                    <th className="p-4 text-right font-bold text-slate-200">
+                  <tr className="border-b border-[var(--panel-border-soft)] bg-white/[0.04]">
+                    <th className="p-4 font-bold text-[var(--muted-strong)]">{t("table.rank")}</th>
+                    <th className="p-4 font-bold text-[var(--muted-strong)]">
+                      {t("table.friend")}
+                    </th>
+                    <th className="p-4 font-bold text-[var(--muted-strong)]">
+                      {t("table.rating")}
+                    </th>
+                    <th className="p-4 font-bold text-[var(--muted-strong)]">
+                      {t("table.winRate")}
+                    </th>
+                    <th className="p-4 font-bold text-[var(--muted-strong)]">{t("table.wins")}</th>
+                    <th className="p-4 font-bold text-[var(--muted-strong)]">
+                      {t("table.losses")}
+                    </th>
+                    <th className="p-4 text-right font-bold text-[var(--muted-strong)]">
                       {t("table.actions")}
                     </th>
                   </tr>
@@ -226,7 +240,7 @@ export default function FriendsContent({
                 <tbody>
                   {friends.length === 0 ? (
                     <tr>
-                      <td colSpan={7} className="p-8 text-center text-slate-400">
+                      <td colSpan={7} className="p-8 text-center text-[var(--muted-text)]">
                         {t("empty.friends")}
                       </td>
                     </tr>
@@ -239,9 +253,9 @@ export default function FriendsContent({
                       return (
                         <tr
                           key={friend.id}
-                          className="border-b border-slate-700/50 transition-colors hover:bg-slate-800/20"
+                          className="border-b border-[var(--panel-border-soft)] transition-colors hover:bg-white/[0.05]"
                         >
-                          <td className="p-4 text-slate-300">{index + 1}</td>
+                          <td className="p-4 text-[var(--muted-text)]">{index + 1}</td>
                           <td className="p-4">
                             <div className="flex items-center gap-3">
                               <Link href={`/profile/${friend.username}`}>
@@ -249,10 +263,13 @@ export default function FriendsContent({
                                   <img
                                     src={friend.avatarUrl}
                                     alt={friend.displayName}
+                                    width={32}
+                                    height={32}
+                                    loading="lazy"
                                     className="h-8 w-8 rounded-full object-cover transition-transform hover:scale-105"
                                   />
                                 ) : (
-                                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-600 font-bold text-white uppercase transition-transform hover:scale-105">
+                                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-white/[0.08] font-bold text-white uppercase transition-transform hover:scale-105">
                                     {friend.displayName.charAt(0)}
                                   </div>
                                 )}
@@ -260,21 +277,21 @@ export default function FriendsContent({
                               <div className="flex flex-col text-left">
                                 <Link
                                   href={`/profile/${friend.username}`}
-                                  className="font-bold text-white transition-colors hover:text-[#4ee8c2]"
+                                  className="font-bold text-white transition-colors hover:text-[var(--mint)]"
                                 >
                                   {friend.displayName}
                                 </Link>
                                 {onlineUsers.includes(friend.username) ? (
                                   <div className="flex items-center gap-1.5">
-                                    <span className="h-2 w-2 rounded-full bg-[#4ee8c2] shadow-[0_0_5px_#4ee8c2]"></span>
-                                    <span className="text-xs font-bold text-[#4ee8c2]">
+                                    <span className="h-2 w-2 rounded-full bg-[var(--mint)] shadow-[0_0_10px_var(--mint)]"></span>
+                                    <span className="text-xs font-bold text-[var(--mint)]">
                                       {t("status.online")}
                                     </span>
                                   </div>
                                 ) : (
                                   <div className="flex items-center gap-1.5">
-                                    <span className="h-2 w-2 rounded-full bg-red-500 shadow-[0_0_5px_#ef4444]"></span>
-                                    <span className="text-xs font-bold text-red-500">
+                                    <span className="h-2 w-2 rounded-full bg-[var(--danger)] shadow-[0_0_10px_var(--danger)]"></span>
+                                    <span className="text-xs font-bold text-[var(--danger)]">
                                       {t("status.offline")}
                                     </span>
                                   </div>
@@ -282,21 +299,26 @@ export default function FriendsContent({
                               </div>
                             </div>
                           </td>
-                          <td className="p-4 text-slate-300">{friend.stats?.rating || 0}</td>
-                          <td className="p-4 text-slate-300">{winRate}%</td>
-                          <td className="p-4 text-slate-300">{wins}</td>
-                          <td className="p-4 text-slate-300">{friend.stats?.losses || 0}</td>
+                          <td className="p-4 text-[var(--muted-text)]">
+                            {friend.stats?.rating || 0}
+                          </td>
+                          <td className="p-4 text-[var(--muted-text)]">{winRate}%</td>
+                          <td className="p-4 text-[var(--muted-text)]">{wins}</td>
+                          <td className="p-4 text-[var(--muted-text)]">
+                            {friend.stats?.losses || 0}
+                          </td>
                           <td className="flex justify-end gap-2 p-4">
                             <Link
                               href={`/messages?user=${friend.username}`}
-                              className="flex items-center gap-2 rounded-md bg-slate-800 px-3 py-1.5 text-sm font-bold transition-colors hover:bg-slate-700"
+                              className="flex items-center gap-2 rounded-md bg-white/[0.06] px-3 py-1.5 text-sm font-bold transition-colors hover:bg-white/[0.1]"
                             >
                               <MessageSquare className="h-4 w-4" />
                               {t("actions.chat")}
                             </Link>
                             <button
+                              type="button"
                               onClick={() => handleRemove(friend.id)}
-                              className="flex items-center gap-2 rounded-md bg-red-500/10 px-3 py-1.5 text-sm font-bold text-red-400 transition-colors hover:bg-red-500/20"
+                              className="flex items-center gap-2 rounded-md bg-[rgb(198_56_47_/_0.15)] px-3 py-1.5 text-sm font-bold text-[var(--danger)] transition-colors hover:bg-[rgb(198_56_47_/_0.25)]"
                             >
                               <UserMinus className="h-4 w-4" />
                               {t("actions.remove")}
@@ -312,12 +334,14 @@ export default function FriendsContent({
           )}
 
           {activeTab === "pending" && (
-            <div className="overflow-hidden rounded-xl border border-slate-700/50 bg-[#08101F] shadow-lg shadow-blue-500/10">
+            <div className="overflow-hidden rounded-lg border border-[var(--panel-border-soft)] bg-[#08110e] shadow-lg">
               <table className="w-full border-collapse text-left">
                 <thead>
-                  <tr className="border-b border-slate-700/50 bg-slate-800/50">
-                    <th className="p-4 font-bold text-slate-200">{t("tabs.pending")}</th>
-                    <th className="p-4 text-right font-bold text-slate-200">
+                  <tr className="border-b border-[var(--panel-border-soft)] bg-white/[0.04]">
+                    <th className="p-4 font-bold text-[var(--muted-strong)]">
+                      {t("tabs.pending")}
+                    </th>
+                    <th className="p-4 text-right font-bold text-[var(--muted-strong)]">
                       {t("table.actions")}
                     </th>
                   </tr>
@@ -325,7 +349,7 @@ export default function FriendsContent({
                 <tbody>
                   {pendingRequests.length === 0 ? (
                     <tr>
-                      <td colSpan={2} className="p-8 text-center text-slate-400">
+                      <td colSpan={2} className="p-8 text-center text-[var(--muted-text)]">
                         {t("empty.pending")}
                       </td>
                     </tr>
@@ -333,7 +357,7 @@ export default function FriendsContent({
                     pendingRequests.map((request) => (
                       <tr
                         key={request.id}
-                        className="border-b border-slate-700/50 transition-colors hover:bg-slate-800/20"
+                        className="border-b border-[var(--panel-border-soft)] transition-colors hover:bg-white/[0.05]"
                       >
                         <td className="p-4">
                           <div className="flex items-center gap-3">
@@ -342,17 +366,20 @@ export default function FriendsContent({
                                 <img
                                   src={request.avatarUrl}
                                   alt={request.displayName}
+                                  width={32}
+                                  height={32}
+                                  loading="lazy"
                                   className="h-8 w-8 rounded-full object-cover transition-transform hover:scale-105"
                                 />
                               ) : (
-                                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-600 font-bold text-white uppercase transition-transform hover:scale-105">
+                                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-white/[0.08] font-bold text-white uppercase transition-transform hover:scale-105">
                                   {request.displayName.charAt(0)}
                                 </div>
                               )}
                             </Link>
                             <Link
                               href={`/profile/${request.username}`}
-                              className="font-bold text-white transition-colors hover:text-[#4ee8c2]"
+                              className="font-bold text-white transition-colors hover:text-[var(--mint)]"
                             >
                               {request.displayName}
                             </Link>
@@ -360,15 +387,17 @@ export default function FriendsContent({
                         </td>
                         <td className="flex justify-end gap-2 p-4">
                           <button
+                            type="button"
                             onClick={() => handleRespond(request.id, true)}
-                            className="flex items-center gap-2 rounded-md bg-[#4ee8c2]/10 px-3 py-1.5 text-sm font-bold text-[#4ee8c2] transition-colors hover:bg-[#4ee8c2]/20"
+                            className="flex items-center gap-2 rounded-md bg-[rgb(121_220_138_/_0.1)] px-3 py-1.5 text-sm font-bold text-[var(--mint)] transition-colors hover:bg-[rgb(121_220_138_/_0.2)]"
                           >
                             <Check className="h-4 w-4" />
                             {t("actions.accept")}
                           </button>
                           <button
+                            type="button"
                             onClick={() => handleRespond(request.id, false)}
-                            className="flex items-center gap-2 rounded-md bg-red-500/10 px-3 py-1.5 text-sm font-bold text-red-400 transition-colors hover:bg-red-500/20"
+                            className="flex items-center gap-2 rounded-md bg-[rgb(198_56_47_/_0.15)] px-3 py-1.5 text-sm font-bold text-[var(--danger)] transition-colors hover:bg-[rgb(198_56_47_/_0.25)]"
                           >
                             <X className="h-4 w-4" />
                             {t("actions.decline")}
@@ -383,12 +412,12 @@ export default function FriendsContent({
           )}
 
           {activeTab === "sent" && (
-            <div className="overflow-hidden rounded-xl border border-slate-700/50 bg-[#08101F] shadow-lg shadow-blue-500/10">
+            <div className="overflow-hidden rounded-lg border border-[var(--panel-border-soft)] bg-[#08110e] shadow-lg">
               <table className="w-full border-collapse text-left">
                 <thead>
-                  <tr className="border-b border-slate-700/50 bg-slate-800/50">
-                    <th className="p-4 font-bold text-slate-200">{t("tabs.sent")}</th>
-                    <th className="p-4 text-right font-bold text-slate-200">
+                  <tr className="border-b border-[var(--panel-border-soft)] bg-white/[0.04]">
+                    <th className="p-4 font-bold text-[var(--muted-strong)]">{t("tabs.sent")}</th>
+                    <th className="p-4 text-right font-bold text-[var(--muted-strong)]">
                       {t("table.actions")}
                     </th>
                   </tr>
@@ -396,7 +425,7 @@ export default function FriendsContent({
                 <tbody>
                   {sentRequests.length === 0 ? (
                     <tr>
-                      <td colSpan={2} className="p-8 text-center text-slate-400">
+                      <td colSpan={2} className="p-8 text-center text-[var(--muted-text)]">
                         {t("empty.sent")}
                       </td>
                     </tr>
@@ -404,7 +433,7 @@ export default function FriendsContent({
                     sentRequests.map((request) => (
                       <tr
                         key={request.id}
-                        className="border-b border-slate-700/50 transition-colors hover:bg-slate-800/20"
+                        className="border-b border-[var(--panel-border-soft)] transition-colors hover:bg-white/[0.05]"
                       >
                         <td className="p-4">
                           <div className="flex items-center gap-3">
@@ -413,17 +442,20 @@ export default function FriendsContent({
                                 <img
                                   src={request.avatarUrl}
                                   alt={request.displayName}
+                                  width={32}
+                                  height={32}
+                                  loading="lazy"
                                   className="h-8 w-8 rounded-full object-cover transition-transform hover:scale-105"
                                 />
                               ) : (
-                                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-600 font-bold text-white uppercase transition-transform hover:scale-105">
+                                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-white/[0.08] font-bold text-white uppercase transition-transform hover:scale-105">
                                   {request.displayName.charAt(0)}
                                 </div>
                               )}
                             </Link>
                             <Link
                               href={`/profile/${request.username}`}
-                              className="font-bold text-white transition-colors hover:text-[#4ee8c2]"
+                              className="font-bold text-white transition-colors hover:text-[var(--mint)]"
                             >
                               {request.displayName}
                             </Link>
@@ -431,8 +463,9 @@ export default function FriendsContent({
                         </td>
                         <td className="flex justify-end p-4">
                           <button
+                            type="button"
                             onClick={() => handleRespond(request.id, false)}
-                            className="flex items-center gap-2 rounded-md bg-slate-800 px-3 py-1.5 text-sm font-bold text-slate-300 transition-colors hover:bg-slate-700"
+                            className="flex items-center gap-2 rounded-md bg-white/[0.06] px-3 py-1.5 text-sm font-bold text-[var(--muted-text)] transition-colors hover:bg-white/[0.1]"
                           >
                             <X className="h-4 w-4" />
                             {t("actions.cancelRequest")}

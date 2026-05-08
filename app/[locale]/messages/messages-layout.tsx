@@ -21,83 +21,98 @@ export default function MessagesContent() {
   }, [searchParams]);
 
   return (
-    <main className="shell">
+    <main className="app-shell app-shell-wide">
       <section className="mt-4 mb-12 flex flex-col items-center">
         <div className="mb-6 flex items-center gap-4">
-          <MessageSquare className="h-12 w-12 text-[#4ee8c2]" />
-          <h1 className="m-0 text-5xl font-bold">{t("title")}</h1>
+          <MessageSquare aria-hidden="true" className="h-12 w-12 text-[var(--brass)]" />
+          <h1 className="page-title">{t("title")}</h1>
         </div>
 
         <div className="flex w-full max-w-md gap-3">
           <input
             type="text"
+            name="messageSearch"
+            autoComplete="off"
+            aria-label={t("search")}
             placeholder={t("searchPlaceholder")}
-            className="flex-1 rounded-xl border border-slate-700/50 bg-[#0c1628] px-5 py-3 text-white transition-colors focus:border-[#4ee8c2] focus:outline-none"
+            className="text-input flex-1"
           />
-          <button className="rounded-xl bg-[#4ee8c2] px-6 py-3 font-bold tracking-wider text-[#04131a] uppercase transition-transform hover:-translate-y-0.5">
+          <button type="button" className="btn m-0 px-6 py-3">
             {t("search")}
           </button>
         </div>
       </section>
 
-      <section className="panel overflow-hidden rounded-xl border border-slate-700/50 bg-[#08101F] p-0 shadow-2xl shadow-blue-500/10">
+      <section className="panel overflow-hidden p-0">
         <div className="flex h-[700px] w-full flex-row">
-          <div className="flex w-1/3 min-w-[250px] flex-col border-r border-slate-700/50 bg-[#0b182d] pt-2">
+          <div className="flex w-1/3 min-w-[250px] flex-col border-r border-[var(--panel-border-soft)] bg-[#07100d] pt-2">
             <div className="flex flex-1 flex-col gap-1 overflow-y-auto p-2">
               <button
+                type="button"
                 onClick={() => setActiveChat("MJ")}
-                className={`flex items-center gap-3 rounded-lg p-3 transition-colors ${activeChat === "MJ" ? "bg-slate-800" : "hover:bg-slate-800/50"}`}
+                className={`flex items-center gap-3 rounded-md p-3 transition-colors focus-visible:ring-3 focus-visible:ring-[var(--mint)]/25 focus-visible:outline-none ${activeChat === "MJ" ? "bg-[var(--mint-soft)]" : "hover:bg-white/[0.06]"}`}
               >
-                <div className="h-10 w-10 shrink-0 rounded-full bg-slate-600"></div>
+                <div className="h-10 w-10 shrink-0 rounded-full bg-white/[0.08]"></div>
                 <div className="flex-1 overflow-hidden text-left">
                   <h3 className="m-0 font-bold text-white">MJ</h3>
-                  <p className="m-0 truncate text-sm text-slate-400">{t("previews.mj")}</p>
+                  <p className="m-0 truncate text-sm text-[var(--muted-text)]">
+                    {t("previews.mj")}
+                  </p>
                 </div>
               </button>
               <button
+                type="button"
                 onClick={() => setActiveChat("Alex")}
-                className={`flex items-center gap-3 rounded-lg p-3 transition-colors ${activeChat === "Alex" ? "bg-slate-800" : "hover:bg-slate-800/50"}`}
+                className={`flex items-center gap-3 rounded-md p-3 transition-colors focus-visible:ring-3 focus-visible:ring-[var(--mint)]/25 focus-visible:outline-none ${activeChat === "Alex" ? "bg-[var(--mint-soft)]" : "hover:bg-white/[0.06]"}`}
               >
-                <div className="h-10 w-10 shrink-0 rounded-full bg-slate-600"></div>
+                <div className="h-10 w-10 shrink-0 rounded-full bg-white/[0.08]"></div>
                 <div className="flex-1 overflow-hidden text-left">
                   <h3 className="m-0 font-bold text-white">Alex</h3>
-                  <p className="m-0 truncate text-sm text-slate-400">{t("previews.alex")}</p>
+                  <p className="m-0 truncate text-sm text-[var(--muted-text)]">
+                    {t("previews.alex")}
+                  </p>
                 </div>
               </button>
             </div>
           </div>
 
-          <div className="flex min-w-0 flex-1 flex-col bg-[#08101F]">
-            <div className="flex items-center gap-4 border-b border-slate-700/50 bg-[#0b182d] p-4">
-              <div className="h-10 w-10 shrink-0 rounded-full bg-slate-600"></div>
+          <div className="flex min-w-0 flex-1 flex-col bg-[#08110e]">
+            <div className="flex items-center gap-4 border-b border-[var(--panel-border-soft)] bg-[#07100d] p-4">
+              <div className="h-10 w-10 shrink-0 rounded-full bg-white/[0.08]"></div>
               <h2 className="m-0 text-xl font-bold text-white">{activeChat}</h2>
             </div>
 
             <div className="flex flex-1 flex-col gap-4 overflow-y-auto p-6">
               <div className="flex max-w-[80%] gap-3">
-                <div className="mt-auto h-8 w-8 shrink-0 rounded-full bg-slate-600"></div>
-                <div className="rounded-2xl rounded-bl-sm bg-slate-800 p-3 text-slate-200">
+                <div className="mt-auto h-8 w-8 shrink-0 rounded-full bg-white/[0.08]"></div>
+                <div className="rounded-lg rounded-bl-sm bg-white/[0.08] p-3 text-[var(--muted-strong)]">
                   <p className="m-0">{t("thread.incoming")}</p>
                 </div>
               </div>
               <div className="flex max-w-[80%] flex-row-reverse gap-3 self-end">
-                <div className="rounded-2xl rounded-br-sm bg-[#4ee8c2] p-3 text-[#04131a]">
+                <div className="rounded-lg rounded-br-sm bg-[var(--mint)] p-3 text-[var(--primary-foreground)]">
                   <p className="m-0 font-medium">{t("thread.outgoing")}</p>
                 </div>
               </div>
             </div>
 
-            <div className="border-t border-slate-700/50 bg-[#0b182d] p-4">
+            <div className="border-t border-[var(--panel-border-soft)] bg-[#07100d] p-4">
               <div className="flex gap-3">
                 <input
                   type="text"
+                  name="message"
+                  autoComplete="off"
+                  aria-label={t("composerPlaceholder", { name: activeChat })}
                   value={messageText}
                   onChange={(e) => setMessageText(e.target.value)}
                   placeholder={t("composerPlaceholder", { name: activeChat })}
-                  className="flex-1 rounded-xl border border-slate-700/50 bg-[#0c1628] px-4 py-3 text-white transition-colors focus:border-[#4ee8c2] focus:outline-none"
+                  className="text-input flex-1"
                 />
-                <button className="flex shrink-0 items-center gap-2 rounded-xl bg-[#4ee8c2] px-6 py-3 font-bold text-[#04131a] transition-transform hover:-translate-y-0.5">
-                  <Send className="h-4 w-4" />
+                <button
+                  type="button"
+                  className="btn m-0 flex shrink-0 items-center gap-2 px-6 py-3"
+                >
+                  <Send aria-hidden="true" className="h-4 w-4" />
                   <span className="hidden sm:inline">{t("send")}</span>
                 </button>
               </div>

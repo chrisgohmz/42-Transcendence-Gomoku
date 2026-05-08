@@ -56,13 +56,18 @@ export default async function RootLayout({ children, params }: RootLayoutProps) 
   const socketUrl = process.env["SOCKET_PUBLIC_URL"];
 
   return (
-    <html lang={locale} className={cn("font-sans", inter.variable)}>
-      <body className="bg-slate-100 text-slate-900">
+    <html lang={locale} className={cn("dark font-sans", inter.variable)}>
+      <body>
         <NextIntlClientProvider>
           <PresenceProvider currentUsername={username} socketUrl={socketUrl}>
+            <a className="skip-link" href="#app-main">
+              Skip to Content
+            </a>
             <Navbar />
 
-            <main className="pt-16">{children}</main>
+            <div id="app-main" className="min-h-[calc(100vh-8rem)] pt-16">
+              {children}
+            </div>
 
             <Footer />
           </PresenceProvider>

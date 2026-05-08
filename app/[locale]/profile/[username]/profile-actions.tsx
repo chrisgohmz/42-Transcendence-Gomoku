@@ -54,17 +54,18 @@ export default function ProfileActions({
   };
 
   return (
-    <div className="mt-6 flex w-full max-w-[200px] flex-col gap-3">
+    <div className="mt-6 flex w-full max-w-[220px] flex-col gap-3">
       {initialState === "NOT_FRIENDS" && (
         <button
+          type="button"
           onClick={() => handleAction("ADD")}
           disabled={isPending}
-          className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#4ee8c2] px-4 py-2.5 text-sm font-bold text-[#04131a] transition-transform hover:-translate-y-0.5 disabled:opacity-50 disabled:hover:translate-y-0"
+          className="btn m-0 w-full px-4 py-2.5 text-sm disabled:opacity-50 disabled:hover:translate-y-0"
         >
           {isPending ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
+            <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" />
           ) : (
-            <UserPlus className="h-4 w-4" />
+            <UserPlus aria-hidden="true" className="h-4 w-4" />
           )}
           <span>{t("actions.add")}</span>
         </button>
@@ -72,11 +73,16 @@ export default function ProfileActions({
 
       {initialState === "REQUEST_SENT" && (
         <button
+          type="button"
           onClick={() => handleAction("CANCEL")}
           disabled={isPending}
-          className="flex w-full items-center justify-center gap-2 rounded-xl bg-slate-700 px-4 py-2.5 text-sm font-bold text-white transition-transform hover:-translate-y-0.5 disabled:opacity-50 disabled:hover:translate-y-0"
+          className="btn btn-subtle m-0 w-full px-4 py-2.5 text-sm disabled:opacity-50 disabled:hover:translate-y-0"
         >
-          {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <X className="h-4 w-4" />}
+          {isPending ? (
+            <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" />
+          ) : (
+            <X aria-hidden="true" className="h-4 w-4" />
+          )}
           <span>{t("actions.cancelRequest")}</span>
         </button>
       )}
@@ -84,23 +90,30 @@ export default function ProfileActions({
       {initialState === "REQUEST_RECEIVED" && (
         <div className="flex w-full gap-2">
           <button
+            type="button"
             onClick={() => handleAction("ACCEPT")}
             disabled={isPending}
-            className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-[#4ee8c2] px-4 py-2.5 text-sm font-bold text-[#04131a] transition-transform hover:-translate-y-0.5 disabled:opacity-50 disabled:hover:translate-y-0"
+            className="btn m-0 flex-1 px-4 py-2.5 text-sm disabled:opacity-50 disabled:hover:translate-y-0"
           >
             {isPending ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
+              <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" />
             ) : (
-              <UserCheck className="h-4 w-4" />
+              <UserCheck aria-hidden="true" className="h-4 w-4" />
             )}
             <span>{t("actions.accept")}</span>
           </button>
           <button
+            type="button"
             onClick={() => handleAction("DECLINE")}
             disabled={isPending}
-            className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-red-500/20 px-4 py-2.5 text-sm font-bold text-red-500 transition-transform hover:-translate-y-0.5 disabled:opacity-50 disabled:hover:translate-y-0"
+            aria-label={t("actions.decline")}
+            className="btn btn-danger m-0 flex-1 px-4 py-2.5 text-sm disabled:opacity-50 disabled:hover:translate-y-0"
           >
-            {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <X className="h-4 w-4" />}
+            {isPending ? (
+              <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" />
+            ) : (
+              <X aria-hidden="true" className="h-4 w-4" />
+            )}
           </button>
         </div>
       )}
@@ -108,21 +121,23 @@ export default function ProfileActions({
       {initialState === "FRIENDS" && (
         <>
           <button
+            type="button"
             onClick={handleMessage}
-            className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#4ee8c2] px-4 py-2.5 text-sm font-bold text-[#04131a] transition-transform hover:-translate-y-0.5"
+            className="btn m-0 w-full px-4 py-2.5 text-sm"
           >
-            <MessageSquare className="h-4 w-4" />
+            <MessageSquare aria-hidden="true" className="h-4 w-4" />
             <span>{t("actions.chat")}</span>
           </button>
           <button
+            type="button"
             onClick={() => handleAction("REMOVE")}
             disabled={isPending}
-            className="flex w-full items-center justify-center gap-2 rounded-xl border border-slate-700 bg-transparent px-4 py-2.5 text-sm font-bold text-slate-400 transition-transform hover:-translate-y-0.5 hover:border-red-400 hover:text-red-400 disabled:opacity-50 disabled:hover:translate-y-0"
+            className="btn btn-subtle m-0 w-full px-4 py-2.5 text-sm hover:border-[var(--danger)] hover:text-[var(--danger)] disabled:opacity-50 disabled:hover:translate-y-0"
           >
             {isPending ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
+              <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" />
             ) : (
-              <UserMinus className="h-4 w-4" />
+              <UserMinus aria-hidden="true" className="h-4 w-4" />
             )}
             <span>{t("actions.remove")}</span>
           </button>

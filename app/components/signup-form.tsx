@@ -33,6 +33,7 @@ export function SignupForm() {
           name="username"
           className="text-input"
           autoComplete="username"
+          spellCheck={false}
           defaultValue={state.username}
           minLength={authValidationLimits.usernameMinLength}
           maxLength={authValidationLimits.usernameMaxLength}
@@ -71,6 +72,7 @@ export function SignupForm() {
           name="email"
           type="email"
           autoComplete="email"
+          spellCheck={false}
           className="text-input"
           defaultValue={state.email}
           maxLength={authValidationLimits.emailMaxLength}
@@ -102,7 +104,7 @@ export function SignupForm() {
       </div>
 
       {state.message ? (
-        <p className="error-text" role="alert">
+        <p className="error-text" role="alert" aria-live="polite">
           {state.message}
         </p>
       ) : null}

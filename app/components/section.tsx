@@ -5,10 +5,10 @@ type SectionProps = {
 
 export default function Section({ title, children }: SectionProps) {
   return (
-    <section className="mt-8">
-      <h2 className="text-xl font-semibold text-slate-300">{title}</h2>
+    <section className="mt-6 rounded-lg border border-[var(--panel-border-soft)] bg-white/[0.035] p-5">
+      <h2 className="font-serif text-xl font-semibold text-[var(--text)]">{title}</h2>
 
-      <p className="mt-2 text-slate-200">{children}</p>
+      <p className="mt-2 leading-7 text-[var(--muted-text)]">{children}</p>
     </section>
   );
 }

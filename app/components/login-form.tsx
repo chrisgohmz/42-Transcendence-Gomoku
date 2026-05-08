@@ -31,6 +31,7 @@ export function LoginForm() {
           name="email"
           type="email"
           autoComplete="email"
+          spellCheck={false}
           className="text-input"
           defaultValue={state.email}
           maxLength={authValidationLimits.emailMaxLength}
@@ -62,7 +63,7 @@ export function LoginForm() {
       </div>
 
       {state.message ? (
-        <p className="error-text" role="alert">
+        <p className="error-text" role="alert" aria-live="polite">
           {state.message}
         </p>
       ) : null}

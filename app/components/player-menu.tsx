@@ -37,7 +37,7 @@ export default function UserMenu({ username, avatarUrl }: UserMenuProps) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button className="flex items-center gap-2 border-0 bg-slate-800 text-white hover:bg-slate-700">
+        <Button variant="outline" className="flex items-center gap-2 bg-white/[0.04]">
           <Avatar className="h-7 w-7">
             <AvatarImage src={avatarUrl || "/icons/Login.svg"} alt={t("avatarAlt")} />
             <AvatarFallback>{username ? username.charAt(0).toUpperCase() : "U"}</AvatarFallback>
@@ -50,11 +50,11 @@ export default function UserMenu({ username, avatarUrl }: UserMenuProps) {
 
       <DropdownMenuContent
         align="start"
-        className="w-48 border-slate-700 bg-[#0b182d] text-slate-200"
+        className="w-52 rounded-lg border-[var(--panel-border-soft)] bg-[#08110e] text-[var(--text)] shadow-[0_24px_60px_rgba(0,0,0,0.42)]"
       >
         <DropdownMenuItem
           asChild
-          className="cursor-pointer text-slate-200 hover:bg-slate-700 hover:text-white focus:bg-slate-200 focus:text-white"
+          className="cursor-pointer rounded-md text-[var(--muted-text)] focus:bg-white/[0.07] focus:text-[var(--text)]"
         >
           <Link href="/profile" className="flex w-full items-center gap-2">
             <User className="h-4 w-4" />
@@ -64,7 +64,7 @@ export default function UserMenu({ username, avatarUrl }: UserMenuProps) {
 
         <DropdownMenuItem
           asChild
-          className="cursor-pointer text-slate-200 hover:bg-slate-700 hover:text-white focus:bg-slate-200 focus:text-white"
+          className="cursor-pointer rounded-md text-[var(--muted-text)] focus:bg-white/[0.07] focus:text-[var(--text)]"
         >
           <Link href="/friends" className="flex w-full items-center gap-2">
             <Users className="h-4 w-4" />
@@ -74,7 +74,7 @@ export default function UserMenu({ username, avatarUrl }: UserMenuProps) {
 
         <DropdownMenuItem
           asChild
-          className="cursor-pointer text-slate-200 hover:bg-slate-700 hover:text-white focus:bg-slate-200 focus:text-white"
+          className="cursor-pointer rounded-md text-[var(--muted-text)] focus:bg-white/[0.07] focus:text-[var(--text)]"
         >
           <Link href="/messages" className="flex w-full items-center gap-2">
             <MessageSquare className="h-4 w-4" />
@@ -84,10 +84,10 @@ export default function UserMenu({ username, avatarUrl }: UserMenuProps) {
         <DropdownMenuItem
           variant="destructive"
           onClick={handleLogout}
-          className="flex w-full cursor-pointer items-center gap-2 focus:bg-slate-200!"
+          className="flex w-full cursor-pointer items-center gap-2 rounded-md focus:!bg-[rgb(198_56_47_/_0.15)]"
         >
-          <LogOut className="h-4 w-4 text-red-700" />
-          <span className="font-semibold text-red-700">{t("logout")}</span>
+          <LogOut className="h-4 w-4 text-[var(--danger)]" />
+          <span className="font-semibold text-[var(--danger)]">{t("logout")}</span>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

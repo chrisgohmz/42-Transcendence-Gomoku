@@ -79,17 +79,17 @@ export default function EditProfileForm({
   }, [displayNameState.successMessage, passwordState.successMessage, router, successMessage]);
 
   return (
-    <div className="mt-8 flex w-full flex-col gap-8 rounded-xl border border-slate-700/50 bg-[#08101F] p-8 text-left shadow-2xl">
+    <div className="mt-8 flex w-full flex-col gap-8 rounded-lg border border-[var(--panel-border-soft)] bg-[#08110e]/90 p-8 text-left shadow-2xl">
       <div className="grid w-full grid-cols-1 gap-16 md:grid-cols-2">
         {/* Left Column: Display Name Form */}
         <form action={displayNameAction} className="flex h-full flex-col gap-6">
           <div className="flex items-center gap-3">
-            <h2 className="m-0 text-xl font-bold text-white">{t("profileDetails")}</h2>
+            <h2 className="m-0 font-serif text-xl font-bold text-white">{t("profileDetails")}</h2>
             {!isEditingName && (
               <button
                 type="button"
                 onClick={() => setIsEditingName(true)}
-                className="text-[#4ee8c2] transition-transform hover:scale-110 hover:text-[#4ee8c2]/80"
+                className="text-[var(--mint)] transition-transform hover:scale-110 hover:text-[var(--mint)] focus-visible:ring-3 focus-visible:ring-[var(--mint)]/25 focus-visible:outline-none"
                 aria-label={t("editNameAria")}
               >
                 <Pencil className="h-4 w-4" />
@@ -98,7 +98,7 @@ export default function EditProfileForm({
           </div>
 
           <div className="flex flex-col gap-2">
-            <label htmlFor="username" className="text-sm font-bold text-slate-300">
+            <label htmlFor="username" className="field-label">
               {t("usernameReadonly")}
             </label>
             <input
@@ -106,13 +106,14 @@ export default function EditProfileForm({
               name="username"
               type="text"
               defaultValue={currentUsername}
-              className="cursor-not-allowed rounded-xl border border-slate-700/50 bg-[#0c1628] px-4 py-3 text-slate-500"
+              autoComplete="username"
+              className="text-input cursor-not-allowed text-[var(--muted-text)] opacity-70"
               readOnly
             />
           </div>
 
           <div className="flex flex-col gap-2">
-            <label htmlFor="displayName" className="text-sm font-bold text-slate-300">
+            <label htmlFor="displayName" className="field-label">
               {t("displayName")}
             </label>
 
@@ -124,7 +125,8 @@ export default function EditProfileForm({
                   type="text"
                   defaultValue={currentDisplayName}
                   maxLength={authValidationLimits.displayNameMaxLength}
-                  className="rounded-xl border border-slate-700/50 bg-[#0c1628] px-4 py-3 text-white transition-colors focus:border-[#4ee8c2] focus:outline-none"
+                  autoComplete="name"
+                  className="text-input"
                   aria-describedby={
                     displayNameState.fields.displayName ? displayNameErrorId : undefined
                   }
@@ -137,20 +139,18 @@ export default function EditProfileForm({
                 />
               </>
             ) : (
-              <div className="rounded-xl border border-slate-700/50 bg-[#0c1628] px-4 py-3 text-white">
-                {currentDisplayName}
-              </div>
+              <div className="text-input">{currentDisplayName}</div>
             )}
           </div>
 
           {displayNameState.message ? (
-            <p className="m-0 text-sm text-red-400" role="alert">
+            <p className="m-0 text-sm text-[var(--danger)]" role="alert">
               {displayNameState.message}
             </p>
           ) : null}
 
           {displayNameState.successMessage ? (
-            <p className="m-0 text-sm text-[#4ee8c2]" role="status">
+            <p className="m-0 text-sm text-[var(--mint)]" role="status">
               {displayNameState.successMessage}
             </p>
           ) : null}
@@ -163,15 +163,11 @@ export default function EditProfileForm({
                 onClick={() => {
                   setIsEditingName(false);
                 }}
-                className="border-slate-700/50 px-6 font-bold text-red-500 hover:bg-slate-800 hover:text-red-400"
+                className="px-6 font-bold text-[var(--danger)] hover:bg-[rgb(198_56_47_/_0.15)] hover:text-[var(--danger)]"
               >
                 {t("cancel")}
               </Button>
-              <Button
-                type="submit"
-                className="w-fit bg-[#4ee8c2] px-8 font-bold text-[#04131a] hover:bg-[#4ee8c2]/90"
-                disabled={displayNamePending}
-              >
+              <Button type="submit" className="w-fit px-8 font-bold" disabled={displayNamePending}>
                 {displayNamePending ? t("savingChanges") : t("saveChanges")}
               </Button>
             </div>
@@ -181,12 +177,12 @@ export default function EditProfileForm({
         {/* Right Column: Password Form */}
         <form ref={passwordFormRef} action={passwordAction} className="flex h-full flex-col gap-6">
           <div className="flex items-center gap-3">
-            <h2 className="m-0 text-xl font-bold text-white">{t("changePassword")}</h2>
+            <h2 className="m-0 font-serif text-xl font-bold text-white">{t("changePassword")}</h2>
             {!isEditingPassword && (
               <button
                 type="button"
                 onClick={() => setIsEditingPassword(true)}
-                className="text-[#4ee8c2] transition-transform hover:scale-110 hover:text-[#4ee8c2]/80"
+                className="text-[var(--mint)] transition-transform hover:scale-110 hover:text-[var(--mint)] focus-visible:ring-3 focus-visible:ring-[var(--mint)]/25 focus-visible:outline-none"
                 aria-label={t("editPasswordAria")}
               >
                 <Pencil className="h-4 w-4" />
@@ -196,22 +192,21 @@ export default function EditProfileForm({
 
           {!isEditingPassword ? (
             <div className="flex flex-col gap-2">
-              <label className="text-sm font-bold text-slate-300">{t("passwordReadonly")}</label>
-              <div className="rounded-xl border border-slate-700/50 bg-[#0c1628] px-4 py-3 tracking-widest text-white">
-                ••••••••••••
-              </div>
+              <label className="field-label">{t("passwordReadonly")}</label>
+              <div className="text-input tracking-widest">••••••••••••</div>
             </div>
           ) : (
             <>
               <div className="flex flex-col gap-2">
-                <label htmlFor="currentPassword" className="text-sm font-bold text-slate-300">
+                <label htmlFor="currentPassword" className="field-label">
                   {t("currentPassword")}
                 </label>
                 <input
                   id="currentPassword"
                   name="currentPassword"
                   type="password"
-                  className="rounded-xl border border-slate-700/50 bg-[#0c1628] px-4 py-3 text-white transition-colors focus:border-[#4ee8c2] focus:outline-none"
+                  autoComplete="current-password"
+                  className="text-input"
                   aria-describedby={
                     passwordState.fields.currentPassword ? currentPasswordErrorId : undefined
                   }
@@ -224,16 +219,17 @@ export default function EditProfileForm({
               </div>
 
               <div className="flex flex-col gap-2">
-                <label htmlFor="newPassword" className="text-sm font-bold text-slate-300">
+                <label htmlFor="newPassword" className="field-label">
                   {t("newPassword")}
                 </label>
                 <input
                   id="newPassword"
                   name="newPassword"
                   type="password"
+                  autoComplete="new-password"
                   minLength={authValidationLimits.passwordMinLength}
                   maxLength={authValidationLimits.passwordMaxLength}
-                  className="rounded-xl border border-slate-700/50 bg-[#0c1628] px-4 py-3 text-white transition-colors focus:border-[#4ee8c2] focus:outline-none"
+                  className="text-input"
                   aria-describedby={
                     passwordState.fields.newPassword ? newPasswordErrorId : undefined
                   }
@@ -243,16 +239,17 @@ export default function EditProfileForm({
               </div>
 
               <div className="flex flex-col gap-2">
-                <label htmlFor="confirmPassword" className="text-sm font-bold text-slate-300">
+                <label htmlFor="confirmPassword" className="field-label">
                   {t("confirmPassword")}
                 </label>
                 <input
                   id="confirmPassword"
                   name="confirmPassword"
                   type="password"
+                  autoComplete="new-password"
                   minLength={authValidationLimits.passwordMinLength}
                   maxLength={authValidationLimits.passwordMaxLength}
-                  className="rounded-xl border border-slate-700/50 bg-[#0c1628] px-4 py-3 text-white transition-colors focus:border-[#4ee8c2] focus:outline-none"
+                  className="text-input"
                   aria-describedby={
                     passwordState.fields.confirmPassword ? confirmPasswordErrorId : undefined
                   }
@@ -265,13 +262,13 @@ export default function EditProfileForm({
               </div>
 
               {passwordState.message ? (
-                <p className="m-0 text-sm text-red-400" role="alert">
+                <p className="m-0 text-sm text-[var(--danger)]" role="alert">
                   {passwordState.message}
                 </p>
               ) : null}
 
               {passwordState.successMessage ? (
-                <p className="m-0 text-sm text-[#4ee8c2]" role="status">
+                <p className="m-0 text-sm text-[var(--mint)]" role="status">
                   {passwordState.successMessage}
                 </p>
               ) : null}
@@ -281,15 +278,11 @@ export default function EditProfileForm({
                   type="button"
                   variant="outline"
                   onClick={() => setIsEditingPassword(false)}
-                  className="border-slate-700/50 px-6 font-bold text-red-500 hover:bg-slate-800 hover:text-red-400"
+                  className="px-6 font-bold text-[var(--danger)] hover:bg-[rgb(198_56_47_/_0.15)] hover:text-[var(--danger)]"
                 >
                   {t("cancel")}
                 </Button>
-                <Button
-                  type="submit"
-                  className="w-fit bg-[#4ee8c2] px-8 font-bold text-[#04131a] hover:bg-[#4ee8c2]/90"
-                  disabled={passwordPending}
-                >
+                <Button type="submit" className="w-fit px-8 font-bold" disabled={passwordPending}>
                   {passwordPending ? t("savingChanges") : t("updatePassword")}
                 </Button>
               </div>
@@ -297,11 +290,11 @@ export default function EditProfileForm({
           )}
         </form>
       </div>
-      <div className="mt-4 flex w-full justify-center border-t border-slate-700/50 pt-8">
+      <div className="mt-4 flex w-full justify-center border-t border-[var(--panel-border-soft)] pt-8">
         <Button
           type="button"
           variant="outline"
-          className="border-slate-700/50 px-12 font-bold text-red-500 hover:bg-slate-800 hover:text-red-400"
+          className="px-12 font-bold text-[var(--danger)] hover:bg-[rgb(198_56_47_/_0.15)] hover:text-[var(--danger)]"
           onClick={() => router.push("/profile")}
         >
           {t("returnToProfile")}

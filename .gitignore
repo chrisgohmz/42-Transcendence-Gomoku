@@ -14,3 +14,4 @@ public/uploads
 .playwright-browsers
 playwright-report
 test-results
+output/playwright

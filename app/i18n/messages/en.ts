@@ -102,7 +102,7 @@ export const messages = {
       title: "Welcome back.",
       lede: "Sign in to create rooms, play matches, and access your private pages.",
       submit: "Sign in",
-      submitting: "Signing in...",
+      submitting: "Signing in…",
       newHere: "New here?",
       signupLink: "Create an account",
     },
@@ -114,7 +114,7 @@ export const messages = {
       displayName: "Display name",
       displayNamePlaceholder: "How other players will see you",
       submit: "Create account",
-      submitting: "Creating account...",
+      submitting: "Creating account…",
       alreadyHaveAccount: "Already have an account?",
       signInLink: "Sign in",
     },
@@ -157,7 +157,7 @@ export const messages = {
   },
   friends: {
     title: "Friends",
-    searchPlaceholder: "Search by username...",
+    searchPlaceholder: "Search by username…",
     search: "Search",
     tabs: {
       friends: "Friends",
@@ -229,10 +229,10 @@ export const messages = {
   },
   messagesPage: {
     title: "Messages",
-    searchPlaceholder: "Search by username...",
+    searchPlaceholder: "Search by username…",
     search: "Search",
     previews: {
-      mj: "Absolutely! Let me just finish...",
+      mj: "Absolutely! Let me just finish…",
       alex: "GG well played.",
     },
     thread: {
@@ -271,7 +271,7 @@ export const messages = {
       confirmPassword: "Confirm New Password",
       cancel: "Cancel",
       saveChanges: "Save Changes",
-      savingChanges: "Saving...",
+      savingChanges: "Saving…",
       editNameAria: "Edit Name",
       editPasswordAria: "Edit Password",
       passwordReadonly: "Password",

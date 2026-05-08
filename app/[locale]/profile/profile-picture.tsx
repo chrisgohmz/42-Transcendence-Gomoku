@@ -47,12 +47,13 @@ export default function ProfilePicture({ initialImage }: { initialImage?: string
     <>
       {errorMessage && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm">
-          <div className="w-full max-w-xs rounded-2xl border border-slate-700 bg-[#08101F] p-5 shadow-2xl">
-            <h3 className="mb-1 text-lg font-bold text-red-400">Upload Failed</h3>
-            <p className="mb-5 text-sm text-slate-300">{errorMessage}</p>
+          <div className="w-full max-w-xs rounded-lg border border-[var(--panel-border-soft)] bg-[#08110e] p-5 shadow-2xl">
+            <h3 className="mb-1 text-lg font-bold text-[var(--danger)]">Upload Failed</h3>
+            <p className="mb-5 text-sm text-[var(--muted-text)]">{errorMessage}</p>
             <button
+              type="button"
               onClick={closeErrorPopup}
-              className="w-full rounded-xl bg-[#4ee8c2] px-4 py-2.5 text-sm font-bold text-[#04131a] transition-transform hover:-translate-y-0.5"
+              className="btn m-0 w-full px-4 py-2.5 text-sm"
             >
               Try Again
             </button>
@@ -60,14 +61,16 @@ export default function ProfilePicture({ initialImage }: { initialImage?: string
         </div>
       )}
 
-      <div
-        className="group relative mb-6 h-[300px] w-[300px] cursor-pointer rounded-full shadow-lg shadow-[#000000]/50"
+      <button
+        type="button"
+        className="group relative mb-6 h-[240px] w-[240px] cursor-pointer rounded-full border border-[var(--brass)]/35 shadow-lg shadow-[#000000]/50 focus-visible:ring-3 focus-visible:ring-[var(--mint)]/25 focus-visible:outline-none sm:h-[300px] sm:w-[300px]"
         onMouseEnter={() => setIsHovering(true)}
         onMouseLeave={() => setIsHovering(false)}
         onClick={handleContainerClick}
+        aria-label={t("changePhoto")}
       >
         <div
-          className={`relative flex h-full w-full items-center justify-center overflow-hidden rounded-full ${initialImage ? "bg-transparent" : "bg-slate-600"}`}
+          className={`relative flex h-full w-full items-center justify-center overflow-hidden rounded-full ${initialImage ? "bg-transparent" : "bg-white/[0.08]"}`}
         >
           {initialImage && (
             <Image src={initialImage} alt={t("alt")} fill sizes="300px" className="object-cover" />
@@ -76,17 +79,18 @@ export default function ProfilePicture({ initialImage }: { initialImage?: string
         <div
           className={`absolute inset-0 flex flex-col items-center justify-center rounded-full bg-black/40 transition-opacity duration-200 ${isHovering ? "opacity-100" : "opacity-0"}`}
         >
-          <Camera className="mb-2 h-10 w-10 text-white" />
+          <Camera aria-hidden="true" className="mb-2 h-10 w-10 text-white" />
           <span className="text-sm font-bold text-white">{t("changePhoto")}</span>
         </div>
-        <input
-          type="file"
-          ref={fileInputRef}
-          onChange={handleFileChange}
-          className="hidden"
-          accept="image/*"
-        />
-      </div>
+      </button>
+      <input
+        type="file"
+        ref={fileInputRef}
+        onChange={handleFileChange}
+        className="hidden"
+        accept="image/*"
+        aria-label={t("changePhoto")}
+      />
     </>
   );
 }

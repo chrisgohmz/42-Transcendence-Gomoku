@@ -62,7 +62,7 @@ export default async function AccountPage({ params }: AccountPageProps) {
   }
 
   return (
-    <main className="shell">
+    <main className="app-shell">
       <section className="hero">
         <p className="eyebrow">{t("eyebrow")}</p>
         <h1>{session ? session.user.displayName : t("fallbackTitle")}</h1>
@@ -77,7 +77,7 @@ export default async function AccountPage({ params }: AccountPageProps) {
         ) : null}
 
         {session ? (
-          <div className="card">
+          <div className="surface-card">
             <div className="label">{t("signedInUser")}</div>
             <div className="meta">
               <div>
