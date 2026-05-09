@@ -75,10 +75,8 @@ function getPrisma(): PrismaClient {
     }),
   ) as unknown as PrismaClient;
 
-  if (process.env["NODE_ENV"] !== "production") {
-    globalThis.prismaPool = pool;
-    globalThis.prisma = prisma;
-  }
+  globalThis.prismaPool = pool;
+  globalThis.prisma = prisma;
 
   return prisma;
 }

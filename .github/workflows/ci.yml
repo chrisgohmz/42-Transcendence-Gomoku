@@ -14,6 +14,23 @@ jobs:
   quality-and-build:
     name: Quality And Build
     runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: postgresql://transcendence:ci-password@127.0.0.1:5432/transcendence?schema=public
+
+    services:
+      postgres:
+        image: postgres:18.3-alpine
+        env:
+          POSTGRES_DB: transcendence
+          POSTGRES_USER: transcendence
+          POSTGRES_PASSWORD: ci-password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U transcendence -d transcendence"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
 
     steps:
       - name: Checkout repository
@@ -40,6 +57,9 @@ jobs:
 
       - name: Generate Prisma client
         run: bun run prisma:generate
+
+      - name: Apply database migrations
+        run: bun run prisma:migrate:deploy
 
       - name: Run tests
         run: bun test

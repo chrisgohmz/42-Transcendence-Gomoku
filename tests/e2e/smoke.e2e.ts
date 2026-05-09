@@ -1,6 +1,8 @@
 import { randomUUID } from "node:crypto";
 
+import { createId } from "@paralleldrive/cuid2";
 import { expect, type Locator, type Page, type TestInfo, test } from "@playwright/test";
+import { hashPassword } from "better-auth/crypto";
 
 import { prisma } from "../../app/lib/prisma";
 
@@ -125,7 +127,7 @@ test("selector and popup surfaces stay opaque and readable", async ({ page }) =>
 test("authenticated redesigned pages render at desktop and mobile widths", async ({
   page,
 }, testInfo) => {
-  const user = await signUpTestUser(page, testInfo);
+  const user = await createAndSignInTestUser(page, testInfo);
   const friend = await createAcceptedFriend(user.id, user.token);
 
   try {
@@ -188,28 +190,47 @@ type TestUser = {
   username: string;
 };
 
-async function signUpTestUser(page: Page, testInfo: TestInfo): Promise<TestUser> {
-  const project = testInfo.project.name.replace(/[^a-z0-9]/gi, "").toLowerCase();
-  const token = `${project}-${testInfo.workerIndex}-${randomUUID().slice(0, 8)}`;
+async function createAndSignInTestUser(page: Page, testInfo: TestInfo): Promise<TestUser> {
+  const project = testInfo.project.name
+    .replace(/[^a-z0-9]/gi, "")
+    .toLowerCase()
+    .slice(0, 6);
+  const token = `${project}${testInfo.workerIndex}${randomUUID().slice(0, 8)}`;
   const username = `e2e_${token}`;
   const email = `gomoku.${token}@example.com`;
   const displayName = `E2E Player ${token.slice(-4)}`;
+  const userId = createId();
+  const hashedPassword = await hashPassword("password123");
 
-  await gotoAppRoute(page, "/signup");
-  await page.getByLabel("Username").fill(username);
-  await page.getByLabel("Display name").fill(displayName);
-  await page.getByLabel("Email").fill(email);
-  await page.getByLabel("Password").fill("password123");
-  await page.getByRole("button", { name: "Create account" }).click();
-  await expect(page).toHaveURL(/\/en\/account$/);
-
-  const dbUser = await prisma.user.findUnique({
+  const dbUser = await prisma.user.create({
+    data: {
+      id: userId,
+      accounts: {
+        create: {
+          id: createId(),
+          accountId: userId,
+          password: hashedPassword,
+          providerId: "credential",
+        },
+      },
+      displayName,
+      email,
+      emailVerified: true,
+      emailVerifiedAt: new Date(),
+      username,
+    },
     select: { id: true },
-    where: { username },
   });
-  expect(dbUser).not.toBeNull();
-  if (!dbUser) {
-    throw new Error(`Could not find signed-up test user ${username}`);
+
+  try {
+    await gotoAppRoute(page, "/login");
+    await page.getByLabel("Email").fill(email);
+    await page.getByLabel("Password").fill("password123");
+    await page.getByRole("button", { name: "Sign in" }).click();
+    await expect(page).toHaveURL(/\/en\/account$/);
+  } catch (error) {
+    await cleanupTestUsers([username]);
+    throw error;
   }
 
   return {
