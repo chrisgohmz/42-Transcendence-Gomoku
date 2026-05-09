@@ -1,9 +1,9 @@
-import { BarChart3, Globe2, Medal, Trophy, Users } from "lucide-react";
+import { AlertTriangle, BarChart3, Globe2, Medal, Trophy, Users } from "lucide-react";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 
 import { Badge, MetricCard, PageHeader, PageShell, Surface } from "@/components/gomoku-ui";
 import LeaderboardTable from "@/components/leaderboardtable";
-import { getLeaderboardEntries } from "@/lib/leaderboard";
+import { getLeaderboardEntries, type LeaderboardEntry } from "@/lib/leaderboard";
 
 export const dynamic = "force-dynamic";
 
@@ -17,10 +17,16 @@ export default async function LeaderBoard({ params }: LeaderBoardProps) {
   const { locale } = await params;
   setRequestLocale(locale);
 
-  const [t, entries] = await Promise.all([
-    getTranslations({ locale, namespace: "leaderboard" }),
-    getLeaderboardEntries().catch(() => []),
-  ]);
+  const t = await getTranslations({ locale, namespace: "leaderboard" });
+  let entries: LeaderboardEntry[] = [];
+  let leaderboardUnavailable = false;
+
+  try {
+    entries = await getLeaderboardEntries();
+  } catch (error) {
+    leaderboardUnavailable = true;
+    console.error("Failed to load leaderboard entries.", error);
+  }
 
   return (
     <PageShell>
@@ -56,29 +62,35 @@ export default async function LeaderBoard({ params }: LeaderBoardProps) {
 
       <section className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_340px]">
         <Surface eyebrow="Ranked Table" title="Top 100">
-          <LeaderboardTable entries={entries} />
-          <div className="rounded-md border border-[var(--brass)]/35 bg-[linear-gradient(90deg,rgba(216,172,89,0.16),rgba(255,255,255,0.03))] p-4">
-            <div className="grid gap-4 md:grid-cols-[120px_minmax(0,1fr)_repeat(3,110px)] md:items-center">
-              <div>
-                <p className="m-0 text-xs font-black tracking-[0.16em] text-[var(--muted-text)] uppercase">
-                  Your Rank
-                </p>
-                <p className="m-0 font-serif text-4xl font-black text-[var(--brass)]">3</p>
-              </div>
-              <div className="flex min-w-0 items-center gap-3">
-                <span className="grid size-14 place-items-center rounded-full border border-[var(--brass)]/45 bg-white/[0.08] font-black">
-                  K
-                </span>
-                <div>
-                  <p className="m-0 text-xl font-black">Kuroishi</p>
-                  <p className="m-0 text-sm text-[var(--brass)]">1,842 rating</p>
+          {leaderboardUnavailable ? (
+            <LeaderboardUnavailable />
+          ) : (
+            <>
+              <LeaderboardTable entries={entries} />
+              <div className="rounded-md border border-[var(--brass)]/35 bg-[linear-gradient(90deg,rgba(216,172,89,0.16),rgba(255,255,255,0.03))] p-4">
+                <div className="grid gap-4 md:grid-cols-[120px_minmax(0,1fr)_repeat(3,110px)] md:items-center">
+                  <div>
+                    <p className="m-0 text-xs font-black tracking-[0.16em] text-[var(--muted-text)] uppercase">
+                      Your Rank
+                    </p>
+                    <p className="m-0 font-serif text-4xl font-black text-[var(--brass)]">3</p>
+                  </div>
+                  <div className="flex min-w-0 items-center gap-3">
+                    <span className="grid size-14 place-items-center rounded-full border border-[var(--brass)]/45 bg-white/[0.08] font-black">
+                      K
+                    </span>
+                    <div>
+                      <p className="m-0 text-xl font-black">Kuroishi</p>
+                      <p className="m-0 text-sm text-[var(--brass)]">1,842 rating</p>
+                    </div>
+                  </div>
+                  <MiniMetric label="Wins" value="254" />
+                  <MiniMetric label="Losses" value="81" />
+                  <MiniMetric label="Win Rate" value="75.8%" />
                 </div>
               </div>
-              <MiniMetric label="Wins" value="254" />
-              <MiniMetric label="Losses" value="81" />
-              <MiniMetric label="Win Rate" value="75.8%" />
-            </div>
-          </div>
+            </>
+          )}
         </Surface>
 
         <aside className="grid content-start gap-5">
@@ -133,6 +145,26 @@ export default async function LeaderBoard({ params }: LeaderBoardProps) {
         </aside>
       </section>
     </PageShell>
+  );
+}
+
+function LeaderboardUnavailable() {
+  return (
+    <div
+      className="grid min-h-[340px] place-items-center rounded-md border border-[var(--danger)]/35 bg-[rgb(216_60_52_/_0.14)] p-8 text-center"
+      role="status"
+    >
+      <div className="max-w-md">
+        <span className="mx-auto mb-4 grid size-12 place-items-center rounded-md border border-[var(--danger)]/35 bg-[rgb(216_60_52_/_0.18)]">
+          <AlertTriangle aria-hidden="true" className="size-6 text-[var(--danger)]" />
+        </span>
+        <h2 className="m-0 font-serif text-3xl leading-none font-black">Leaderboard unavailable</h2>
+        <p className="mt-3 mb-0 text-sm leading-6 text-[var(--muted-text)]">
+          Rankings could not be loaded. The preview standings are hidden until the live table
+          responds again.
+        </p>
+      </div>
+    </div>
   );
 }
 

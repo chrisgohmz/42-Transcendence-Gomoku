@@ -48,7 +48,7 @@ export default async function VsHuman({ params }: VsHumanProps) {
         }
       />
 
-      <div className="mb-5 inline-flex overflow-hidden rounded-md border border-[var(--panel-border-soft)] bg-[var(--panel-solid)] p-1">
+      <div className="mb-5 flex max-w-full overflow-x-auto rounded-md border border-[var(--panel-border-soft)] bg-[var(--panel-solid)] p-1 sm:inline-flex">
         {["Lobby", "My Room", "History"].map((item, index) => (
           <button
             key={item}

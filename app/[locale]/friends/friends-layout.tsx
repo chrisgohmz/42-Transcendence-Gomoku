@@ -132,7 +132,7 @@ export default function FriendsContent({
         title={t("title")}
         lede="Manage rivals, answer requests, and jump into chat or challenge actions from a dense roster."
         actions={
-          <Form action="" scroll={false} className="grid min-w-[320px] gap-2">
+          <Form action="" scroll={false} className="grid w-full min-w-0 gap-2 sm:min-w-[320px]">
             <label htmlFor="friend-search" className="field-label">
               {t("search")}
             </label>
@@ -325,84 +325,89 @@ function FriendsTable({
   onRespond: (id: number, accept: boolean) => void;
 }) {
   return (
-    <div className="overflow-hidden rounded-md border border-[var(--panel-border-soft)] bg-white/[0.025]">
-      <div className="grid grid-cols-[minmax(220px,1fr)_110px_100px_92px_170px] gap-3 border-b border-[var(--panel-border-soft)] bg-black/20 px-4 py-3 text-xs font-black tracking-[0.12em] text-[var(--muted-text)] uppercase">
-        <span>Player</span>
-        <span>Rating</span>
-        <span>Win Rate</span>
-        <span>Status</span>
-        <span>Actions</span>
-      </div>
-      {friends.map((friend) => {
-        const wins = friend.stats?.wins ?? 0;
-        const played = friend.stats?.matchesPlayed ?? 0;
-        const winRate = played > 0 ? Math.round((wins / played) * 100) : 0;
-        const online = onlineUsers.includes(friend.username);
+    <div
+      className="overflow-x-auto rounded-md border border-[var(--panel-border-soft)] bg-white/[0.025]"
+      data-testid="friends-table"
+    >
+      <div className="min-w-[760px]">
+        <div className="grid grid-cols-[minmax(220px,1fr)_110px_100px_92px_170px] gap-3 border-b border-[var(--panel-border-soft)] bg-black/20 px-4 py-3 text-xs font-black tracking-[0.12em] text-[var(--muted-text)] uppercase">
+          <span>Player</span>
+          <span>Rating</span>
+          <span>Win Rate</span>
+          <span>Status</span>
+          <span>Actions</span>
+        </div>
+        {friends.map((friend) => {
+          const wins = friend.stats?.wins ?? 0;
+          const played = friend.stats?.matchesPlayed ?? 0;
+          const winRate = played > 0 ? Math.round((wins / played) * 100) : 0;
+          const online = onlineUsers.includes(friend.username);
 
-        return (
-          <article
-            key={friend.id}
-            className="grid min-h-16 grid-cols-[minmax(220px,1fr)_110px_100px_92px_170px] items-center gap-3 border-b border-[var(--panel-border-soft)] px-4 py-3 last:border-b-0 hover:bg-white/[0.045]"
-          >
-            <div className="flex min-w-0 items-center gap-3">
-              <AvatarToken image={friend.avatarUrl} name={friend.displayName} online={online} />
-              <UserName user={friend} />
-            </div>
-            <span className="font-black text-[var(--brass)] tabular-nums">
-              {friend.stats?.rating ?? 0}
-            </span>
-            <span className="font-black text-[var(--mint)] tabular-nums">{winRate}%</span>
-            <Badge tone={online ? "mint" : "neutral"}>{online ? "Online" : "Offline"}</Badge>
-            <div className="flex items-center gap-2">
-              {activeTab === "friends" ? (
-                <>
-                  <Link
-                    href={`/messages?user=${friend.username}`}
-                    className="icon-button"
-                    aria-label={`Message ${friend.displayName}`}
-                  >
-                    <MessageSquare aria-hidden="true" className="size-4" />
-                  </Link>
-                  <button
-                    type="button"
-                    className="icon-button"
-                    aria-label={`Challenge ${friend.displayName}`}
-                  >
-                    <Swords aria-hidden="true" className="size-4" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => onRemove(friend.id)}
-                    className="icon-button text-[var(--danger)]"
-                    aria-label={`Remove ${friend.displayName}`}
-                  >
-                    <UserMinus aria-hidden="true" className="size-4" />
-                  </button>
-                </>
-              ) : (
-                <>
-                  <button
-                    type="button"
-                    onClick={() => onRespond(friend.id, true)}
-                    className="icon-button"
-                    aria-label={`Accept ${friend.displayName}`}
-                  >
-                    <Check aria-hidden="true" className="size-4 text-[var(--mint)]" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => onRespond(friend.id, false)}
-                    className="icon-button"
-                    aria-label={`Decline ${friend.displayName}`}
-                  >
-                    <X aria-hidden="true" className="size-4 text-[var(--danger)]" />
-                  </button>
-                </>
-              )}
-            </div>
-          </article>
-        );
-      })}
+          return (
+            <article
+              key={friend.id}
+              className="grid min-h-16 grid-cols-[minmax(220px,1fr)_110px_100px_92px_170px] items-center gap-3 border-b border-[var(--panel-border-soft)] px-4 py-3 last:border-b-0 hover:bg-white/[0.045]"
+            >
+              <div className="flex min-w-0 items-center gap-3">
+                <AvatarToken image={friend.avatarUrl} name={friend.displayName} online={online} />
+                <UserName user={friend} />
+              </div>
+              <span className="font-black text-[var(--brass)] tabular-nums">
+                {friend.stats?.rating ?? 0}
+              </span>
+              <span className="font-black text-[var(--mint)] tabular-nums">{winRate}%</span>
+              <Badge tone={online ? "mint" : "neutral"}>{online ? "Online" : "Offline"}</Badge>
+              <div className="flex items-center gap-2">
+                {activeTab === "friends" ? (
+                  <>
+                    <Link
+                      href={`/messages?user=${friend.username}`}
+                      className="icon-button"
+                      aria-label={`Message ${friend.displayName}`}
+                    >
+                      <MessageSquare aria-hidden="true" className="size-4" />
+                    </Link>
+                    <button
+                      type="button"
+                      className="icon-button"
+                      aria-label={`Challenge ${friend.displayName}`}
+                    >
+                      <Swords aria-hidden="true" className="size-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => onRemove(friend.id)}
+                      className="icon-button text-[var(--danger)]"
+                      aria-label={`Remove ${friend.displayName}`}
+                    >
+                      <UserMinus aria-hidden="true" className="size-4" />
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => onRespond(friend.id, true)}
+                      className="icon-button"
+                      aria-label={`Accept ${friend.displayName}`}
+                    >
+                      <Check aria-hidden="true" className="size-4 text-[var(--mint)]" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => onRespond(friend.id, false)}
+                      className="icon-button"
+                      aria-label={`Decline ${friend.displayName}`}
+                    >
+                      <X aria-hidden="true" className="size-4 text-[var(--danger)]" />
+                    </button>
+                  </>
+                )}
+              </div>
+            </article>
+          );
+        })}
+      </div>
     </div>
   );
 }

@@ -1,4 +1,8 @@
-import { expect, type Page, test } from "@playwright/test";
+import { randomUUID } from "node:crypto";
+
+import { expect, type Locator, type Page, type TestInfo, test } from "@playwright/test";
+
+import { prisma } from "../../app/lib/prisma";
 
 const routes = ["/", "/game", "/human", "/leaderboard", "/login", "/signup"] as const;
 
@@ -25,19 +29,27 @@ test("primary game routes render their new page shells", async ({ page }) => {
   await expect(page.getByRole("heading", { level: 1, name: "Active game vs AI" })).toBeAttached();
   await expect(page.getByRole("heading", { name: "Kata Reader" })).toBeVisible();
   await expect(page.getByText("Move History", { exact: true }).first()).toBeVisible();
+  await page.waitForLoadState("networkidle");
+
+  const board = page.getByRole("grid", { name: "Gomoku board" });
+  const boardCells = board.getByRole("gridcell");
+  await expect(board).toBeVisible();
+  await expect(boardCells).toHaveCount(225);
+  expect(await countBoardTabStops(board)).toBe(1);
+  await boardCells.nth(112).focus();
+  await expect(boardCells.nth(112)).toBeFocused();
+  await page.keyboard.press("ArrowRight");
+  await expect(boardCells.nth(113)).toBeFocused();
+  expect(await countBoardTabStops(board)).toBe(1);
 
   await gotoAppRoute(page, "/human");
   await expect(page.getByRole("heading", { level: 1, name: /Find a room/i })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Room List" })).toBeVisible();
+  await expect(page.getByTestId("game-lobby-table")).toBeVisible();
 
   await gotoAppRoute(page, "/leaderboard");
   await expect(page.getByRole("heading", { level: 1, name: "Leaderboard" })).toBeVisible();
-  await expect(
-    page.getByText("Preview standings are shown until completed matches report results."),
-  ).toBeVisible();
-  await expect(
-    page.getByText("Hoshi", { exact: true }).filter({ visible: true }).first(),
-  ).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Top 100" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Rank Bands" })).toBeVisible();
 });
 
@@ -110,6 +122,154 @@ test("selector and popup surfaces stay opaque and readable", async ({ page }) =>
   expect(popupStyles.backdropFilter).toBe("none");
 });
 
+test("authenticated redesigned pages render at desktop and mobile widths", async ({
+  page,
+}, testInfo) => {
+  const user = await signUpTestUser(page, testInfo);
+  const friend = await createAcceptedFriend(user.id, user.token);
+
+  try {
+    await gotoAppRoute(page, "/account");
+    await expect(page.getByRole("heading", { level: 1, name: "Account Settings" })).toBeVisible();
+    await expect(page.getByText(user.email, { exact: true })).toBeVisible();
+    await expectNoDocumentOverflow(page, "/account");
+
+    await gotoAppRoute(page, "/profile");
+    await expect(page.getByRole("heading", { level: 1, name: user.displayName })).toBeVisible();
+    await expect(page.getByRole("link", { name: /Edit Profile/i })).toBeVisible();
+    await expectNoDocumentOverflow(page, "/profile");
+
+    await gotoAppRoute(page, "/profile/edit");
+    await expect(page.getByRole("heading", { level: 1, name: "Edit Profile" })).toBeVisible();
+    await expect(page.getByLabel("Display Name")).toBeVisible();
+    await expectNoDocumentOverflow(page, "/profile/edit");
+
+    await gotoAppRoute(page, "/friends");
+    await expect(page.getByRole("heading", { level: 1, name: "Friends" })).toBeVisible();
+    await expect(page.getByText(friend.displayName, { exact: true })).toBeVisible();
+    await expect(page.getByTestId("friends-table")).toBeVisible();
+    await expectNoDocumentOverflow(page, "/friends");
+
+    await gotoAppRoute(page, "/messages");
+    await expect(page.getByRole("heading", { level: 1, name: "Messages" })).toBeVisible();
+    await expect(page.getByPlaceholder("Message MJ...")).toBeVisible();
+    await expectNoDocumentOverflow(page, "/messages");
+  } finally {
+    await cleanupTestUsers([user.username, friend.username]);
+  }
+});
+
 async function gotoAppRoute(page: Page, route: string) {
   await page.goto(route, { waitUntil: "domcontentloaded" });
+}
+
+async function countBoardTabStops(board: Locator) {
+  return board
+    .getByRole("gridcell")
+    .evaluateAll((cells) => cells.filter((cell) => cell.getAttribute("tabindex") === "0").length);
+}
+
+async function expectNoDocumentOverflow(page: Page, route: string) {
+  const dimensions = await page.evaluate(() => ({
+    clientWidth: document.documentElement.clientWidth,
+    scrollWidth: document.documentElement.scrollWidth,
+  }));
+
+  expect(dimensions.scrollWidth, `${route} should not horizontally overflow`).toBeLessThanOrEqual(
+    dimensions.clientWidth + 1,
+  );
+}
+
+type TestUser = {
+  displayName: string;
+  email: string;
+  id: string;
+  token: string;
+  username: string;
+};
+
+async function signUpTestUser(page: Page, testInfo: TestInfo): Promise<TestUser> {
+  const project = testInfo.project.name.replace(/[^a-z0-9]/gi, "").toLowerCase();
+  const token = `${project}-${testInfo.workerIndex}-${randomUUID().slice(0, 8)}`;
+  const username = `e2e_${token}`;
+  const email = `gomoku.${token}@example.com`;
+  const displayName = `E2E Player ${token.slice(-4)}`;
+
+  await gotoAppRoute(page, "/signup");
+  await page.getByLabel("Username").fill(username);
+  await page.getByLabel("Display name").fill(displayName);
+  await page.getByLabel("Email").fill(email);
+  await page.getByLabel("Password").fill("password123");
+  await page.getByRole("button", { name: "Create account" }).click();
+  await expect(page).toHaveURL(/\/en\/account$/);
+
+  const dbUser = await prisma.user.findUnique({
+    select: { id: true },
+    where: { username },
+  });
+  expect(dbUser).not.toBeNull();
+  if (!dbUser) {
+    throw new Error(`Could not find signed-up test user ${username}`);
+  }
+
+  return {
+    displayName,
+    email,
+    id: dbUser.id,
+    token,
+    username,
+  };
+}
+
+async function createAcceptedFriend(userId: string, token: string) {
+  const username = `e2e_friend_${token}`;
+  const friend = await prisma.user.create({
+    data: {
+      displayName: `Rival ${token.slice(-4)}`,
+      email: `gomoku.friend.${token}@example.com`,
+      emailVerified: true,
+      username,
+    },
+  });
+  const friendshipIds =
+    userId < friend.id
+      ? { userLowId: userId, userHighId: friend.id }
+      : { userLowId: friend.id, userHighId: userId };
+
+  await prisma.userGameStats.create({
+    data: {
+      boardSize: 15,
+      losses: 4,
+      matchesPlayed: 12,
+      rating: 1710,
+      ruleType: "GOMOKU",
+      userId: friend.id,
+      wins: 8,
+    },
+  });
+  await prisma.friendship.create({
+    data: {
+      acceptedAt: new Date(),
+      requestedById: userId,
+      respondedAt: new Date(),
+      status: "ACCEPTED",
+      userHighId: friendshipIds.userHighId,
+      userLowId: friendshipIds.userLowId,
+    },
+  });
+
+  return {
+    displayName: friend.displayName,
+    username,
+  };
+}
+
+async function cleanupTestUsers(usernames: string[]) {
+  await prisma.user.deleteMany({
+    where: {
+      username: {
+        in: usernames,
+      },
+    },
+  });
 }
