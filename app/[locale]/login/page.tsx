@@ -1,7 +1,7 @@
 import { ShieldCheck, Sparkles } from "lucide-react";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 
-import GomokuBoard from "@/components/gomoku-board";
+import { BoardShowpiece, PageShell } from "@/components/gomoku-ui";
 import { LoginForm } from "@/components/login-form";
 import { redirect } from "@/i18n/navigation";
 import { getCurrentSession } from "@/lib/auth";
@@ -26,9 +26,9 @@ export default async function LoginPage({ params }: LoginPageProps) {
   const login = await getTranslations({ locale, namespace: "auth.login" });
 
   return (
-    <main className="app-shell">
-      <section className="grid overflow-hidden rounded-lg border border-[var(--panel-border-soft)] bg-[#050807]/88 shadow-[0_34px_100px_rgba(0,0,0,0.46)] lg:grid-cols-[minmax(360px,0.9fr)_minmax(360px,0.72fr)]">
-        <div className="board-room min-h-[650px] content-between rounded-none border-0 border-r border-[var(--panel-border-soft)] p-5 sm:p-8">
+    <PageShell wide={false}>
+      <section className="grid overflow-hidden rounded-md border border-[var(--panel-border-soft)] bg-[var(--panel)] shadow-[0_34px_100px_rgba(0,0,0,0.46)] lg:grid-cols-[minmax(360px,0.9fr)_minmax(360px,0.72fr)]">
+        <div className="grid min-h-[700px] content-between border-r border-[var(--panel-border-soft)] p-5 sm:p-8">
           <div className="flex items-center justify-between gap-4">
             <div>
               <p className="eyebrow mb-2">{shared("eyebrow")}</p>
@@ -44,7 +44,10 @@ export default async function LoginPage({ params }: LoginPageProps) {
             </div>
           </div>
 
-          <GomokuBoard className="mx-auto w-full max-w-[560px]" />
+          <BoardShowpiece
+            label="Secure ranked session"
+            className="min-h-[430px] border-0 bg-transparent shadow-none"
+          />
 
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="kpi-card">
@@ -73,6 +76,6 @@ export default async function LoginPage({ params }: LoginPageProps) {
           </section>
         </div>
       </section>
-    </main>
+    </PageShell>
   );
 }

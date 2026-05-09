@@ -1,10 +1,11 @@
 "use client";
 
-import { Pencil } from "lucide-react";
+import { Eye, EyeOff, LockKeyhole, Palette, Save, Trash2, UserRound } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { useActionState, useEffect, useRef, useState } from "react";
+import { useActionState, useEffect, useRef } from "react";
 
 import { FieldErrorList } from "@/components/field-error-list";
+import { Badge, MetricCard, Surface } from "@/components/gomoku-ui";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "@/i18n/navigation";
 import { authValidationLimits } from "@/lib/validation/auth-profile-limits";
@@ -13,8 +14,8 @@ import { initialProfileSettingsActionState } from "./action-state";
 import { changeAccountPassword, saveDisplayName } from "./actions";
 
 export default function EditProfileForm({
-  currentUsername,
   currentDisplayName,
+  currentUsername,
 }: {
   currentUsername: string;
   currentDisplayName: string;
@@ -28,9 +29,6 @@ export default function EditProfileForm({
     initialProfileSettingsActionState,
   );
 
-  const [isEditingName, setIsEditingName] = useState(false);
-  const [isEditingPassword, setIsEditingPassword] = useState(false);
-
   const passwordFormRef = useRef<HTMLFormElement>(null);
   const router = useRouter();
   const t = useTranslations("profile.edit");
@@ -40,266 +38,219 @@ export default function EditProfileForm({
   const newPasswordErrorId = "newPassword-errors";
   const confirmPasswordErrorId = "confirmPassword-errors";
 
-  const successMessage = displayNameState.successMessage ?? passwordState.successMessage;
-
   useEffect(() => {
-    if (!successMessage) {
-      return;
-    }
-
-    if (displayNameState.successMessage) {
-      const timer = setTimeout(() => setIsEditingName(false), 1500);
-      return () => clearTimeout(timer);
-    }
-
-    if (passwordState.successMessage) {
-      const timer = setTimeout(() => setIsEditingPassword(false), 1500);
-      const form = passwordFormRef.current;
-      if (form) {
-        const currentPassword = form.elements.namedItem(
-          "currentPassword",
-        ) as HTMLInputElement | null;
-        const newPassword = form.elements.namedItem("newPassword") as HTMLInputElement | null;
-        const confirmPassword = form.elements.namedItem(
-          "confirmPassword",
-        ) as HTMLInputElement | null;
-
-        if (currentPassword) currentPassword.value = "";
-        if (newPassword) newPassword.value = "";
-        if (confirmPassword) confirmPassword.value = "";
-      }
-      return () => clearTimeout(timer);
-    }
-
-    const timeoutId = window.setTimeout(() => {
-      router.push("/profile");
-    }, 1500);
-
-    return () => window.clearTimeout(timeoutId);
-  }, [displayNameState.successMessage, passwordState.successMessage, router, successMessage]);
+    if (!passwordState.successMessage) return;
+    const form = passwordFormRef.current;
+    if (!form) return;
+    form.reset();
+  }, [passwordState.successMessage]);
 
   return (
-    <div className="mt-8 flex w-full flex-col gap-8 rounded-lg border border-[var(--panel-border-soft)] bg-[#08110e]/90 p-8 text-left shadow-2xl">
-      <div className="grid w-full grid-cols-1 gap-16 md:grid-cols-2">
-        {/* Left Column: Display Name Form */}
-        <form action={displayNameAction} className="flex h-full flex-col gap-6">
-          <div className="flex items-center gap-3">
-            <h2 className="m-0 font-serif text-xl font-bold text-white">{t("profileDetails")}</h2>
-            {!isEditingName && (
-              <button
-                type="button"
-                onClick={() => setIsEditingName(true)}
-                className="text-[var(--mint)] transition-transform hover:scale-110 hover:text-[var(--mint)] focus-visible:ring-3 focus-visible:ring-[var(--mint)]/25 focus-visible:outline-none"
-                aria-label={t("editNameAria")}
-              >
-                <Pencil className="h-4 w-4" />
-              </button>
-            )}
-          </div>
+    <div className="grid gap-5">
+      <Surface eyebrow="Basic Information" icon={UserRound} title={t("profileDetails")}>
+        <form action={displayNameAction} className="grid gap-4">
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="field">
+              <label htmlFor="username" className="field-label">
+                {t("usernameReadonly")}
+              </label>
+              <input
+                id="username"
+                name="username"
+                type="text"
+                defaultValue={currentUsername}
+                autoComplete="username"
+                className="text-input cursor-not-allowed text-[var(--muted-text)] opacity-70"
+                readOnly
+              />
+            </div>
 
-          <div className="flex flex-col gap-2">
-            <label htmlFor="username" className="field-label">
-              {t("usernameReadonly")}
-            </label>
-            <input
-              id="username"
-              name="username"
-              type="text"
-              defaultValue={currentUsername}
-              autoComplete="username"
-              className="text-input cursor-not-allowed text-[var(--muted-text)] opacity-70"
-              readOnly
-            />
-          </div>
-
-          <div className="flex flex-col gap-2">
-            <label htmlFor="displayName" className="field-label">
-              {t("displayName")}
-            </label>
-
-            {isEditingName ? (
-              <>
-                <input
-                  id="displayName"
-                  name="displayName"
-                  type="text"
-                  defaultValue={currentDisplayName}
-                  maxLength={authValidationLimits.displayNameMaxLength}
-                  autoComplete="name"
-                  className="text-input"
-                  aria-describedby={
-                    displayNameState.fields.displayName ? displayNameErrorId : undefined
-                  }
-                  aria-invalid={Boolean(displayNameState.fields.displayName)}
-                  required
-                />
-                <FieldErrorList
-                  id={displayNameErrorId}
-                  errors={displayNameState.fields.displayName}
-                />
-              </>
-            ) : (
-              <div className="text-input">{currentDisplayName}</div>
-            )}
+            <div className="field">
+              <label htmlFor="displayName" className="field-label">
+                {t("displayName")}
+              </label>
+              <input
+                id="displayName"
+                name="displayName"
+                type="text"
+                defaultValue={currentDisplayName}
+                maxLength={authValidationLimits.displayNameMaxLength}
+                autoComplete="name"
+                className="text-input"
+                aria-describedby={
+                  displayNameState.fields.displayName ? displayNameErrorId : undefined
+                }
+                aria-invalid={Boolean(displayNameState.fields.displayName)}
+                required
+              />
+              <FieldErrorList
+                id={displayNameErrorId}
+                errors={displayNameState.fields.displayName}
+              />
+            </div>
           </div>
 
           {displayNameState.message ? (
-            <p className="m-0 text-sm text-[var(--danger)]" role="alert">
+            <p className="m-0 text-sm font-bold text-[var(--danger)]" role="alert">
               {displayNameState.message}
             </p>
           ) : null}
 
           {displayNameState.successMessage ? (
-            <p className="m-0 text-sm text-[var(--mint)]" role="status">
+            <p className="m-0 text-sm font-bold text-[var(--mint)]" role="status">
               {displayNameState.successMessage}
             </p>
           ) : null}
 
-          {isEditingName && (
-            <div className="mt-auto flex w-full justify-center gap-4 pt-6">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => {
-                  setIsEditingName(false);
-                }}
-                className="px-6 font-bold text-[var(--danger)] hover:bg-[rgb(198_56_47_/_0.15)] hover:text-[var(--danger)]"
-              >
-                {t("cancel")}
-              </Button>
-              <Button type="submit" className="w-fit px-8 font-bold" disabled={displayNamePending}>
-                {displayNamePending ? t("savingChanges") : t("saveChanges")}
-              </Button>
-            </div>
-          )}
+          <div className="flex flex-wrap items-center gap-3">
+            <Button type="submit" disabled={displayNamePending} className="h-12 px-5 font-black">
+              <Save aria-hidden="true" className="size-4" />
+              {displayNamePending ? t("savingChanges") : t("saveChanges")}
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => router.push("/profile")}
+              className="h-12 px-5 font-black"
+            >
+              {t("cancel")}
+            </Button>
+          </div>
         </form>
+      </Surface>
 
-        {/* Right Column: Password Form */}
-        <form ref={passwordFormRef} action={passwordAction} className="flex h-full flex-col gap-6">
-          <div className="flex items-center gap-3">
-            <h2 className="m-0 font-serif text-xl font-bold text-white">{t("changePassword")}</h2>
-            {!isEditingPassword && (
-              <button
-                type="button"
-                onClick={() => setIsEditingPassword(true)}
-                className="text-[var(--mint)] transition-transform hover:scale-110 hover:text-[var(--mint)] focus-visible:ring-3 focus-visible:ring-[var(--mint)]/25 focus-visible:outline-none"
-                aria-label={t("editPasswordAria")}
-              >
-                <Pencil className="h-4 w-4" />
-              </button>
-            )}
+      <section className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_320px]">
+        <Surface eyebrow="Stone Preference" icon={Palette} title="Board identity">
+          <div className="grid gap-3 sm:grid-cols-2">
+            <button
+              type="button"
+              className="grid min-h-24 place-items-center gap-2 rounded-md border border-[var(--brass)]/40 bg-white/[0.035] p-4 font-black"
+            >
+              <span className="stone stone-black size-10" />
+              Black stone
+            </button>
+            <button
+              type="button"
+              className="grid min-h-24 place-items-center gap-2 rounded-md border border-[var(--panel-border-soft)] bg-white/[0.035] p-4 font-black text-[var(--muted-text)]"
+            >
+              <span className="stone stone-white size-10" />
+              White stone
+            </button>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Badge tone="mint">
+              <Eye aria-hidden="true" className="size-3.5" />
+              Public profile visible
+            </Badge>
+            <Badge tone="neutral">
+              <EyeOff aria-hidden="true" className="size-3.5" />
+              Email hidden
+            </Badge>
+          </div>
+        </Surface>
+
+        <Surface eyebrow="Recent Stats" title="Snapshot">
+          <div className="grid gap-3">
+            <MetricCard label="Rating" tone="brass" value="1,842" />
+            <MetricCard label="Win Rate" tone="mint" value="75.8%" />
+          </div>
+        </Surface>
+      </section>
+
+      <Surface eyebrow="Security" icon={LockKeyhole} title={t("changePassword")}>
+        <form ref={passwordFormRef} action={passwordAction} className="grid gap-4">
+          <div className="grid gap-4 md:grid-cols-3">
+            <PasswordField
+              errorId={currentPasswordErrorId}
+              errors={passwordState.fields.currentPassword}
+              id="currentPassword"
+              label={t("currentPassword")}
+              name="currentPassword"
+              autoComplete="current-password"
+            />
+            <PasswordField
+              errorId={newPasswordErrorId}
+              errors={passwordState.fields.newPassword}
+              id="newPassword"
+              label={t("newPassword")}
+              name="newPassword"
+              autoComplete="new-password"
+            />
+            <PasswordField
+              errorId={confirmPasswordErrorId}
+              errors={passwordState.fields.confirmPassword}
+              id="confirmPassword"
+              label={t("confirmPassword")}
+              name="confirmPassword"
+              autoComplete="new-password"
+            />
           </div>
 
-          {!isEditingPassword ? (
-            <div className="flex flex-col gap-2">
-              <label className="field-label">{t("passwordReadonly")}</label>
-              <div className="text-input tracking-widest">••••••••••••</div>
-            </div>
-          ) : (
-            <>
-              <div className="flex flex-col gap-2">
-                <label htmlFor="currentPassword" className="field-label">
-                  {t("currentPassword")}
-                </label>
-                <input
-                  id="currentPassword"
-                  name="currentPassword"
-                  type="password"
-                  autoComplete="current-password"
-                  className="text-input"
-                  aria-describedby={
-                    passwordState.fields.currentPassword ? currentPasswordErrorId : undefined
-                  }
-                  aria-invalid={Boolean(passwordState.fields.currentPassword)}
-                />
-                <FieldErrorList
-                  id={currentPasswordErrorId}
-                  errors={passwordState.fields.currentPassword}
-                />
-              </div>
+          {passwordState.message ? (
+            <p className="m-0 text-sm font-bold text-[var(--danger)]" role="alert">
+              {passwordState.message}
+            </p>
+          ) : null}
 
-              <div className="flex flex-col gap-2">
-                <label htmlFor="newPassword" className="field-label">
-                  {t("newPassword")}
-                </label>
-                <input
-                  id="newPassword"
-                  name="newPassword"
-                  type="password"
-                  autoComplete="new-password"
-                  minLength={authValidationLimits.passwordMinLength}
-                  maxLength={authValidationLimits.passwordMaxLength}
-                  className="text-input"
-                  aria-describedby={
-                    passwordState.fields.newPassword ? newPasswordErrorId : undefined
-                  }
-                  aria-invalid={Boolean(passwordState.fields.newPassword)}
-                />
-                <FieldErrorList id={newPasswordErrorId} errors={passwordState.fields.newPassword} />
-              </div>
+          {passwordState.successMessage ? (
+            <p className="m-0 text-sm font-bold text-[var(--mint)]" role="status">
+              {passwordState.successMessage}
+            </p>
+          ) : null}
 
-              <div className="flex flex-col gap-2">
-                <label htmlFor="confirmPassword" className="field-label">
-                  {t("confirmPassword")}
-                </label>
-                <input
-                  id="confirmPassword"
-                  name="confirmPassword"
-                  type="password"
-                  autoComplete="new-password"
-                  minLength={authValidationLimits.passwordMinLength}
-                  maxLength={authValidationLimits.passwordMaxLength}
-                  className="text-input"
-                  aria-describedby={
-                    passwordState.fields.confirmPassword ? confirmPasswordErrorId : undefined
-                  }
-                  aria-invalid={Boolean(passwordState.fields.confirmPassword)}
-                />
-                <FieldErrorList
-                  id={confirmPasswordErrorId}
-                  errors={passwordState.fields.confirmPassword}
-                />
-              </div>
-
-              {passwordState.message ? (
-                <p className="m-0 text-sm text-[var(--danger)]" role="alert">
-                  {passwordState.message}
-                </p>
-              ) : null}
-
-              {passwordState.successMessage ? (
-                <p className="m-0 text-sm text-[var(--mint)]" role="status">
-                  {passwordState.successMessage}
-                </p>
-              ) : null}
-
-              <div className="mt-auto flex w-full justify-center gap-4 pt-6">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setIsEditingPassword(false)}
-                  className="px-6 font-bold text-[var(--danger)] hover:bg-[rgb(198_56_47_/_0.15)] hover:text-[var(--danger)]"
-                >
-                  {t("cancel")}
-                </Button>
-                <Button type="submit" className="w-fit px-8 font-bold" disabled={passwordPending}>
-                  {passwordPending ? t("savingChanges") : t("updatePassword")}
-                </Button>
-              </div>
-            </>
-          )}
+          <div className="flex flex-wrap items-center gap-3">
+            <Button type="submit" disabled={passwordPending} className="h-12 px-5 font-black">
+              <LockKeyhole aria-hidden="true" className="size-4" />
+              {passwordPending ? t("savingChanges") : t("updatePassword")}
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={() => router.push("/profile")}
+              className="h-12 px-5 font-black"
+            >
+              <Trash2 aria-hidden="true" className="size-4" />
+              {t("returnToProfile")}
+            </Button>
+          </div>
         </form>
-      </div>
-      <div className="mt-4 flex w-full justify-center border-t border-[var(--panel-border-soft)] pt-8">
-        <Button
-          type="button"
-          variant="outline"
-          className="px-12 font-bold text-[var(--danger)] hover:bg-[rgb(198_56_47_/_0.15)] hover:text-[var(--danger)]"
-          onClick={() => router.push("/profile")}
-        >
-          {t("returnToProfile")}
-        </Button>
-      </div>
+      </Surface>
+    </div>
+  );
+}
+
+function PasswordField({
+  autoComplete,
+  errorId,
+  errors,
+  id,
+  label,
+  name,
+}: {
+  autoComplete: string;
+  errorId: string;
+  errors?: string[];
+  id: string;
+  label: string;
+  name: string;
+}) {
+  return (
+    <div className="field">
+      <label htmlFor={id} className="field-label">
+        {label}
+      </label>
+      <input
+        id={id}
+        name={name}
+        type="password"
+        autoComplete={autoComplete}
+        minLength={authValidationLimits.passwordMinLength}
+        maxLength={authValidationLimits.passwordMaxLength}
+        className="text-input"
+        aria-describedby={errors ? errorId : undefined}
+        aria-invalid={Boolean(errors)}
+      />
+      <FieldErrorList id={errorId} errors={errors} />
     </div>
   );
 }

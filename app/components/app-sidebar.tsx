@@ -1,29 +1,20 @@
-import {
-  BookOpen,
-  Bot,
-  Home,
-  MessageSquare,
-  ShieldCheck,
-  Swords,
-  Trophy,
-  UserRound,
-  Users,
-} from "lucide-react";
+import { BookOpen, ShieldCheck } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import Image from "next/image";
 
 import { LocaleSwitcher } from "@/components/locale-switcher";
 import UserMenu from "@/components/player-menu";
+import { SidebarNav, type SidebarNavItem } from "@/components/sidebar-nav";
 import { Button } from "@/components/ui/button";
 import { Link } from "@/i18n/navigation";
 import { getCurrentSession } from "@/lib/auth";
 
-const productLinks = [
-  { href: "/", icon: Home, labelKey: "home" },
-  { href: "/game", icon: Bot, labelKey: "vsAi" },
-  { href: "/human", icon: Swords, labelKey: "vsHuman" },
-  { href: "/leaderboard", icon: Trophy, labelKey: "leaderboard" },
-] as const;
+const productLinkMeta = [
+  { href: "/", icon: "home", labelKey: "home" },
+  { href: "/game", icon: "game", labelKey: "vsAi" },
+  { href: "/human", icon: "human", labelKey: "vsHuman" },
+  { href: "/leaderboard", icon: "leaderboard", labelKey: "leaderboard" },
+] as const satisfies ReadonlyArray<Omit<SidebarNavItem, "label"> & { labelKey: string }>;
 
 export default async function AppSidebar() {
   const [sessionData, brand, nav] = await Promise.all([
@@ -34,11 +25,17 @@ export default async function AppSidebar() {
   const isLoggedIn = sessionData !== null;
   const realUsername = sessionData?.user.username;
   const avatarUrl = sessionData?.user.avatarUrl;
-  const socialLinks = [
-    { href: "/friends", icon: Users, label: nav("userMenu.friends") },
-    { href: "/messages", icon: MessageSquare, label: nav("userMenu.messages") },
-    { href: "/profile", icon: UserRound, label: nav("userMenu.profile") },
-  ] as const;
+  const productLinks = productLinkMeta.map(({ href, icon, labelKey }) => ({
+    href,
+    icon,
+    label: nav(labelKey),
+  }));
+  const socialLinks: SidebarNavItem[] = [
+    { href: "/friends", icon: "friends", label: nav("userMenu.friends") },
+    { href: "/messages", icon: "messages", label: nav("userMenu.messages") },
+    { href: "/profile", icon: "profile", label: nav("userMenu.profile") },
+    { href: "/account", icon: "account", label: "Settings" },
+  ];
 
   return (
     <>
@@ -53,29 +50,12 @@ export default async function AppSidebar() {
           </span>
         </Link>
 
-        <nav className="sidebar-nav">
-          <p className="sidebar-nav-label">Play</p>
-          {productLinks.map((item) => {
-            const Icon = item.icon;
-            return (
-              <Link key={item.href} href={item.href} className="sidebar-link">
-                <Icon aria-hidden="true" className="size-4" />
-                <span>{nav(item.labelKey)}</span>
-              </Link>
-            );
-          })}
-
-          <p className="sidebar-nav-label">Social</p>
-          {socialLinks.map((item) => {
-            const Icon = item.icon;
-            return (
-              <Link key={item.href} href={item.href} className="sidebar-link">
-                <Icon aria-hidden="true" className="size-4" />
-                <span>{item.label}</span>
-              </Link>
-            );
-          })}
-        </nav>
+        <SidebarNav
+          groups={[
+            { label: "Play", items: productLinks },
+            { label: "Social", items: socialLinks },
+          ]}
+        />
 
         <div className="mt-auto grid gap-3">
           <a

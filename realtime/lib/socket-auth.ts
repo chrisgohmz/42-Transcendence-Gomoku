@@ -3,7 +3,9 @@ import type { Socket } from "socket.io";
 import { auth } from "@/lib/auth";
 
 type SocketMiddlewareNext = (error?: Error) => void;
-type SocketSessionLookup = typeof auth.api.getSession;
+type SocketSessionLookup = (context: {
+  headers: Headers;
+}) => ReturnType<typeof auth.api.getSession>;
 
 export function headersFromSocketRequest(headers: Socket["request"]["headers"]) {
   const webHeaders = new Headers();

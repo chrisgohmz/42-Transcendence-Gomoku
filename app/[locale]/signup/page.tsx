@@ -1,7 +1,7 @@
 import { Crown, Swords } from "lucide-react";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 
-import GomokuBoard from "@/components/gomoku-board";
+import { BoardShowpiece, PageShell } from "@/components/gomoku-ui";
 import { SignupForm } from "@/components/signup-form";
 import { redirect } from "@/i18n/navigation";
 import { getCurrentSession } from "@/lib/auth";
@@ -26,8 +26,8 @@ export default async function SignupPage({ params }: SignupPageProps) {
   const signup = await getTranslations({ locale, namespace: "auth.signup" });
 
   return (
-    <main className="app-shell">
-      <section className="grid overflow-hidden rounded-lg border border-[var(--panel-border-soft)] bg-[#050807]/88 shadow-[0_34px_100px_rgba(0,0,0,0.46)] lg:grid-cols-[minmax(360px,0.72fr)_minmax(380px,0.92fr)]">
+    <PageShell wide={false}>
+      <section className="grid overflow-hidden rounded-md border border-[var(--panel-border-soft)] bg-[var(--panel)] shadow-[0_34px_100px_rgba(0,0,0,0.46)] lg:grid-cols-[minmax(360px,0.72fr)_minmax(380px,0.92fr)]">
         <div className="grid content-center p-6 sm:p-10">
           <section className="command-panel">
             <p className="eyebrow">{shared("eyebrow")}</p>
@@ -37,7 +37,7 @@ export default async function SignupPage({ params }: SignupPageProps) {
           </section>
         </div>
 
-        <div className="board-room min-h-[760px] content-between rounded-none border-0 border-l border-[var(--panel-border-soft)] p-5 sm:p-8">
+        <div className="grid min-h-[780px] content-between border-l border-[var(--panel-border-soft)] p-5 sm:p-8">
           <div>
             <p className="eyebrow mb-2">New Player File</p>
             <h2 className="font-serif text-5xl leading-none font-black text-pretty">
@@ -45,7 +45,10 @@ export default async function SignupPage({ params }: SignupPageProps) {
             </h2>
           </div>
 
-          <GomokuBoard className="mx-auto w-full max-w-[560px]" />
+          <BoardShowpiece
+            label="New player seat"
+            className="min-h-[430px] border-0 bg-transparent shadow-none"
+          />
 
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="kpi-card">
@@ -65,6 +68,6 @@ export default async function SignupPage({ params }: SignupPageProps) {
           </div>
         </div>
       </section>
-    </main>
+    </PageShell>
   );
 }

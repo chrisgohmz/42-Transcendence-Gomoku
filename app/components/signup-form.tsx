@@ -126,6 +126,18 @@ export function SignupForm() {
         {pending ? signup("submitting") : signup("submit")}
       </button>
 
+      <p className="m-0 text-xs leading-5 text-[var(--muted-text)]">
+        By creating an account, you agree to the{" "}
+        <Link href="/terms" className="text-link">
+          Terms
+        </Link>{" "}
+        and{" "}
+        <Link href="/privacy" className="text-link">
+          Privacy Policy
+        </Link>
+        .
+      </p>
+
       <div className="inline-links">
         <span className="helper">{signup("alreadyHaveAccount")}</span>
         <Link href="/login" className="text-link">

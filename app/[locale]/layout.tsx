@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { hasLocale, NextIntlClientProvider } from "next-intl";
 import { getTranslations, setRequestLocale } from "next-intl/server";
-import { Inter } from "next/font/google";
+import { Cormorant_Garamond, Manrope } from "next/font/google";
 import { notFound } from "next/navigation";
 
 import "../../node_modules/shadcn/dist/tailwind.css";
@@ -15,7 +15,18 @@ import { routing } from "@/i18n/routing";
 import { getCurrentSession } from "@/lib/auth";
 import { cn } from "@/lib/utils";
 
-const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
+const manrope = Manrope({
+  display: "swap",
+  subsets: ["latin"],
+  variable: "--font-sans",
+});
+
+const cormorant = Cormorant_Garamond({
+  display: "swap",
+  subsets: ["latin"],
+  variable: "--font-display",
+  weight: ["600", "700"],
+});
 
 type RootLayoutProps = {
   children: ReactNode;
@@ -55,7 +66,7 @@ export default async function RootLayout({ children, params }: RootLayoutProps) 
   const socketUrl = process.env["SOCKET_PUBLIC_URL"];
 
   return (
-    <html lang={locale} className={cn("dark font-sans", inter.variable)}>
+    <html lang={locale} className={cn("dark font-sans", manrope.variable, cormorant.variable)}>
       <body>
         <NextIntlClientProvider>
           <PresenceProvider currentUsername={username} socketUrl={socketUrl}>

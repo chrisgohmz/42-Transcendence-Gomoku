@@ -1,16 +1,21 @@
-import { Activity, Pencil, Trophy, User } from "lucide-react";
+import { Activity, Award, Pencil, ShieldCheck, Trophy, UserRound } from "lucide-react";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 
+import { AvatarToken, Badge, MetricCard, PageShell, Surface } from "@/components/gomoku-ui";
 import { Link, redirect } from "@/i18n/navigation";
 import { getCurrentSession } from "@/lib/auth";
-
-import ProfilePicture from "./profile-picture";
 
 type ProfilePageProps = {
   params: Promise<{
     locale: string;
   }>;
 };
+
+const recentMatches = [
+  ["Kuroaki vs Shiroyasha", "Won", "+14", "01:32 left"],
+  ["Kuroaki vs Tenkei", "Lost", "-8", "resigned"],
+  ["Kuroaki vs Mokuren", "Won", "+11", "five in row"],
+] as const;
 
 export default async function ProfilePage({ params }: ProfilePageProps) {
   const { locale } = await params;
@@ -27,83 +32,101 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
   const realUser = sessionData.user;
 
   return (
-    <main className="app-shell app-shell-wide">
+    <PageShell>
       <section className="command-panel mb-5">
-        <div className="flex flex-wrap items-end justify-between gap-4">
-          <div>
-            <p className="eyebrow">Player File</p>
-            <h1 className="page-title">{t("title")}</h1>
-            <p className="lede">{t("lede")}</p>
+        <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-center">
+          <div className="flex min-w-0 flex-wrap items-center gap-5">
+            <AvatarToken image={realUser.avatarUrl} name={realUser.displayName} online size="lg" />
+            <div className="min-w-0">
+              <Badge tone="mint">
+                <ShieldCheck aria-hidden="true" className="size-3.5" />
+                Signed in
+              </Badge>
+              <h1 className="mt-4 font-serif text-6xl leading-none font-bold max-sm:text-4xl">
+                {realUser.displayName}
+              </h1>
+              <p className="mt-2 text-lg text-[var(--muted-text)]">@{realUser.username}</p>
+            </div>
           </div>
-          <Link className="btn m-0" href="/profile/edit">
-            <Pencil aria-hidden="true" className="size-4" />
-            {t("editProfile")}
-          </Link>
+          <div className="flex flex-wrap gap-3">
+            <Link href="/profile/edit" className="btn m-0">
+              <Pencil aria-hidden="true" className="size-4" />
+              {t("editProfile")}
+            </Link>
+            <Link href="/account" className="btn btn-subtle m-0">
+              Account Settings
+            </Link>
+          </div>
         </div>
       </section>
 
-      <section className="grid gap-5 lg:grid-cols-[360px_minmax(0,1fr)]">
-        <article className="command-panel flex flex-col items-center overflow-hidden text-center">
-          <ProfilePicture initialImage={realUser.avatarUrl} />
-          <h2 className="m-0 w-full truncate px-4 text-2xl font-bold capitalize">
-            {realUser.displayName}
-          </h2>
-          <p className="meta m-0 mb-2 text-sm">@{realUser.username}</p>
-          <div className="mt-5 grid w-full grid-cols-2 gap-3">
-            <div className="kpi-card">
-              <User aria-hidden="true" className="mb-3 size-5 text-[var(--mint)]" />
-              <div className="text-xl font-black">Active</div>
-              <p className="m-0 text-xs text-[var(--muted-text)]">Account</p>
-            </div>
-            <div className="kpi-card">
-              <Trophy aria-hidden="true" className="mb-3 size-5 text-[var(--brass)]" />
-              <div className="text-xl font-black">Unranked</div>
-              <p className="m-0 text-xs text-[var(--muted-text)]">Tier</p>
-            </div>
+      <section className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_360px]">
+        <div className="grid gap-5">
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            <MetricCard icon={Trophy} label={t("stats.rating")} tone="brass" value="1,842" />
+            <MetricCard icon={Activity} label={t("stats.winRate")} tone="mint" value="75.8%" />
+            <MetricCard label={t("stats.wins")} value="254" />
+            <MetricCard label={t("stats.losses")} value="81" />
           </div>
-        </article>
 
-        <section className="grid gap-5">
-          <article className="surface-panel">
-            <div className="flex items-center justify-between gap-4">
-              <div>
-                <p className="eyebrow">Performance</p>
-                <h2 className="font-serif text-3xl font-bold">{t("statsTitle")}</h2>
-              </div>
-              <Activity aria-hidden="true" className="size-6 text-[var(--mint)]" />
-            </div>
-            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-              {[
-                [t("stats.rating"), "0", "text-[var(--brass)]"],
-                [t("stats.winRate"), "0%", "text-[var(--mint)]"],
-                [t("stats.wins"), "0", "text-[var(--text)]"],
-                [t("stats.losses"), "0", "text-[var(--text)]"],
-              ].map(([label, value, tone]) => (
-                <div key={label} className="kpi-card">
-                  <h3 className={`m-0 text-4xl font-black tabular-nums ${tone}`}>{value}</h3>
-                  <p className="meta m-0 mt-2">{label}</p>
-                </div>
+          <Surface eyebrow="Recent Matches" title="Last table sessions">
+            <div className="overflow-hidden rounded-md border border-[var(--panel-border-soft)] bg-white/[0.025]">
+              {recentMatches.map(([match, result, delta, note]) => (
+                <article
+                  key={match}
+                  className="grid min-h-16 grid-cols-[minmax(0,1fr)_80px_70px_minmax(120px,0.5fr)] items-center gap-3 border-b border-[var(--panel-border-soft)] px-4 py-3 last:border-b-0"
+                >
+                  <span className="truncate font-black">{match}</span>
+                  <Badge tone={result === "Won" ? "mint" : "red"}>{result}</Badge>
+                  <span
+                    className={`font-black tabular-nums ${
+                      delta.startsWith("+") ? "text-[var(--mint)]" : "text-[var(--danger)]"
+                    }`}
+                  >
+                    {delta}
+                  </span>
+                  <span className="truncate text-sm text-[var(--muted-text)]">{note}</span>
+                </article>
               ))}
             </div>
-          </article>
+          </Surface>
+        </div>
 
-          <article className="command-panel">
-            <p className="eyebrow">Next Up</p>
-            <h2 className="font-serif text-3xl font-bold">No active match yet.</h2>
-            <p className="mt-3 max-w-2xl leading-7 text-[var(--muted-text)]">
-              Start an AI drill or join a human room to populate this file with live match context.
+        <aside className="grid content-start gap-5">
+          <Surface eyebrow="About Me" icon={UserRound} title="Player card">
+            <p className="m-0 leading-7 text-[var(--muted-text)]">
+              Calm center openings, fast rematches, and a weakness for ladder-breaking diagonals.
             </p>
-            <div className="mt-5 flex flex-wrap gap-3">
-              <Link href="/game" className="btn m-0">
-                Train vs AI
-              </Link>
-              <Link href="/human" className="btn btn-danger m-0">
-                Find Room
-              </Link>
+            <div className="grid grid-cols-2 gap-3">
+              <MetricCard label="Rank" tone="brass" value="5-dan" />
+              <MetricCard label="Season" tone="mint" value="#3" />
             </div>
-          </article>
-        </section>
+          </Surface>
+
+          <Surface eyebrow="Achievements" icon={Award} title="Badges">
+            <div className="grid gap-2">
+              {["Open Four Specialist", "100 Ranked Wins", "Study Room Host"].map((item) => (
+                <Badge key={item} tone="brass">
+                  <Award aria-hidden="true" className="size-3.5" />
+                  {item}
+                </Badge>
+              ))}
+            </div>
+          </Surface>
+
+          <Surface eyebrow="Season Progress" title="Next rank">
+            <div>
+              <div className="mb-2 flex items-center justify-between text-sm font-bold">
+                <span>5-dan to 6-dan</span>
+                <span className="text-[var(--mint)]">68%</span>
+              </div>
+              <span className="block h-2 overflow-hidden rounded-full bg-white/[0.08]">
+                <span className="block h-full w-[68%] rounded-full bg-[linear-gradient(90deg,var(--mint),var(--brass))]" />
+              </span>
+            </div>
+          </Surface>
+        </aside>
       </section>
-    </main>
+    </PageShell>
   );
 }

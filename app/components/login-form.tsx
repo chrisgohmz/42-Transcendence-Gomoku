@@ -1,6 +1,6 @@
 "use client";
 
-import { LockKeyhole, Mail } from "lucide-react";
+import { GitBranch, LockKeyhole, Mail } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useActionState } from "react";
 
@@ -69,6 +69,20 @@ export function LoginForm() {
         <FieldErrorList id={passwordErrorId} errors={state.fields.password} />
       </div>
 
+      <div className="flex flex-wrap items-center justify-between gap-3 text-sm">
+        <label className="inline-flex items-center gap-2 font-bold text-[var(--muted-text)]">
+          <input
+            type="checkbox"
+            name="remember"
+            className="size-4 rounded border border-[var(--panel-border-soft)] bg-[var(--panel-solid)]"
+          />
+          Remember this table
+        </label>
+        <Link href="/privacy" className="text-link">
+          Forgot password?
+        </Link>
+      </div>
+
       {state.message ? (
         <p className="error-text" role="alert" aria-live="polite">
           {state.message}
@@ -78,6 +92,13 @@ export function LoginForm() {
       <button className="btn m-0 w-full" type="submit" disabled={pending}>
         {pending ? login("submitting") : login("submit")}
       </button>
+
+      <div className="grid gap-2">
+        <button type="button" className="btn btn-subtle m-0 w-full">
+          <GitBranch aria-hidden="true" className="size-4" />
+          Continue with GitHub
+        </button>
+      </div>
 
       <div className="inline-links">
         <span className="helper">{login("newHere")}</span>

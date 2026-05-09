@@ -9,17 +9,20 @@ test("home page renders the redesigned command center", async ({ page }) => {
 
   await expect(page).toHaveTitle(/Transcendence/);
   await expect(page).toHaveURL(/\/en$/);
-  await expect(page.getByText("Home Dashboard", { exact: true }).first()).toBeVisible();
   await expect(page.getByRole("heading", { level: 1, name: "Master the board." })).toBeVisible();
-  await expect(page.getByText("Active Game", { exact: true }).first()).toBeVisible();
-  await expect(page.getByText("vs Human Lobby", { exact: true }).first()).toBeVisible();
+  await expect(page.getByText("Ranked Snapshot", { exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Train vs AI" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Challenge Human" })).toBeVisible();
   await expect(
     page.getByRole("link", { name: /vs AI/i }).filter({ visible: true }).first(),
   ).toBeVisible();
+  await expect(page.getByText("Active Game", { exact: true })).toHaveCount(0);
+  await expect(page.getByText("vs Human Lobby", { exact: true })).toHaveCount(0);
 });
 
 test("primary game routes render their new page shells", async ({ page }) => {
   await gotoAppRoute(page, "/game");
+  await expect(page.getByRole("heading", { level: 1, name: "Active game vs AI" })).toBeAttached();
   await expect(page.getByRole("heading", { name: "Kata Reader" })).toBeVisible();
   await expect(page.getByText("Move History", { exact: true }).first()).toBeVisible();
 
@@ -35,9 +38,7 @@ test("primary game routes render their new page shells", async ({ page }) => {
   await expect(
     page.getByText("Hoshi", { exact: true }).filter({ visible: true }).first(),
   ).toBeVisible();
-  await expect(
-    page.getByRole("heading", { name: "Friends" }).filter({ visible: true }).first(),
-  ).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Rank Bands" })).toBeVisible();
 });
 
 test("auth pages expose usable sign-in and sign-up forms", async ({ page }) => {

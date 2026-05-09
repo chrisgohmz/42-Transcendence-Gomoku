@@ -105,7 +105,7 @@ export default function LeaderboardTable({ entries }: LeaderboardTableProps) {
       ) : null}
 
       <div className="overflow-hidden rounded-md border border-[var(--panel-border-soft)] bg-white/[0.025]">
-        <div className="hidden grid-cols-[76px_minmax(0,1fr)_110px_90px_90px_110px_110px] gap-3 border-b border-[var(--panel-border-soft)] bg-black/20 px-4 py-3 text-xs font-black tracking-[0.12em] text-[var(--muted-text)] uppercase md:grid">
+        <div className="hidden grid-cols-[64px_minmax(150px,1fr)_86px_64px_72px_82px_86px] gap-3 border-b border-[var(--panel-border-soft)] bg-black/20 px-4 py-3 text-xs font-black tracking-[0.12em] text-[var(--muted-text)] uppercase md:grid">
           <span>{t("rank")}</span>
           <span>{t("player")}</span>
           <span>{t("rating")}</span>
@@ -118,7 +118,7 @@ export default function LeaderboardTable({ entries }: LeaderboardTableProps) {
         {rows.map((entry) => (
           <article
             key={entry.playerId}
-            className="grid gap-3 border-b border-[var(--panel-border-soft)] px-4 py-3 transition-[background-color] last:border-b-0 hover:bg-white/[0.055] md:grid-cols-[76px_minmax(0,1fr)_110px_90px_90px_110px_110px] md:items-center"
+            className="grid gap-3 border-b border-[var(--panel-border-soft)] px-4 py-3 transition-[background-color] last:border-b-0 hover:bg-white/[0.055] md:grid-cols-[64px_minmax(150px,1fr)_86px_64px_72px_82px_86px] md:items-center"
           >
             <div className="flex items-center gap-3">
               <span
@@ -133,17 +133,17 @@ export default function LeaderboardTable({ entries }: LeaderboardTableProps) {
             </div>
 
             <div className="flex min-w-0 items-center gap-3">
-              <span className="grid size-11 shrink-0 place-items-center rounded-full border border-[var(--panel-border-soft)] bg-white/[0.08] font-black uppercase">
+              <span className="grid size-10 shrink-0 place-items-center rounded-full border border-[var(--panel-border-soft)] bg-white/[0.08] font-black uppercase">
                 {entry.player.charAt(0)}
               </span>
               <div className="min-w-0">
-                <p className="m-0 flex min-w-0 items-center gap-2 truncate font-black">
+                <p className="m-0 flex min-w-0 items-center gap-2 font-black">
                   <span className="truncate">{entry.player}</span>
                   <span className="size-2 rounded-full bg-[var(--mint)]" />
                 </p>
-                <p className="m-0 flex items-center gap-1 text-xs text-[var(--muted-text)]">
+                <p className="m-0 flex items-center gap-1 truncate text-xs text-[var(--muted-text)]">
                   <TrendingUp aria-hidden="true" className="size-3 text-[var(--mint)]" />
-                  Active this week
+                  Active
                 </p>
               </div>
             </div>
