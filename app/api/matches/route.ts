@@ -1,5 +1,6 @@
 import { Role, MatchStatus, Seat } from "../../../generated/prisma/enums";
 import { getCurrentSession } from "../../lib/auth";
+import { standardGomokuBoardSize } from "../../lib/matches/move-rules";
 import { prisma } from "../../lib/prisma";
 
 export const dynamic = "force-dynamic";
@@ -24,6 +25,7 @@ export async function POST() {
   try {
     const match = await prisma.match.create({
       data: {
+        boardSize: standardGomokuBoardSize,
         participants: {
           create: {
             displayNameSnapshot: "Player 1",

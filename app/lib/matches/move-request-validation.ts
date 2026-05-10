@@ -10,3 +10,10 @@ export const submitMoveRequestSchema = z.object({
 });
 
 export type SubmitMoveRequest = z.infer<typeof submitMoveRequestSchema>;
+
+export const resignMatchRequestSchema = z.object({
+  baseVersion: z.number().int().nullable().optional(),
+  participantId: z.string().min(1),
+});
+
+export type ResignMatchRequest = z.infer<typeof resignMatchRequestSchema>;
