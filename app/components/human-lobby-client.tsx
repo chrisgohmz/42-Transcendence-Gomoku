@@ -1,13 +1,33 @@
 "use client";
 
 import { RefreshCcw, Swords, Users } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
 
 import CreateRoomCard from "@/components/create-room-card";
 import GameLobbyTable from "@/components/game-lobby-table";
 import { Badge, MetricCard, PageHeader, PageShell, Surface } from "@/components/gomoku-ui";
+import HumanMatchRoom from "@/components/human-match-room";
 import { useHumanLobby } from "@/hooks/useHumanLobby";
+import { useMatchInitialize } from "@/hooks/useMatchInitialize";
+import type { StoredMatchSession } from "@/lib/matches/match-session-storage";
 
 export default function HumanLobbyClient() {
+  const restoredMatch = useMatchInitialize();
+  const setRestoredSession = restoredMatch.setSession;
+  const [activeSession, setActiveSession] = useState<StoredMatchSession | null>(null);
+  const [showLobby, setShowLobby] = useState(false);
+
+  useEffect(() => {
+    if (!showLobby && restoredMatch.session) {
+      setActiveSession(restoredMatch.session);
+    }
+  }, [restoredMatch.session, showLobby]);
+
+  const handleSessionReady = useCallback((session: StoredMatchSession) => {
+    setShowLobby(false);
+    setActiveSession(session);
+  }, []);
+
   const {
     createError,
     createRoom,
@@ -19,7 +39,46 @@ export default function HumanLobbyClient() {
     joiningMatchId,
     loadMatches,
     tableError,
-  } = useHumanLobby();
+  } = useHumanLobby({ onSessionReady: handleSessionReady });
+
+  const handleBackToLobby = useCallback(() => {
+    setShowLobby(true);
+    setActiveSession(null);
+    void loadMatches();
+  }, [loadMatches]);
+
+  const handleSessionLost = useCallback(() => {
+    setRestoredSession(null);
+    setActiveSession(null);
+    setShowLobby(true);
+    void loadMatches();
+  }, [loadMatches, setRestoredSession]);
+
+  if (activeSession) {
+    return (
+      <HumanMatchRoom
+        initialState={restoredMatch.state}
+        isRestoring={restoredMatch.isLoading}
+        onBackToLobby={handleBackToLobby}
+        onSessionLost={handleSessionLost}
+        restoreError={restoredMatch.error}
+        session={activeSession}
+      />
+    );
+  }
+
+  if (restoredMatch.isLoading && !showLobby) {
+    return (
+      <PageShell>
+        <PageHeader
+          eyebrow="vs Human Lobby"
+          icon={Swords}
+          title="Checking your table."
+          lede="Loading the most recent active room."
+        />
+      </PageShell>
+    );
+  }
 
   return (
     <PageShell>

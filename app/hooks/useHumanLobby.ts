@@ -4,7 +4,10 @@ import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useState } from "react";
 
 import type { LobbyEntry } from "@/components/game-lobby-table";
-import { saveStoredMatchSession, type StoredMatchSession } from "@/lib/proto/match-session-storage";
+import {
+  saveStoredMatchSession,
+  type StoredMatchSession,
+} from "@/lib/matches/match-session-storage";
 
 import type { Seat } from "../../shared/match-events";
 
@@ -41,18 +44,21 @@ function getStoredRole(role: string | undefined): StoredMatchSession["role"] {
   return role === "SPECTATOR" ? "SPECTATOR" : "PLAYER";
 }
 
-function saveMatchSession(session: MatchActionResponse) {
+function saveMatchSession(session: MatchActionResponse): StoredMatchSession | null {
   if (!session.matchId || !session.participantId) {
-    return;
+    return null;
   }
 
-  saveStoredMatchSession({
+  const storedSession: StoredMatchSession = {
     displayName: "Player",
     matchId: session.matchId,
     participantId: session.participantId,
     role: getStoredRole(session.role),
     seat: session.seat ?? null,
-  });
+  };
+
+  saveStoredMatchSession(storedSession);
+  return storedSession;
 }
 
 function mapMatchToEntry(match: Match): LobbyEntry {
@@ -68,10 +74,14 @@ function mapMatchToEntry(match: Match): LobbyEntry {
   };
 }
 
-export function useHumanLobby() {
-  const proto = useTranslations("proto");
-  const createT = useTranslations("proto.create");
-  const joinT = useTranslations("proto.join");
+export function useHumanLobby({
+  onSessionReady,
+}: {
+  onSessionReady?: (session: StoredMatchSession) => void;
+} = {}) {
+  const humanT = useTranslations("human");
+  const createT = useTranslations("human.createRoom");
+  const joinT = useTranslations("human.join");
 
   const [matches, setMatches] = useState<Match[]>([]);
   const [isLoadingMatches, setIsLoadingMatches] = useState(false);
@@ -94,7 +104,7 @@ export function useHumanLobby() {
       if (!response.ok) {
         const errorPayload = (await response.json().catch(() => null)) as ErrorResponse | null;
         setListError(
-          getErrorMessage(errorPayload, proto("requestFailed", { status: response.status })),
+          getErrorMessage(errorPayload, humanT("requestFailed", { status: response.status })),
         );
         setMatches([]);
         return;
@@ -106,12 +116,12 @@ export function useHumanLobby() {
       setJoinError(null);
     } catch (error) {
       console.error("Error loading matches:", error);
-      setListError(error instanceof Error ? error.message : proto("networkLoadError"));
+      setListError(error instanceof Error ? error.message : humanT("networkLoadError"));
       setMatches([]);
     } finally {
       setIsLoadingMatches(false);
     }
-  }, [proto]);
+  }, [humanT]);
 
   useEffect(() => {
     void loadMatches();
@@ -138,7 +148,7 @@ export function useHumanLobby() {
 
         const errorPayload = (await response.json().catch(() => null)) as ErrorResponse | null;
         setCreateError(
-          getErrorMessage(errorPayload, proto("requestFailed", { status: response.status })),
+          getErrorMessage(errorPayload, humanT("requestFailed", { status: response.status })),
         );
         return;
       }
@@ -155,15 +165,17 @@ export function useHumanLobby() {
         return;
       }
 
-      saveMatchSession(result);
+      const storedSession = saveMatchSession(result);
+      if (storedSession) {
+        onSessionReady?.(storedSession);
+      }
       setJoinError(null);
-      await loadMatches();
     } catch {
       setCreateError(createT("networkError"));
     } finally {
       setIsCreating(false);
     }
-  }, [createT, loadMatches, proto]);
+  }, [createT, humanT, onSessionReady]);
 
   const joinMatch = useCallback(
     async (entry: LobbyEntry) => {
@@ -186,7 +198,7 @@ export function useHumanLobby() {
         if (!response.ok) {
           const errorPayload = (await response.json().catch(() => null)) as ErrorResponse | null;
           setJoinError(
-            getErrorMessage(errorPayload, proto("requestFailed", { status: response.status })),
+            getErrorMessage(errorPayload, humanT("requestFailed", { status: response.status })),
           );
           return;
         }
@@ -198,19 +210,21 @@ export function useHumanLobby() {
           return;
         }
 
-        saveMatchSession({
+        const storedSession = saveMatchSession({
           ...result,
           matchId: result.matchId ?? entry.matchId,
         });
+        if (storedSession) {
+          onSessionReady?.(storedSession);
+        }
         setCreateError(null);
-        await loadMatches();
       } catch {
         setJoinError(joinT("networkError"));
       } finally {
         setJoiningMatchId(null);
       }
     },
-    [joinT, loadMatches, proto],
+    [humanT, joinT, onSessionReady],
   );
 
   return {

@@ -2,8 +2,8 @@
 
 ## Scenarios
 
-- Create Room: visiting the human lobby loads the match list, clicking Create Room sends a match creation request, and the returned participant session is stored in sessionStorage.
-- Join Room: visiting the human lobby renders waiting matches from the match API, clicking the row join control sends a join request, and the returned participant session is stored in sessionStorage.
+- Create Room: visiting the human lobby loads the match list, clicking Create Room sends a match creation request, stores the returned participant session, and opens the active human match board.
+- Join Room: visiting the human lobby renders waiting matches from the match API, clicking the row join control sends a join request, stores the returned participant session, and opens the active human match board.
 
 ## Notes
 

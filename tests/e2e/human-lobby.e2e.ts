@@ -1,6 +1,6 @@
 import { expect, type Page, test } from "@playwright/test";
 
-const activeSessionKey = "proto:matchSession:v1:active";
+const activeSessionKey = "match:session:v1:active";
 
 test("human lobby creates a room and stores the returned session", async ({ page }) => {
   let createRequests = 0;
@@ -35,6 +35,16 @@ test("human lobby creates a room and stores the returned session", async ({ page
       });
     },
   );
+  await page.route(
+    (url) => url.pathname === "/api/matches/created-match/state",
+    async (route) => {
+      await route.fulfill({
+        body: JSON.stringify(matchStateResponse("created-match", "creator-1", "BLACK", "WAITING")),
+        contentType: "application/json",
+        status: 200,
+      });
+    },
+  );
 
   await page.goto("/en/human", { waitUntil: "domcontentloaded" });
   await expect(page.getByRole("heading", { name: /Find a room/i })).toBeVisible();
@@ -53,6 +63,9 @@ test("human lobby creates a room and stores the returned session", async ({ page
     role: "PLAYER",
     seat: "BLACK",
   });
+  await expect(page).toHaveURL(/\/en\/human$/);
+  await expect(page.getByTestId("human-match-room")).toBeVisible();
+  await expect(page.getByTestId("human-match-board")).toBeVisible();
 });
 
 test("human lobby joins a waiting room and stores the returned session", async ({ page }) => {
@@ -95,6 +108,16 @@ test("human lobby joins a waiting room and stores the returned session", async (
       });
     },
   );
+  await page.route(
+    (url) => url.pathname === "/api/matches/match-1/state",
+    async (route) => {
+      await route.fulfill({
+        body: JSON.stringify(matchStateResponse("match-1", "joiner-1", "WHITE", "IN_PROGRESS")),
+        contentType: "application/json",
+        status: 200,
+      });
+    },
+  );
 
   await page.goto("/en/human", { waitUntil: "domcontentloaded" });
   await expect.poll(() => listRequests).toBeGreaterThan(0);
@@ -113,6 +136,9 @@ test("human lobby joins a waiting room and stores the returned session", async (
     role: "PLAYER",
     seat: "WHITE",
   });
+  await expect(page).toHaveURL(/\/en\/human$/);
+  await expect(page.getByTestId("human-match-room")).toBeVisible();
+  await expect(page.getByTestId("human-match-board")).toBeVisible();
 });
 
 async function readStoredSession(page: Page) {
@@ -123,7 +149,54 @@ async function readStoredSession(page: Page) {
       return null;
     }
 
-    const raw = sessionStorage.getItem(`proto:matchSession:v1:${activeMatchId}`);
+    const raw = sessionStorage.getItem(`match:session:v1:${activeMatchId}`);
     return raw ? JSON.parse(raw) : null;
   }, activeSessionKey);
+}
+
+function matchStateResponse(
+  matchId: string,
+  participantId: string,
+  seat: "BLACK" | "WHITE",
+  status: "WAITING" | "IN_PROGRESS",
+) {
+  const board = Array.from({ length: 15 }, () =>
+    Array.from({ length: 15 }, () => ({ occupied: false })),
+  );
+  const otherSeat = seat === "BLACK" ? "WHITE" : "BLACK";
+
+  return {
+    matchId,
+    status,
+    visibility: "PUBLIC",
+    boardSize: 15,
+    stateVersion: 0,
+    nextTurnSeat: status === "IN_PROGRESS" ? "BLACK" : null,
+    winningSeat: null,
+    endReason: null,
+    participants: [
+      {
+        participantId,
+        displayName: "Player",
+        role: "PLAYER",
+        seat,
+        joinedAt: "2026-05-10T00:00:00.000Z",
+        leftAt: null,
+      },
+      ...(status === "IN_PROGRESS"
+        ? [
+            {
+              participantId: "opponent-1",
+              displayName: "Opponent",
+              role: "PLAYER",
+              seat: otherSeat,
+              joinedAt: "2026-05-10T00:00:01.000Z",
+              leftAt: null,
+            },
+          ]
+        : []),
+    ],
+    moves: [],
+    board,
+  };
 }

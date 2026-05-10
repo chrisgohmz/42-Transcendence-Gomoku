@@ -2,12 +2,12 @@
 
 import { useEffect, useState } from "react";
 
-import type { StoredMatchSession } from "@/lib/proto/match-session-storage";
+import type { StoredMatchSession } from "@/lib/matches/match-session-storage";
 import {
   clearStoredMatchSession,
   readActiveStoredMatchSession,
-} from "@/lib/proto/match-session-storage";
-import type { MatchStateResponse } from "@/lib/proto/match-state";
+} from "@/lib/matches/match-session-storage";
+import type { MatchStateResponse } from "@/lib/matches/match-state";
 
 export function useMatchInitialize() {
   const [session, setSession] = useState<StoredMatchSession | null>(null);
