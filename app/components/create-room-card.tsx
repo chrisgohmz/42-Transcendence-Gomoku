@@ -1,16 +1,39 @@
+"use client";
+
 import { Eye, EyeOff, LockKeyhole, Plus, Swords, Timer } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 import { Badge, Surface } from "@/components/gomoku-ui";
 
-export default function CreateRoomCard() {
+type CreateRoomCardProps = {
+  error?: string | null;
+  isCreating?: boolean;
+  onCreateRoom?: () => void;
+  submitLabel?: string;
+};
+
+export default function CreateRoomCard({
+  error,
+  isCreating = false,
+  onCreateRoom,
+  submitLabel,
+}: CreateRoomCardProps) {
   const t = useTranslations("human.createRoom");
 
   return (
     <Surface eyebrow="Challenge" icon={Swords} title={t("title")}>
       <p className="m-0 text-sm leading-6 text-[var(--muted-text)]">{t("description")}</p>
 
-      <div className="grid gap-4">
+      <form
+        className="grid gap-4"
+        onSubmit={(event) => {
+          event.preventDefault();
+          if (isCreating) {
+            return;
+          }
+          onCreateRoom?.();
+        }}
+      >
         <div className="field">
           <label htmlFor="room-name" className="field-label">
             Room name
@@ -60,11 +83,22 @@ export default function CreateRoomCard() {
           <Badge tone="brass">15 x 15 board</Badge>
         </div>
 
-        <button type="button" className="btn btn-danger m-0 w-full">
+        <button
+          type="submit"
+          className="btn btn-danger m-0 w-full"
+          disabled={isCreating}
+          aria-busy={isCreating}
+        >
           <Plus aria-hidden="true" className="size-4" />
-          {t("submit")}
+          {submitLabel ?? t("submit")}
         </button>
-      </div>
+
+        {error ? (
+          <p role="alert" className="m-0 text-sm font-bold text-[var(--danger)]">
+            {error}
+          </p>
+        ) : null}
+      </form>
     </Surface>
   );
 }
