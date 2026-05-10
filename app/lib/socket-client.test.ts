@@ -18,6 +18,10 @@ describe("createSocket", () => {
 
     expect(io).toHaveBeenCalledWith("https://localhost:8443", {
       path: "/socket.io",
+      reconnection: true,
+      reconnectionDelay: 500,
+      reconnectionDelayMax: 5000,
+      timeout: 10000,
       withCredentials: true,
     });
   });
@@ -27,6 +31,10 @@ describe("createSocket", () => {
 
     expect(io).toHaveBeenCalledWith("http://localhost:3001", {
       path: "/socket.io",
+      reconnection: true,
+      reconnectionDelay: 500,
+      reconnectionDelayMax: 5000,
+      timeout: 10000,
       withCredentials: true,
     });
   });
@@ -36,6 +44,10 @@ describe("createSocket", () => {
 
     expect(io).toHaveBeenCalledWith({
       path: "/socket.io",
+      reconnection: true,
+      reconnectionDelay: 500,
+      reconnectionDelayMax: 5000,
+      timeout: 10000,
       withCredentials: true,
     });
   });
