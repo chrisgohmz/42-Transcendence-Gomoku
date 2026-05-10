@@ -1,9 +1,23 @@
 "use client";
 
+import { Globe } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 
 import { locales, type Locale } from "@/i18n/config";
 import { usePathname, useRouter } from "@/i18n/navigation";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+
+const shortLabels: Record<string, string> = {
+  en: "EN",
+  ja: "JA",
+  zh: "ZH",
+};
 
 export function LocaleSwitcher() {
   const locale = useLocale() as Locale;
@@ -17,19 +31,25 @@ export function LocaleSwitcher() {
   }
 
   return (
-    <label className="locale-switcher">
-      <span className="sr-only">{t("languageLabel")}</span>
-      <select
-        aria-label={t("languageLabel")}
-        value={locale}
-        onChange={(event) => handleLocaleChange(event.target.value as Locale)}
-      >
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" size="sm" className="flex items-center gap-2 cursor-pointer">
+          <Globe className="h-4 w-4 text-[var(--brass)]" />
+          <span>{shortLabels[locale] || locale.toUpperCase()}</span>
+          <span className="sr-only">{t("languageLabel")}</span>
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent side="top" align="end" className="z-[100]">
         {locales.map((availableLocale) => (
-          <option key={availableLocale} value={availableLocale}>
+          <DropdownMenuItem
+            key={availableLocale}
+            onClick={() => handleLocaleChange(availableLocale as Locale)}
+            className={`cursor-pointer ${locale === availableLocale ? "font-bold text-primary" : ""}`}
+          >
             {localeNames(availableLocale)}
-          </option>
+          </DropdownMenuItem>
         ))}
-      </select>
-    </label>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }

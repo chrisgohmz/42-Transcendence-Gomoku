@@ -3,7 +3,7 @@ import { getTranslations } from "next-intl/server";
 import Image from "next/image";
 
 import { LocaleSwitcher } from "@/components/locale-switcher";
-import UserMenu from "@/components/player-menu";
+import { PlayerProfile, PlayerLogout } from "@/components/player-menu";
 import { SidebarNav, type SidebarNavItem } from "@/components/sidebar-nav";
 import { Button } from "@/components/ui/button";
 import { Link } from "@/i18n/navigation";
@@ -67,23 +67,31 @@ export default async function AppSidebar() {
           </a>
 
           <div className="sidebar-account">
-            <div className="flex items-center gap-2 text-xs font-bold text-[var(--muted-strong)]">
-              <ShieldCheck aria-hidden="true" className="size-4 text-[var(--mint)]" />
-              Ranked Session
+            <div className="flex items-center justify-between gap-2 text-xs font-bold text-[var(--muted-strong)]">
+              <div className="flex items-center gap-2">
+                <ShieldCheck aria-hidden="true" className="size-4 text-[var(--mint)]" />
+                <span>Ranked Session</span>
+              </div>
+              <div className="-mr-2">
+                <LocaleSwitcher />
+              </div>
             </div>
-            <div className="mt-3 flex flex-wrap items-center gap-2">
-              <LocaleSwitcher />
+
+            <div className="mt-3 flex flex-col gap-2">
               {isLoggedIn ? (
-                <UserMenu username={realUsername} avatarUrl={avatarUrl} />
+                <div className="flex w-full gap-2">
+                  <PlayerProfile username={realUsername} avatarUrl={avatarUrl} className="flex-1 overflow-hidden" />
+                  <PlayerLogout iconOnly />
+                </div>
               ) : (
-                <>
-                  <Button asChild variant="outline" size="sm">
+                <div className="flex w-full gap-2">
+                  <Button asChild variant="ghost" size="sm" className="flex-1">
                     <Link href="/login">{nav("login")}</Link>
                   </Button>
-                  <Button asChild size="sm">
+                  <Button asChild size="sm" className="flex-1">
                     <Link href="/signup">{nav("signup")}</Link>
                   </Button>
-                </>
+                </div>
               )}
             </div>
           </div>
@@ -98,13 +106,19 @@ export default async function AppSidebar() {
           </span>
         </Link>
         <div className="flex items-center gap-2">
-          <LocaleSwitcher />
           {isLoggedIn ? (
-            <UserMenu username={realUsername} avatarUrl={avatarUrl} />
+            <>
+              <PlayerProfile username={realUsername} avatarUrl={avatarUrl} />
+              <LocaleSwitcher />
+              <PlayerLogout iconOnly />
+            </>
           ) : (
-            <Button asChild size="sm">
-              <Link href="/login">{nav("login")}</Link>
-            </Button>
+            <>
+              <LocaleSwitcher />
+              <Button asChild variant="ghost" size="sm">
+                <Link href="/login">{nav("login")}</Link>
+              </Button>
+            </>
           )}
         </div>
       </header>

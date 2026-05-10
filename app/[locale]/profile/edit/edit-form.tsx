@@ -1,15 +1,13 @@
 "use client";
 
-import { Eye, EyeOff, LockKeyhole, Palette, Save, Trash2, UserRound } from "lucide-react";
+import { LockKeyhole, Save, UserRound } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useActionState, useEffect, useRef } from "react";
-
 import { FieldErrorList } from "@/components/field-error-list";
-import { Badge, MetricCard, Surface } from "@/components/gomoku-ui";
+import { Surface } from "@/components/gomoku-ui";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "@/i18n/navigation";
 import { authValidationLimits } from "@/lib/validation/auth-profile-limits";
-
 import { initialProfileSettingsActionState } from "./action-state";
 import { changeAccountPassword, saveDisplayName } from "./actions";
 
@@ -119,44 +117,6 @@ export default function EditProfileForm({
         </form>
       </Surface>
 
-      <section className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_320px]">
-        <Surface eyebrow="Stone Preference" icon={Palette} title="Board identity">
-          <div className="grid gap-3 sm:grid-cols-2">
-            <button
-              type="button"
-              className="grid min-h-24 place-items-center gap-2 rounded-md border border-[var(--brass)]/40 bg-white/[0.035] p-4 font-black"
-            >
-              <span className="stone stone-black size-10" />
-              Black stone
-            </button>
-            <button
-              type="button"
-              className="grid min-h-24 place-items-center gap-2 rounded-md border border-[var(--panel-border-soft)] bg-white/[0.035] p-4 font-black text-[var(--muted-text)]"
-            >
-              <span className="stone stone-white size-10" />
-              White stone
-            </button>
-          </div>
-          <div className="grid gap-3 sm:grid-cols-2">
-            <Badge tone="mint">
-              <Eye aria-hidden="true" className="size-3.5" />
-              Public profile visible
-            </Badge>
-            <Badge tone="neutral">
-              <EyeOff aria-hidden="true" className="size-3.5" />
-              Email hidden
-            </Badge>
-          </div>
-        </Surface>
-
-        <Surface eyebrow="Recent Stats" title="Snapshot">
-          <div className="grid gap-3">
-            <MetricCard label="Rating" tone="brass" value="1,842" />
-            <MetricCard label="Win Rate" tone="mint" value="75.8%" />
-          </div>
-        </Surface>
-      </section>
-
       <Surface eyebrow="Security" icon={LockKeyhole} title={t("changePassword")}>
         <form ref={passwordFormRef} action={passwordAction} className="grid gap-4">
           <div className="grid gap-4 md:grid-cols-3">
@@ -205,12 +165,11 @@ export default function EditProfileForm({
             </Button>
             <Button
               type="button"
-              variant="destructive"
+              variant="outline"
               onClick={() => router.push("/profile")}
               className="h-12 px-5 font-black"
             >
-              <Trash2 aria-hidden="true" className="size-4" />
-              {t("returnToProfile")}
+              {t("cancel")}
             </Button>
           </div>
         </form>
