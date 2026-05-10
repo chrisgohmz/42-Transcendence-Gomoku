@@ -1,9 +1,7 @@
 import { setRequestLocale } from "next-intl/server";
-
 import { redirect } from "@/i18n/navigation";
 import { getCurrentSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-
 import FriendsContent from "./friends-layout";
 
 type FriendsPageProps = {
@@ -50,12 +48,12 @@ export default async function FriendsPage({ params, searchParams }: FriendsPageP
   });
 
   const searchResults =
-    searchQuery.length > 0
+    searchQuery.length >= 3
       ? await prisma.user.findMany({
           where: {
             OR: [
-              { username: { contains: searchQuery, mode: "insensitive" } },
-              { displayName: { contains: searchQuery, mode: "insensitive" } },
+              { username: { startsWith: searchQuery, mode: "insensitive" } },
+              { displayName: { startsWith: searchQuery, mode: "insensitive" } },
             ],
             NOT: { id: currentUserId },
           },
