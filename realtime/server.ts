@@ -13,6 +13,13 @@ import { registerMatchSubscription } from "./handlers/match-subscription";
 import { removePresenceConnection, subscribeToPresence, type ConnectedUsers } from "./lib/presence";
 import { matchRoomId } from "./lib/rooms";
 import { authenticateSocketSession } from "./lib/socket-auth";
+import {
+  DEFAULT_SOCKET_HEARTBEAT_INTERVAL_MS,
+  DEFAULT_SOCKET_PING_INTERVAL_MS,
+  DEFAULT_SOCKET_PING_TIMEOUT_MS,
+  readPositiveIntegerEnv,
+  startSocketLifecycle,
+} from "./lib/socket-lifecycle";
 
 const currentDirectory = dirname(fileURLToPath(import.meta.url));
 const rootEnvPath = resolve(currentDirectory, "../.env");
@@ -24,6 +31,21 @@ if (existsSync(rootEnvPath)) {
 const hostname = process.env["SOCKET_HOST"] ?? "0.0.0.0";
 const port = Number(process.env["SOCKET_PORT"] || 3001);
 const socketPath = process.env["SOCKET_PATH"] ?? "/socket.io/";
+const socketHeartbeatIntervalMs = readPositiveIntegerEnv(
+  process.env,
+  "SOCKET_HEARTBEAT_INTERVAL_MS",
+  DEFAULT_SOCKET_HEARTBEAT_INTERVAL_MS,
+);
+const socketPingIntervalMs = readPositiveIntegerEnv(
+  process.env,
+  "SOCKET_PING_INTERVAL_MS",
+  DEFAULT_SOCKET_PING_INTERVAL_MS,
+);
+const socketPingTimeoutMs = readPositiveIntegerEnv(
+  process.env,
+  "SOCKET_PING_TIMEOUT_MS",
+  DEFAULT_SOCKET_PING_TIMEOUT_MS,
+);
 
 function readCorsOrigins(): string[] {
   const configuredOrigins = process.env["SOCKET_CORS_ORIGIN"];
@@ -37,6 +59,8 @@ const corsOrigins = readCorsOrigins();
 
 const engine = new Engine({
   path: socketPath,
+  pingInterval: socketPingIntervalMs,
+  pingTimeout: socketPingTimeoutMs,
   cors: {
     origin: corsOrigins,
     methods: ["GET", "POST"],
@@ -69,6 +93,11 @@ io.on("connection", (socket) => {
   console.log(`Socket.IO client connected: ${socket.id}`);
   console.log(`[realtime] connected: ${socket.id}`);
 
+  const stopSocketLifecycle = startSocketLifecycle(socket, {
+    heartbeatIntervalMs: socketHeartbeatIntervalMs,
+  });
+
+  subscribeToPresence(socket, io, connectedUsers);
   registerMatchSubscription(socket);
 
   socket.on("presence:subscribe", () => {
@@ -98,12 +127,13 @@ io.on("connection", (socket) => {
     }
   });
 
-  socket.on("queue:join", async (userId: string) => {
+  socket.on("queue:join", async () => {
+    const userId = socket.data.user?.id;
     if (!userId) return;
 
-    if (matchQueue.some((player) => player.userId === userId)) {
-      return;
-    }
+    matchQueue = matchQueue.filter(
+      (player) => player.userId !== userId && player.socketId !== socket.id,
+    );
 
     matchQueue.push({ socketId: socket.id, userId });
     console.log(`Player ${userId} joined the queue. Total waiting: ${matchQueue.length}`);
@@ -152,6 +182,7 @@ io.on("connection", (socket) => {
   socket.on("disconnect", (reason) => {
     console.log(`Socket.IO client disconnected: ${socket.id} (${reason})`);
 
+    stopSocketLifecycle();
     matchQueue = matchQueue.filter((player) => player.socketId !== socket.id);
 
     removePresenceConnection(socket, io, connectedUsers);

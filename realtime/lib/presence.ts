@@ -11,11 +11,19 @@ type PresenceSocket = {
     };
   };
   id: string;
+  emit(event: "presence:update", users: string[]): unknown;
   join(room: string): unknown;
 };
 
 export function getActiveUsernames(connectedUsers: ConnectedUsers) {
   return Array.from(new Set(connectedUsers.values()));
+}
+
+function hasSameUsernames(left: string[], right: string[]) {
+  if (left.length !== right.length) return false;
+
+  const rightUsernames = new Set(right);
+  return left.every((username) => rightUsernames.has(username));
 }
 
 export function subscribeToPresence(
@@ -26,9 +34,18 @@ export function subscribeToPresence(
   const username = socket.data.user?.username;
   if (!username) return;
 
+  const previousUsernames = getActiveUsernames(connectedUsers);
+
   void socket.join(`user:${username}`);
   connectedUsers.set(socket.id, username);
-  broadcaster.emit("presence:update", getActiveUsernames(connectedUsers));
+
+  const activeUsernames = getActiveUsernames(connectedUsers);
+  if (hasSameUsernames(previousUsernames, activeUsernames)) {
+    socket.emit("presence:update", activeUsernames);
+    return;
+  }
+
+  broadcaster.emit("presence:update", activeUsernames);
 }
 
 export function removePresenceConnection(
@@ -38,6 +55,12 @@ export function removePresenceConnection(
 ) {
   if (!connectedUsers.has(socket.id)) return;
 
+  const previousUsernames = getActiveUsernames(connectedUsers);
+
   connectedUsers.delete(socket.id);
-  broadcaster.emit("presence:update", getActiveUsernames(connectedUsers));
+
+  const activeUsernames = getActiveUsernames(connectedUsers);
+  if (!hasSameUsernames(previousUsernames, activeUsernames)) {
+    broadcaster.emit("presence:update", activeUsernames);
+  }
 }
