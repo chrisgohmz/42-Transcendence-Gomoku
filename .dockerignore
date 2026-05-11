@@ -1,6 +1,7 @@
 node_modules
 .next
 .docker-data
+.transcendence-docker-data
 generated
 bun-debug.log*
 npm-debug.log*
