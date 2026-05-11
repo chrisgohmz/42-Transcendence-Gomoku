@@ -91,7 +91,7 @@ export async function loginAction(
     };
   }
 
-  return redirect({ href: "/account", locale });
+  return redirect({ href: "/profile", locale });
 }
 
 export async function signupAction(
@@ -187,5 +187,5 @@ export async function signupAction(
     };
   }
 
-  return redirect({ href: "/account", locale });
+  return redirect({ href: "/profile", locale });
 }
