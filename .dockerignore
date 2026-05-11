@@ -1,5 +1,6 @@
 node_modules
 .next
+.docker-data
 generated
 bun-debug.log*
 npm-debug.log*

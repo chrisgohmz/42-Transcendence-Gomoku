@@ -27,6 +27,28 @@ bun install
 
 The root install intentionally skips dependency lifecycle scripts. Generate the Prisma client with the Bun command below after installing dependencies.
 
+### Docker data location
+
+Keep Docker Engine's `data-root` on a local filesystem such as `goinfre`. This
+repo stores project-owned container data in bind-mounted directories under
+`.docker-data/`, which lives beside the repo on `sgoinfre` when the repo is
+checked out there:
+
+- `.docker-data/caddy` for Caddy local CA/cert state
+- `.docker-data/app` for container-only development caches such as
+  `node_modules`, `.next`, and generated Prisma files
+
+Uploaded profile images are stored in `public/uploads/`, which is also ignored
+by Git.
+
+PostgreSQL stays in a Docker named volume. On the 42 lab machines, rootless
+Docker cannot initialize PostgreSQL data on the NFS-backed `sgoinfre` mount
+because the image needs ownership changes during startup.
+
+Because `.docker-data/` and `public/uploads/` are bind mounts,
+`docker compose down -v` does not remove them. Use `make db-reset` or
+`make fclean` when you want to delete the local Docker data directories as well.
+
 ### Run locally without containers
 
 Start PostgreSQL in Docker first so the host-side `DATABASE_URL` in `.env` can reach `localhost:5432`:
@@ -68,15 +90,21 @@ If you were already using the old `db push` workflow locally, do a one-time rese
 before the first migration-based run:
 
 ```bash
-docker compose -f docker-compose.yml -f docker-compose.dev.yml down -v
+make db-reset
+```
+
+If you only want to recreate the database container afterward:
+
+```bash
 docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d database
 ```
 
-PostgreSQL 18 stores container data below a major-versioned directory. If the
-database container exits with an `unused mount/volume` error for
-`/var/lib/postgresql/data`, reset the disposable local development volume with
-the same `down -v` command above. Preserve and migrate the volume with
-`pg_upgrade` instead if it contains data you need to keep.
+PostgreSQL 18 stores container data below a major-versioned directory, so the
+Compose volume targets `/var/lib/postgresql` and lets the image create its own
+versioned data subdirectory. If the database container exits with an
+`unused mount/volume` error, reset the disposable local database volume with
+`make db-reset`. Preserve and migrate the data with `pg_upgrade` instead if it
+contains data you need to keep.
 
 ### Run the full stack with containers
 
