@@ -14,11 +14,16 @@ type StoredMatchSessionRecord = StoredMatchSession & {
 
 type SessionStorageLike = Pick<Storage, "getItem" | "removeItem" | "setItem">;
 
-const STORAGE_PREFIX = "proto:matchSession:v1:";
-const ACTIVE_SESSION_KEY = `${STORAGE_PREFIX}active`;
+const STORAGE_PREFIX = "match:session:v1:";
+const LEGACY_STORAGE_PREFIX = "proto:matchSession:v1:";
+export const activeMatchSessionKey = `${STORAGE_PREFIX}active`;
 
-function getSessionKey(matchId: string) {
+export function getStoredMatchSessionKey(matchId: string) {
   return `${STORAGE_PREFIX}${matchId}`;
+}
+
+function getLegacySessionKey(matchId: string) {
+  return `${LEGACY_STORAGE_PREFIX}${matchId}`;
 }
 
 function isRole(value: unknown): value is StoredMatchSession["role"] {
@@ -61,24 +66,10 @@ export function readActiveStoredMatchSession(
   storage: SessionStorageLike = sessionStorage,
 ): StoredMatchSession | null {
   try {
-    const activeMatchId = storage.getItem(ACTIVE_SESSION_KEY);
-    if (!activeMatchId) {
-      return null;
-    }
-
-    const raw = storage.getItem(getSessionKey(activeMatchId));
-    if (!raw) {
-      storage.removeItem(ACTIVE_SESSION_KEY);
-      return null;
-    }
-
-    const session = parseStoredMatchSession(raw);
-    if (!session || session.matchId !== activeMatchId) {
-      storage.removeItem(ACTIVE_SESSION_KEY);
-      return null;
-    }
-
-    return session;
+    return (
+      readStoredSession(storage, activeMatchSessionKey, getStoredMatchSessionKey) ??
+      readStoredSession(storage, `${LEGACY_STORAGE_PREFIX}active`, getLegacySessionKey)
+    );
   } catch {
     return null;
   }
@@ -94,8 +85,8 @@ export function saveStoredMatchSession(
   };
 
   try {
-    storage.setItem(getSessionKey(session.matchId), JSON.stringify(record));
-    storage.setItem(ACTIVE_SESSION_KEY, session.matchId);
+    storage.setItem(getStoredMatchSessionKey(session.matchId), JSON.stringify(record));
+    storage.setItem(activeMatchSessionKey, session.matchId);
   } catch {
     // Storage can be unavailable or quota-limited; the live session still works.
   }
@@ -106,11 +97,40 @@ export function clearStoredMatchSession(
   storage: SessionStorageLike = sessionStorage,
 ) {
   try {
-    storage.removeItem(getSessionKey(matchId));
-    if (storage.getItem(ACTIVE_SESSION_KEY) === matchId) {
-      storage.removeItem(ACTIVE_SESSION_KEY);
+    storage.removeItem(getStoredMatchSessionKey(matchId));
+    storage.removeItem(getLegacySessionKey(matchId));
+    if (storage.getItem(activeMatchSessionKey) === matchId) {
+      storage.removeItem(activeMatchSessionKey);
+    }
+    if (storage.getItem(`${LEGACY_STORAGE_PREFIX}active`) === matchId) {
+      storage.removeItem(`${LEGACY_STORAGE_PREFIX}active`);
     }
   } catch {
     // Ignore storage failures; callers already clear in-memory state.
   }
+}
+
+function readStoredSession(
+  storage: SessionStorageLike,
+  activeKey: string,
+  sessionKeyFor: (matchId: string) => string,
+): StoredMatchSession | null {
+  const activeMatchId = storage.getItem(activeKey);
+  if (!activeMatchId) {
+    return null;
+  }
+
+  const raw = storage.getItem(sessionKeyFor(activeMatchId));
+  if (!raw) {
+    storage.removeItem(activeKey);
+    return null;
+  }
+
+  const session = parseStoredMatchSession(raw);
+  if (!session || session.matchId !== activeMatchId) {
+    storage.removeItem(activeKey);
+    return null;
+  }
+
+  return session;
 }

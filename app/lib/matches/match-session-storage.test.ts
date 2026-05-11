@@ -1,7 +1,9 @@
 import { beforeEach, describe, expect, test } from "bun:test";
 
 import {
+  activeMatchSessionKey,
   clearStoredMatchSession,
+  getStoredMatchSessionKey,
   parseStoredMatchSession,
   readActiveStoredMatchSession,
   saveStoredMatchSession,
@@ -55,9 +57,16 @@ describe("match session storage", () => {
   });
 
   test("ignores legacy per-match entries when no active pointer exists", () => {
-    storage.setItem("proto:matchSession:legacy-match", JSON.stringify(blackSession));
+    storage.setItem("proto:matchSession:v1:legacy-match", JSON.stringify(blackSession));
 
     expect(readActiveStoredMatchSession(storage)).toBeNull();
+  });
+
+  test("reads legacy active sessions during the storage-key transition", () => {
+    storage.setItem("proto:matchSession:v1:active", blackSession.matchId);
+    storage.setItem(`proto:matchSession:v1:${blackSession.matchId}`, JSON.stringify(blackSession));
+
+    expect(readActiveStoredMatchSession(storage)).toEqual(blackSession);
   });
 
   test("clears the active pointer when its match is removed", () => {
@@ -65,6 +74,8 @@ describe("match session storage", () => {
     clearStoredMatchSession(blackSession.matchId, storage);
 
     expect(readActiveStoredMatchSession(storage)).toBeNull();
+    expect(storage.getItem(activeMatchSessionKey)).toBeNull();
+    expect(storage.getItem(getStoredMatchSessionKey(blackSession.matchId))).toBeNull();
   });
 
   test("rejects malformed stored sessions", () => {

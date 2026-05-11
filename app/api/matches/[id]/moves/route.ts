@@ -1,10 +1,10 @@
-import { Prisma, MatchParticipant } from "@/../generated/prisma/client";
-import { buildBoard } from "@/lib/game/state-builder";
+import { Prisma } from "@/../generated/prisma/client";
+import { MatchStatus } from "@/../generated/prisma/enums";
+import { buildGameUpdatePayload } from "@/lib/matches/game-update";
 import { submitMoveRequestSchema } from "@/lib/matches/move-request-validation";
-import { validateMoveSubmission } from "@/lib/matches/move-rules";
+import { evaluateMoveOutcome, validateMoveSubmission } from "@/lib/matches/move-rules";
+import { publishGameUpdate } from "@/lib/matches/realtime-publisher";
 import { prisma } from "@/lib/prisma";
-
-import type { GameUpdatePayload } from "../../../../../shared/match-events";
 
 export const dynamic = "force-dynamic";
 
@@ -34,40 +34,6 @@ function mapUniqueConstraintError(error: Prisma.PrismaClientKnownRequestError) {
   }
 
   return "move_conflict";
-}
-
-async function publishGameUpdate(
-  payload: GameUpdatePayload,
-  timeoutMs = Number(process.env["REALTIME_PUBLISH_TIMEOUT_MS"] ?? 2000),
-) {
-  const realtimeInternalUrl =
-    process.env["REALTIME_INTERNAL_URL"] ?? "http://realtime:3001/internal/game-update";
-
-  // Allow caller to provide a short timeout so publish doesn't block the request.
-  // On failure we throw so callers can decide how to handle it.
-  async function doFetch(ms: number) {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), ms);
-    try {
-      const response = await fetch(realtimeInternalUrl, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
-        cache: "no-store",
-        signal: controller.signal,
-      });
-
-      if (!response.ok) {
-        throw new Error(`Failed to publish game:update(${response.status})`);
-      }
-    } finally {
-      clearTimeout(timeoutId);
-    }
-  }
-
-  return doFetch(timeoutMs);
 }
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -147,15 +113,58 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
         };
       }
 
-      const moveCount = await tx.matchMove.count({
-        where: { matchId },
+      const moveNumber = match.moves.length + 1;
+      const nextMove = {
+        participantId: validation.participant.id,
+        moveNumber,
+        x: position.x,
+        y: position.y,
+      };
+      const allMoves = [...match.moves, nextMove];
+      const outcome = evaluateMoveOutcome({
+        boardSize: match.boardSize,
+        participants: match.participants,
+        moves: allMoves,
+        lastMove: nextMove,
+        lastMoveSeat: validation.participant.seat,
       });
+      const finishedAt = outcome.finished ? new Date() : null;
+      const matchUpdate = outcome.finished
+        ? {
+            stateVersion: validation.nextStateVersion,
+            status: MatchStatus.FINISHED,
+            nextTurnSeat: null,
+            winningSeat: outcome.winningSeat,
+            endReason: outcome.endReason,
+            finishedAt,
+          }
+        : {
+            stateVersion: validation.nextStateVersion,
+            nextTurnSeat: outcome.nextTurnSeat,
+          };
+
+      const guardedTransition = await tx.match.updateMany({
+        where: {
+          id: matchId,
+          status: MatchStatus.IN_PROGRESS,
+          stateVersion: match.stateVersion,
+          nextTurnSeat: validation.participant.seat,
+        },
+        data: matchUpdate,
+      });
+
+      if (guardedTransition.count !== 1) {
+        return {
+          kind: "error" as const,
+          payload: { error: "stale_state", status: 409 },
+        };
+      }
 
       const move = await tx.matchMove.create({
         data: {
           matchId,
           participantId: validation.participant.id,
-          moveNumber: moveCount + 1,
+          moveNumber,
           x: position.x,
           y: position.y,
           requestId,
@@ -164,21 +173,24 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
         },
       });
 
-      const updatedMatch = await tx.match.update({
-        where: { id: matchId },
-        data: {
-          stateVersion: validation.nextStateVersion,
-          nextTurnSeat: validation.nextTurnSeat,
-        },
-      });
+      if (outcome.finished) {
+        await Promise.all(
+          outcome.participantResults.map((participantResult) =>
+            tx.matchParticipant.update({
+              where: { id: participantResult.participantId },
+              data: { result: participantResult.result },
+            }),
+          ),
+        );
+      }
 
       return {
         kind: "ok" as const,
         payload: {
-          match: updatedMatch,
+          match: { ...match, ...matchUpdate },
           move,
           participants: match.participants,
-          allmoves: [...match.moves, move],
+          allMoves: [...match.moves, move],
         },
       };
     });
@@ -187,36 +199,12 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       return Response.json({ error: result.payload.error }, { status: result.payload.status });
     }
 
-    const board = buildBoard(
-      result.payload.match.boardSize,
-      result.payload.participants,
-      result.payload.allmoves,
-    );
-
-    const gameUpdate: GameUpdatePayload = {
-      matchId,
-      status: result.payload.match.status,
-      visibility: result.payload.match.visibility,
-      boardSize: result.payload.match.boardSize,
-      stateVersion: result.payload.match.stateVersion,
-      nextTurnSeat: result.payload.match.nextTurnSeat,
-      winningSeat: result.payload.match.winningSeat,
-      endReason: result.payload.match.endReason,
-      participants: result.payload.participants.map((p: MatchParticipant) => ({
-        participantId: p.id,
-        displayName: p.displayNameSnapshot,
-        role: p.role,
-        seat: p.seat,
-      })),
-      board,
-      lastMove: {
-        moveNumber: result.payload.move.moveNumber,
-        participantId: result.payload.move.participantId,
-        position,
-        requestId: result.payload.move.requestId,
-        stateVersion: result.payload.move.stateVersion,
-      },
-    };
+    const gameUpdate = buildGameUpdatePayload({
+      match: result.payload.match,
+      participants: result.payload.participants,
+      moves: result.payload.allMoves,
+      lastMove: result.payload.move,
+    });
 
     // Try to publish the realtime update, but do NOT surface publish failures
     // as a move submission failure. This avoids the client retrying a move

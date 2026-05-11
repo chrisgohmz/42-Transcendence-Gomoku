@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { submitMoveRequestSchema } from "./move-request-validation";
+import { resignMatchRequestSchema, submitMoveRequestSchema } from "./move-request-validation";
 
 describe("submitMoveRequestSchema", () => {
   test("accepts first-move payloads with a null base version", () => {
@@ -61,6 +61,31 @@ describe("submitMoveRequestSchema", () => {
     const result = submitMoveRequestSchema.safeParse({
       participantId: "black-player",
       position: { x: -1, y: 4 },
+    });
+
+    expect(result.success).toBe(false);
+  });
+});
+
+describe("resignMatchRequestSchema", () => {
+  test("accepts a participant with optional base version", () => {
+    const result = resignMatchRequestSchema.safeParse({
+      participantId: "black-player",
+      baseVersion: 4,
+    });
+
+    expect(result).toMatchObject({
+      data: {
+        participantId: "black-player",
+        baseVersion: 4,
+      },
+      success: true,
+    });
+  });
+
+  test("rejects empty participant ids", () => {
+    const result = resignMatchRequestSchema.safeParse({
+      participantId: "",
     });
 
     expect(result.success).toBe(false);

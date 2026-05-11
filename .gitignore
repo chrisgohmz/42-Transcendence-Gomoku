@@ -4,6 +4,7 @@ next-env.d.ts
 bun-debug.log*
 npm-debug.log*
 .next
+.docker-data
 generated
 bun.lockb
 tsconfig.tsbuildinfo
