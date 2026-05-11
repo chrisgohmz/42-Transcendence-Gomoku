@@ -89,7 +89,7 @@ test("localized shell avoids horizontal overflow on public routes", async ({ pag
 test("selector and popup surfaces stay opaque and readable", async ({ page }) => {
   await gotoAppRoute(page, "/");
 
-  const localeSelect = page.locator(".locale-switcher select").filter({ visible: true }).first();
+  const localeSelect = page.locator("button:has(svg.lucide-globe)").filter({ visible: true }).first();
   await expect(localeSelect).toBeVisible();
 
   const localeStyles = await localeSelect.evaluate((element) => {
@@ -227,7 +227,7 @@ async function createAndSignInTestUser(page: Page, testInfo: TestInfo): Promise<
     await page.getByLabel("Email").fill(email);
     await page.getByLabel("Password").fill("password123");
     await page.getByRole("button", { name: "Sign in" }).click();
-    await expect(page).toHaveURL(/\/en\/account$/);
+    await expect(page).toHaveURL(/\/en\/profile$/);
   } catch (error) {
     await cleanupTestUsers([username]);
     throw error;
