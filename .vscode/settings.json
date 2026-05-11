@@ -1,6 +1,20 @@
 {
   "typescript.tsdk": "node_modules/typescript/lib",
   "typescript.enablePromptUseWorkspaceTsdk": true,
+  "files.watcherExclude": {
+    "**/.docker-data/**": true,
+    "**/.next/**": true,
+    "**/.playwright-browsers/**": true,
+    "**/generated/**": true,
+    "**/node_modules/**": true
+  },
+  "search.exclude": {
+    "**/.docker-data/**": true,
+    "**/.next/**": true,
+    "**/.playwright-browsers/**": true,
+    "**/generated/**": true,
+    "**/node_modules/**": true
+  },
   "oxc.typeAware": true,
   "editor.formatOnSave": true,
   "editor.formatOnSaveMode": "file",

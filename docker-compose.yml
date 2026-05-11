@@ -88,8 +88,8 @@ services:
       - "8443:8443"
     volumes:
       - ./infra/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
-      - ./.docker-data/caddy/data:/data
-      - ./.docker-data/caddy/config:/config
+      - ${DOCKER_DATA_DIR:-../.transcendence-docker-data}/caddy/data:/data
+      - ${DOCKER_DATA_DIR:-../.transcendence-docker-data}/caddy/config:/config
     networks:
       - transcendence
 

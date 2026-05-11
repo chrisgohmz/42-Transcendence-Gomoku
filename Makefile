@@ -1,7 +1,8 @@
 COMPOSE_BASE = docker-compose.yml
 COMPOSE_DEV = docker-compose.dev.yml
 COMPOSE = docker compose -f $(COMPOSE_BASE) -f $(COMPOSE_DEV)
-DOCKER_DATA_DIR = .docker-data
+DOCKER_DATA_DIR ?= ../.transcendence-docker-data
+export DOCKER_DATA_DIR
 
 .DEFAULT_GOAL := help
 
