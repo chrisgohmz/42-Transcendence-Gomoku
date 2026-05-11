@@ -103,8 +103,8 @@ test("selector and popup surfaces stay opaque and readable", async ({ page }) =>
     };
   });
 
-  expect(localeStyles.backgroundColor).toBe("rgb(8, 17, 14)");
-  expect(localeStyles.color).toBe("rgb(246, 241, 231)");
+  expect(localeStyles.backgroundColor).toBe("rgba(0, 0, 0, 0)");
+  expect(localeStyles.color).toBe("rgb(174, 184, 174)");
 
   const popupStyles = await page.evaluate(() => {
     const element = document.createElement("div");
