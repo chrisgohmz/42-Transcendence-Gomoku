@@ -3,6 +3,7 @@
 import { LogOut } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
+
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Link } from "@/i18n/navigation";
@@ -17,15 +18,18 @@ export function PlayerProfile({ username, avatarUrl, className }: UserProps) {
   const t = useTranslations("nav.userMenu");
 
   return (
-    <Button variant="outline" size="sm" asChild className={`flex items-center justify-start gap-2 bg-white/[0.04] px-2 ${className || ""}`}>
+    <Button
+      variant="outline"
+      size="sm"
+      asChild
+      className={`flex items-center justify-start gap-2 bg-white/[0.04] px-2 ${className || ""}`}
+    >
       <Link href="/profile">
         <Avatar className="h-6 w-6">
           <AvatarImage src={avatarUrl || "/icons/Login.svg"} alt={t("avatarAlt")} />
           <AvatarFallback>{username ? username.charAt(0).toUpperCase() : "U"}</AvatarFallback>
         </Avatar>
-        <span className="truncate text-sm font-medium capitalize">
-          {username || t("player")}
-        </span>
+        <span className="truncate text-sm font-medium capitalize">{username || t("player")}</span>
       </Link>
     </Button>
   );

@@ -32,10 +32,7 @@ export default async function AppSidebar() {
   if (sessionData) {
     const pendingCount = await prisma.friendship.count({
       where: {
-        OR: [
-          { userLowId: sessionData.user.id },
-          { userHighId: sessionData.user.id },
-        ],
+        OR: [{ userLowId: sessionData.user.id }, { userHighId: sessionData.user.id }],
         status: "PENDING",
         NOT: { requestedById: sessionData.user.id },
       },
@@ -50,7 +47,12 @@ export default async function AppSidebar() {
   }));
 
   const socialLinks: SidebarNavItem[] = [
-    { href: "/friends", icon: "friends", label: nav("userMenu.friends"), notificationCount: pendingFriendsCount },
+    {
+      href: "/friends",
+      icon: "friends",
+      label: nav("userMenu.friends"),
+      notificationCount: pendingFriendsCount,
+    },
     { href: "/messages", icon: "messages", label: nav("userMenu.messages") },
     { href: "/profile", icon: "profile", label: nav("userMenu.profile") },
     // { href: "/account", icon: "account", label: "Settings" },
@@ -99,7 +101,11 @@ export default async function AppSidebar() {
             <div className="mt-3 flex flex-col gap-2">
               {isLoggedIn ? (
                 <div className="flex w-full gap-2">
-                  <PlayerProfile username={realUsername} avatarUrl={avatarUrl} className="flex-1 overflow-hidden" />
+                  <PlayerProfile
+                    username={realUsername}
+                    avatarUrl={avatarUrl}
+                    className="flex-1 overflow-hidden"
+                  />
                   <PlayerLogout iconOnly />
                 </div>
               ) : (

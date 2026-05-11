@@ -1,6 +1,7 @@
 "use client";
 
 import { useTranslations } from "next-intl";
+
 import { AvatarToken } from "@/components/gomoku-ui";
 import { usePresence } from "@/components/presence-provider";
 

@@ -1,5 +1,15 @@
-import { Activity, Award, Pencil, ShieldCheck, Trophy, UserRound, TrendingUp, TrendingDown } from "lucide-react";
+import {
+  Activity,
+  Award,
+  Pencil,
+  ShieldCheck,
+  Trophy,
+  UserRound,
+  TrendingUp,
+  TrendingDown,
+} from "lucide-react";
 import { getTranslations, setRequestLocale } from "next-intl/server";
+
 import { AvatarToken, Badge, MetricCard, PageShell, Surface } from "@/components/gomoku-ui";
 import { Link, redirect } from "@/i18n/navigation";
 import { getCurrentSession } from "@/lib/auth";

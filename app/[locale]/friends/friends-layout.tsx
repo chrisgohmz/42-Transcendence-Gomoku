@@ -1,35 +1,16 @@
 "use client";
 
-import {
-  Check,
-  MessageSquare,
-  Search,
-  Swords,
-  UserMinus,
-  UserPlus,
-  Users,
-  X,
-} from "lucide-react";
+import { Check, MessageSquare, Search, Swords, UserMinus, UserPlus, Users, X } from "lucide-react";
 import { useTranslations } from "next-intl";
 import Form from "next/form";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
-import {
-  AvatarToken,
-  Badge,
-  PageHeader,
-  PageShell,
-  Surface,
-} from "@/components/gomoku-ui";
+import { AvatarToken, Badge, PageHeader, PageShell, Surface } from "@/components/gomoku-ui";
 import { usePresence } from "@/components/presence-provider";
 import { Link } from "@/i18n/navigation";
 
-import {
-  removeFriend,
-  respondToRequest,
-  sendFriendRequest,
-} from "./actions";
+import { removeFriend, respondToRequest, sendFriendRequest } from "./actions";
 
 type FriendStats = {
   wins: number;
@@ -139,10 +120,7 @@ export default function FriendsContent({
     });
   };
 
-  const handleRespond = async (
-    friendshipId: number,
-    accept: boolean,
-  ) => {
+  const handleRespond = async (friendshipId: number, accept: boolean) => {
     const request =
       pendingRequests.find((item) => item.id === friendshipId) ||
       sentRequests.find((item) => item.id === friendshipId);
@@ -157,17 +135,11 @@ export default function FriendsContent({
   };
 
   const handleRemove = async (friendshipId: number) => {
-    if (
-      !window.confirm(
-        "Are you sure you want to remove this friend?",
-      )
-    ) {
+    if (!window.confirm("Are you sure you want to remove this friend?")) {
       return;
     }
 
-    const friend = friends.find(
-      (item) => item.id === friendshipId,
-    );
+    const friend = friends.find((item) => item.id === friendshipId);
 
     await removeFriend(friendshipId);
 
@@ -179,11 +151,7 @@ export default function FriendsContent({
   };
 
   const activeRows =
-    activeTab === "friends"
-      ? friends
-      : activeTab === "pending"
-        ? pendingRequests
-        : sentRequests;
+    activeTab === "friends" ? friends : activeTab === "pending" ? pendingRequests : sentRequests;
 
   return (
     <PageShell>
@@ -241,19 +209,14 @@ export default function FriendsContent({
                 <button
                   key={tab.key}
                   type="button"
-                  onClick={() =>
-                    setActiveTab(tab.key as TabKey)
-                  }
+                  onClick={() => setActiveTab(tab.key as TabKey)}
                   className={`min-h-10 rounded-sm px-4 text-sm font-black ${
                     activeTab === tab.key
                       ? "bg-[var(--mint-soft)] text-[var(--mint)]"
                       : "text-[var(--muted-text)]"
                   }`}
                 >
-                  {tab.label}{" "}
-                  <span className="tabular-nums">
-                    {tab.count}
-                  </span>
+                  {tab.label} <span className="tabular-nums">{tab.count}</span>
                 </button>
               ))}
             </div>
@@ -269,9 +232,7 @@ export default function FriendsContent({
                   name="query"
                   type="text"
                   value={searchValue}
-                  onChange={(e) =>
-                    setSearchValue(e.target.value)
-                  }
+                  onChange={(e) => setSearchValue(e.target.value)}
                   placeholder={t("searchPlaceholder")}
                   autoComplete="off"
                   className="text-input h-10 w-full pr-3"
@@ -280,9 +241,8 @@ export default function FriendsContent({
               </Form>
 
               {/* FLOATING SEARCH RESULTS */}
-              {searchValue.trim().length >= 3 &&
-                 searchValue === searchQuery && (
-                <div className="absolute left-0 top-full z-50 mt-2 w-full rounded-md border border-[var(--panel-border)] bg-[var(--panel-solid)] p-2 shadow-xl">
+              {searchValue.trim().length >= 3 && searchValue === searchQuery && (
+                <div className="absolute top-full left-0 z-50 mt-2 w-full rounded-md border border-[var(--panel-border)] bg-[var(--panel-solid)] p-2 shadow-xl">
                   {searchResults.length === 0 ? (
                     <p className="p-2 text-sm font-bold text-[var(--danger)]">
                       {t("empty.search")}
@@ -294,11 +254,7 @@ export default function FriendsContent({
                           key={user.id}
                           className="flex items-center gap-3 rounded-sm p-2 hover:bg-white/[0.05]"
                         >
-                          <AvatarToken
-                            size="sm"
-                            image={user.avatarUrl}
-                            name={user.displayName}
-                          />
+                          <AvatarToken size="sm" image={user.avatarUrl} name={user.displayName} />
 
                           <div className="min-w-0 flex-1">
                             <UserName user={user} />
@@ -306,11 +262,7 @@ export default function FriendsContent({
 
                           <button
                             type="button"
-                            onClick={() =>
-                              handleSendRequest(
-                                user.username,
-                              )
-                            }
+                            onClick={() => handleSendRequest(user.username)}
                             className="btn btn-subtle m-0 h-8 px-2 text-xs"
                           >
                             <UserPlus className="size-3" />
@@ -382,18 +334,12 @@ function FriendsTable({
         {friends.map((friend) => {
           const wins = friend.stats?.wins ?? 0;
           const losses = friend.stats?.losses ?? 0;
-          const played =
-            friend.stats?.matchesPlayed ?? 0;
+          const played = friend.stats?.matchesPlayed ?? 0;
 
-          const winRate =
-            played > 0
-              ? Math.round((wins / played) * 100)
-              : 0;
+          const winRate = played > 0 ? Math.round((wins / played) * 100) : 0;
 
           const isRevealed = activeTab === "friends";
-          const online = isRevealed && onlineUsers.includes(
-            friend.username,
-          );
+          const online = isRevealed && onlineUsers.includes(friend.username);
 
           return (
             <article
@@ -401,11 +347,7 @@ function FriendsTable({
               className="grid min-h-16 grid-cols-[minmax(220px,1fr)_110px_100px_80px_80px_92px_170px] items-center gap-3 border-b border-[var(--panel-border-soft)] px-4 py-3 last:border-b-0 hover:bg-white/[0.045]"
             >
               <div className="flex min-w-0 items-center gap-3">
-                <AvatarToken
-                  image={friend.avatarUrl}
-                  name={friend.displayName}
-                  online={online}
-                />
+                <AvatarToken image={friend.avatarUrl} name={friend.displayName} online={online} />
 
                 <UserName user={friend} />
               </div>
@@ -414,21 +356,13 @@ function FriendsTable({
                 {friend.stats?.rating ?? 0}
               </span>
 
-              <span className="font-black text-[var(--mint)] tabular-nums">
-                {winRate}%
-              </span>
+              <span className="font-black text-[var(--mint)] tabular-nums">{winRate}%</span>
 
-              <span className="font-black text-[var(--muted-strong)] tabular-nums">
-                {wins}
-              </span>
+              <span className="font-black text-[var(--muted-strong)] tabular-nums">{wins}</span>
 
-              <span className="font-black text-[var(--muted-text)] tabular-nums">
-                {losses}
-              </span>
+              <span className="font-black text-[var(--muted-text)] tabular-nums">{losses}</span>
 
-              <Badge tone={online ? "mint" : "neutral"}>
-                {online ? "Online" : "Offline"}
-              </Badge>
+              <Badge tone={online ? "mint" : "neutral"}>{online ? "Online" : "Offline"}</Badge>
 
               <div className="flex items-center gap-2">
                 {activeTab === "friends" ? (
@@ -438,10 +372,7 @@ function FriendsTable({
                       className="icon-button"
                       aria-label={`Message ${friend.displayName}`}
                     >
-                      <MessageSquare
-                        aria-hidden="true"
-                        className="size-4"
-                      />
+                      <MessageSquare aria-hidden="true" className="size-4" />
                     </Link>
 
                     <button
@@ -449,69 +380,46 @@ function FriendsTable({
                       className="icon-button"
                       aria-label={`Challenge ${friend.displayName}`}
                     >
-                      <Swords
-                        aria-hidden="true"
-                        className="size-4 text-[var(--brass)]"
-                      />
+                      <Swords aria-hidden="true" className="size-4 text-[var(--brass)]" />
                     </button>
 
                     <button
                       type="button"
-                      onClick={() =>
-                        onRemove(friend.id)
-                      }
+                      onClick={() => onRemove(friend.id)}
                       className="icon-button"
                       aria-label={`Remove ${friend.displayName}`}
                     >
-                      <UserMinus
-                        aria-hidden="true"
-                        className="size-4 text-[var(--danger)]"
-                      />
+                      <UserMinus aria-hidden="true" className="size-4 text-[var(--danger)]" />
                     </button>
                   </>
                 ) : activeTab === "pending" ? (
                   <>
                     <button
                       type="button"
-                      onClick={() =>
-                        onRespond(friend.id, true)
-                      }
+                      onClick={() => onRespond(friend.id, true)}
                       className="icon-button"
                       aria-label={`Accept ${friend.displayName}`}
                     >
-                      <Check
-                        aria-hidden="true"
-                        className="size-4 text-[var(--mint)]"
-                      />
+                      <Check aria-hidden="true" className="size-4 text-[var(--mint)]" />
                     </button>
 
                     <button
                       type="button"
-                      onClick={() =>
-                        onRespond(friend.id, false)
-                      }
+                      onClick={() => onRespond(friend.id, false)}
                       className="icon-button"
                       aria-label={`Decline ${friend.displayName}`}
                     >
-                      <X
-                        aria-hidden="true"
-                        className="size-4 text-[var(--danger)]"
-                      />
+                      <X aria-hidden="true" className="size-4 text-[var(--danger)]" />
                     </button>
                   </>
                 ) : (
                   <button
                     type="button"
-                    onClick={() =>
-                      onRespond(friend.id, false)
-                    }
+                    onClick={() => onRespond(friend.id, false)}
                     className="icon-button"
                     aria-label={`Cancel request to ${friend.displayName}`}
                   >
-                    <X
-                      aria-hidden="true"
-                      className="size-4 text-[var(--danger)]"
-                    />
+                    <X aria-hidden="true" className="size-4 text-[var(--danger)]" />
                   </button>
                 )}
               </div>
@@ -526,12 +434,7 @@ function FriendsTable({
 function UserName({
   user,
 }: {
-  user:
-    | Pick<
-        FriendData,
-        "username" | "displayName" | "avatarUrl"
-      >
-    | SearchUser;
+  user: Pick<FriendData, "username" | "displayName" | "avatarUrl"> | SearchUser;
 }) {
   return (
     <span className="min-w-0">
@@ -542,29 +445,18 @@ function UserName({
         {user.displayName}
       </Link>
 
-      <span className="block truncate text-xs text-[var(--muted-text)]">
-        @{user.username}
-      </span>
+      <span className="block truncate text-xs text-[var(--muted-text)]">@{user.username}</span>
     </span>
   );
 }
 
-function EmptyState({
-  label,
-}: {
-  label: string;
-}) {
+function EmptyState({ label }: { label: string }) {
   return (
     <div className="grid min-h-[360px] place-items-center rounded-md border border-dashed border-[var(--panel-border)] bg-white/[0.035] p-8 text-center">
       <div>
-        <Users
-          aria-hidden="true"
-          className="mx-auto mb-4 size-10 text-[var(--brass)]"
-        />
+        <Users aria-hidden="true" className="mx-auto mb-4 size-10 text-[var(--brass)]" />
 
-        <p className="m-0 font-serif text-2xl font-bold">
-          {label}
-        </p>
+        <p className="m-0 font-serif text-2xl font-bold">{label}</p>
       </div>
     </div>
   );

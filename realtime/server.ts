@@ -10,11 +10,7 @@ import { prisma } from "@/lib/prisma";
 
 import { isGameUpdatePayload } from "../shared/match-events-validation";
 import { registerMatchSubscription } from "./handlers/match-subscription";
-import {
-  removePresenceConnection,
-  subscribeToPresence,
-  type ConnectedUsers,
-} from "./lib/presence";
+import { removePresenceConnection, subscribeToPresence, type ConnectedUsers } from "./lib/presence";
 import { matchRoomId } from "./lib/rooms";
 import { authenticateSocketSession } from "./lib/socket-auth";
 import {
@@ -25,14 +21,9 @@ import {
   startSocketLifecycle,
 } from "./lib/socket-lifecycle";
 
-const currentDirectory = dirname(
-  fileURLToPath(import.meta.url),
-);
+const currentDirectory = dirname(fileURLToPath(import.meta.url));
 
-const rootEnvPath = resolve(
-  currentDirectory,
-  "../.env",
-);
+const rootEnvPath = resolve(currentDirectory, "../.env");
 
 if (existsSync(rootEnvPath)) {
   config({
@@ -61,19 +52,13 @@ const socketPingTimeoutMs = readPositiveIntegerEnv(
 );
 
 function readCorsOrigins(): string[] {
-  const configuredOrigins =
-    process.env["SOCKET_CORS_ORIGIN"];
+  const configuredOrigins = process.env["SOCKET_CORS_ORIGIN"];
 
   if (!configuredOrigins) {
-    return [
-      "http://localhost:3000",
-      "https://localhost:8443",
-    ];
+    return ["http://localhost:3000", "https://localhost:8443"];
   }
 
-  return configuredOrigins
-    .split(",")
-    .map((origin) => origin.trim());
+  return configuredOrigins.split(",").map((origin) => origin.trim());
 }
 
 const corsOrigins = readCorsOrigins();
@@ -102,8 +87,7 @@ io.bind(engine);
 
 io.use(authenticateSocketSession);
 
-const connectedUsers: ConnectedUsers =
-  new Map();
+const connectedUsers: ConnectedUsers = new Map();
 
 type QueuedPlayer = {
   socketId: string;
@@ -113,21 +97,14 @@ type QueuedPlayer = {
 let matchQueue: QueuedPlayer[] = [];
 
 io.on("connection", (socket) => {
-  console.log(
-    `Socket.IO client connected: ${socket.id}`,
-  );
+  console.log(`Socket.IO client connected: ${socket.id}`);
 
-  console.log(
-    `[realtime] connected: ${socket.id}`,
-  );
+  console.log(`[realtime] connected: ${socket.id}`);
 
   // REGISTER USER ROOM
-  socket.on(
-    "register",
-    (username: string) => {
-      socket.join(`user:${username}`);
-    },
-  );
+  socket.on("register", (username: string) => {
+    void socket.join(`user:${username}`);
+  });
 
   const stopSocketLifecycle = startSocketLifecycle(socket, {
     heartbeatIntervalMs: socketHeartbeatIntervalMs,
@@ -137,40 +114,25 @@ io.on("connection", (socket) => {
   registerMatchSubscription(socket);
 
   socket.on("presence:subscribe", () => {
-    subscribeToPresence(
-      socket,
-      io,
-      connectedUsers,
-    );
+    subscribeToPresence(socket, io, connectedUsers);
   });
 
   // FRIENDSHIP LIVE REFRESH
-  socket.on(
-    "friendship:notify",
-    async (targetUsername: string) => {
-      try {
-        // REFRESH TARGET USER
-        io.to(`user:${targetUsername}`).emit(
-          "friendship:refresh",
-        );
+  socket.on("friendship:notify", async (targetUsername: string) => {
+    try {
+      // REFRESH TARGET USER
+      io.to(`user:${targetUsername}`).emit("friendship:refresh");
 
-        // REFRESH CURRENT USER
-        const senderUsername =
-          socket.data.user?.username;
+      // REFRESH CURRENT USER
+      const senderUsername = socket.data.user?.username;
 
-        if (senderUsername) {
-          io.to(`user:${senderUsername}`).emit(
-            "friendship:refresh",
-          );
-        }
-      } catch (error) {
-        console.error(
-          "Failed friendship notification",
-          error,
-        );
+      if (senderUsername) {
+        io.to(`user:${senderUsername}`).emit("friendship:refresh");
       }
-    },
-  );
+    } catch (error) {
+      console.error("Failed friendship notification", error);
+    }
+  });
 
   socket.on("queue:join", async () => {
     const userId = socket.data.user?.id;
@@ -211,85 +173,55 @@ io.on("connection", (socket) => {
           },
         });
 
-        io.to(player1.socketId).emit(
-          "queue:matched",
-          {
-            matchId: match.id,
-          },
-        );
+        io.to(player1.socketId).emit("queue:matched", {
+          matchId: match.id,
+        });
 
-        io.to(player2.socketId).emit(
-          "queue:matched",
-          {
-            matchId: match.id,
-          },
-        );
+        io.to(player2.socketId).emit("queue:matched", {
+          matchId: match.id,
+        });
 
-        console.log(
-          `Created match ${match.id} for ${player1.userId} and ${player2.userId}`,
-        );
+        console.log(`Created match ${match.id} for ${player1.userId} and ${player2.userId}`);
       } catch (error) {
-        console.error(
-          "Failed to create match from queue",
-          error,
-        );
+        console.error("Failed to create match from queue", error);
       }
     }
   });
 
   socket.on("queue:leave", () => {
-    matchQueue = matchQueue.filter(
-      (player) =>
-        player.socketId !== socket.id,
-    );
+    matchQueue = matchQueue.filter((player) => player.socketId !== socket.id);
   });
 
   socket.on("disconnect", (reason) => {
-    console.log(
-      `Socket.IO client disconnected: ${socket.id} (${reason})`,
-    );
+    console.log(`Socket.IO client disconnected: ${socket.id} (${reason})`);
 
     stopSocketLifecycle();
     matchQueue = matchQueue.filter((player) => player.socketId !== socket.id);
 
-    removePresenceConnection(
-      socket,
-      io,
-      connectedUsers,
-    );
+    removePresenceConnection(socket, io, connectedUsers);
   });
 });
 
 const engineHandler = engine.handler();
 
-async function handleInternalGameUpdate(
-  request: Request,
-) {
+async function handleInternalGameUpdate(request: Request) {
   let payload: unknown;
 
   try {
     payload = await request.json();
   } catch {
-    return Response.json(
-      { error: "invalid_payload" },
-      { status: 400 },
-    );
+    return Response.json({ error: "invalid_payload" }, { status: 400 });
   }
 
   if (!isGameUpdatePayload(payload)) {
-    return Response.json(
-      { error: "invalid_payload" },
-      { status: 400 },
-    );
+    return Response.json({ error: "invalid_payload" }, { status: 400 });
   }
 
   const room = matchRoomId(payload.matchId);
 
   io.to(room).emit("game:update", payload);
 
-  console.log(
-    `[realtime] broadcast game:update to ${room}`,
-  );
+  console.log(`[realtime] broadcast game:update to ${room}`);
 
   return Response.json({
     ok: true,
@@ -312,21 +244,12 @@ Bun.serve({
       });
     }
 
-    if (
-      url.pathname ===
-        "/internal/game-update" &&
-      request.method === "POST"
-    ) {
-      return handleInternalGameUpdate(
-        request,
-      );
+    if (url.pathname === "/internal/game-update" && request.method === "POST") {
+      return handleInternalGameUpdate(request);
     }
 
     if (url.pathname === socketPath) {
-      return engine.handleRequest(
-        request,
-        server,
-      );
+      return engine.handleRequest(request, server);
     }
 
     return new Response("Not Found", {
@@ -336,11 +259,9 @@ Bun.serve({
 
   websocket: engineHandler.websocket,
 
-  idleTimeout:
-    engineHandler.idleTimeout,
+  idleTimeout: engineHandler.idleTimeout,
 
-  maxRequestBodySize:
-    engineHandler.maxRequestBodySize,
+  maxRequestBodySize: engineHandler.maxRequestBodySize,
 });
 
 console.log(

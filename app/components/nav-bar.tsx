@@ -3,7 +3,7 @@ import { getTranslations } from "next-intl/server";
 import Image from "next/image";
 
 import { LocaleSwitcher } from "@/components/locale-switcher";
-import UserMenu from "@/components/player-menu";
+import { PlayerProfile } from "@/components/player-menu";
 import { Button } from "@/components/ui/button";
 import { Link } from "@/i18n/navigation";
 import { getCurrentSession } from "@/lib/auth";
@@ -83,7 +83,7 @@ export default async function Navbar() {
             </>
           ) : (
             <div className="flex items-center">
-              <UserMenu username={realUsername} avatarUrl={avatarUrl} />
+              <PlayerProfile username={realUsername} avatarUrl={avatarUrl} />
             </div>
           )}
         </div>

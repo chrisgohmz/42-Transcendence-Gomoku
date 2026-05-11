@@ -1,7 +1,9 @@
 import { setRequestLocale } from "next-intl/server";
+
 import { redirect } from "@/i18n/navigation";
 import { getCurrentSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+
 import FriendsContent from "./friends-layout";
 
 type FriendsPageProps = {

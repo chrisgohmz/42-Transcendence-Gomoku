@@ -1,8 +1,19 @@
 /* eslint-disable @next/next/no-img-element */
-import { Activity, ArrowLeft, Award, BarChart3, Flag, Swords, Trophy, TrendingUp, TrendingDown } from "lucide-react";
+import {
+  Activity,
+  ArrowLeft,
+  Award,
+  BarChart3,
+  Flag,
+  Swords,
+  Trophy,
+  TrendingUp,
+  TrendingDown,
+} from "lucide-react";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { notFound } from "next/navigation";
-import { AvatarToken, Badge, MetricCard, PageShell, Surface } from "@/components/gomoku-ui";
+
+import { Badge, MetricCard, PageShell, Surface } from "@/components/gomoku-ui";
 import { Link } from "@/i18n/navigation";
 import { getCurrentSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";

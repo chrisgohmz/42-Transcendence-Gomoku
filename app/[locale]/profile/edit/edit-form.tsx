@@ -3,11 +3,13 @@
 import { LockKeyhole, Save, UserRound } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useActionState, useEffect, useRef } from "react";
+
 import { FieldErrorList } from "@/components/field-error-list";
 import { Surface } from "@/components/gomoku-ui";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "@/i18n/navigation";
 import { authValidationLimits } from "@/lib/validation/auth-profile-limits";
+
 import { initialProfileSettingsActionState } from "./action-state";
 import { changeAccountPassword, saveDisplayName } from "./actions";
 
