@@ -1,15 +1,14 @@
 /* eslint-disable @next/next/no-img-element */
-import { Activity, ArrowLeft, Award, BarChart3, Flag, Swords, Trophy } from "lucide-react";
+import { Activity, ArrowLeft, Award, BarChart3, Flag, Swords, Trophy, TrendingUp, TrendingDown } from "lucide-react";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { notFound } from "next/navigation";
-
 import { AvatarToken, Badge, MetricCard, PageShell, Surface } from "@/components/gomoku-ui";
 import { Link } from "@/i18n/navigation";
 import { getCurrentSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
 import ProfileActions from "./profile-actions";
-import ProfilePresence from "./profile-presence";
+import ProfilePresence, { LiveAvatar } from "./profile-presence";
 
 type ProfilePageProps = {
   params: Promise<{
@@ -74,6 +73,8 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
   const rating = statsList.length > 0 ? Math.max(...statsList.map((s) => s.rating || 0)) : 0;
   const winRate = played > 0 ? Math.round((wins / played) * 100) : 0;
 
+  const isRevealed = relationshipState === "FRIENDS" || relationshipState === "SELF";
+
   return (
     <PageShell>
       <Link
@@ -87,26 +88,25 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
       <section className="command-panel mb-5">
         <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-center">
           <div className="flex min-w-0 flex-wrap items-center gap-5">
-            <AvatarToken
+            <LiveAvatar
               image={userProfile.avatarUrl}
               name={userProfile.displayName}
-              online={relationshipState === "FRIENDS" || relationshipState === "SELF"}
               size="lg"
+              username={userProfile.username}
+              isRevealed={isRevealed}
             />
             <div className="min-w-0">
-              <Badge tone="brass">
-                <Trophy aria-hidden="true" className="size-3.5" />
-                Public Player File
-              </Badge>
+              <div className="flex flex-wrap items-center gap-3">
+                <Badge tone="brass">
+                  <Trophy aria-hidden="true" className="size-3.5" />
+                  Public Player File
+                </Badge>
+                <ProfilePresence username={userProfile.username} isRevealed={isRevealed} />
+              </div>
               <h1 className="mt-4 font-serif text-6xl leading-none font-bold max-sm:text-4xl">
                 {userProfile.displayName}
               </h1>
-              <p className="mt-2 text-lg text-[var(--muted-text)]">@{userProfile.username}</p>
-              {(relationshipState === "FRIENDS" || relationshipState === "SELF") && (
-                <div className="mt-3">
-                  <ProfilePresence username={userProfile.username} />
-                </div>
-              )}
+              <p className="text-lg text-[var(--muted-text)]">@{userProfile.username}</p>
             </div>
           </div>
           <div className="grid justify-items-start gap-3 xl:justify-items-end">
@@ -133,8 +133,8 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
               tone="mint"
               value={`${winRate}%`}
             />
-            <MetricCard label={t("stats.wins")} value={wins} />
-            <MetricCard label={t("stats.losses")} value={losses} />
+            <MetricCard icon={TrendingUp} label={t("stats.wins")} tone="mint" value={wins} />
+            <MetricCard icon={TrendingDown} label={t("stats.losses")} tone="red" value={losses} />
           </div>
 
           <Surface eyebrow="Rating Progress" icon={BarChart3} title="Season curve">

@@ -56,7 +56,7 @@ export async function processFriendAction(
       });
     }
 
-    revalidatePath("/[locale]/profile/[username]", "page");
+    revalidatePath("/", "layout");
     return { success: true };
   } catch {
     return { error: "Something went wrong." };

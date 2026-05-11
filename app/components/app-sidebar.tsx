@@ -34,7 +34,7 @@ export default async function AppSidebar() {
     { href: "/friends", icon: "friends", label: nav("userMenu.friends") },
     { href: "/messages", icon: "messages", label: nav("userMenu.messages") },
     { href: "/profile", icon: "profile", label: nav("userMenu.profile") },
-    { href: "/account", icon: "account", label: "Settings" },
+    // { href: "/account", icon: "account", label: "Settings" },
   ];
 
   return (

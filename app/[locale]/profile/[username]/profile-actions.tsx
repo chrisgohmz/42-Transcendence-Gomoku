@@ -43,8 +43,9 @@ export default function ProfileActions({
     startTransition(async () => {
       const result = await processFriendAction(targetUserId, action);
 
-      if (result?.success) {
+      if (result?.success || !result?.error) {
         socket?.emit("friendship:notify", targetUsername);
+        router.refresh();
       }
     });
   };

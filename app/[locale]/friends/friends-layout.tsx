@@ -260,7 +260,10 @@ export default function FriendsContent({
 
             {/* SEARCH */}
             <div className="relative w-full max-w-sm">
-              <Form action="" scroll={false}>
+              <Form action="" scroll={false} className="relative">
+                <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                  <Search className="size-4 text-[var(--muted-text)]" />
+                </div>
                 <input
                   id="friend-search"
                   name="query"
@@ -271,13 +274,14 @@ export default function FriendsContent({
                   }
                   placeholder={t("searchPlaceholder")}
                   autoComplete="off"
-                  className="text-input h-10 w-full pl-14 pr-3"
+                  className="text-input h-10 w-full pr-3"
+                  style={{ paddingLeft: "2.5rem" }}
                 />
               </Form>
 
               {/* FLOATING SEARCH RESULTS */}
               {searchValue.trim().length >= 3 &&
- 				searchValue === searchQuery && (
+                 searchValue === searchQuery && (
                 <div className="absolute left-0 top-full z-50 mt-2 w-full rounded-md border border-[var(--panel-border)] bg-[var(--panel-solid)] p-2 shadow-xl">
                   {searchResults.length === 0 ? (
                     <p className="p-2 text-sm font-bold text-[var(--danger)]">
@@ -386,7 +390,8 @@ function FriendsTable({
               ? Math.round((wins / played) * 100)
               : 0;
 
-          const online = onlineUsers.includes(
+          const isRevealed = activeTab === "friends";
+          const online = isRevealed && onlineUsers.includes(
             friend.username,
           );
 
@@ -464,7 +469,7 @@ function FriendsTable({
                       />
                     </button>
                   </>
-                ) : (
+                ) : activeTab === "pending" ? (
                   <>
                     <button
                       type="button"
@@ -494,6 +499,20 @@ function FriendsTable({
                       />
                     </button>
                   </>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      onRespond(friend.id, false)
+                    }
+                    className="icon-button"
+                    aria-label={`Cancel request to ${friend.displayName}`}
+                  >
+                    <X
+                      aria-hidden="true"
+                      className="size-4 text-[var(--danger)]"
+                    />
+                  </button>
                 )}
               </div>
             </article>

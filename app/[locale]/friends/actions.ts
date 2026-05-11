@@ -39,7 +39,7 @@ export async function sendFriendRequest(targetUsername: string) {
     },
   });
 
-  revalidatePath("/");
+  revalidatePath("/", "layout");
   return { success: true };
 }
 
@@ -72,7 +72,7 @@ export async function respondToRequest(friendshipId: number, accept: boolean) {
     });
   }
 
-  revalidatePath("/");
+  revalidatePath("/", "layout");
   return { success: true };
 }
 
@@ -89,6 +89,6 @@ export async function removeFriend(friendshipId: number) {
   await prisma.friendship.delete({
     where: { id: friendshipId },
   });
-  revalidatePath("/");
+  revalidatePath("/", "layout");
   return { success: true };
 }

@@ -1,6 +1,5 @@
-import { Activity, Award, Pencil, ShieldCheck, Trophy, UserRound } from "lucide-react";
+import { Activity, Award, Pencil, ShieldCheck, Trophy, UserRound, TrendingUp, TrendingDown } from "lucide-react";
 import { getTranslations, setRequestLocale } from "next-intl/server";
-
 import { AvatarToken, Badge, MetricCard, PageShell, Surface } from "@/components/gomoku-ui";
 import { Link, redirect } from "@/i18n/navigation";
 import { getCurrentSession } from "@/lib/auth";
@@ -42,10 +41,10 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
                 <ShieldCheck aria-hidden="true" className="size-3.5" />
                 Signed in
               </Badge>
-              <h1 className="mt-4 font-serif text-6xl leading-none font-bold max-sm:text-4xl">
+              <h1 className="mt-2 font-serif text-6xl leading-none font-bold max-sm:text-4xl">
                 {realUser.displayName}
               </h1>
-              <p className="mt-2 text-lg text-[var(--muted-text)]">@{realUser.username}</p>
+              <p className="text-lg text-[var(--muted-text)]">@{realUser.username}</p>
             </div>
           </div>
           <div className="flex flex-wrap gap-3">
@@ -53,9 +52,9 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
               <Pencil aria-hidden="true" className="size-4" />
               {t("editProfile")}
             </Link>
-            <Link href="/account" className="btn btn-subtle m-0">
+            {/* <Link href="/account" className="btn btn-subtle m-0">
               Account Settings
-            </Link>
+            </Link> */}
           </div>
         </div>
       </section>
@@ -63,10 +62,10 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
       <section className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_360px]">
         <div className="grid gap-5">
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            <MetricCard icon={Trophy} label={t("stats.rating")} tone="brass" value="1,842" />
-            <MetricCard icon={Activity} label={t("stats.winRate")} tone="mint" value="75.8%" />
-            <MetricCard label={t("stats.wins")} value="254" />
-            <MetricCard label={t("stats.losses")} value="81" />
+            <MetricCard icon={Trophy} label={t("stats.rating")} tone="brass" value="0" />
+            <MetricCard icon={Activity} label={t("stats.winRate")} tone="mint" value="0%" />
+            <MetricCard icon={TrendingUp} label={t("stats.wins")} tone="mint" value="0" />
+            <MetricCard icon={TrendingDown} label={t("stats.losses")} tone="red" value="0" />
           </div>
 
           <Surface eyebrow="Recent Matches" title="Last table sessions">
