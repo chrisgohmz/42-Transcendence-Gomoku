@@ -240,6 +240,27 @@ async function handleInternalGameUpdate(request: Request) {
   });
 }
 
+async function handleInternalFriendshipUpdate(request: Request) {
+  let payload: { usernames: string[] };
+
+  try {
+    payload = await request.json();
+  } catch {
+    return Response.json({ error: "invalid_payload" }, { status: 400 });
+  }
+
+  if (!payload.usernames || !Array.isArray(payload.usernames)) {
+    return Response.json({ error: "invalid_payload" }, { status: 400 });
+  }
+
+  for (const username of payload.usernames) {
+    io.to(`user:${username}`).emit("friendship:refresh");
+    console.log(`[realtime] broadcast friendship:refresh to user:${username}`);
+  }
+
+  return Response.json({ ok: true });
+}
+
 Bun.serve({
   hostname,
   port,
@@ -257,6 +278,10 @@ Bun.serve({
 
     if (url.pathname === "/internal/game-update" && request.method === "POST") {
       return handleInternalGameUpdate(request);
+    }
+
+    if (url.pathname === "/internal/friendship-update" && request.method === "POST") {
+      return handleInternalFriendshipUpdate(request);
     }
 
     if (url.pathname === socketPath) {
