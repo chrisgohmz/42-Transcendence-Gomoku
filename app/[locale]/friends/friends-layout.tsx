@@ -92,6 +92,21 @@ export default function FriendsContent({
     setSearchValue(searchQuery);
   }, [searchQuery]);
 
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      const query = searchValue.trim();
+      if (query.length >= 3) {
+        if (query !== searchQuery) {
+          router.replace(`${pathname}?query=${encodeURIComponent(query)}`, { scroll: false });
+        }
+      } else if (searchQuery !== "") {
+        router.replace(pathname, { scroll: false });
+      }
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [searchValue, searchQuery, pathname, router]);
+
   const handleSendRequest = async (targetUsername: string) => {
     setStatusMessage(null);
 

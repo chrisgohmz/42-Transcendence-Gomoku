@@ -103,7 +103,10 @@ io.on("connection", (socket) => {
 
   // REGISTER USER ROOM
   socket.on("register", (username: string) => {
-    void socket.join(`user:${username}`);
+    const authUsername = socket.data.user?.username;
+    if (authUsername && authUsername === username) {
+      void socket.join(`user:${username}`);
+    }
   });
 
   const stopSocketLifecycle = startSocketLifecycle(socket, {
@@ -120,15 +123,19 @@ io.on("connection", (socket) => {
   // FRIENDSHIP LIVE REFRESH
   socket.on("friendship:notify", async (targetUsername: string) => {
     try {
+      const senderUsername = socket.data.user?.username;
+      if (!senderUsername) return;
+
+      const target = await prisma.user.findUnique({
+        where: { username: targetUsername },
+      });
+      if (!target) return;
+
       // REFRESH TARGET USER
       io.to(`user:${targetUsername}`).emit("friendship:refresh");
 
       // REFRESH CURRENT USER
-      const senderUsername = socket.data.user?.username;
-
-      if (senderUsername) {
-        io.to(`user:${senderUsername}`).emit("friendship:refresh");
-      }
+      io.to(`user:${senderUsername}`).emit("friendship:refresh");
     } catch (error) {
       console.error("Failed friendship notification", error);
     }
