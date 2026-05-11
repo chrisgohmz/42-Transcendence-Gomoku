@@ -17,6 +17,13 @@ import {
 } from "./lib/presence";
 import { matchRoomId } from "./lib/rooms";
 import { authenticateSocketSession } from "./lib/socket-auth";
+import {
+  DEFAULT_SOCKET_HEARTBEAT_INTERVAL_MS,
+  DEFAULT_SOCKET_PING_INTERVAL_MS,
+  DEFAULT_SOCKET_PING_TIMEOUT_MS,
+  readPositiveIntegerEnv,
+  startSocketLifecycle,
+} from "./lib/socket-lifecycle";
 
 const currentDirectory = dirname(
   fileURLToPath(import.meta.url),
@@ -34,15 +41,24 @@ if (existsSync(rootEnvPath)) {
   });
 }
 
-const hostname =
-  process.env["SOCKET_HOST"] ?? "0.0.0.0";
-
-const port = Number(
-  process.env["SOCKET_PORT"] || 3001,
+const hostname = process.env["SOCKET_HOST"] ?? "0.0.0.0";
+const port = Number(process.env["SOCKET_PORT"] || 3001);
+const socketPath = process.env["SOCKET_PATH"] ?? "/socket.io/";
+const socketHeartbeatIntervalMs = readPositiveIntegerEnv(
+  process.env,
+  "SOCKET_HEARTBEAT_INTERVAL_MS",
+  DEFAULT_SOCKET_HEARTBEAT_INTERVAL_MS,
 );
-
-const socketPath =
-  process.env["SOCKET_PATH"] ?? "/socket.io/";
+const socketPingIntervalMs = readPositiveIntegerEnv(
+  process.env,
+  "SOCKET_PING_INTERVAL_MS",
+  DEFAULT_SOCKET_PING_INTERVAL_MS,
+);
+const socketPingTimeoutMs = readPositiveIntegerEnv(
+  process.env,
+  "SOCKET_PING_TIMEOUT_MS",
+  DEFAULT_SOCKET_PING_TIMEOUT_MS,
+);
 
 function readCorsOrigins(): string[] {
   const configuredOrigins =
@@ -64,6 +80,8 @@ const corsOrigins = readCorsOrigins();
 
 const engine = new Engine({
   path: socketPath,
+  pingInterval: socketPingIntervalMs,
+  pingTimeout: socketPingTimeoutMs,
   cors: {
     origin: corsOrigins,
     methods: ["GET", "POST"],
@@ -111,6 +129,11 @@ io.on("connection", (socket) => {
     },
   );
 
+  const stopSocketLifecycle = startSocketLifecycle(socket, {
+    heartbeatIntervalMs: socketHeartbeatIntervalMs,
+  });
+
+  subscribeToPresence(socket, io, connectedUsers);
   registerMatchSubscription(socket);
 
   socket.on("presence:subscribe", () => {
@@ -149,86 +172,70 @@ io.on("connection", (socket) => {
     },
   );
 
-  socket.on(
-    "queue:join",
-    async (userId: string) => {
-      if (!userId) return;
+  socket.on("queue:join", async () => {
+    const userId = socket.data.user?.id;
+    if (!userId) return;
 
-      if (
-        matchQueue.some(
-          (player) =>
-            player.userId === userId,
-        )
-      ) {
-        return;
-      }
+    matchQueue = matchQueue.filter(
+      (player) => player.userId !== userId && player.socketId !== socket.id,
+    );
 
-      matchQueue.push({
-        socketId: socket.id,
-        userId,
-      });
+    matchQueue.push({ socketId: socket.id, userId });
+    console.log(`Player ${userId} joined the queue. Total waiting: ${matchQueue.length}`);
 
-      console.log(
-        `Player ${userId} joined the queue. Total waiting: ${matchQueue.length}`,
-      );
+    if (matchQueue.length >= 2) {
+      const player1 = matchQueue.shift()!;
+      const player2 = matchQueue.shift()!;
 
-      if (matchQueue.length >= 2) {
-        const player1 = matchQueue.shift()!;
-        const player2 = matchQueue.shift()!;
-
-        try {
-          const match =
-            await prisma.match.create({
-              data: {
-                status: "IN_PROGRESS",
-                nextTurnSeat: "BLACK",
-                participants: {
-                  create: [
-                    {
-                      userId: player1.userId,
-                      displayNameSnapshot:
-                        "Player 1",
-                      role: "PLAYER",
-                      seat: "BLACK",
-                    },
-                    {
-                      userId: player2.userId,
-                      displayNameSnapshot:
-                        "Player 2",
-                      role: "PLAYER",
-                      seat: "WHITE",
-                    },
-                  ],
+      try {
+        const match = await prisma.match.create({
+          data: {
+            status: "IN_PROGRESS",
+            nextTurnSeat: "BLACK",
+            participants: {
+              create: [
+                {
+                  userId: player1.userId,
+                  displayNameSnapshot: "Player 1",
+                  role: "PLAYER",
+                  seat: "BLACK",
                 },
-              },
-            });
-
-          io.to(player1.socketId).emit(
-            "queue:matched",
-            {
-              matchId: match.id,
+                {
+                  userId: player2.userId,
+                  displayNameSnapshot: "Player 2",
+                  role: "PLAYER",
+                  seat: "WHITE",
+                },
+              ],
             },
-          );
+          },
+        });
 
-          io.to(player2.socketId).emit(
-            "queue:matched",
-            {
-              matchId: match.id,
-            },
-          );
+        io.to(player1.socketId).emit(
+          "queue:matched",
+          {
+            matchId: match.id,
+          },
+        );
 
-          console.log(
-            `Created match ${match.id} for ${player1.userId} and ${player2.userId}`,
-          );
-        } catch (error) {
-          console.error(
-            "Failed to create match from queue",
-            error,
-          );
-        }
+        io.to(player2.socketId).emit(
+          "queue:matched",
+          {
+            matchId: match.id,
+          },
+        );
+
+        console.log(
+          `Created match ${match.id} for ${player1.userId} and ${player2.userId}`,
+        );
+      } catch (error) {
+        console.error(
+          "Failed to create match from queue",
+          error,
+        );
       }
-    },
-  );
+    }
+  });
 
   socket.on("queue:leave", () => {
     matchQueue = matchQueue.filter(
@@ -242,10 +249,8 @@ io.on("connection", (socket) => {
       `Socket.IO client disconnected: ${socket.id} (${reason})`,
     );
 
-    matchQueue = matchQueue.filter(
-      (player) =>
-        player.socketId !== socket.id,
-    );
+    stopSocketLifecycle();
+    matchQueue = matchQueue.filter((player) => player.socketId !== socket.id);
 
     removePresenceConnection(
       socket,

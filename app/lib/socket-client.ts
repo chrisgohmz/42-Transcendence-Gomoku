@@ -4,6 +4,15 @@ import { io } from "socket.io-client";
 
 type SocketLocation = Pick<Location, "hostname" | "port">;
 
+export const socketClientOptions = {
+  path: "/socket.io",
+  reconnection: true,
+  reconnectionDelay: 500,
+  reconnectionDelayMax: 5000,
+  timeout: 10000,
+  withCredentials: true,
+} as const;
+
 export function resolveSocketUrl(
   configuredUrl?: string,
   location: SocketLocation | undefined = typeof window === "undefined"
@@ -27,10 +36,5 @@ export function resolveSocketUrl(
 
 export function createSocket(configuredUrl?: string, location?: SocketLocation) {
   const socketUrl = resolveSocketUrl(configuredUrl, location);
-  const options = {
-    path: "/socket.io",
-    withCredentials: true,
-  };
-
-  return socketUrl ? io(socketUrl, options) : io(options);
+  return socketUrl ? io(socketUrl, socketClientOptions) : io(socketClientOptions);
 }

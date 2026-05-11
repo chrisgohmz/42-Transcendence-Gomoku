@@ -38,22 +38,30 @@ export function PresenceProvider({
 
     setSocket(nextSocket);
 
-    nextSocket.on("connect", () => {
+    const handleConnect = () => {
       nextSocket.emit("presence:subscribe");
-
       // IMPORTANT
       nextSocket.emit("register", currentUsername);
-    });
+    };
 
-    nextSocket.on("presence:update", (users: string[]) => {
+    const handlePresenceUpdate = (users: string[]) => {
       setOnlineUsers(users);
-    });
+    };
 
-    nextSocket.on("connect_error", () => {
+    const handleUnavailable = () => {
       setOnlineUsers([]);
-    });
+    };
+
+    nextSocket.on("connect", handleConnect);
+    nextSocket.on("presence:update", handlePresenceUpdate);
+    nextSocket.on("connect_error", handleUnavailable);
+    nextSocket.on("disconnect", handleUnavailable);
 
     return () => {
+      nextSocket.off("connect", handleConnect);
+      nextSocket.off("presence:update", handlePresenceUpdate);
+      nextSocket.off("connect_error", handleUnavailable);
+      nextSocket.off("disconnect", handleUnavailable);
       nextSocket.disconnect();
       setSocket(null);
     };
