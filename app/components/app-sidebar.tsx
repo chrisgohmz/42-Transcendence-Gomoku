@@ -8,6 +8,7 @@ import { SidebarNav, type SidebarNavItem } from "@/components/sidebar-nav";
 import { Button } from "@/components/ui/button";
 import { Link } from "@/i18n/navigation";
 import { getCurrentSession } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
 
 const productLinkMeta = [
   { href: "/", icon: "home", labelKey: "home" },
@@ -22,16 +23,34 @@ export default async function AppSidebar() {
     getTranslations("brand"),
     getTranslations("nav"),
   ]);
+
   const isLoggedIn = sessionData !== null;
   const realUsername = sessionData?.user.username;
   const avatarUrl = sessionData?.user.avatarUrl;
+
+  let pendingFriendsCount = 0;
+  if (sessionData) {
+    const pendingCount = await prisma.friendship.count({
+      where: {
+        OR: [
+          { userLowId: sessionData.user.id },
+          { userHighId: sessionData.user.id },
+        ],
+        status: "PENDING",
+        NOT: { requestedById: sessionData.user.id },
+      },
+    });
+    pendingFriendsCount = pendingCount;
+  }
+
   const productLinks = productLinkMeta.map(({ href, icon, labelKey }) => ({
     href,
     icon,
     label: nav(labelKey),
   }));
+
   const socialLinks: SidebarNavItem[] = [
-    { href: "/friends", icon: "friends", label: nav("userMenu.friends") },
+    { href: "/friends", icon: "friends", label: nav("userMenu.friends"), notificationCount: pendingFriendsCount },
     { href: "/messages", icon: "messages", label: nav("userMenu.messages") },
     { href: "/profile", icon: "profile", label: nav("userMenu.profile") },
     // { href: "/account", icon: "account", label: "Settings" },
