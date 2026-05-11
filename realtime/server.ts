@@ -10,6 +10,7 @@ import { prisma } from "@/lib/prisma";
 
 import { isGameUpdatePayload } from "../shared/match-events-validation";
 import { registerMatchSubscription } from "./handlers/match-subscription";
+import { resolveFriendshipNotificationTarget } from "./lib/friendship-notifications";
 import { removePresenceConnection, subscribeToPresence, type ConnectedUsers } from "./lib/presence";
 import { matchRoomId } from "./lib/rooms";
 import { authenticateSocketSession } from "./lib/socket-auth";
@@ -123,16 +124,19 @@ io.on("connection", (socket) => {
   // FRIENDSHIP LIVE REFRESH
   socket.on("friendship:notify", async (targetUsername: string) => {
     try {
+      const senderId = socket.data.user?.id;
       const senderUsername = socket.data.user?.username;
-      if (!senderUsername) return;
+      if (!senderId || !senderUsername) return;
 
-      const target = await prisma.user.findUnique({
-        where: { username: targetUsername },
-      });
-      if (!target) return;
+      const verifiedTargetUsername = await resolveFriendshipNotificationTarget(
+        prisma,
+        senderId,
+        targetUsername,
+      );
+      if (!verifiedTargetUsername) return;
 
       // REFRESH TARGET USER
-      io.to(`user:${targetUsername}`).emit("friendship:refresh");
+      io.to(`user:${verifiedTargetUsername}`).emit("friendship:refresh");
 
       // REFRESH CURRENT USER
       io.to(`user:${senderUsername}`).emit("friendship:refresh");
