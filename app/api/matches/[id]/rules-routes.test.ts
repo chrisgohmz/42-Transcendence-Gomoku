@@ -13,19 +13,17 @@ import { endReasonFiveInARow, endReasonResign } from "@/lib/matches/move-rules";
 const transaction = mock();
 const findMatch = mock();
 const findMove = mock();
-const countMoves = mock();
 const createMove = mock();
-const updateMatch = mock();
+const updateMatchMany = mock();
 const updateParticipant = mock();
 const publishGameUpdate = mock();
 
 const tx = {
   match: {
     findUnique: findMatch,
-    update: updateMatch,
+    updateMany: updateMatchMany,
   },
   matchMove: {
-    count: countMoves,
     create: createMove,
     findUnique: findMove,
   },
@@ -149,9 +147,8 @@ beforeEach(() => {
   transaction.mockReset();
   findMatch.mockReset();
   findMove.mockReset();
-  countMoves.mockReset();
   createMove.mockReset();
-  updateMatch.mockReset();
+  updateMatchMany.mockReset();
   updateParticipant.mockReset();
   publishGameUpdate.mockReset();
 
@@ -165,21 +162,11 @@ describe("POST /api/matches/:id/moves", () => {
   test("finishes the match when the submitted move completes five in a row", async () => {
     const storedMatch = matchRecord();
     const createdMove = move("black-player", 9, 4, 7, 9);
-    const finishedMatch = {
-      ...storedMatch,
-      status: MatchStatus.FINISHED,
-      stateVersion: 9,
-      nextTurnSeat: null,
-      winningSeat: Seat.BLACK,
-      endReason: endReasonFiveInARow,
-      finishedAt: new Date("2026-05-10T00:02:00.000Z"),
-    };
 
     findMatch.mockResolvedValueOnce(storedMatch);
     findMove.mockResolvedValueOnce(null);
-    countMoves.mockResolvedValueOnce(8);
+    updateMatchMany.mockResolvedValueOnce({ count: 1 });
     createMove.mockResolvedValueOnce(createdMove);
-    updateMatch.mockResolvedValueOnce(finishedMatch);
     updateParticipant.mockResolvedValue({});
 
     const response = await movesRoute.POST(
@@ -194,7 +181,13 @@ describe("POST /api/matches/:id/moves", () => {
 
     expect(response.status).toBe(200);
     expect(payload).toMatchObject({ ok: true, accepted: true });
-    expect(updateMatch.mock.calls[0]?.[0]).toMatchObject({
+    expect(updateMatchMany.mock.calls[0]?.[0]).toMatchObject({
+      where: {
+        id: "match-1",
+        status: MatchStatus.IN_PROGRESS,
+        stateVersion: 8,
+        nextTurnSeat: Seat.BLACK,
+      },
       data: {
         status: MatchStatus.FINISHED,
         nextTurnSeat: null,
@@ -219,23 +212,38 @@ describe("POST /api/matches/:id/moves", () => {
       },
     });
   });
+
+  test("rejects a move when the match state changed before commit", async () => {
+    const storedMatch = matchRecord();
+
+    findMatch.mockResolvedValueOnce(storedMatch);
+    findMove.mockResolvedValueOnce(null);
+    updateMatchMany.mockResolvedValueOnce({ count: 0 });
+
+    const response = await movesRoute.POST(
+      jsonRequest("/api/matches/match-1/moves", {
+        participantId: "black-player",
+        position: { x: 4, y: 7 },
+        baseVersion: 8,
+      }),
+      context(),
+    );
+    const payload = await response.json();
+
+    expect(response.status).toBe(409);
+    expect(payload).toEqual({ error: "stale_state" });
+    expect(createMove).not.toHaveBeenCalled();
+    expect(updateParticipant).not.toHaveBeenCalled();
+    expect(publishGameUpdate).not.toHaveBeenCalled();
+  });
 });
 
 describe("POST /api/matches/:id/resign", () => {
   test("finishes the match in favor of the opponent", async () => {
     const storedMatch = matchRecord();
-    const resignedMatch = {
-      ...storedMatch,
-      status: MatchStatus.FINISHED,
-      stateVersion: 9,
-      nextTurnSeat: null,
-      winningSeat: Seat.WHITE,
-      endReason: endReasonResign,
-      finishedAt: new Date("2026-05-10T00:02:00.000Z"),
-    };
 
     findMatch.mockResolvedValueOnce(storedMatch);
-    updateMatch.mockResolvedValueOnce(resignedMatch);
+    updateMatchMany.mockResolvedValueOnce({ count: 1 });
     updateParticipant.mockResolvedValue({});
 
     const response = await resignRoute.POST(
@@ -255,7 +263,12 @@ describe("POST /api/matches/:id/resign", () => {
       winningSeat: Seat.WHITE,
       endReason: endReasonResign,
     });
-    expect(updateMatch.mock.calls[0]?.[0]).toMatchObject({
+    expect(updateMatchMany.mock.calls[0]?.[0]).toMatchObject({
+      where: {
+        id: "match-1",
+        status: MatchStatus.IN_PROGRESS,
+        stateVersion: 8,
+      },
       data: {
         status: MatchStatus.FINISHED,
         nextTurnSeat: null,
@@ -275,5 +288,26 @@ describe("POST /api/matches/:id/resign", () => {
       endReason: endReasonResign,
       nextTurnSeat: null,
     });
+  });
+
+  test("rejects resignation when the match state changed before commit", async () => {
+    const storedMatch = matchRecord();
+
+    findMatch.mockResolvedValueOnce(storedMatch);
+    updateMatchMany.mockResolvedValueOnce({ count: 0 });
+
+    const response = await resignRoute.POST(
+      jsonRequest("/api/matches/match-1/resign", {
+        participantId: "black-player",
+        baseVersion: 8,
+      }),
+      context(),
+    );
+    const payload = await response.json();
+
+    expect(response.status).toBe(409);
+    expect(payload).toEqual({ error: "stale_state" });
+    expect(updateParticipant).not.toHaveBeenCalled();
+    expect(publishGameUpdate).not.toHaveBeenCalled();
   });
 });

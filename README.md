@@ -57,13 +57,17 @@ Start PostgreSQL in Docker first so the host-side `DATABASE_URL` in `.env` can r
 docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d database
 ```
 
-Then run the single Next app from your host shell:
+Then run the Next app and realtime service from separate host shells:
 
 ```bash
 bun run dev
+bun run dev:realtime
 ```
 
-This host-shell path still serves plain HTTP on `http://localhost:3000`.
+This host-shell path still serves plain HTTP on `http://localhost:3000`. Set
+`REALTIME_INTERNAL_URL=http://localhost:3001/internal/game-update` in `.env` so
+the Next route handlers can publish match updates to the host-side realtime
+service.
 
 ### Prisma workflow
 

@@ -113,44 +113,64 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
         };
       }
 
+      const moveNumber = match.moves.length + 1;
+      const nextMove = {
+        participantId: validation.participant.id,
+        moveNumber,
+        x: position.x,
+        y: position.y,
+      };
+      const allMoves = [...match.moves, nextMove];
+      const outcome = evaluateMoveOutcome({
+        boardSize: match.boardSize,
+        participants: match.participants,
+        moves: allMoves,
+        lastMove: nextMove,
+        lastMoveSeat: validation.participant.seat,
+      });
+      const finishedAt = outcome.finished ? new Date() : null;
+      const matchUpdate = outcome.finished
+        ? {
+            stateVersion: validation.nextStateVersion,
+            status: MatchStatus.FINISHED,
+            nextTurnSeat: null,
+            winningSeat: outcome.winningSeat,
+            endReason: outcome.endReason,
+            finishedAt,
+          }
+        : {
+            stateVersion: validation.nextStateVersion,
+            nextTurnSeat: outcome.nextTurnSeat,
+          };
+
+      const guardedTransition = await tx.match.updateMany({
+        where: {
+          id: matchId,
+          status: MatchStatus.IN_PROGRESS,
+          stateVersion: match.stateVersion,
+          nextTurnSeat: validation.participant.seat,
+        },
+        data: matchUpdate,
+      });
+
+      if (guardedTransition.count !== 1) {
+        return {
+          kind: "error" as const,
+          payload: { error: "stale_state", status: 409 },
+        };
+      }
+
       const move = await tx.matchMove.create({
         data: {
           matchId,
           participantId: validation.participant.id,
-          moveNumber: match.moves.length + 1,
+          moveNumber,
           x: position.x,
           y: position.y,
           requestId,
           baseVersion,
           stateVersion: validation.nextStateVersion,
         },
-      });
-
-      const allMoves = [...match.moves, move];
-      const outcome = evaluateMoveOutcome({
-        boardSize: match.boardSize,
-        participants: match.participants,
-        moves: allMoves,
-        lastMove: move,
-        lastMoveSeat: validation.participant.seat,
-      });
-      const finishedAt = outcome.finished ? new Date() : null;
-
-      const updatedMatch = await tx.match.update({
-        where: { id: matchId },
-        data: outcome.finished
-          ? {
-              stateVersion: validation.nextStateVersion,
-              status: MatchStatus.FINISHED,
-              nextTurnSeat: null,
-              winningSeat: outcome.winningSeat,
-              endReason: outcome.endReason,
-              finishedAt,
-            }
-          : {
-              stateVersion: validation.nextStateVersion,
-              nextTurnSeat: outcome.nextTurnSeat,
-            },
       });
 
       if (outcome.finished) {
@@ -167,10 +187,10 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       return {
         kind: "ok" as const,
         payload: {
-          match: updatedMatch,
+          match: { ...match, ...matchUpdate },
           move,
           participants: match.participants,
-          allMoves,
+          allMoves: [...match.moves, move],
         },
       };
     });

@@ -59,17 +59,29 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       }
 
       const finishedAt = new Date();
-      const updatedMatch = await tx.match.update({
-        where: { id: matchId },
-        data: {
-          stateVersion: resignationValidation.nextStateVersion,
-          status: resignationValidation.transition.status,
-          nextTurnSeat: resignationValidation.transition.nextTurnSeat,
-          winningSeat: resignationValidation.transition.winningSeat,
-          endReason: resignationValidation.transition.endReason,
-          finishedAt,
+      const matchUpdate = {
+        stateVersion: resignationValidation.nextStateVersion,
+        status: resignationValidation.transition.status,
+        nextTurnSeat: resignationValidation.transition.nextTurnSeat,
+        winningSeat: resignationValidation.transition.winningSeat,
+        endReason: resignationValidation.transition.endReason,
+        finishedAt,
+      };
+      const guardedTransition = await tx.match.updateMany({
+        where: {
+          id: matchId,
+          status: match.status,
+          stateVersion: match.stateVersion,
         },
+        data: matchUpdate,
       });
+
+      if (guardedTransition.count !== 1) {
+        return {
+          kind: "error" as const,
+          payload: { error: "stale_state", status: 409 },
+        };
+      }
 
       await Promise.all(
         resignationValidation.transition.participantResults.map((participantResult) =>
@@ -83,7 +95,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       return {
         kind: "ok" as const,
         payload: {
-          match: updatedMatch,
+          match: { ...match, ...matchUpdate },
           participants: match.participants,
           moves: match.moves,
         },
