@@ -1,10 +1,12 @@
 export type MatchSubscribePayload = {
   matchId: string;
   participantId: string;
+  lastSeenStateVersion?: number;
 };
 
 export type MatchSubscribedPayload = {
   matchId: string;
+  stateVersion: number;
 };
 
 export type Seat = "BLACK" | "WHITE";
@@ -28,6 +30,10 @@ export interface LastMove {
   stateVersion: number;
 }
 
+export interface MoveSummary extends LastMove {
+  baseVersion: number | null;
+}
+
 export interface GameUpdatePayload {
   matchId: string;
   status: MatchStatus;
@@ -40,5 +46,6 @@ export interface GameUpdatePayload {
   endReason: string | null;
   participants: ParticipantSummary[];
   lastMove: LastMove | null;
+  moves: MoveSummary[];
   board: Cell[][];
 }

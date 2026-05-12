@@ -449,15 +449,20 @@ export async function joinMatchmakingQueue(
         data: {
           nextTurnSeat: Seat.BLACK,
           startedAt: now,
+          stateVersion: {
+            increment: 1,
+          },
           status: MatchStatus.IN_PROGRESS,
         },
       });
+      const startedStateVersion = (opponentMatch.stateVersion ?? 0) + 1;
 
       const matchedMatch: QueueMatch = {
         ...opponentMatch,
         nextTurnSeat: Seat.BLACK,
         participants: [...opponentMatch.participants, joiner],
         startedAt: now,
+        stateVersion: startedStateVersion,
         status: MatchStatus.IN_PROGRESS,
       };
       const opponent = opponentMatch.participants[0];

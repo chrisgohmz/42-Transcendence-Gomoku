@@ -3,6 +3,7 @@ import { describe, expect, test } from "bun:test";
 import {
   getGameUpdateForSession,
   getSessionSeat,
+  selectLatestGameUpdateForSession,
   type MatchStateResponse,
   toInitialGameUpdate,
 } from "./match-state";
@@ -97,9 +98,54 @@ describe("match state helpers", () => {
         participantId: "white-player",
       },
     });
+    expect(update?.moves).toHaveLength(2);
     expect(update?.participants).toHaveLength(2);
     expect(getSessionSeat(state, { matchId: "match-1", participantId: "black-player" })).toBe(
       "BLACK",
     );
+  });
+
+  test("keeps restored state when a duplicate or stale live event arrives", () => {
+    const restored = toInitialGameUpdate(state, {
+      matchId: "match-1",
+      participantId: "black-player",
+    });
+    const staleLive = restored
+      ? {
+          ...restored,
+          stateVersion: 2,
+        }
+      : null;
+
+    expect(
+      selectLatestGameUpdateForSession(restored, staleLive, {
+        matchId: "match-1",
+        participantId: "black-player",
+      })?.stateVersion,
+    ).toBe(3);
+  });
+
+  test("uses newer live updates for the active session", () => {
+    const restored = toInitialGameUpdate(state, {
+      matchId: "match-1",
+      participantId: "black-player",
+    });
+    const live = restored
+      ? {
+          ...restored,
+          nextTurnSeat: "BLACK" as const,
+          stateVersion: 4,
+        }
+      : null;
+
+    expect(
+      selectLatestGameUpdateForSession(restored, live, {
+        matchId: "match-1",
+        participantId: "black-player",
+      }),
+    ).toMatchObject({
+      nextTurnSeat: "BLACK",
+      stateVersion: 4,
+    });
   });
 });

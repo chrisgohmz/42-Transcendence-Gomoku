@@ -1,7 +1,9 @@
 import { Role, MatchStatus, Seat } from "../../../generated/prisma/enums";
 import { getCurrentSession } from "../../lib/auth";
+import { buildGameUpdatePayload } from "../../lib/matches/game-update";
 import { cleanupStaleMatchSessions } from "../../lib/matches/matchmaking";
 import { standardGomokuBoardSize } from "../../lib/matches/move-rules";
+import { publishGameUpdate } from "../../lib/matches/realtime-publisher";
 import { prisma } from "../../lib/prisma";
 
 export const dynamic = "force-dynamic";
@@ -47,11 +49,28 @@ export async function POST() {
       throw new Error("Match participant was not created.");
     }
 
+    const gameUpdate = buildGameUpdatePayload({
+      match,
+      participants: match.participants,
+      moves: [],
+    });
+
+    try {
+      const timeoutMs = Number(process.env["REALTIME_PUBLISH_TIMEOUT_MS"] ?? 2000);
+      await publishGameUpdate(gameUpdate, timeoutMs);
+    } catch (publishError) {
+      console.error(
+        `[matches/${match.id}] realtime publish failed:`,
+        getErrorMessage(publishError),
+      );
+    }
+
     return Response.json({
       matchId: match.id,
       participantId: creator.id,
       role: creator.role,
       seat: creator.seat,
+      stateVersion: match.stateVersion,
       status: match.status,
       createdAt: match.createdAt,
     });

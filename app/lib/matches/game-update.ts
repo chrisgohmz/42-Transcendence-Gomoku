@@ -1,7 +1,7 @@
 import type { Match, MatchMove, MatchParticipant } from "@/../generated/prisma/client";
 import { buildBoard } from "@/lib/game/state-builder";
 
-import type { GameUpdatePayload, LastMove } from "../../../shared/match-events";
+import type { GameUpdatePayload, LastMove, MoveSummary } from "../../../shared/match-events";
 
 type GameUpdateMatch = Pick<
   Match,
@@ -19,7 +19,7 @@ type GameUpdateParticipant = Pick<MatchParticipant, "displayNameSnapshot" | "id"
 
 type GameUpdateMove = Pick<
   MatchMove,
-  "moveNumber" | "participantId" | "requestId" | "stateVersion" | "x" | "y"
+  "baseVersion" | "moveNumber" | "participantId" | "requestId" | "stateVersion" | "x" | "y"
 >;
 
 function toLastMove(move: GameUpdateMove | null): LastMove | null {
@@ -28,6 +28,17 @@ function toLastMove(move: GameUpdateMove | null): LastMove | null {
   }
 
   return {
+    moveNumber: move.moveNumber,
+    participantId: move.participantId,
+    position: { x: move.x, y: move.y },
+    requestId: move.requestId,
+    stateVersion: move.stateVersion,
+  };
+}
+
+function toMoveSummary(move: GameUpdateMove): MoveSummary {
+  return {
+    baseVersion: move.baseVersion,
     moveNumber: move.moveNumber,
     participantId: move.participantId,
     position: { x: move.x, y: move.y },
@@ -67,5 +78,6 @@ export function buildGameUpdatePayload({
     })),
     board: buildBoard(match.boardSize, participants, sortedMoves),
     lastMove: toLastMove(latestMove),
+    moves: sortedMoves.map(toMoveSummary),
   };
 }

@@ -1,4 +1,6 @@
+import { getCurrentSession } from "@/lib/auth";
 import { buildBoard } from "@/lib/game/state-builder";
+import { isActiveParticipantForUser } from "@/lib/matches/participant-access";
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
@@ -8,6 +10,12 @@ function getErrorMessage(error: unknown): string {
 }
 
 export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  const context = await getCurrentSession();
+
+  if (!context) {
+    return Response.json({ error: "unauthorized" }, { status: 401 });
+  }
+
   try {
     const { id: matchId } = await params;
     const participantId = new URL(request.url).searchParams.get("participantId");
@@ -30,8 +38,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
       return Response.json({ error: "match_not_found" }, { status: 404 });
     }
 
-    const participant = match.participants.find((item) => item.id === participantId);
-    if (!participant) {
+    if (!isActiveParticipantForUser(match.participants, participantId, context.user.id)) {
       return Response.json({ error: "participant_not_found" }, { status: 403 });
     }
 

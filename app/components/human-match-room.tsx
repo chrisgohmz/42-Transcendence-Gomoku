@@ -22,10 +22,11 @@ import {
 import {
   getGameUpdateForSession,
   getSessionSeat,
+  selectLatestGameUpdateForSession,
   toInitialGameUpdate,
   type MatchStateResponse,
 } from "@/lib/matches/match-state";
-import { submitMove } from "@/lib/matches/submit-move";
+import { MoveSubmissionError, submitMove } from "@/lib/matches/submit-move";
 import { cn } from "@/lib/utils";
 
 import type { Cell, GameUpdatePayload, ParticipantSummary, Seat } from "../../shared/match-events";
@@ -60,6 +61,15 @@ function getErrorMessage(payload: unknown, fallback: string) {
       (value): value is string => typeof value === "string" && value.length > 0,
     ) ?? fallback
   );
+}
+
+function getErrorCode(payload: unknown): string | null {
+  if (!payload || typeof payload !== "object") {
+    return null;
+  }
+
+  const errorPayload = payload as { error?: unknown };
+  return typeof errorPayload.error === "string" ? errorPayload.error : null;
 }
 
 function formatPoint(position: { x: number; y: number }) {
@@ -107,11 +117,6 @@ export default function HumanMatchRoom({
   const [isSubmittingMove, setIsSubmittingMove] = useState(false);
   const [isResigning, setIsResigning] = useState(false);
 
-  const { status: socketStatus, lastUpdate } = useSocketGame(
-    session.matchId,
-    session.participantId,
-  );
-
   useEffect(() => {
     if (initialState?.matchId === session.matchId) {
       setState(initialState);
@@ -156,9 +161,14 @@ export default function HumanMatchRoom({
     void loadState();
   }, [loadState]);
 
-  const liveUpdate = getGameUpdateForSession(lastUpdate, session);
   const initialUpdate = toInitialGameUpdate(state, session);
-  const effectiveUpdate = liveUpdate ?? initialUpdate;
+  const { status: socketStatus, lastUpdate } = useSocketGame(
+    session.matchId,
+    session.participantId,
+    initialUpdate?.stateVersion ?? null,
+  );
+  const liveUpdate = getGameUpdateForSession(lastUpdate, session);
+  const effectiveUpdate = selectLatestGameUpdateForSession(initialUpdate, liveUpdate, session);
   const board = effectiveUpdate?.board ?? state?.board ?? emptyBoard(state?.boardSize ?? 15);
   const mySeat = getSessionSeat(state, session) ?? session.seat;
   const participantBySeat = useMemo(() => {
@@ -169,8 +179,8 @@ export default function HumanMatchRoom({
     };
   }, [effectiveUpdate?.participants]);
   const moveHistory = useMemo(
-    () => mergeMoveHistory(state?.moves ?? [], effectiveUpdate?.lastMove ?? null),
-    [effectiveUpdate?.lastMove, state?.moves],
+    () => effectiveUpdate?.moves ?? state?.moves ?? [],
+    [effectiveUpdate?.moves, state?.moves],
   );
   const canResign = effectiveUpdate?.status === "IN_PROGRESS" && mySeat !== null;
   const matchStatus = effectiveUpdate?.status ?? state?.status;
@@ -194,6 +204,9 @@ export default function HumanMatchRoom({
       await loadState();
     } catch (error) {
       setMoveError(error instanceof Error ? error.message : "Network error while submitting move");
+      if (error instanceof MoveSubmissionError && error.code === "stale_state") {
+        await loadState();
+      }
     } finally {
       setIsSubmittingMove(false);
     }
@@ -221,7 +234,11 @@ export default function HumanMatchRoom({
 
       if (!response.ok) {
         const errorPayload = await response.json().catch(() => null);
+        const errorCode = getErrorCode(errorPayload);
         setMoveError(getErrorMessage(errorPayload, `Resign request failed (${response.status})`));
+        if (errorCode === "stale_state") {
+          await loadState();
+        }
         return;
       }
 
@@ -556,27 +573,6 @@ function MoveHistory({
       })}
     </div>
   );
-}
-
-function mergeMoveHistory(
-  moves: MatchMove[],
-  lastMove: GameUpdatePayload["lastMove"],
-): MatchMove[] {
-  if (!lastMove || moves.some((move) => move.moveNumber === lastMove.moveNumber)) {
-    return moves;
-  }
-
-  return [
-    ...moves,
-    {
-      baseVersion: null,
-      moveNumber: lastMove.moveNumber,
-      participantId: lastMove.participantId,
-      position: lastMove.position,
-      requestId: lastMove.requestId,
-      stateVersion: lastMove.stateVersion,
-    },
-  ];
 }
 
 function statusLine(update: GameUpdatePayload | null, mySeat: Seat | null) {

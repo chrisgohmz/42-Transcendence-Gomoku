@@ -9,20 +9,36 @@ import type { GameUpdatePayload } from "../../shared/match-events";
 
 type SubscribeStatus = "idle" | "connecting" | "subscribed" | "error";
 
-export function useSocketGame(matchId: string | null, participantId: string | null) {
+export function useSocketGame(
+  matchId: string | null,
+  participantId: string | null,
+  knownStateVersion: number | null = null,
+) {
   const socketRef = useRef<Socket | null>(null);
+  const knownStateVersionRef = useRef(knownStateVersion);
+  const latestStateVersionRef = useRef(knownStateVersion ?? -1);
   const [status, setStatus] = useState<SubscribeStatus>("idle");
   const [lastUpdate, setLastUpdate] = useState<GameUpdatePayload | null>(null);
+
+  useEffect(() => {
+    knownStateVersionRef.current = knownStateVersion;
+
+    if (typeof knownStateVersion === "number") {
+      latestStateVersionRef.current = Math.max(latestStateVersionRef.current, knownStateVersion);
+    }
+  }, [knownStateVersion]);
 
   useEffect(() => {
     if (!matchId || !participantId) {
       setStatus("idle");
       setLastUpdate(null);
+      latestStateVersionRef.current = -1;
       return;
     }
 
     setStatus("connecting");
     setLastUpdate(null);
+    latestStateVersionRef.current = knownStateVersionRef.current ?? -1;
 
     const socket = createSocket();
     socketRef.current = socket;
@@ -30,7 +46,12 @@ export function useSocketGame(matchId: string | null, participantId: string | nu
     let active = true;
 
     socket.on("connect", () => {
-      socket.emit("match:subscribe", { matchId, participantId });
+      const lastSeenStateVersion = latestStateVersionRef.current;
+      socket.emit("match:subscribe", {
+        matchId,
+        participantId,
+        ...(lastSeenStateVersion >= 0 ? { lastSeenStateVersion } : {}),
+      });
     });
 
     socket.on("match:subscribed", () => {
@@ -38,7 +59,12 @@ export function useSocketGame(matchId: string | null, participantId: string | nu
     });
 
     socket.on("game:update", (payload: GameUpdatePayload) => {
-      if (active) {
+      if (active && payload.matchId === matchId) {
+        if (payload.stateVersion <= latestStateVersionRef.current) {
+          return;
+        }
+
+        latestStateVersionRef.current = payload.stateVersion;
         setLastUpdate(payload);
       }
     });
@@ -50,6 +76,18 @@ export function useSocketGame(matchId: string | null, participantId: string | nu
     socket.on("error", () => {
       if (active) {
         setStatus("error");
+      }
+    });
+
+    socket.on("match:error", () => {
+      if (active) {
+        setStatus("error");
+      }
+    });
+
+    socket.on("disconnect", () => {
+      if (active) {
+        setStatus("connecting");
       }
     });
 

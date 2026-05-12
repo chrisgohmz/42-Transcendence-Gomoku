@@ -8,14 +8,13 @@ import { Server } from "socket.io";
 
 import { prisma } from "@/lib/prisma";
 
-import { isGameUpdatePayload } from "../shared/match-events-validation";
 import { readRealtimeInternalSecret } from "../shared/realtime-internal";
 import { registerMatchSubscription } from "./handlers/match-subscription";
 import { registerMatchmakingQueue } from "./handlers/matchmaking-queue";
 import { resolveFriendshipNotificationTarget } from "./lib/friendship-notifications";
 import { handleInternalFriendshipUpdate } from "./lib/internal-friendship-update";
+import { handleInternalGameUpdate } from "./lib/internal-game-update";
 import { removePresenceConnection, subscribeToPresence, type ConnectedUsers } from "./lib/presence";
-import { matchRoomId } from "./lib/rooms";
 import { authenticateSocketSession } from "./lib/socket-auth";
 import {
   DEFAULT_SOCKET_HEARTBEAT_INTERVAL_MS,
@@ -154,31 +153,6 @@ io.on("connection", (socket) => {
 
 const engineHandler = engine.handler();
 
-async function handleInternalGameUpdate(request: Request) {
-  let payload: unknown;
-
-  try {
-    payload = await request.json();
-  } catch {
-    return Response.json({ error: "invalid_payload" }, { status: 400 });
-  }
-
-  if (!isGameUpdatePayload(payload)) {
-    return Response.json({ error: "invalid_payload" }, { status: 400 });
-  }
-
-  const room = matchRoomId(payload.matchId);
-
-  io.to(room).emit("game:update", payload);
-
-  console.log(`[realtime] broadcast game:update to ${room}`);
-
-  return Response.json({
-    ok: true,
-    room,
-  });
-}
-
 Bun.serve({
   hostname,
   port,
@@ -195,7 +169,7 @@ Bun.serve({
     }
 
     if (url.pathname === "/internal/game-update" && request.method === "POST") {
-      return handleInternalGameUpdate(request);
+      return handleInternalGameUpdate(request, io, realtimeInternalSecret);
     }
 
     if (url.pathname === "/internal/friendship-update" && request.method === "POST") {

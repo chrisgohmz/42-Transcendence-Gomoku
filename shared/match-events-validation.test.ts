@@ -11,6 +11,24 @@ const basePayload = {
   nextTurnSeat: "WHITE",
   winningSeat: null,
   endReason: null,
+  moves: [
+    {
+      baseVersion: 0,
+      moveNumber: 1,
+      participantId: "white-player",
+      position: { x: 0, y: 0 },
+      requestId: "request-0",
+      stateVersion: 1,
+    },
+    {
+      baseVersion: 1,
+      moveNumber: 2,
+      participantId: "black-player",
+      position: { x: 1, y: 1 },
+      requestId: "request-1",
+      stateVersion: 2,
+    },
+  ],
   participants: [
     {
       participantId: "black-player",

@@ -17,6 +17,7 @@ const createMove = mock();
 const updateMatchMany = mock();
 const updateParticipant = mock();
 const publishGameUpdate = mock();
+const getCurrentSession = mock();
 
 const tx = {
   match: {
@@ -40,6 +41,10 @@ await mock.module("@/lib/prisma", () => ({
 
 await mock.module("@/lib/matches/realtime-publisher", () => ({
   publishGameUpdate,
+}));
+
+await mock.module("@/lib/auth", () => ({
+  getCurrentSession,
 }));
 
 const movesRoute = await import("./moves/route");
@@ -69,7 +74,7 @@ function participants() {
     {
       id: "black-player",
       matchId: "match-1",
-      userId: null,
+      userId: "user-black",
       displayNameSnapshot: "Black",
       role: Role.PLAYER,
       seat: Seat.BLACK,
@@ -80,7 +85,7 @@ function participants() {
     {
       id: "white-player",
       matchId: "match-1",
-      userId: null,
+      userId: "user-white",
       displayNameSnapshot: "White",
       role: Role.PLAYER,
       seat: Seat.WHITE,
@@ -151,11 +156,17 @@ beforeEach(() => {
   updateMatchMany.mockReset();
   updateParticipant.mockReset();
   publishGameUpdate.mockReset();
+  getCurrentSession.mockReset();
 
   transaction.mockImplementation((callback: (transactionClient: typeof tx) => unknown) =>
     callback(tx),
   );
   publishGameUpdate.mockResolvedValue(undefined);
+  getCurrentSession.mockResolvedValue({
+    user: {
+      id: "user-black",
+    },
+  });
 });
 
 describe("POST /api/matches/:id/moves", () => {

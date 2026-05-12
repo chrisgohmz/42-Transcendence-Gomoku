@@ -1,8 +1,10 @@
 import { Prisma } from "@/../generated/prisma/client";
 import { MatchStatus } from "@/../generated/prisma/enums";
+import { getCurrentSession } from "@/lib/auth";
 import { buildGameUpdatePayload } from "@/lib/matches/game-update";
 import { submitMoveRequestSchema } from "@/lib/matches/move-request-validation";
 import { evaluateMoveOutcome, validateMoveSubmission } from "@/lib/matches/move-rules";
+import { isActiveParticipantForUser } from "@/lib/matches/participant-access";
 import { publishGameUpdate } from "@/lib/matches/realtime-publisher";
 import { prisma } from "@/lib/prisma";
 
@@ -37,6 +39,12 @@ function mapUniqueConstraintError(error: Prisma.PrismaClientKnownRequestError) {
 }
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  const context = await getCurrentSession();
+
+  if (!context) {
+    return Response.json({ error: "unauthorized" }, { status: 401 });
+  }
+
   try {
     const { id: matchId } = await params;
     const body = await request.json().catch(() => null);
@@ -64,6 +72,13 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
         return {
           kind: "error" as const,
           payload: { error: "match_not_found", status: 404 },
+        };
+      }
+
+      if (!isActiveParticipantForUser(match.participants, participantId, context.user.id)) {
+        return {
+          kind: "error" as const,
+          payload: { error: "participant_not_found", status: 403 },
         };
       }
 

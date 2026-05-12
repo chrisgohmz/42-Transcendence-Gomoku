@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, mock, test } from "bun:test";
 
 const findUnique = mock();
 const buildBoard = mock();
+const getCurrentSession = mock();
 
 await mock.module("@/lib/prisma", () => ({
   prisma: {
@@ -13,6 +14,10 @@ await mock.module("@/lib/prisma", () => ({
 
 await mock.module("@/lib/game/state-builder", () => ({
   buildBoard,
+}));
+
+await mock.module("@/lib/auth", () => ({
+  getCurrentSession,
 }));
 
 const route = await import("./route");
@@ -46,7 +51,7 @@ function matchRecord() {
     participants: [
       {
         id: "participant-black",
-        userId: "user-black",
+        userId: "user-current",
         displayNameSnapshot: "Black",
         role: "PLAYER",
         seat: "BLACK",
@@ -80,7 +85,13 @@ function matchRecord() {
 beforeEach(() => {
   findUnique.mockReset();
   buildBoard.mockReset();
+  getCurrentSession.mockReset();
   buildBoard.mockReturnValue([[{ occupied: false }]]);
+  getCurrentSession.mockResolvedValue({
+    user: {
+      id: "user-current",
+    },
+  });
 });
 
 describe("GET /api/matches/:id/state", () => {
@@ -90,6 +101,17 @@ describe("GET /api/matches/:id/state", () => {
 
     expect(response.status).toBe(400);
     expect(payload["error"]).toBe("missing_participant_id");
+    expect(findUnique).not.toHaveBeenCalled();
+  });
+
+  test("requires authentication before loading match state", async () => {
+    getCurrentSession.mockResolvedValueOnce(null);
+
+    const response = await route.GET(request("participant-black"), context());
+    const payload = (await response.json()) as Record<string, unknown>;
+
+    expect(response.status).toBe(401);
+    expect(payload["error"]).toBe("unauthorized");
     expect(findUnique).not.toHaveBeenCalled();
   });
 

@@ -3,6 +3,8 @@ import { z } from "zod";
 import { Prisma } from "@/../generated/prisma/client";
 import { MatchStatus, Role, Seat } from "@/../generated/prisma/enums";
 import { getCurrentSession } from "@/lib/auth";
+import { buildGameUpdatePayload } from "@/lib/matches/game-update";
+import { publishGameUpdate } from "@/lib/matches/realtime-publisher";
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
@@ -68,7 +70,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       return Response.json({ error: "match_full" }, { status: 409 });
     }
 
-    const { joiner } = await prisma.$transaction(async (tx) => {
+    const { joiner, updatedMatch } = await prisma.$transaction(async (tx) => {
       const joiner = await tx.matchParticipant.create({
         data: {
           matchId,
@@ -79,23 +81,48 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
         },
       });
 
-      await tx.match.update({
+      const updatedMatch = await tx.match.update({
         where: { id: matchId },
         data: {
+          stateVersion: {
+            increment: 1,
+          },
           status: MatchStatus.IN_PROGRESS,
           nextTurnSeat: Seat.BLACK,
           startedAt: new Date(),
         },
+        include: {
+          moves: {
+            orderBy: { moveNumber: "asc" },
+          },
+          participants: {
+            orderBy: { joinedAt: "asc" },
+          },
+        },
       });
 
-      return { joiner };
+      return { joiner, updatedMatch };
     });
+
+    const gameUpdate = buildGameUpdatePayload({
+      match: updatedMatch,
+      participants: updatedMatch.participants,
+      moves: updatedMatch.moves,
+    });
+
+    try {
+      const timeoutMs = Number(process.env["REALTIME_PUBLISH_TIMEOUT_MS"] ?? 2000);
+      await publishGameUpdate(gameUpdate, timeoutMs);
+    } catch (publishError) {
+      console.error(`[matches/${matchId}] realtime publish failed:`, getErrorMessage(publishError));
+    }
 
     return Response.json({
       matchId,
       participantId: joiner.id,
       role: joiner.role,
       seat: joiner.seat,
+      stateVersion: updatedMatch.stateVersion,
     });
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {

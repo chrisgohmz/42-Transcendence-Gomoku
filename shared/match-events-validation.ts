@@ -30,6 +30,9 @@ const lastMoveSchema = z.object({
   requestId: z.string().nullable(),
   stateVersion: z.number().int(),
 });
+const moveSummarySchema = lastMoveSchema.extend({
+  baseVersion: z.number().int().nullable(),
+});
 
 export const gameUpdatePayloadSchema = z.object({
   board: z.array(z.array(cellSchema)),
@@ -37,6 +40,7 @@ export const gameUpdatePayloadSchema = z.object({
   endReason: z.string().nullable(),
   lastMove: lastMoveSchema.nullable(),
   matchId: z.string(),
+  moves: z.array(moveSummarySchema),
   nextTurnSeat: seatSchema.nullable(),
   participants: z.array(participantSummarySchema),
   stateVersion: z.number().int(),
@@ -46,6 +50,7 @@ export const gameUpdatePayloadSchema = z.object({
 });
 
 export const matchSubscribePayloadSchema = z.object({
+  lastSeenStateVersion: z.number().int().nonnegative().optional(),
   matchId: z.string().min(1),
   participantId: z.string().min(1),
 });

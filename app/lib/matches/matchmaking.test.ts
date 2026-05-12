@@ -215,6 +215,9 @@ describe("joinMatchmakingQueue", () => {
       data: {
         nextTurnSeat: Seat.BLACK,
         startedAt: now,
+        stateVersion: {
+          increment: 1,
+        },
         status: MatchStatus.IN_PROGRESS,
       },
       where: {

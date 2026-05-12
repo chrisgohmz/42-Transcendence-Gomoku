@@ -92,6 +92,33 @@ export function toInitialGameUpdate(
           stateVersion: restoredLastMove.stateVersion,
         }
       : null,
+    moves: state.moves.map((move) => ({
+      baseVersion: move.baseVersion,
+      moveNumber: move.moveNumber,
+      participantId: move.participantId,
+      position: move.position,
+      requestId: move.requestId,
+      stateVersion: move.stateVersion,
+    })),
     board: state.board,
   };
+}
+
+export function selectLatestGameUpdateForSession(
+  restoredUpdate: GameUpdatePayload | null,
+  liveUpdate: GameUpdatePayload | null,
+  session: MatchSessionIdentity | null,
+): GameUpdatePayload | null {
+  const restored = getGameUpdateForSession(restoredUpdate, session);
+  const live = getGameUpdateForSession(liveUpdate, session);
+
+  if (!restored) {
+    return live;
+  }
+
+  if (!live) {
+    return restored;
+  }
+
+  return live.stateVersion >= restored.stateVersion ? live : restored;
 }

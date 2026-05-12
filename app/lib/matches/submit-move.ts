@@ -23,6 +23,18 @@ type ErrorResponse = {
   error?: string;
 };
 
+export class MoveSubmissionError extends Error {
+  code: string | null;
+  status: number;
+
+  constructor(message: string, status: number, code: string | null) {
+    super(message);
+    this.name = "MoveSubmissionError";
+    this.code = code;
+    this.status = status;
+  }
+}
+
 export async function submitMove({
   matchId,
   participantId,
@@ -51,13 +63,14 @@ export async function submitMove({
 
   if (!response.ok) {
     const errorPayload = (await response.json().catch(() => null)) as ErrorResponse | null;
+    const code = typeof errorPayload?.error === "string" ? errorPayload.error : null;
     const message =
       errorPayload?.message ??
       errorPayload?.detail ??
       errorPayload?.error ??
       `Request failed with status ${response.status}`;
 
-    throw new Error(message);
+    throw new MoveSubmissionError(message, response.status, code);
   }
 
   const result = (await response.json()) as SubmitMoveResponse;
