@@ -3,11 +3,8 @@
 import { revalidatePath } from "next/cache";
 
 import { getCurrentSession } from "@/lib/auth";
+import { deleteFriendshipAndNotify, getLowHighIds } from "@/lib/friendships/friendship-mutations";
 import { prisma } from "@/lib/prisma";
-
-function getLowHighIds(id1: string, id2: string) {
-  return id1 < id2 ? { userLowId: id1, userHighId: id2 } : { userLowId: id2, userHighId: id1 };
-}
 
 export async function sendFriendRequest(targetUsername: string) {
   const session = await getCurrentSession();
@@ -67,9 +64,7 @@ export async function respondToRequest(friendshipId: number, accept: boolean) {
       },
     });
   } else {
-    await prisma.friendship.delete({
-      where: { id: friendshipId },
-    });
+    await deleteFriendshipAndNotify(friendship);
   }
 
   revalidatePath("/", "layout");
@@ -86,9 +81,8 @@ export async function removeFriend(friendshipId: number) {
   if (friendship.userLowId !== session.user.id && friendship.userHighId !== session.user.id) {
     return { error: "Unauthorized." };
   }
-  await prisma.friendship.delete({
-    where: { id: friendshipId },
-  });
+  await deleteFriendshipAndNotify(friendship);
+
   revalidatePath("/", "layout");
   return { success: true };
 }

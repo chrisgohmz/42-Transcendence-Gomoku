@@ -9,8 +9,10 @@ import { Server } from "socket.io";
 import { prisma } from "@/lib/prisma";
 
 import { isGameUpdatePayload } from "../shared/match-events-validation";
+import { readRealtimeInternalSecret } from "../shared/realtime-internal";
 import { registerMatchSubscription } from "./handlers/match-subscription";
 import { resolveFriendshipNotificationTarget } from "./lib/friendship-notifications";
+import { handleInternalFriendshipUpdate } from "./lib/internal-friendship-update";
 import { removePresenceConnection, subscribeToPresence, type ConnectedUsers } from "./lib/presence";
 import { matchRoomId } from "./lib/rooms";
 import { authenticateSocketSession } from "./lib/socket-auth";
@@ -36,6 +38,7 @@ if (existsSync(rootEnvPath)) {
 const hostname = process.env["SOCKET_HOST"] ?? "0.0.0.0";
 const port = Number(process.env["SOCKET_PORT"] || 3001);
 const socketPath = process.env["SOCKET_PATH"] ?? "/socket.io/";
+const realtimeInternalSecret = readRealtimeInternalSecret(process.env);
 const socketHeartbeatIntervalMs = readPositiveIntegerEnv(
   process.env,
   "SOCKET_HEARTBEAT_INTERVAL_MS",
@@ -257,6 +260,10 @@ Bun.serve({
 
     if (url.pathname === "/internal/game-update" && request.method === "POST") {
       return handleInternalGameUpdate(request);
+    }
+
+    if (url.pathname === "/internal/friendship-update" && request.method === "POST") {
+      return handleInternalFriendshipUpdate(request, io, realtimeInternalSecret);
     }
 
     if (url.pathname === socketPath) {
