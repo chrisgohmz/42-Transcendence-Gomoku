@@ -1,7 +1,6 @@
 /* eslint-disable @next/next/no-img-element */
 import {
   Activity,
-  ArrowLeft,
   Award,
   BarChart3,
   Flag,
@@ -14,12 +13,12 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import { notFound } from "next/navigation";
 
 import { Badge, MetricCard, PageShell, Surface } from "@/components/gomoku-ui";
-import { Link } from "@/i18n/navigation";
 import { getCurrentSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
 import ProfileActions from "./profile-actions";
 import ProfilePresence, { LiveAvatar } from "./profile-presence";
+import ProfileBackButton from "./profile-back-button";
 
 type ProfilePageProps = {
   params: Promise<{
@@ -88,13 +87,7 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
 
   return (
     <PageShell>
-      <Link
-        href="/leaderboard"
-        className="mb-4 inline-flex items-center gap-2 text-sm font-black text-[var(--brass)] no-underline"
-      >
-        <ArrowLeft aria-hidden="true" className="size-4" />
-        Back to leaderboard
-      </Link>
+      <ProfileBackButton />
 
       <section className="command-panel mb-5">
         <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-center">
