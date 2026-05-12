@@ -26,6 +26,8 @@ services:
       BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?BETTER_AUTH_SECRET is required}
       BETTER_AUTH_URL: ${BETTER_AUTH_URL:-https://localhost:8443}
       REALTIME_INTERNAL_URL: http://realtime:3001/internal/game-update
+      REALTIME_FRIENDSHIP_INTERNAL_URL: http://realtime:3001/internal/friendship-update
+      REALTIME_INTERNAL_SECRET: ${REALTIME_INTERNAL_SECRET:-}
       SOCKET_PUBLIC_URL: ${SOCKET_PUBLIC_URL:-https://localhost:8443}
     depends_on:
       database:
@@ -56,6 +58,7 @@ services:
       DATABASE_URL: postgresql://${POSTGRES_USER:-transcendence}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}@database:5432/${POSTGRES_DB:-transcendence}?schema=public
       BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?BETTER_AUTH_SECRET is required}
       BETTER_AUTH_URL: ${BETTER_AUTH_URL:-https://localhost:8443}
+      REALTIME_INTERNAL_SECRET: ${REALTIME_INTERNAL_SECRET:-}
       SOCKET_HOST: 0.0.0.0
       SOCKET_PORT: 3001
       SOCKET_CORS_ORIGIN: ${SOCKET_CORS_ORIGIN:-https://localhost:8443}

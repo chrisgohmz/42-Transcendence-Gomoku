@@ -142,7 +142,7 @@ export default function FriendsContent({
 
     await respondToRequest(friendshipId, accept);
 
-    if (request) {
+    if (accept && request) {
       socket?.emit("friendship:notify", request.username);
     }
 
@@ -154,13 +154,7 @@ export default function FriendsContent({
       return;
     }
 
-    const friend = friends.find((item) => item.id === friendshipId);
-
     await removeFriend(friendshipId);
-
-    if (friend) {
-      socket?.emit("friendship:notify", friend.username);
-    }
 
     router.refresh();
   };

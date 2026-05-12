@@ -3,32 +3,8 @@
 import { revalidatePath } from "next/cache";
 
 import { getCurrentSession } from "@/lib/auth";
+import { deleteFriendshipAndNotify, getLowHighIds } from "@/lib/friendships/friendship-mutations";
 import { prisma } from "@/lib/prisma";
-
-function getLowHighIds(id1: string, id2: string) {
-  return id1 < id2 ? { userLowId: id1, userHighId: id2 } : { userLowId: id2, userHighId: id1 };
-}
-
-async function notifyFriendshipUpdate(userLowId: string, userHighId: string) {
-  try {
-    const userLow = await prisma.user.findUnique({ where: { id: userLowId } });
-    const userHigh = await prisma.user.findUnique({ where: { id: userHighId } });
-
-    if (!userLow || !userHigh) return;
-
-    const socketUrl = process.env["REALTIME_INTERNAL_URL"]
-      ? process.env["REALTIME_INTERNAL_URL"].replace("/game-update", "/friendship-update")
-      : "http://realtime:3001/internal/friendship-update";
-
-    await fetch(socketUrl, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ usernames: [userLow.username, userHigh.username] }),
-    });
-  } catch (err) {
-    console.error("Failed to notify realtime server", err);
-  }
-}
 
 export async function sendFriendRequest(targetUsername: string) {
   const session = await getCurrentSession();
@@ -88,10 +64,7 @@ export async function respondToRequest(friendshipId: number, accept: boolean) {
       },
     });
   } else {
-    await prisma.friendship.delete({
-      where: { id: friendshipId },
-    });
-    await notifyFriendshipUpdate(friendship.userLowId, friendship.userHighId);
+    await deleteFriendshipAndNotify(friendship);
   }
 
   revalidatePath("/", "layout");
@@ -108,11 +81,7 @@ export async function removeFriend(friendshipId: number) {
   if (friendship.userLowId !== session.user.id && friendship.userHighId !== session.user.id) {
     return { error: "Unauthorized." };
   }
-  await prisma.friendship.delete({
-    where: { id: friendshipId },
-  });
-
-  await notifyFriendshipUpdate(friendship.userLowId, friendship.userHighId);
+  await deleteFriendshipAndNotify(friendship);
 
   revalidatePath("/", "layout");
   return { success: true };

@@ -44,7 +44,9 @@ export default function ProfileActions({
       const result = await processFriendAction(targetUserId, action);
 
       if (result?.success || !result?.error) {
-        socket?.emit("friendship:notify", targetUsername);
+        if (action === "ADD" || action === "ACCEPT") {
+          socket?.emit("friendship:notify", targetUsername);
+        }
         router.refresh();
       }
     });

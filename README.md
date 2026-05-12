@@ -67,7 +67,10 @@ bun run dev:realtime
 This host-shell path still serves plain HTTP on `http://localhost:3000`. Set
 `REALTIME_INTERNAL_URL=http://localhost:3001/internal/game-update` in `.env` so
 the Next route handlers can publish match updates to the host-side realtime
-service.
+service. Friendship refreshes are derived from that URL unless you set
+`REALTIME_FRIENDSHIP_INTERNAL_URL` explicitly. Internal friendship publishes use
+`REALTIME_INTERNAL_SECRET`, falling back to `BETTER_AUTH_SECRET`, as the shared
+service-to-service header secret.
 
 ### Prisma workflow
 

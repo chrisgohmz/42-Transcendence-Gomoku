@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 
 import { getCurrentSession } from "@/lib/auth";
+import { deleteFriendshipAndNotify, getLowHighIds } from "@/lib/friendships/friendship-mutations";
 import { prisma } from "@/lib/prisma";
 
 export async function processFriendAction(
@@ -16,8 +17,7 @@ export async function processFriendAction(
     return { error: "Unauthorized" };
   }
 
-  const userLowId = loggedInUserId < targetUserId ? loggedInUserId : targetUserId;
-  const userHighId = loggedInUserId < targetUserId ? targetUserId : loggedInUserId;
+  const { userLowId, userHighId } = getLowHighIds(loggedInUserId, targetUserId);
 
   try {
     const existing = await prisma.friendship.findUnique({
@@ -51,9 +51,7 @@ export async function processFriendAction(
     } else if (action === "DECLINE" || action === "REMOVE" || action === "CANCEL") {
       if (!existing) return { error: "Not found" };
 
-      await prisma.friendship.delete({
-        where: { userLowId_userHighId: { userLowId, userHighId } },
-      });
+      await deleteFriendshipAndNotify(existing);
     }
 
     revalidatePath("/", "layout");
