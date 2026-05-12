@@ -2,6 +2,7 @@ import { z } from "zod";
 
 import { Prisma } from "@/../generated/prisma/client";
 import { MatchStatus, Role, Seat } from "@/../generated/prisma/enums";
+import { getCurrentSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
@@ -18,6 +19,18 @@ function getErrorMessage(error: unknown): string {
 }
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  const context = await getCurrentSession();
+
+  if (!context) {
+    return Response.json(
+      {
+        error: "unauthorized",
+        message: "You need to sign in before joining a match.",
+      },
+      { status: 401 },
+    );
+  }
+
   try {
     const { id: matchId } = await params;
     const body = await request.json().catch(() => ({}));
@@ -27,7 +40,8 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       return Response.json({ error: "invalid_payload" }, { status: 400 });
     }
 
-    const displayName = validation.data.displayName ?? "Player 2";
+    const displayName =
+      validation.data.displayName ?? (context.user.displayName || context.user.username);
 
     const match = await prisma.match.findUnique({
       where: { id: matchId },
@@ -42,6 +56,13 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       return Response.json({ error: "match_not_available" }, { status: 409 });
     }
 
+    const alreadyJoined = match.participants.some(
+      (participant) => participant.userId === context.user.id,
+    );
+    if (alreadyJoined) {
+      return Response.json({ error: "already_in_match" }, { status: 409 });
+    }
+
     const alreadyHasWhite = match.participants.some((p) => p.seat === Seat.WHITE);
     if (alreadyHasWhite) {
       return Response.json({ error: "match_full" }, { status: 409 });
@@ -54,6 +75,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
           displayNameSnapshot: displayName,
           role: Role.PLAYER,
           seat: Seat.WHITE,
+          userId: context.user.id,
         },
       });
 

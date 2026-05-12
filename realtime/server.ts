@@ -11,6 +11,7 @@ import { prisma } from "@/lib/prisma";
 import { isGameUpdatePayload } from "../shared/match-events-validation";
 import { readRealtimeInternalSecret } from "../shared/realtime-internal";
 import { registerMatchSubscription } from "./handlers/match-subscription";
+import { registerMatchmakingQueue } from "./handlers/matchmaking-queue";
 import { resolveFriendshipNotificationTarget } from "./lib/friendship-notifications";
 import { handleInternalFriendshipUpdate } from "./lib/internal-friendship-update";
 import { removePresenceConnection, subscribeToPresence, type ConnectedUsers } from "./lib/presence";
@@ -93,13 +94,6 @@ io.use(authenticateSocketSession);
 
 const connectedUsers: ConnectedUsers = new Map();
 
-type QueuedPlayer = {
-  socketId: string;
-  userId: string;
-};
-
-let matchQueue: QueuedPlayer[] = [];
-
 io.on("connection", (socket) => {
   console.log(`Socket.IO client connected: ${socket.id}`);
 
@@ -118,6 +112,7 @@ io.on("connection", (socket) => {
   });
 
   subscribeToPresence(socket, io, connectedUsers);
+  registerMatchmakingQueue(socket, io);
   registerMatchSubscription(socket);
 
   socket.on("presence:subscribe", () => {
@@ -148,69 +143,10 @@ io.on("connection", (socket) => {
     }
   });
 
-  socket.on("queue:join", async () => {
-    const userId = socket.data.user?.id;
-    if (!userId) return;
-
-    matchQueue = matchQueue.filter(
-      (player) => player.userId !== userId && player.socketId !== socket.id,
-    );
-
-    matchQueue.push({ socketId: socket.id, userId });
-    console.log(`Player ${userId} joined the queue. Total waiting: ${matchQueue.length}`);
-
-    if (matchQueue.length >= 2) {
-      const player1 = matchQueue.shift()!;
-      const player2 = matchQueue.shift()!;
-
-      try {
-        const match = await prisma.match.create({
-          data: {
-            status: "IN_PROGRESS",
-            nextTurnSeat: "BLACK",
-            participants: {
-              create: [
-                {
-                  userId: player1.userId,
-                  displayNameSnapshot: "Player 1",
-                  role: "PLAYER",
-                  seat: "BLACK",
-                },
-                {
-                  userId: player2.userId,
-                  displayNameSnapshot: "Player 2",
-                  role: "PLAYER",
-                  seat: "WHITE",
-                },
-              ],
-            },
-          },
-        });
-
-        io.to(player1.socketId).emit("queue:matched", {
-          matchId: match.id,
-        });
-
-        io.to(player2.socketId).emit("queue:matched", {
-          matchId: match.id,
-        });
-
-        console.log(`Created match ${match.id} for ${player1.userId} and ${player2.userId}`);
-      } catch (error) {
-        console.error("Failed to create match from queue", error);
-      }
-    }
-  });
-
-  socket.on("queue:leave", () => {
-    matchQueue = matchQueue.filter((player) => player.socketId !== socket.id);
-  });
-
   socket.on("disconnect", (reason) => {
     console.log(`Socket.IO client disconnected: ${socket.id} (${reason})`);
 
     stopSocketLifecycle();
-    matchQueue = matchQueue.filter((player) => player.socketId !== socket.id);
 
     removePresenceConnection(socket, io, connectedUsers);
   });

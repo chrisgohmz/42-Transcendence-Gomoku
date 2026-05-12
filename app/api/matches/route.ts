@@ -1,5 +1,6 @@
 import { Role, MatchStatus, Seat } from "../../../generated/prisma/enums";
 import { getCurrentSession } from "../../lib/auth";
+import { cleanupStaleMatchSessions } from "../../lib/matches/matchmaking";
 import { standardGomokuBoardSize } from "../../lib/matches/move-rules";
 import { prisma } from "../../lib/prisma";
 
@@ -26,11 +27,13 @@ export async function POST() {
     const match = await prisma.match.create({
       data: {
         boardSize: standardGomokuBoardSize,
+        createdByUserId: context.user.id,
         participants: {
           create: {
-            displayNameSnapshot: "Player 1",
+            displayNameSnapshot: context.user.displayName || context.user.username,
             role: Role.PLAYER,
             seat: Seat.BLACK,
+            userId: context.user.id,
           },
         },
       },
@@ -64,6 +67,8 @@ export async function POST() {
 }
 
 export async function GET() {
+  await cleanupStaleMatchSessions();
+
   const matches = await prisma.match.findMany({
     where: { status: MatchStatus.WAITING },
     orderBy: { createdAt: "desc" },
