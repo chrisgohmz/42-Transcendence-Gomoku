@@ -1,4 +1,4 @@
-import { Role, MatchStatus, Seat } from "../../../generated/prisma/enums";
+import { Role, MatchStatus, Seat, MatchVisibility } from "../../../generated/prisma/enums";
 import { getCurrentSession } from "../../lib/auth";
 import { buildGameUpdatePayload } from "../../lib/matches/game-update";
 import { cleanupStaleMatchSessions } from "../../lib/matches/matchmaking";
@@ -12,7 +12,7 @@ function getErrorMessage(error: unknown): string {
   return error instanceof Error ? error.message : "Unknown error";
 }
 
-export async function POST() {
+export async function POST(request: Request) {
   const context = await getCurrentSession();
 
   if (!context) {
@@ -26,10 +26,17 @@ export async function POST() {
   }
 
   try {
+    const body = await request.json().catch(() => ({}));
+    const name = typeof body.name === "string" && body.name.trim().length > 0 ? body.name.trim() : null;
+    const password = typeof body.password === "string" && body.password.length > 0 ? body.password : null;
+
     const match = await prisma.match.create({
       data: {
+        name,
+        password,
         boardSize: standardGomokuBoardSize,
         createdByUserId: context.user.id,
+        visibility: MatchVisibility.PUBLIC,
         participants: {
           create: {
             displayNameSnapshot: context.user.displayName || context.user.username,
@@ -89,7 +96,10 @@ export async function GET() {
   await cleanupStaleMatchSessions();
 
   const matches = await prisma.match.findMany({
-    where: { status: MatchStatus.WAITING },
+    where: {
+      status: MatchStatus.WAITING,
+      visibility: MatchVisibility.PUBLIC,
+    },
     orderBy: { createdAt: "desc" },
     include: {
       participants: true,
@@ -98,6 +108,8 @@ export async function GET() {
 
   const body = matches.map((r) => ({
     matchId: r.id,
+    name: r.name,
+    requiresPassword: r.password !== null,
     status: r.status,
     ruleType: r.ruleType,
     boardSize: r.boardSize,

@@ -94,21 +94,20 @@ model User {
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
   lastSeenAt      DateTime?
-
-  profile           UserProfile?
-  accounts          Account[]
-  oauthAccounts     OAuthAccount[]
-  sessions          UserSession[]
-  conversations     ConversationParticipant[]
-  messages          DirectMessage[]           @relation("MessageSender")
+  profile         UserProfile?
+  accounts        Account[]
+  oauthAccounts   OAuthAccount[]
+  sessions        UserSession[]
+  conversations   ConversationParticipant[]
+  messages        DirectMessage[]           @relation("MessageSender")
   matchParticipants MatchParticipant[]
-  createdMatches    Match[]                   @relation("matchCreator")
-  gameStats         UserGameStats[]
-  achievements      UserAchievement[]
-  analyticsEvents   AnalyticsEvent[]
-  avatars           AvatarMedia[]             @relation("avatarUploader")
+  createdMatches  Match[]                   @relation("matchCreator")
+  gameStats       UserGameStats[]
+  achievements    UserAchievement[]
+  analyticsEvents AnalyticsEvent[]
+  avatars         AvatarMedia[]             @relation("avatarUploader")
 
-  // friendship relations (multiple relations to the same model must be named)
+  // friendship relations
   friendshipsLow     Friendship[] @relation("friendLow")
   friendshipsHigh    Friendship[] @relation("friendHigh")
   friendshipRequests Friendship[] @relation("friendRequestedBy")
@@ -161,8 +160,7 @@ model OAuthAccount {
   expiresAt         DateTime?
   createdAt         DateTime      @default(now())
   scopes            String?
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user              User          @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
   @@index([userId])
@@ -227,10 +225,9 @@ model Friendship {
   respondedAt   DateTime?
   acceptedAt    DateTime?
   declinedAt    DateTime?
-
-  userLow     User @relation("friendLow", fields: [userLowId], references: [id], onDelete: Cascade)
-  userHigh    User @relation("friendHigh", fields: [userHighId], references: [id], onDelete: Cascade)
-  requestedBy User @relation("friendRequestedBy", fields: [requestedById], references: [id], onDelete: Cascade)
+  userLow       User             @relation("friendLow", fields: [userLowId], references: [id], onDelete: Cascade)
+  userHigh      User             @relation("friendHigh", fields: [userHighId], references: [id], onDelete: Cascade)
+  requestedBy   User             @relation("friendRequestedBy", fields: [requestedById], references: [id], onDelete: Cascade)
 
   @@unique([userLowId, userHighId])
   @@index([requestedById])
@@ -244,10 +241,9 @@ model Conversation {
   topic         String?
   createdAt     DateTime         @default(now())
   lastMessageAt DateTime?
-
-  match        Match?                    @relation("MatchConversation", fields: [matchId], references: [id], onDelete: SetNull)
-  participants ConversationParticipant[]
-  messages     DirectMessage[]
+  match         Match?           @relation("MatchConversation", fields: [matchId], references: [id], onDelete: SetNull)
+  participants  ConversationParticipant[]
+  messages      DirectMessage[]
 
   @@index([directKey])
   @@index([matchId])
@@ -259,9 +255,8 @@ model ConversationParticipant {
   userId         String
   joinedAt       DateTime  @default(now())
   lastReadAt     DateTime?
-
-  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
-  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([conversationId, userId])
   @@index([conversationId])
@@ -287,6 +282,8 @@ model DirectMessage {
 
 model Match {
   id              String          @id @default(cuid(2))
+  name            String?
+  password        String?
   status          MatchStatus     @default(WAITING)
   visibility      MatchVisibility @default(PUBLIC)
   ruleType        RuleType        @default(GOMOKU)
@@ -301,10 +298,10 @@ model Match {
   createdAt       DateTime        @default(now())
   updatedAt       DateTime        @updatedAt
 
-  createdBy       User?              @relation("matchCreator", fields: [createdByUserId], references: [id], onDelete: SetNull)
+  createdBy       User?                @relation("matchCreator", fields: [createdByUserId], references: [id], onDelete: SetNull)
   participants    MatchParticipant[]
   moves           MatchMove[]
-  conversation    Conversation?      @relation("MatchConversation")
+  conversation    Conversation?        @relation("MatchConversation")
   analyticsEvents AnalyticsEvent[]
 
   @@index([status])
@@ -312,7 +309,7 @@ model Match {
 }
 
 model MatchParticipant {
-  id                  String       @id @default(cuid(2)) // playerId in Phase 0.2 API
+  id                  String       @id @default(cuid(2))
   matchId             String
   userId              String?
   displayNameSnapshot String
@@ -321,10 +318,9 @@ model MatchParticipant {
   result              MatchResult?
   joinedAt            DateTime     @default(now())
   leftAt              DateTime?
-
-  match Match       @relation(fields: [matchId], references: [id], onDelete: Cascade)
-  user  User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
-  moves MatchMove[]
+  match               Match        @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  user                User?        @relation(fields: [userId], references: [id], onDelete: SetNull)
+  moves               MatchMove[]
 
   @@unique([matchId, seat])
   @@unique([matchId, userId])
@@ -399,9 +395,8 @@ model UserAchievement {
   unlockedAt    DateTime  @default(now())
   progress      Int       @default(0)
   completedAt   DateTime?
-
-  user        User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
-  achievement AchievementDefinition @relation(fields: [achievementId], references: [id], onDelete: Cascade)
+  user          User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  achievement   AchievementDefinition @relation(fields: [achievementId], references: [id], onDelete: Cascade)
 
   @@unique([userId, achievementId])
   @@index([userId])

@@ -283,8 +283,8 @@ export default function HumanLobbyClient() {
           <CreateRoomCard
             error={createError}
             isCreating={isCreating}
-            onCreateRoom={() => {
-              void createRoom();
+            onCreateRoom={(data) => {
+              void createRoom(data);
             }}
             submitLabel={createSubmitLabel}
           />
@@ -339,8 +339,8 @@ export default function HumanLobbyClient() {
             error={tableError}
             isLoading={isLoadingMatches}
             joiningMatchId={joiningMatchId}
-            onJoin={(entry) => {
-              void joinMatch(entry);
+            onJoin={(entry, password) => {
+              void joinMatch(entry, password);
             }}
           />
         </div>

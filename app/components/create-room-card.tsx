@@ -8,7 +8,7 @@ import { Badge, Surface } from "@/components/gomoku-ui";
 type CreateRoomCardProps = {
   error?: string | null;
   isCreating?: boolean;
-  onCreateRoom?: () => void;
+  onCreateRoom?: (data: { name?: string; password?: string }) => void;
   submitLabel?: string;
 };
 
@@ -31,7 +31,11 @@ export default function CreateRoomCard({
           if (isCreating) {
             return;
           }
-          onCreateRoom?.();
+          const formData = new FormData(event.currentTarget);
+          const name = formData.get("roomName")?.toString() || undefined;
+          const password = formData.get("roomPassword")?.toString() || undefined;
+
+          onCreateRoom?.({ name, password });
         }}
       >
         <div className="field">

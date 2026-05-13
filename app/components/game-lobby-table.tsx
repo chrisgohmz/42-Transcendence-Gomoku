@@ -8,6 +8,7 @@ import { Badge } from "@/components/gomoku-ui";
 export type LobbyEntry = {
   matchId?: string;
   roomId?: number;
+  name?: string | null;
   player: string;
   requiresPassword: boolean;
   playerCount?: number;
@@ -20,7 +21,7 @@ type GameLobbyTableProps = {
   error?: string | null;
   isLoading?: boolean;
   joiningMatchId?: string | null;
-  onJoin?: (entry: LobbyEntry) => void;
+  onJoin?: (entry: LobbyEntry, password?: string) => void;
 };
 
 export default function GameLobbyTable({
@@ -44,7 +45,7 @@ export default function GameLobbyTable({
     return {
       id,
       entry,
-      name: t("roomName", { player: entry.player }),
+      name: entry.name || t("roomName", { player: entry.player }), // Use custom name if it exists!
       ping: entry.roomId && entry.roomId % 2 === 0 ? "28ms" : "45ms",
       players:
         typeof entry.playerCount === "number"
@@ -118,7 +119,13 @@ export default function GameLobbyTable({
                 className="grid size-10 place-items-center rounded-md border border-[var(--panel-border-soft)] bg-white/[0.035] text-[var(--muted-strong)] hover:bg-white/[0.07]"
                 aria-label={`${t("join")} ${row.name}`}
                 onClick={() => {
-                  onJoin?.(row.entry);
+                  if (row.entry.requiresPassword) {
+                    const input = window.prompt("This room is private. Please enter the password:");
+                    if (input === null) return;
+                    onJoin?.(row.entry, input);
+                  } else {
+                    onJoin?.(row.entry);
+                  }
                 }}
                 disabled={Boolean(joiningMatchId) || isLoading}
                 aria-busy={joiningMatchId === row.id}

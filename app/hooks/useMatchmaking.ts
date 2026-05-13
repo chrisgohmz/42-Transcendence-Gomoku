@@ -24,8 +24,6 @@ export function useMatchmaking({
   const [position, setPosition] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [globalStats, setGlobalStats] = useState({ searching: 0, liveGames: 0 });
-
-  // Use refs to ensure our listeners always have the freshest state
   const statusRef = useRef<QueueStatus>("idle");
   const queuedSessionRef = useRef<StoredMatchSession | null>(null);
 
@@ -41,7 +39,6 @@ export function useMatchmaking({
         setStatus("queued");
         setPosition(data.queuePosition);
 
-        // Save the details of the room we are waiting in
         const session: StoredMatchSession = {
           matchId: data.session.matchId,
           participantId: data.session.participantId,
@@ -51,7 +48,6 @@ export function useMatchmaking({
         };
         queuedSessionRef.current = session;
 
-        // Subscribe to the waiting room immediately so we hear when someone joins
         socket.emit("match:subscribe", {
           matchId: session.matchId,
           participantId: session.participantId,
@@ -81,7 +77,6 @@ export function useMatchmaking({
     const handleGameUpdate = (payload: any) => {
       const qSession = queuedSessionRef.current;
 
-      // If we are waiting, and our specific match announces it has started
       if (statusRef.current === "queued" && qSession && payload.matchId === qSession.matchId) {
         if (payload.status === "IN_PROGRESS") {
           setStatus("matched");
@@ -107,10 +102,7 @@ export function useMatchmaking({
     socket.on("queue:matched", handleMatched);
     socket.on("queue:error", handleError);
     socket.on("stats:update", handleStatsUpdate);
-
-    // Add the new listener
     socket.on("game:update", handleGameUpdate);
-
     socket.emit("stats:request");
 
     return () => {

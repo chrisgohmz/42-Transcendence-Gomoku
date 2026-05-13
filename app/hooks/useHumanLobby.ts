@@ -18,6 +18,8 @@ type MatchParticipant = {
 
 type Match = {
   matchId: string;
+  name?: string | null;
+  requiresPassword?: boolean;
   status?: string;
   boardSize?: number;
   participants?: MatchParticipant[];
@@ -66,9 +68,10 @@ function mapMatchToEntry(match: Match): LobbyEntry {
 
   return {
     matchId: match.matchId,
+    name: match.name,
     player: hostName,
     playerCount: match.participants?.length ?? 0,
-    requiresPassword: false,
+    requiresPassword: match.requiresPassword ?? false,
     status: match.status,
     boardSize: match.boardSize,
   };
@@ -127,7 +130,7 @@ export function useHumanLobby({
     void loadMatches();
   }, [loadMatches]);
 
-  const createRoom = useCallback(async () => {
+  const createRoom = useCallback(async (options?: { name?: string; password?: string }) => {
     setIsCreating(true);
     setCreateError(null);
 
@@ -137,7 +140,10 @@ export function useHumanLobby({
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({}),
+        body: JSON.stringify({
+          name: options?.name,
+          password: options?.password,
+        }),
       });
 
       if (!response.ok) {
@@ -178,7 +184,7 @@ export function useHumanLobby({
   }, [createT, humanT, onSessionReady]);
 
   const joinMatch = useCallback(
-    async (entry: LobbyEntry) => {
+    async (entry: LobbyEntry, password?: string) => {
       if (!entry.matchId) {
         return;
       }
@@ -192,7 +198,7 @@ export function useHumanLobby({
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({}),
+          body: JSON.stringify({ password }),
         });
 
         if (!response.ok) {

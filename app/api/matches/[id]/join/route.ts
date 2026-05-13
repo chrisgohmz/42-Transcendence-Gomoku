@@ -10,11 +10,12 @@ import { prisma } from "@/lib/prisma";
 export const dynamic = "force-dynamic";
 
 const joinMatchRequestSchema = z.preprocess(
-  (value) => (typeof value === "object" && value !== null && !Array.isArray(value) ? value : {}),
-  z.object({
-    displayName: z.string().trim().min(1).max(80).optional(),
-  }),
-);
+	(value) => (typeof value === "object" && value !== null && !Array.isArray(value) ? value : {}),
+	z.object({
+	  displayName: z.string().trim().min(1).max(80).optional(),
+	  password: z.string().optional(),
+	}),
+  );
 
 function getErrorMessage(error: unknown): string {
   return error instanceof Error ? error.message : "Unknown error";
@@ -70,6 +71,10 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       return Response.json({ error: "match_full" }, { status: 409 });
     }
 
+	if (match.password && match.password !== validation.data.password) {
+      return Response.json({ error: "invalid_password", message: "Incorrect password." }, { status: 401 });
+    }
+
     const { joiner, updatedMatch } = await prisma.$transaction(async (tx) => {
       const joiner = await tx.matchParticipant.create({
         data: {
@@ -97,7 +102,6 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
           },
           participants: {
             orderBy: { joinedAt: "asc" },
-            // WE ADDED THIS TO GET PLAYER 1's USERNAME
             include: {
               user: {
                 select: {
@@ -121,10 +125,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     try {
       const timeoutMs = Number(process.env["REALTIME_PUBLISH_TIMEOUT_MS"] ?? 2000);
 
-      // Tell everyone the game started
       await publishGameUpdate(gameUpdate, timeoutMs);
-
-      // Tell Player 1 explicitly so their screen stops loading
       const creator = updatedMatch.participants.find((p) => p.id !== joiner.id);
       if (creator && creator.user?.username) {
         const session = {

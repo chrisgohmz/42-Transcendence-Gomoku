@@ -67,7 +67,6 @@ export async function publishQueueMatched(
   const timeoutId = setTimeout(() => controller.abort(), readPositiveTimeoutMs(timeoutMs));
 
   try {
-    // If the main URL is locally patched via .env, we reuse the domain and swap the path.
     const baseUrl = resolveGameUpdateUrl().replace("/internal/game-update", "");
     const finalUrl = baseUrl.includes("localhost")
       ? `${baseUrl}/internal/queue-matched`

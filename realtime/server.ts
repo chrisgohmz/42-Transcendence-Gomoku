@@ -99,7 +99,6 @@ io.on("connection", (socket) => {
 
   console.log(`[realtime] connected: ${socket.id}`);
 
-  // REGISTER USER ROOM
   socket.on("register", (username: string) => {
     const authUsername = socket.data.user?.username;
     if (authUsername && authUsername === username) {
@@ -119,7 +118,6 @@ io.on("connection", (socket) => {
     subscribeToPresence(socket, io, connectedUsers);
   });
 
-  // FRIENDSHIP LIVE REFRESH
   socket.on("friendship:notify", async (targetUsername: string) => {
     try {
       const senderId = socket.data.user?.id;
@@ -133,10 +131,8 @@ io.on("connection", (socket) => {
       );
       if (!verifiedTargetUsername) return;
 
-      // REFRESH TARGET USER
       io.to(`user:${verifiedTargetUsername}`).emit("friendship:refresh");
 
-      // REFRESH CURRENT USER
       io.to(`user:${senderUsername}`).emit("friendship:refresh");
     } catch (error) {
       console.error("Failed friendship notification", error);

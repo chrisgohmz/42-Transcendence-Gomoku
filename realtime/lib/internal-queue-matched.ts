@@ -26,7 +26,6 @@ export async function handleInternalQueueMatched(
   const { username, session } = payload;
 
   if (username && session) {
-    // Wake up the specific user who was waiting in the queue
     io.to(`user:${username}`).emit("queue:matched", session);
     io.to(`user:${username}`).emit("queue:status", {
       kind: "matched",
