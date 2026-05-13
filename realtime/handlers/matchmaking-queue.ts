@@ -6,6 +6,7 @@ import {
   type MatchmakingUser,
   type MatchmakingSession,
   joinMatchmakingQueue,
+  getGlobalMatchStats,
 } from "@/lib/matches/matchmaking";
 
 type SocketUser = Partial<MatchmakingUser> & {
@@ -56,7 +57,25 @@ function emitJoinResult(socket: Socket, io: Server, result: JoinMatchmakingQueue
   }
 }
 
+async function broadcastStats(io: Server) {
+  try {
+    const stats = await getGlobalMatchStats();
+    io.emit("stats:update", stats);
+  } catch (error) {
+    console.error("Failed to broadcast stats", error);
+  }
+}
+
 export function registerMatchmakingQueue(socket: Socket, io: Server) {
+  socket.on("stats:request", async () => {
+    try {
+      const stats = await getGlobalMatchStats();
+      socket.emit("stats:update", stats);
+    } catch (error) {
+      console.error("Failed to fetch initial stats", error);
+    }
+  });
+
   socket.on("queue:join", async () => {
     const user = getAuthenticatedUser(socket);
 
@@ -67,6 +86,7 @@ export function registerMatchmakingQueue(socket: Socket, io: Server) {
 
     try {
       emitJoinResult(socket, io, await joinMatchmakingQueue(user));
+      await broadcastStats(io);
     } catch (error) {
       console.error("Failed to join matchmaking queue", error);
       socket.emit("queue:error", { error: "failed_to_join_queue" });
@@ -84,6 +104,7 @@ export function registerMatchmakingQueue(socket: Socket, io: Server) {
     try {
       const result = await cancelMatchmakingQueue(user);
       socket.emit("queue:status", result);
+      await broadcastStats(io);
     } catch (error) {
       console.error("Failed to leave matchmaking queue", error);
       socket.emit("queue:error", { error: "failed_to_cancel_queue" });

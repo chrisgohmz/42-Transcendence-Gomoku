@@ -621,3 +621,20 @@ export async function getMatchmakingQueueStatus(
     };
   });
 }
+
+export async function getGlobalMatchStats() {
+  const searching = await prisma.match.count({
+    where: {
+      status: MatchStatus.WAITING,
+      visibility: MatchVisibility.PUBLIC,
+    },
+  });
+
+  const liveGames = await prisma.match.count({
+    where: {
+      status: MatchStatus.IN_PROGRESS,
+    },
+  });
+
+  return { searching, liveGames };
+}
