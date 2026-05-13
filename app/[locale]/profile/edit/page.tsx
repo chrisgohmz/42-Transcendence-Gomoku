@@ -1,7 +1,8 @@
+import { ArrowLeft } from "lucide-react";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 
 import { AvatarToken, Badge, PageHeader, PageShell, Surface } from "@/components/gomoku-ui";
-import { redirect } from "@/i18n/navigation";
+import { Link, redirect } from "@/i18n/navigation";
 import { getCurrentSession } from "@/lib/auth";
 
 import ProfilePicture from "../profile-picture";
@@ -28,6 +29,16 @@ export default async function EditProfilePage({ params }: EditProfilePageProps) 
 
   return (
     <PageShell>
+      <div className="mb-2">
+        <Link
+          href="/profile"
+          className="inline-flex items-center gap-2 text-sm font-black text-[var(--brass)] no-underline hover:opacity-80"
+        >
+          <ArrowLeft aria-hidden="true" className="size-4" />
+          Return to Profile
+        </Link>
+      </div>
+
       <PageHeader eyebrow="Profile Studio" title={t("title")} lede={t("lede")} />
       <section className="grid gap-5 xl:grid-cols-[340px_minmax(0,1fr)]">
         <aside className="grid content-start gap-5">

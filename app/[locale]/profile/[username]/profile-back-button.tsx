@@ -10,7 +10,7 @@ export default function ProfileBackButton() {
     <button
       type="button"
       onClick={() => router.back()}
-      className="mb-4 inline-flex items-center gap-2 text-sm font-black text-[var(--brass)] hover:opacity-80"
+      className="mb-4 inline-flex items-center gap-2 text-sm font-black text-[var(--brass)] no-underline hover:opacity-80"
     >
       <ArrowLeft aria-hidden="true" className="size-4" />
       Go Back
