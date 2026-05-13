@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useRef } from "react";
 import { createSocket } from "@/lib/socket-client";
 import type { StoredMatchSession } from "@/lib/matches/match-session-storage";
 import type { Socket } from "socket.io-client";
@@ -25,6 +25,14 @@ export function useMatchmaking({
   const [error, setError] = useState<string | null>(null);
   const [globalStats, setGlobalStats] = useState({ searching: 0, liveGames: 0 });
 
+  // Use refs to ensure our listeners always have the freshest state
+  const statusRef = useRef<QueueStatus>("idle");
+  const queuedSessionRef = useRef<StoredMatchSession | null>(null);
+
+  useEffect(() => {
+    statusRef.current = status;
+  }, [status]);
+
   useEffect(() => {
     const socket = getSocket();
 
@@ -32,28 +40,63 @@ export function useMatchmaking({
       if (data.kind === "queued") {
         setStatus("queued");
         setPosition(data.queuePosition);
+
+        // Save the details of the room we are waiting in
+        const session: StoredMatchSession = {
+          matchId: data.session.matchId,
+          participantId: data.session.participantId,
+          role: data.session.role === "SPECTATOR" ? "SPECTATOR" : "PLAYER",
+          seat: data.session.seat,
+          displayName: data.session.displayName || "Player",
+        };
+        queuedSessionRef.current = session;
+
+        // Subscribe to the waiting room immediately so we hear when someone joins
+        socket.emit("match:subscribe", {
+          matchId: session.matchId,
+          participantId: session.participantId,
+        });
+
       } else if (data.kind === "matched") {
         setStatus("matched");
+        queuedSessionRef.current = null;
       }
     };
 
     const handleMatched = (session: any) => {
       setStatus("matched");
+      queuedSessionRef.current = null;
       if (onMatchFound) {
         const storedSession: StoredMatchSession = {
           matchId: session.matchId,
           participantId: session.participantId,
           role: session.role === "SPECTATOR" ? "SPECTATOR" : "PLAYER",
           seat: session.seat,
-          displayName: "Player",
+          displayName: session.displayName || "Player",
         };
         onMatchFound(storedSession);
+      }
+    };
+
+    const handleGameUpdate = (payload: any) => {
+      const qSession = queuedSessionRef.current;
+
+      // If we are waiting, and our specific match announces it has started
+      if (statusRef.current === "queued" && qSession && payload.matchId === qSession.matchId) {
+        if (payload.status === "IN_PROGRESS") {
+          setStatus("matched");
+          queuedSessionRef.current = null;
+          if (onMatchFound) {
+            onMatchFound(qSession);
+          }
+        }
       }
     };
 
     const handleError = (err: any) => {
       setError(err.error || "An error occurred");
       setStatus("idle");
+      queuedSessionRef.current = null;
     };
 
     const handleStatsUpdate = (newStats: any) => {
@@ -65,6 +108,9 @@ export function useMatchmaking({
     socket.on("queue:error", handleError);
     socket.on("stats:update", handleStatsUpdate);
 
+    // Add the new listener
+    socket.on("game:update", handleGameUpdate);
+
     socket.emit("stats:request");
 
     return () => {
@@ -72,6 +118,7 @@ export function useMatchmaking({
       socket.off("queue:matched", handleMatched);
       socket.off("queue:error", handleError);
       socket.off("stats:update", handleStatsUpdate);
+      socket.off("game:update", handleGameUpdate);
     };
   }, [onMatchFound]);
 
@@ -85,6 +132,7 @@ export function useMatchmaking({
     getSocket().emit("queue:leave");
     setStatus("idle");
     setPosition(null);
+    queuedSessionRef.current = null;
   }, []);
 
   return { status, position, error, joinQueue, leaveQueue, globalStats };

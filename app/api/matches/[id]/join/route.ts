@@ -4,7 +4,7 @@ import { Prisma } from "@/../generated/prisma/client";
 import { MatchStatus, Role, Seat } from "@/../generated/prisma/enums";
 import { getCurrentSession } from "@/lib/auth";
 import { buildGameUpdatePayload } from "@/lib/matches/game-update";
-import { publishGameUpdate } from "@/lib/matches/realtime-publisher";
+import { publishGameUpdate, publishQueueMatched } from "@/lib/matches/realtime-publisher";
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
@@ -97,6 +97,14 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
           },
           participants: {
             orderBy: { joinedAt: "asc" },
+            // WE ADDED THIS TO GET PLAYER 1's USERNAME
+            include: {
+              user: {
+                select: {
+                  username: true,
+                },
+              },
+            },
           },
         },
       });
@@ -112,7 +120,26 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
 
     try {
       const timeoutMs = Number(process.env["REALTIME_PUBLISH_TIMEOUT_MS"] ?? 2000);
+
+      // Tell everyone the game started
       await publishGameUpdate(gameUpdate, timeoutMs);
+
+      // Tell Player 1 explicitly so their screen stops loading
+      const creator = updatedMatch.participants.find((p) => p.id !== joiner.id);
+      if (creator && creator.user?.username) {
+        const session = {
+          matchId: updatedMatch.id,
+          participantId: creator.id,
+          role: creator.role,
+          seat: creator.seat,
+          status: updatedMatch.status,
+          displayName: creator.displayNameSnapshot,
+          createdAt: updatedMatch.createdAt.toISOString(),
+          startedAt: updatedMatch.startedAt?.toISOString() || null,
+        };
+        await publishQueueMatched(creator.user.username, session, timeoutMs);
+      }
+
     } catch (publishError) {
       console.error(`[matches/${matchId}] realtime publish failed:`, getErrorMessage(publishError));
     }

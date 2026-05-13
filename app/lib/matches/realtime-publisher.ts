@@ -5,6 +5,7 @@ import {
 } from "../../../shared/realtime-internal";
 
 const defaultGameUpdateUrl = "http://realtime:3001/internal/game-update";
+const defaultQueueMatchedUrl = "http://realtime:3001/internal/queue-matched";
 
 function readPositiveTimeoutMs(timeoutMs: number) {
   return Number.isFinite(timeoutMs) && timeoutMs > 0 ? timeoutMs : 2000;
@@ -12,6 +13,10 @@ function readPositiveTimeoutMs(timeoutMs: number) {
 
 export function resolveGameUpdateUrl(env: NodeJS.ProcessEnv = process.env) {
   return env["REALTIME_INTERNAL_URL"] ?? defaultGameUpdateUrl;
+}
+
+export function resolveQueueMatchedUrl(env: NodeJS.ProcessEnv = process.env) {
+  return env["REALTIME_QUEUE_MATCHED_URL"] ?? defaultQueueMatchedUrl;
 }
 
 export async function publishGameUpdate(
@@ -41,6 +46,46 @@ export async function publishGameUpdate(
 
     if (!response.ok) {
       throw new Error(`Failed to publish game:update(${response.status})`);
+    }
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
+export async function publishQueueMatched(
+  username: string,
+  session: any,
+  timeoutMs = Number(process.env["REALTIME_PUBLISH_TIMEOUT_MS"] ?? 2000),
+) {
+  const internalSecret = readRealtimeInternalSecret();
+
+  if (!internalSecret) {
+    throw new Error("Missing REALTIME_INTERNAL_SECRET");
+  }
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), readPositiveTimeoutMs(timeoutMs));
+
+  try {
+    // If the main URL is locally patched via .env, we reuse the domain and swap the path.
+    const baseUrl = resolveGameUpdateUrl().replace("/internal/game-update", "");
+    const finalUrl = baseUrl.includes("localhost")
+      ? `${baseUrl}/internal/queue-matched`
+      : resolveQueueMatchedUrl();
+
+    const response = await fetch(finalUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        [internalRealtimeSecretHeader]: internalSecret,
+      },
+      body: JSON.stringify({ username, session }),
+      cache: "no-store",
+      signal: controller.signal,
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to publish queue:matched (${response.status})`);
     }
   } finally {
     clearTimeout(timeoutId);

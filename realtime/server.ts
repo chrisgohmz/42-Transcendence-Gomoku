@@ -14,6 +14,7 @@ import { registerMatchmakingQueue } from "./handlers/matchmaking-queue";
 import { resolveFriendshipNotificationTarget } from "./lib/friendship-notifications";
 import { handleInternalFriendshipUpdate } from "./lib/internal-friendship-update";
 import { handleInternalGameUpdate } from "./lib/internal-game-update";
+import { handleInternalQueueMatched } from "./lib/internal-queue-matched";
 import { removePresenceConnection, subscribeToPresence, type ConnectedUsers } from "./lib/presence";
 import { authenticateSocketSession } from "./lib/socket-auth";
 import {
@@ -174,6 +175,10 @@ Bun.serve({
 
     if (url.pathname === "/internal/friendship-update" && request.method === "POST") {
       return handleInternalFriendshipUpdate(request, io, realtimeInternalSecret);
+    }
+
+    if (url.pathname === "/internal/queue-matched" && request.method === "POST") {
+      return handleInternalQueueMatched(request, io, realtimeInternalSecret);
     }
 
     if (url.pathname === socketPath) {

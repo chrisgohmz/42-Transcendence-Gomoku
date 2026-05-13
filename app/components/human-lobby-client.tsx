@@ -25,7 +25,11 @@ import { useHumanLobby } from "@/hooks/useHumanLobby";
 import { useMatchmaking } from "@/hooks/useMatchmaking";
 import { useMatchInitialize } from "@/hooks/useMatchInitialize";
 
-import type { StoredMatchSession } from "@/lib/matches/match-session-storage";
+import {
+  clearStoredMatchSession,
+  saveStoredMatchSession,
+  type StoredMatchSession,
+} from "@/lib/matches/match-session-storage";
 
 export default function HumanLobbyClient() {
   const { onlineUsers } = usePresence();
@@ -45,15 +49,19 @@ export default function HumanLobbyClient() {
   useEffect(() => {
     if (!showLobby && restoredMatch.session) {
       setActiveSession(restoredMatch.session);
+      // Consume the restored ticket so it doesn't haunt future matches
+      setRestoredSession(null);
     }
-  }, [restoredMatch.session, showLobby]);
+  }, [restoredMatch.session, showLobby, setRestoredSession]);
 
   const handleSessionReady = useCallback(
     (session: StoredMatchSession) => {
+      setRestoredSession(null);
+      saveStoredMatchSession(session);
       setShowLobby(false);
       setActiveSession(session);
     },
-    [],
+    [setRestoredSession],
   );
 
   /**
@@ -95,19 +103,24 @@ export default function HumanLobbyClient() {
    */
 
   const handleBackToLobby = useCallback(() => {
+    if (activeSession) {
+      // Throw away the old game ticket immediately
+      clearStoredMatchSession(activeSession.matchId);
+    }
+    setRestoredSession(null);
     setShowLobby(true);
     setActiveSession(null);
-
+    leaveQueue();
     void loadMatches();
-  }, [loadMatches]);
+  }, [activeSession, loadMatches, leaveQueue, setRestoredSession]);
 
   const handleSessionLost = useCallback(() => {
     setRestoredSession(null);
     setActiveSession(null);
     setShowLobby(true);
-
+    leaveQueue();
     void loadMatches();
-  }, [loadMatches, setRestoredSession]);
+  }, [loadMatches, setRestoredSession, leaveQueue]);
 
   /**
    * ACTIVE MATCH
