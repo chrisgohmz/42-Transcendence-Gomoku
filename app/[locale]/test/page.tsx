@@ -1,5 +1,5 @@
 import CreateRoomCard from "@/components/create-room-card";
-import GameLobbyTable from "@/components/game-lobby-table";
+import GameLobbyTableClient from "@/components/game-lobby-table-client";
 
 const entries = [
   {
@@ -21,7 +21,7 @@ export default function TestPage() {
         <div className="mx-auto max-w-xl">
           <CreateRoomCard />
         </div>
-        <GameLobbyTable entries={entries} />
+        <GameLobbyTableClient entries={entries} />
       </section>
     </main>
   );

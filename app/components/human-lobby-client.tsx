@@ -283,7 +283,7 @@ export default function HumanLobbyClient() {
           <CreateRoomCard
             error={createError}
             isCreating={isCreating}
-            onCreateRoom={(data) => {
+            onCreateRoomAction={(data) => {
               void createRoom(data);
             }}
             submitLabel={createSubmitLabel}
