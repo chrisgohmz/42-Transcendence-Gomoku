@@ -73,7 +73,14 @@ export default async function RootLayout({ children, params }: RootLayoutProps) 
             <a className="skip-link" href="#app-main">
               Skip to Content
             </a>
-            <div className="app-frame">
+            <div
+              aria-hidden="true"
+              className="pointer-events-none fixed inset-0 z-0 overflow-hidden"
+            >
+              <div className="absolute top-0 right-0 h-72 w-[760px] bg-[url('/ui/bamboo-accent.svg')] bg-contain bg-right-top bg-no-repeat opacity-[0.18] mix-blend-screen" />
+              <div className="absolute bottom-[-5rem] left-[var(--sidebar-width)] h-80 w-[720px] rotate-180 bg-[url('/ui/bamboo-accent.svg')] bg-contain bg-left-bottom bg-no-repeat opacity-[0.08] mix-blend-screen" />
+            </div>
+            <div className="app-frame relative z-10">
               <AppSidebar />
               <div id="app-main" className="app-content">
                 {children}
