@@ -33,7 +33,7 @@ services:
       database:
         condition: service_healthy
     volumes:
-      - ./public/uploads:/app/public/uploads
+      - app_uploads:/app/public/uploads
     networks:
       - transcendence
     healthcheck:
@@ -91,8 +91,8 @@ services:
       - "8443:8443"
     volumes:
       - ./infra/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
-      - ${DOCKER_DATA_DIR:-../.transcendence-docker-data}/caddy/data:/data
-      - ${DOCKER_DATA_DIR:-../.transcendence-docker-data}/caddy/config:/config
+      - caddy_data:/data
+      - caddy_config:/config
     networks:
       - transcendence
 
@@ -101,4 +101,7 @@ networks:
     driver: bridge
 
 volumes:
+  app_uploads:
+  caddy_config:
+  caddy_data:
   postgres_data:

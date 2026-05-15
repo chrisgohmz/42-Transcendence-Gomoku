@@ -30,24 +30,16 @@ The root install intentionally skips dependency lifecycle scripts. Generate the 
 ### Docker data location
 
 Keep Docker Engine's `data-root` on a local filesystem such as `goinfre`. This
-repo stores project-owned container data in bind-mounted directories under the
-path set by `DOCKER_DATA_DIR`, which defaults to a sibling directory named
-`../.transcendence-docker-data` when using the `make` targets:
+repo stores project-owned container data in Docker named volumes:
 
-- `../.transcendence-docker-data/caddy` for Caddy local CA/cert state
-- `../.transcendence-docker-data/app` for container-only development caches such as
-  `node_modules`, `.next`, and generated Prisma files
+- `postgres_data` for PostgreSQL data
+- `app_uploads` for uploaded profile images
+- `caddy_data` and `caddy_config` for Caddy local CA/cert state
+- `app_node_modules`, `app_next`, and `app_generated` for development caches
 
-Uploaded profile images are stored in `public/uploads/`, which is also ignored
-by Git.
-
-PostgreSQL stays in a Docker named volume. On the 42 lab machines, rootless
-Docker cannot initialize PostgreSQL data on the NFS-backed `sgoinfre` mount
-because the image needs ownership changes during startup.
-
-Because `DOCKER_DATA_DIR` and `public/uploads/` are bind mounts,
-`docker compose down -v` does not remove them. Use `make db-reset` or
-`make fclean` when you want to delete the local Docker data directories as well.
+On the 42 lab machines, keep Docker's own storage on `goinfre` so these named
+volumes do not fill the small home partition. `docker compose down` preserves
+the volumes. Use `make db-reset` or `make fclean` when you want to remove them.
 
 ### Run locally without containers
 
