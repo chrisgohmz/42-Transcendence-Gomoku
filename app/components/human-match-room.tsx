@@ -43,6 +43,8 @@ type HumanMatchRoomProps = {
 };
 
 type MatchMove = MatchStateResponse["moves"][number];
+type MatchStatus = GameUpdatePayload["status"];
+type SocketStatus = ReturnType<typeof useSocketGame>["status"];
 type TranslationFunction = (key: string, values?: Record<string, string | number>) => string;
 
 function emptyBoard(boardSize: number): Cell[][] {
@@ -96,7 +98,127 @@ function statusTone(
     return "brass";
   }
 
+  if (status === "CANCELLED") {
+    return "red";
+  }
+
   return "neutral";
+}
+
+function pageTitle(status: MatchStatus | undefined, t: TranslationFunction) {
+  if (status === "WAITING") {
+    return t("page.title.waiting");
+  }
+
+  if (status === "IN_PROGRESS") {
+    return t("page.title.live");
+  }
+
+  if (status === "FINISHED") {
+    return t("page.title.finished");
+  }
+
+  if (status === "CANCELLED") {
+    return t("page.title.cancelled");
+  }
+
+  return t("page.title.loading");
+}
+
+function pageLede(status: MatchStatus | undefined, t: TranslationFunction) {
+  if (status === "WAITING") {
+    return t("page.lede.waiting");
+  }
+
+  if (status === "IN_PROGRESS") {
+    return t("page.lede.live");
+  }
+
+  if (status === "FINISHED") {
+    return t("page.lede.finished");
+  }
+
+  if (status === "CANCELLED") {
+    return t("page.lede.cancelled");
+  }
+
+  return t("page.lede.loading");
+}
+
+function matchStatusLabel(status: MatchStatus | undefined, t: TranslationFunction) {
+  if (status === "WAITING") {
+    return t("status.waiting");
+  }
+
+  if (status === "IN_PROGRESS") {
+    return t("status.inProgress");
+  }
+
+  if (status === "FINISHED") {
+    return t("status.finished");
+  }
+
+  if (status === "CANCELLED") {
+    return t("status.cancelled");
+  }
+
+  return t("status.loading");
+}
+
+function socketStatusLabel(status: SocketStatus, t: TranslationFunction) {
+  if (status === "connecting") {
+    return t("connection.status.connecting");
+  }
+
+  if (status === "subscribed") {
+    return t("connection.status.connected");
+  }
+
+  if (status === "error") {
+    return t("connection.status.error");
+  }
+
+  return t("connection.status.idle");
+}
+
+function seatLabel(seat: Seat | null | undefined, t: TranslationFunction) {
+  if (seat === "BLACK") {
+    return t("seat.black");
+  }
+
+  if (seat === "WHITE") {
+    return t("seat.white");
+  }
+
+  return t("state.none");
+}
+
+function endReasonLabel(reason: string | null | undefined, t: TranslationFunction) {
+  if (reason === "five_in_a_row") {
+    return t("endReason.fiveInARow");
+  }
+
+  if (reason === "resign") {
+    return t("endReason.resign");
+  }
+
+  if (reason === "draw") {
+    return t("endReason.draw");
+  }
+
+  if (reason === "queue_cancelled") {
+    return t("endReason.queueCancelled");
+  }
+
+  if (reason === "queue_expired") {
+    return t("endReason.queueExpired");
+  }
+
+  if (reason === "abandoned") {
+    return t("endReason.abandoned");
+  }
+
+  return t("statusLine.resultFallback");
 }
 
 export default function HumanMatchRoom({
@@ -339,7 +461,7 @@ export default function HumanMatchRoom({
           <MatchBoard
             board={board}
             disabled={isBusy || isSubmittingMove || matchStatus !== "IN_PROGRESS"}
-            label="Human Gomoku board"
+            label={t("board.ariaLabel")}
             lastMove={effectiveUpdate?.lastMove?.position ?? null}
             nextTurnSeat={effectiveUpdate?.nextTurnSeat ?? null}
             onCellSelect={(x, y) => {
@@ -508,6 +630,10 @@ function statusLine(update: GameUpdatePayload | null, mySeat: Seat | null, t: Tr
     return t("statusLine.draw");
   }
 
+  if (update.status === "CANCELLED") {
+    return t("statusLine.cancelled", { reason: endReasonLabel(update.endReason, t) });
+  }
+
   if (mySeat && update.nextTurnSeat === mySeat) {
     return t("statusLine.yourMove");
   }
@@ -518,7 +644,15 @@ function statusLine(update: GameUpdatePayload | null, mySeat: Seat | null, t: Tr
 }
 
 function resultLabel(update: GameUpdatePayload | null, t: TranslationFunction) {
-  if (!update || update.status !== "FINISHED") {
+  if (!update) {
+    return t("result.pending");
+  }
+
+  if (update.status === "CANCELLED") {
+    return t("result.cancelled");
+  }
+
+  if (update.status !== "FINISHED") {
     return t("result.pending");
   }
 

@@ -434,12 +434,14 @@ export const messages = {
           waiting: "Room is open.",
           live: "Live room.",
           finished: "Room finished.",
+          cancelled: "Room closed.",
         },
         lede: {
           loading: "Fetching the latest room state.",
           waiting: "Waiting for the second player.",
           live: "Board, turn, and result for this table.",
           finished: "The final position is locked.",
+          cancelled: "This room is no longer available.",
         },
         refresh: "Refresh",
         lobby: "Back to Lobby",
@@ -449,6 +451,7 @@ export const messages = {
         waiting: "Waiting",
         inProgress: "In progress",
         finished: "Finished",
+        cancelled: "Cancelled",
       },
       connection: {
         eyebrow: "Connection",
@@ -507,12 +510,14 @@ export const messages = {
         draw: "Draw.",
         yourMove: "Your move.",
         toMove: "{seat} to move.",
+        cancelled: "Room closed by {reason}.",
         resultFallback: "result",
       },
       result: {
         pending: "Pending",
         won: "{seat} won",
         draw: "Draw",
+        cancelled: "Cancelled",
       },
       actions: {
         resign: "Resign",

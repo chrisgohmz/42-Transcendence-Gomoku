@@ -427,12 +427,14 @@ export const messages = {
           waiting: "房间已开启。",
           live: "进行中的房间。",
           finished: "已结束的房间。",
+          cancelled: "房间已关闭。",
         },
         lede: {
           loading: "正在获取最新房间状态。",
           waiting: "正在等待第二位玩家。",
           live: "显示此桌的棋盘、轮次和结果。",
           finished: "最终局面已锁定。",
+          cancelled: "此房间已不可用。",
         },
         refresh: "刷新",
         lobby: "返回大厅",
@@ -442,6 +444,7 @@ export const messages = {
         waiting: "等待中",
         inProgress: "进行中",
         finished: "已结束",
+        cancelled: "已取消",
       },
       connection: {
         eyebrow: "连接",
@@ -500,12 +503,14 @@ export const messages = {
         draw: "平局。",
         yourMove: "轮到你了。",
         toMove: "轮到 {seat}。",
+        cancelled: "房间因{reason}关闭。",
         resultFallback: "结果",
       },
       result: {
         pending: "待定",
         won: "{seat} 获胜",
         draw: "平局",
+        cancelled: "已取消",
       },
       actions: {
         resign: "认输",

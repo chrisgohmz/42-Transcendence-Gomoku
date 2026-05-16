@@ -427,12 +427,14 @@ export const messages = {
           waiting: "ルームは開いています。",
           live: "対局中のルーム。",
           finished: "対局終了のルーム。",
+          cancelled: "ルームは閉じられました。",
         },
         lede: {
           loading: "最新のルーム状態を取得しています。",
           waiting: "2人目の参加を待っています。",
           live: "この卓の盤面、手番、結果を表示しています。",
           finished: "最終局面は固定されています。",
+          cancelled: "このルームは利用できなくなりました。",
         },
         refresh: "更新",
         lobby: "ロビーに戻る",
@@ -442,6 +444,7 @@ export const messages = {
         waiting: "待機中",
         inProgress: "進行中",
         finished: "終了",
+        cancelled: "キャンセル",
       },
       connection: {
         eyebrow: "接続",
@@ -500,12 +503,14 @@ export const messages = {
         draw: "引き分けです。",
         yourMove: "あなたの番です。",
         toMove: "{seat} の番です。",
+        cancelled: "{reason} によりルームは閉じられました。",
         resultFallback: "結果",
       },
       result: {
         pending: "未確定",
         won: "{seat} の勝ち",
         draw: "引き分け",
+        cancelled: "キャンセル",
       },
       actions: {
         resign: "投了",
