@@ -1,4 +1,5 @@
 import type { Cell, GameUpdatePayload, Seat } from "../../../shared/match-events";
+import type { AiDifficultyId } from "./ai-difficulty";
 
 export type MatchSessionIdentity = {
   matchId: string;
@@ -6,7 +7,9 @@ export type MatchSessionIdentity = {
 };
 
 export type MatchStateResponse = {
+  aiDifficulty?: AiDifficultyId;
   matchId: string;
+  mode?: "ai";
   status: "WAITING" | "IN_PROGRESS" | "FINISHED" | "CANCELLED";
   visibility: "PUBLIC" | "PRIVATE";
   boardSize: number;
@@ -69,6 +72,12 @@ export function toInitialGameUpdate(
   const restoredLastMove = state.moves[state.moves.length - 1] ?? null;
 
   return {
+    ...(state.mode === "ai"
+      ? {
+          aiDifficulty: state.aiDifficulty,
+          mode: state.mode,
+        }
+      : {}),
     matchId: state.matchId,
     status: state.status,
     visibility: state.visibility,

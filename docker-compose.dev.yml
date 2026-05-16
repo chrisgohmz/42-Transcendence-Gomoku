@@ -11,10 +11,9 @@ services:
       SOCKET_PUBLIC_URL: https://localhost:8443
     volumes:
       - .:/app
-      - hidden_legacy_docker_data:/app/.docker-data
-      - ${DOCKER_DATA_DIR:-../.transcendence-docker-data}/app/node_modules:/app/node_modules
-      - ${DOCKER_DATA_DIR:-../.transcendence-docker-data}/app/next:/app/.next
-      - ${DOCKER_DATA_DIR:-../.transcendence-docker-data}/app/generated:/app/generated
+      - app_node_modules:/app/node_modules
+      - app_next:/app/.next
+      - app_generated:/app/generated
     healthcheck:
       start_period: 40s
 
@@ -34,10 +33,11 @@ services:
       SOCKET_CORS_ORIGIN: https://localhost:8443
     volumes:
       - .:/app
-      - hidden_legacy_docker_data:/app/.docker-data
-      - ${DOCKER_DATA_DIR:-../.transcendence-docker-data}/app/node_modules:/app/node_modules
+      - app_node_modules:/app/node_modules
     healthcheck:
       start_period: 5s
 
 volumes:
-  hidden_legacy_docker_data:
+  app_generated:
+  app_node_modules:
+  app_next:

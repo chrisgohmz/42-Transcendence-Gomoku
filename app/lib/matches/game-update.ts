@@ -1,5 +1,6 @@
 import type { Match, MatchMove, MatchParticipant } from "@/../generated/prisma/client";
 import { buildBoard } from "@/lib/game/state-builder";
+import { getSoloMatchMetadata } from "@/lib/matches/ai-solo";
 
 import type { GameUpdatePayload, LastMove, MoveSummary } from "../../../shared/match-events";
 
@@ -8,6 +9,7 @@ type GameUpdateMatch = Pick<
   | "boardSize"
   | "endReason"
   | "id"
+  | "metadata"
   | "nextTurnSeat"
   | "stateVersion"
   | "status"
@@ -60,8 +62,15 @@ export function buildGameUpdatePayload({
 }): GameUpdatePayload {
   const sortedMoves = [...moves].sort((a, b) => a.moveNumber - b.moveNumber);
   const latestMove = lastMove ?? sortedMoves.at(-1) ?? null;
+  const soloMetadata = getSoloMatchMetadata(match.metadata);
 
   return {
+    ...(soloMetadata
+      ? {
+          aiDifficulty: soloMetadata.aiDifficulty,
+          mode: soloMetadata.mode,
+        }
+      : {}),
     matchId: match.id,
     status: match.status,
     visibility: match.visibility,

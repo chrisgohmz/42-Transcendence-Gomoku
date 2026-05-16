@@ -37,7 +37,7 @@ function context(matchId = "match-1") {
   };
 }
 
-function matchRecord() {
+function matchRecord(overrides: Record<string, unknown> = {}) {
   return {
     id: "match-1",
     status: "IN_PROGRESS",
@@ -47,6 +47,7 @@ function matchRecord() {
     nextTurnSeat: "BLACK",
     winningSeat: null,
     endReason: null,
+    metadata: null,
     createdByUserId: "user-creator",
     participants: [
       {
@@ -79,6 +80,7 @@ function matchRecord() {
         stateVersion: 1,
       },
     ],
+    ...overrides,
   };
 }
 
@@ -141,5 +143,25 @@ describe("GET /api/matches/:id/state", () => {
       displayName: "Black",
     });
     expect(payload["board"]).toEqual([[{ occupied: false }]]);
+  });
+
+  test("returns structured solo AI metadata when present", async () => {
+    findUnique.mockResolvedValueOnce(
+      matchRecord({
+        metadata: {
+          aiDifficulty: "master",
+          mode: "ai",
+        },
+      }),
+    );
+
+    const response = await route.GET(request("participant-black"), context());
+    const payload = (await response.json()) as Record<string, unknown>;
+
+    expect(response.status).toBe(200);
+    expect(payload).toMatchObject({
+      aiDifficulty: "master",
+      mode: "ai",
+    });
   });
 });
