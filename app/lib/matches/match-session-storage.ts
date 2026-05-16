@@ -1,4 +1,5 @@
 import type { Seat } from "../../../shared/match-events";
+import { isAiDifficultyId, type AiDifficultyId } from "./ai-difficulty";
 
 export type StoredMatchSession = {
   matchId: string;
@@ -6,6 +7,8 @@ export type StoredMatchSession = {
   role: "PLAYER" | "SPECTATOR";
   seat: Seat | null;
   displayName: string;
+  aiDifficulty?: AiDifficultyId;
+  mode?: "ai" | "human";
 };
 
 type StoredMatchSessionRecord = StoredMatchSession & {
@@ -34,6 +37,10 @@ function isSeat(value: unknown): value is Seat | null {
   return value === "BLACK" || value === "WHITE" || value === null;
 }
 
+function isMode(value: unknown): value is StoredMatchSession["mode"] {
+  return value === "ai" || value === "human";
+}
+
 export function parseStoredMatchSession(raw: string): StoredMatchSession | null {
   try {
     const parsed = JSON.parse(raw) as Partial<StoredMatchSessionRecord>;
@@ -51,8 +58,10 @@ export function parseStoredMatchSession(raw: string): StoredMatchSession | null 
     }
 
     return {
+      aiDifficulty: isAiDifficultyId(parsed.aiDifficulty) ? parsed.aiDifficulty : undefined,
       displayName: parsed.displayName,
       matchId: parsed.matchId,
+      mode: isMode(parsed.mode) ? parsed.mode : undefined,
       participantId: parsed.participantId,
       role: parsed.role,
       seat: parsed.seat,

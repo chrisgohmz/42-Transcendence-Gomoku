@@ -1,3 +1,5 @@
+import type { AiDifficultyId } from "./ai-difficulty";
+
 export type MatchSubscribePayload = {
   matchId: string;
   participantId: string;
@@ -14,6 +16,7 @@ export type Seat = "BLACK" | "WHITE";
 export type Cell = { occupied: false } | { occupied: true; seat: Seat; moveNumber: number };
 
 export type MatchStatus = "WAITING" | "IN_PROGRESS" | "FINISHED" | "CANCELLED";
+export type MatchMode = "ai";
 
 export interface ParticipantSummary {
   participantId: string;
@@ -35,7 +38,9 @@ export interface MoveSummary extends LastMove {
 }
 
 export interface GameUpdatePayload {
+  aiDifficulty?: AiDifficultyId;
   matchId: string;
+  mode?: MatchMode;
   status: MatchStatus;
   visibility: "PUBLIC" | "PRIVATE";
   // ruleType: "GOMOKU" | "RENJU";

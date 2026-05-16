@@ -1,8 +1,11 @@
 import { z } from "zod";
 
+import { aiDifficultyIds } from "./ai-difficulty";
 import type { GameUpdatePayload, MatchSubscribePayload } from "./match-events";
 
 const seatSchema = z.enum(["BLACK", "WHITE"]);
+const aiDifficultySchema = z.enum(aiDifficultyIds);
+const matchModeSchema = z.enum(["ai"]);
 const matchStatusSchema = z.enum(["WAITING", "IN_PROGRESS", "FINISHED", "CANCELLED"]);
 const visibilitySchema = z.enum(["PUBLIC", "PRIVATE"]);
 const participantSummarySchema = z.object({
@@ -35,11 +38,13 @@ const moveSummarySchema = lastMoveSchema.extend({
 });
 
 export const gameUpdatePayloadSchema = z.object({
+  aiDifficulty: aiDifficultySchema.optional(),
   board: z.array(z.array(cellSchema)),
   boardSize: z.number().int(),
   endReason: z.string().nullable(),
   lastMove: lastMoveSchema.nullable(),
   matchId: z.string(),
+  mode: matchModeSchema.optional(),
   moves: z.array(moveSummarySchema),
   nextTurnSeat: seatSchema.nullable(),
   participants: z.array(participantSummarySchema),

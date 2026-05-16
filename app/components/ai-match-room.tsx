@@ -2,6 +2,8 @@
 
 import {
   ArrowLeft,
+  Bot,
+  BrainCircuit,
   CircleDot,
   Flag,
   LoaderCircle,
@@ -11,12 +13,13 @@ import {
   Trophy,
   UserRound,
 } from "lucide-react";
-import { useTranslations } from "next-intl";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { Badge, PageHeader, PageShell, Surface } from "@/components/gomoku-ui";
 import MatchBoard, { formatBoardPoint } from "@/components/match-board";
 import { useSocketGame } from "@/hooks/useSocketGame";
+import { getAiDifficulty } from "@/lib/matches/ai-difficulty";
+import { soloAiDisplayName } from "@/lib/matches/ai-solo";
 import {
   clearStoredMatchSession,
   type StoredMatchSession,
@@ -33,7 +36,7 @@ import { cn } from "@/lib/utils";
 
 import type { Cell, GameUpdatePayload, ParticipantSummary, Seat } from "../../shared/match-events";
 
-type HumanMatchRoomProps = {
+type AiMatchRoomProps = {
   initialState: MatchStateResponse | null;
   isRestoring?: boolean;
   onBackToLobby: () => void;
@@ -43,7 +46,6 @@ type HumanMatchRoomProps = {
 };
 
 type MatchMove = MatchStateResponse["moves"][number];
-type TranslationFunction = (key: string, values?: Record<string, string | number>) => string;
 
 function emptyBoard(boardSize: number): Cell[][] {
   return Array.from({ length: boardSize }, () =>
@@ -85,9 +87,15 @@ function seatTone(seat: Seat | null): "brass" | "mint" | "neutral" {
   return "neutral";
 }
 
-function statusTone(
-  status: GameUpdatePayload["status"] | undefined,
-): "brass" | "mint" | "red" | "neutral" {
+function oppositeSeat(seat: Seat | null): Seat | null {
+  if (seat === "BLACK") {
+    return "WHITE";
+  }
+
+  return seat === "WHITE" ? "BLACK" : null;
+}
+
+function statusTone(status: GameUpdatePayload["status"] | undefined): "brass" | "mint" | "red" {
   if (status === "IN_PROGRESS") {
     return "mint";
   }
@@ -96,26 +104,29 @@ function statusTone(
     return "brass";
   }
 
-  return "neutral";
+  return "red";
 }
 
-export default function HumanMatchRoom({
+export default function AiMatchRoom({
   initialState,
   isRestoring = false,
   onBackToLobby,
   onSessionLost,
   restoreError,
   session,
-}: HumanMatchRoomProps) {
-  const t = useTranslations("human.match");
+}: AiMatchRoomProps) {
   const [state, setState] = useState<MatchStateResponse | null>(
     initialState?.matchId === session.matchId ? initialState : null,
   );
   const [isLoadingState, setIsLoadingState] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(restoreError ?? null);
   const [moveError, setMoveError] = useState<string | null>(null);
+  const [aiLastReason, setAiLastReason] = useState<string | null>(null);
   const [isSubmittingMove, setIsSubmittingMove] = useState(false);
+  const [isAiThinking, setIsAiThinking] = useState(false);
+  const [failedAiTurnVersion, setFailedAiTurnVersion] = useState<number | null>(null);
   const [isResigning, setIsResigning] = useState(false);
+  const requestedAiVersionRef = useRef<number | null>(null);
 
   useEffect(() => {
     if (initialState?.matchId === session.matchId) {
@@ -143,24 +154,21 @@ export default function HumanMatchRoom({
           onSessionLost();
         }
 
-        setLoadError(
-          getErrorMessage(
-            errorPayload,
-            t("errors.stateRequestFailed", { status: response.status }),
-          ),
-        );
-        return;
+        setLoadError(getErrorMessage(errorPayload, `State request failed (${response.status})`));
+        return null;
       }
 
       const nextState = (await response.json()) as MatchStateResponse;
       setState(nextState);
       setLoadError(null);
+      return nextState;
     } catch {
-      setLoadError(t("errors.networkLoadState"));
+      setLoadError("Network error while loading match state");
+      return null;
     } finally {
       setIsLoadingState(false);
     }
-  }, [onSessionLost, session.matchId, session.participantId, t]);
+  }, [onSessionLost, session.matchId, session.participantId]);
 
   useEffect(() => {
     void loadState();
@@ -175,27 +183,119 @@ export default function HumanMatchRoom({
   const liveUpdate = getGameUpdateForSession(lastUpdate, session);
   const effectiveUpdate = selectLatestGameUpdateForSession(initialUpdate, liveUpdate, session);
   const board = effectiveUpdate?.board ?? state?.board ?? emptyBoard(state?.boardSize ?? 15);
-  const mySeat = getSessionSeat(state, session) ?? session.seat;
-  const participantBySeat = useMemo(() => {
-    const participants = effectiveUpdate?.participants ?? [];
-    return {
+  const participants = useMemo(
+    () => effectiveUpdate?.participants ?? state?.participants ?? [],
+    [effectiveUpdate?.participants, state?.participants],
+  );
+  const participantBySeat = useMemo(
+    () => ({
       BLACK: participants.find((participant) => participant.seat === "BLACK") ?? null,
       WHITE: participants.find((participant) => participant.seat === "WHITE") ?? null,
-    };
-  }, [effectiveUpdate?.participants]);
+    }),
+    [participants],
+  );
+  const mySeat = getSessionSeat(state, session) ?? session.seat;
+  const matchMode = effectiveUpdate?.mode ?? state?.mode ?? session.mode;
+  const aiSeat = matchMode === "ai" ? oppositeSeat(mySeat) : null;
+  const aiParticipant = aiSeat ? participantBySeat[aiSeat] : null;
+  const aiName = aiParticipant?.displayName ?? soloAiDisplayName;
+  const difficulty = getAiDifficulty(
+    session.aiDifficulty ?? effectiveUpdate?.aiDifficulty ?? state?.aiDifficulty,
+  );
   const moveHistory = useMemo(
     () => effectiveUpdate?.moves ?? state?.moves ?? [],
     [effectiveUpdate?.moves, state?.moves],
   );
-  const canResign = effectiveUpdate?.status === "IN_PROGRESS" && mySeat !== null;
   const matchStatus = effectiveUpdate?.status ?? state?.status;
+  const canResign = effectiveUpdate?.status === "IN_PROGRESS" && mySeat !== null;
+  const isAiTurn =
+    effectiveUpdate?.status === "IN_PROGRESS" &&
+    aiSeat !== null &&
+    effectiveUpdate.nextTurnSeat === aiSeat;
+  const canRetryAiTurn =
+    isAiTurn &&
+    !isAiThinking &&
+    typeof effectiveUpdate?.stateVersion === "number" &&
+    failedAiTurnVersion === effectiveUpdate.stateVersion;
   const isBusy = isRestoring || isLoadingState;
-  const pageHeaderTitle = pageTitle(matchStatus, t);
-  const pageHeaderLede = pageLede(matchStatus, t);
-  const matchStatusText = matchStatusLabel(matchStatus, t);
-  const socketStatusText = socketStatusLabel(socketStatus, t);
-  const statusLineText = statusLine(effectiveUpdate, mySeat, t);
-  const resultText = resultLabel(effectiveUpdate, t);
+
+  const requestAiTurn = useCallback(
+    async (baseVersion: number) => {
+      setIsAiThinking(true);
+      setMoveError(null);
+
+      try {
+        const response = await fetch(
+          `/api/matches/${encodeURIComponent(session.matchId)}/ai-turn`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              baseVersion,
+              participantId: session.participantId,
+            }),
+          },
+        );
+
+        if (!response.ok) {
+          const errorPayload = await response.json().catch(() => null);
+          const errorCode = getErrorCode(errorPayload);
+          if (errorCode === "stale_state" || errorCode === "not_ai_turn") {
+            setFailedAiTurnVersion(null);
+            await loadState();
+            return;
+          }
+
+          setMoveError(getErrorMessage(errorPayload, `AI turn failed (${response.status})`));
+          setFailedAiTurnVersion(baseVersion);
+          return;
+        }
+
+        const payload = (await response.json()) as { move?: { reason?: string } };
+        setAiLastReason(payload.move?.reason ?? null);
+        setFailedAiTurnVersion(null);
+        await loadState();
+      } catch {
+        setMoveError("Network error while the AI was thinking");
+        setFailedAiTurnVersion(baseVersion);
+      } finally {
+        setIsAiThinking(false);
+      }
+    },
+    [loadState, session.matchId, session.participantId],
+  );
+
+  useEffect(() => {
+    const stateVersion = effectiveUpdate?.stateVersion;
+    if (
+      !isAiTurn ||
+      typeof stateVersion !== "number" ||
+      isAiThinking ||
+      failedAiTurnVersion === stateVersion
+    ) {
+      return;
+    }
+
+    if (requestedAiVersionRef.current === stateVersion) {
+      return;
+    }
+
+    requestedAiVersionRef.current = stateVersion;
+    void requestAiTurn(stateVersion);
+  }, [effectiveUpdate?.stateVersion, failedAiTurnVersion, isAiThinking, isAiTurn, requestAiTurn]);
+
+  function handleRetryAiTurn() {
+    const stateVersion = effectiveUpdate?.stateVersion;
+    if (!isAiTurn || typeof stateVersion !== "number" || isAiThinking) {
+      return;
+    }
+
+    setFailedAiTurnVersion(null);
+    requestedAiVersionRef.current = stateVersion;
+    void requestAiTurn(stateVersion);
+  }
 
   async function handleCellSelect(x: number, y: number) {
     if (!effectiveUpdate || !mySeat || effectiveUpdate.status !== "IN_PROGRESS") {
@@ -204,17 +304,19 @@ export default function HumanMatchRoom({
 
     setIsSubmittingMove(true);
     setMoveError(null);
+    setFailedAiTurnVersion(null);
+    setAiLastReason(null);
 
     try {
       await submitMove({
+        baseVersion: effectiveUpdate.stateVersion,
         matchId: session.matchId,
         participantId: session.participantId,
         position: { x, y },
-        baseVersion: effectiveUpdate.stateVersion,
       });
       await loadState();
     } catch (error) {
-      setMoveError(error instanceof Error ? error.message : t("errors.submitMove"));
+      setMoveError(error instanceof Error ? error.message : "Network error while submitting move");
       if (error instanceof MoveSubmissionError && error.code === "stale_state") {
         await loadState();
       }
@@ -238,20 +340,15 @@ export default function HumanMatchRoom({
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          participantId: session.participantId,
           baseVersion: effectiveUpdate.stateVersion,
+          participantId: session.participantId,
         }),
       });
 
       if (!response.ok) {
         const errorPayload = await response.json().catch(() => null);
         const errorCode = getErrorCode(errorPayload);
-        setMoveError(
-          getErrorMessage(
-            errorPayload,
-            t("errors.resignRequestFailed", { status: response.status }),
-          ),
-        );
+        setMoveError(getErrorMessage(errorPayload, `Resign request failed (${response.status})`));
         if (errorCode === "stale_state") {
           await loadState();
         }
@@ -260,24 +357,28 @@ export default function HumanMatchRoom({
 
       await loadState();
     } catch {
-      setMoveError(t("errors.networkResign"));
+      setMoveError("Network error while resigning");
     } finally {
       setIsResigning(false);
     }
   }
 
   return (
-    <PageShell className="human-match-room">
+    <PageShell className="ai-match-room">
       <PageHeader
-        eyebrow={t("page.eyebrow")}
+        eyebrow="vs AI Match"
         icon={Swords}
-        title={pageHeaderTitle}
-        lede={pageHeaderLede}
+        title={matchStatus === "FINISHED" ? "Solo match complete." : "Active game vs AI"}
+        lede={
+          matchStatus === "FINISHED"
+            ? "The final position is locked."
+            : `${aiName} is running ${difficulty.name} search on the server.`
+        }
         actions={
           <>
             <Badge tone={statusTone(matchStatus)}>
               <CircleDot aria-hidden="true" className="size-3.5" />
-              {matchStatusText}
+              {matchStatus ?? "Loading"}
             </Badge>
             <button
               type="button"
@@ -289,7 +390,7 @@ export default function HumanMatchRoom({
               aria-busy={isLoadingState}
             >
               <RefreshCcw aria-hidden="true" className="size-4" />
-              {t("page.refresh")}
+              Refresh
             </button>
             <button
               type="button"
@@ -297,7 +398,7 @@ export default function HumanMatchRoom({
               onClick={onBackToLobby}
             >
               <ArrowLeft aria-hidden="true" className="size-4" />
-              {t("page.lobby")}
+              Setup
             </button>
           </>
         }
@@ -305,32 +406,31 @@ export default function HumanMatchRoom({
 
       <section
         className="grid gap-5 xl:grid-cols-[260px_minmax(0,1fr)_300px]"
-        data-testid="human-match-room"
+        data-testid="ai-match-room"
       >
         <aside className="grid content-start gap-5">
           <SeatPanel
             participant={participantBySeat.BLACK}
+            isAi={aiSeat === "BLACK"}
             isTurn={effectiveUpdate?.nextTurnSeat === "BLACK"}
             isYou={mySeat === "BLACK"}
             seat="BLACK"
           />
           <SeatPanel
             participant={participantBySeat.WHITE}
+            isAi={aiSeat === "WHITE"}
             isTurn={effectiveUpdate?.nextTurnSeat === "WHITE"}
             isYou={mySeat === "WHITE"}
             seat="WHITE"
           />
-          <Surface eyebrow={t("connection.eyebrow")} icon={Radio} title={t("connection.title")}>
+          <Surface eyebrow="Connection" icon={Radio} title="Realtime">
             <div className="grid gap-3 text-sm">
-              <DetailRow label={t("connection.socket")} value={socketStatusText} />
+              <DetailRow label="Socket" value={socketStatus} />
               <DetailRow
-                label={t("connection.version")}
+                label="Version"
                 value={effectiveUpdate?.stateVersion ?? state?.stateVersion ?? 0}
               />
-              <DetailRow
-                label={t("connection.you")}
-                value={mySeat ? seatLabel(mySeat, t) : t("connection.spectator")}
-              />
+              <DetailRow label="You" value={mySeat ?? "Spectator"} />
             </div>
           </Surface>
         </aside>
@@ -338,64 +438,87 @@ export default function HumanMatchRoom({
         <section className="board-room overflow-hidden p-3 sm:p-5">
           <MatchBoard
             board={board}
-            disabled={isBusy || isSubmittingMove || matchStatus !== "IN_PROGRESS"}
-            label="Human Gomoku board"
+            disabled={isBusy || isSubmittingMove || isAiThinking || matchStatus !== "IN_PROGRESS"}
+            label="AI Gomoku board"
             lastMove={effectiveUpdate?.lastMove?.position ?? null}
             nextTurnSeat={effectiveUpdate?.nextTurnSeat ?? null}
             onCellSelect={(x, y) => {
               void handleCellSelect(x, y);
             }}
             playerSeat={mySeat}
-            testId="human-match-board"
+            testId="ai-match-board"
           />
 
           <div className="mt-4 grid gap-3 md:grid-cols-[minmax(0,1fr)_auto] md:items-center">
             <div className="min-w-0">
-              <p className="m-0 text-sm font-black text-[var(--muted-strong)]">{statusLineText}</p>
+              <p className="m-0 text-sm font-black text-[var(--muted-strong)]">
+                {statusLine(effectiveUpdate, mySeat, aiSeat, isAiThinking, aiName)}
+              </p>
+              {aiLastReason ? (
+                <p className="m-0 mt-2 text-sm font-bold text-[var(--muted-text)]">
+                  Last AI move: {aiLastReason}
+                </p>
+              ) : null}
               {loadError || moveError ? (
                 <p role="alert" className="m-0 mt-2 text-sm font-bold text-[var(--danger)]">
                   {moveError ?? loadError}
                 </p>
               ) : null}
             </div>
-            <button
-              type="button"
-              className="btn btn-danger m-0 min-h-11 px-4"
-              onClick={() => {
-                void handleResign();
-              }}
-              disabled={!canResign || isResigning}
-              aria-busy={isResigning}
-            >
-              {isResigning ? (
-                <LoaderCircle aria-hidden="true" className="size-4 animate-spin" />
-              ) : (
-                <Flag aria-hidden="true" className="size-4" />
-              )}
-              {t("actions.resign")}
-            </button>
+            <div className="flex flex-wrap justify-start gap-2 md:justify-end">
+              {canRetryAiTurn ? (
+                <button
+                  type="button"
+                  className="btn btn-subtle m-0 min-h-11 px-4"
+                  onClick={handleRetryAiTurn}
+                >
+                  <RefreshCcw aria-hidden="true" className="size-4" />
+                  Retry AI
+                </button>
+              ) : null}
+              <button
+                type="button"
+                className="btn btn-danger m-0 min-h-11 px-4"
+                onClick={() => {
+                  void handleResign();
+                }}
+                disabled={!canResign || isResigning}
+                aria-busy={isResigning}
+              >
+                {isResigning ? (
+                  <LoaderCircle aria-hidden="true" className="size-4 animate-spin" />
+                ) : (
+                  <Flag aria-hidden="true" className="size-4" />
+                )}
+                Resign
+              </button>
+            </div>
           </div>
         </section>
 
         <aside className="grid content-start gap-5">
-          <Surface eyebrow={t("state.eyebrow")} icon={Trophy} title={t("state.title")}>
+          <Surface eyebrow="AI model" icon={BrainCircuit} title={difficulty.name}>
             <div className="grid gap-3 text-sm">
-              <DetailRow label={t("state.match")} value={session.matchId.slice(0, 8)} />
-              <DetailRow label={t("state.board")} value={`${board.length} x ${board.length}`} />
+              <DetailRow label="Depth" value={`${difficulty.engine.searchDepth} plies`} />
+              <DetailRow label="Candidates" value={difficulty.engine.candidateLimit} />
               <DetailRow
-                label={t("state.next")}
-                value={
-                  effectiveUpdate?.nextTurnSeat
-                    ? seatLabel(effectiveUpdate.nextTurnSeat, t)
-                    : t("state.none")
-                }
+                label="Randomness"
+                value={`${Math.round(difficulty.engine.mistakeChance * 100)}%`}
               />
-              <DetailRow label={t("state.result")} value={resultText} />
             </div>
           </Surface>
 
-          <Surface eyebrow={t("moves.eyebrow")} title={t("moves.title")}>
-            <MoveHistory moves={moveHistory} participants={effectiveUpdate?.participants ?? []} />
+          <Surface eyebrow="Match" icon={Trophy} title="State">
+            <div className="grid gap-3 text-sm">
+              <DetailRow label="Match" value={session.matchId.slice(0, 8)} />
+              <DetailRow label="Board" value={`${board.length} x ${board.length}`} />
+              <DetailRow label="Next" value={effectiveUpdate?.nextTurnSeat ?? "None"} />
+              <DetailRow label="Result" value={resultLabel(effectiveUpdate)} />
+            </div>
+          </Surface>
+
+          <Surface eyebrow="Moves" title="Notation">
+            <MoveHistory moves={moveHistory} participants={participants} />
           </Surface>
         </aside>
       </section>
@@ -404,26 +527,27 @@ export default function HumanMatchRoom({
 }
 
 function SeatPanel({
+  isAi,
   isTurn,
   isYou,
   participant,
   seat,
 }: {
+  isAi: boolean;
   isTurn: boolean;
   isYou: boolean;
   participant: ParticipantSummary | null;
   seat: Seat;
 }) {
-  const t = useTranslations("human.match");
   return (
     <Surface
-      eyebrow={seatLabel(seat, t)}
-      icon={UserRound}
-      title={participant?.displayName ?? t("seat.openSeat")}
+      eyebrow={seat}
+      icon={isAi ? Bot : UserRound}
+      title={participant?.displayName ?? "Open seat"}
     >
       <div className="flex flex-wrap gap-2">
-        <Badge tone={seatTone(seat)}>{isYou ? t("seat.you") : t("seat.opponent")}</Badge>
-        {isTurn ? <Badge tone="mint">{t("seat.turn")}</Badge> : null}
+        <Badge tone={seatTone(seat)}>{isYou ? "You" : isAi ? "AI" : "Opponent"}</Badge>
+        {isTurn ? <Badge tone="mint">Turn</Badge> : null}
       </div>
     </Surface>
   );
@@ -445,7 +569,6 @@ function MoveHistory({
   moves: MatchMove[];
   participants: ParticipantSummary[];
 }) {
-  const t = useTranslations("human.match");
   const seatByParticipant = new Map(
     participants.map((participant) => [participant.participantId, participant.seat]),
   );
@@ -454,7 +577,7 @@ function MoveHistory({
   if (recentMoves.length === 0) {
     return (
       <div className="rounded-md border border-dashed border-[var(--panel-border)] bg-white/[0.035] p-4 text-sm font-bold text-[var(--muted-text)]">
-        {t("moves.empty")}
+        No moves yet.
       </div>
     );
   }
@@ -484,45 +607,40 @@ function MoveHistory({
   );
 }
 
-function statusLine(update: GameUpdatePayload | null, mySeat: Seat | null, t: TranslationFunction) {
+function statusLine(
+  update: GameUpdatePayload | null,
+  mySeat: Seat | null,
+  aiSeat: Seat | null,
+  isAiThinking: boolean,
+  aiName: string,
+) {
   if (!update) {
-    return t("statusLine.loading");
-  }
-
-  if (update.status === "WAITING") {
-    return t("statusLine.waiting");
+    return "Loading match state.";
   }
 
   if (update.status === "FINISHED") {
     if (update.winningSeat) {
-      if (update.endReason === "resign") {
-        return t("statusLine.winnerByResign", { seat: seatLabel(update.winningSeat, t) });
-      }
-
-      return t("statusLine.winner", {
-        seat: seatLabel(update.winningSeat, t),
-        reason: endReasonLabel(update.endReason, t),
-      });
+      return `${update.winningSeat} wins by ${update.endReason ?? "result"}.`;
     }
 
-    return t("statusLine.draw");
+    return `Draw by ${update.endReason ?? "result"}.`;
+  }
+
+  if (isAiThinking || (aiSeat && update.nextTurnSeat === aiSeat)) {
+    return `${aiName} is thinking.`;
   }
 
   if (mySeat && update.nextTurnSeat === mySeat) {
-    return t("statusLine.yourMove");
+    return "Your move.";
   }
 
-  return t("statusLine.toMove", {
-    seat: seatLabel(update.nextTurnSeat, t),
-  });
+  return `${update.nextTurnSeat ?? "Opponent"} to move.`;
 }
 
-function resultLabel(update: GameUpdatePayload | null, t: TranslationFunction) {
+function resultLabel(update: GameUpdatePayload | null) {
   if (!update || update.status !== "FINISHED") {
-    return t("result.pending");
+    return "Pending";
   }
 
-  return update.winningSeat
-    ? t("result.won", { seat: seatLabel(update.winningSeat, t) })
-    : t("result.draw");
+  return update.winningSeat ? `${update.winningSeat} won` : "Draw";
 }
