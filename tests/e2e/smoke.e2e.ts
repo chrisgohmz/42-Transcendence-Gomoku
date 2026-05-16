@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 
 import { createId } from "@paralleldrive/cuid2";
-import { expect, type Locator, type Page, type TestInfo, test } from "@playwright/test";
+import { expect, type Page, type TestInfo, test } from "@playwright/test";
 import { hashPassword } from "better-auth/crypto";
 
 import { prisma } from "../../app/lib/prisma";
@@ -28,21 +28,12 @@ test("home page renders the redesigned command center", async ({ page }) => {
 
 test("primary game routes render their new page shells", async ({ page }) => {
   await gotoAppRoute(page, "/game");
-  await expect(page.getByRole("heading", { level: 1, name: "Active game vs AI" })).toBeAttached();
+  await expect(
+    page.getByRole("heading", { level: 1, name: "Choose your opponent." }),
+  ).toBeVisible();
   await expect(page.getByRole("heading", { name: "Kata Reader" })).toBeVisible();
-  await expect(page.getByText("Move History", { exact: true }).first()).toBeVisible();
+  await expect(page.getByRole("button", { name: "Start Training" })).toBeVisible();
   await page.waitForLoadState("networkidle");
-
-  const board = page.getByRole("grid", { name: "Gomoku board" });
-  const boardCells = board.getByRole("gridcell");
-  await expect(board).toBeVisible();
-  await expect(boardCells).toHaveCount(225);
-  expect(await countBoardTabStops(board)).toBe(1);
-  await boardCells.nth(112).focus();
-  await expect(boardCells.nth(112)).toBeFocused();
-  await page.keyboard.press("ArrowRight");
-  await expect(boardCells.nth(113)).toBeFocused();
-  expect(await countBoardTabStops(board)).toBe(1);
 
   await gotoAppRoute(page, "/human");
   await expect(page.getByRole("heading", { level: 1, name: /Find a room/i })).toBeVisible();
@@ -166,12 +157,6 @@ test("authenticated redesigned pages render at desktop and mobile widths", async
 
 async function gotoAppRoute(page: Page, route: string) {
   await page.goto(route, { waitUntil: "domcontentloaded" });
-}
-
-async function countBoardTabStops(board: Locator) {
-  return board
-    .getByRole("gridcell")
-    .evaluateAll((cells) => cells.filter((cell) => cell.getAttribute("tabindex") === "0").length);
 }
 
 async function expectNoDocumentOverflow(page: Page, route: string) {
