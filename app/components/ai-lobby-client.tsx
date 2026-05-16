@@ -110,9 +110,14 @@ export default function AiLobbyClient() {
   const [showHints, setShowHints] = useState(true);
   const [activeSession, setActiveSession] = useState<StoredMatchSession | null>(null);
   const [showLobby, setShowLobby] = useState(false);
+  const [isClientReady, setIsClientReady] = useState(false);
   const [isStarting, setIsStarting] = useState(false);
   const [startError, setStartError] = useState<string | null>(null);
   const selectedDifficulty = getAiDifficulty(selectedDifficultyId);
+
+  useEffect(() => {
+    setIsClientReady(true);
+  }, []);
 
   useEffect(() => {
     if (showLobby || !restoredMatch.session) {
@@ -385,7 +390,7 @@ export default function AiLobbyClient() {
               onClick={() => {
                 void handleStartTraining();
               }}
-              disabled={isStarting}
+              disabled={!isClientReady || isStarting}
               aria-busy={isStarting}
             >
               <Swords aria-hidden="true" className="size-5" />

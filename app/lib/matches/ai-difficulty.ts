@@ -1,6 +1,6 @@
-export const aiDifficultyIds = ["beginner", "apprentice", "expert", "master"] as const;
+import { aiDifficultyIds, type AiDifficultyId } from "../../../shared/ai-difficulty";
 
-export type AiDifficultyId = (typeof aiDifficultyIds)[number];
+export { aiDifficultyIds, type AiDifficultyId };
 export type AiDifficultyTone = "blue" | "brass" | "mint" | "purple";
 
 export type AiDifficultyOption = {

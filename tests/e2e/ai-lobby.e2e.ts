@@ -43,9 +43,10 @@ test("AI lobby starts a solo match and renders the shared match board", async ({
   await expect(
     page.getByRole("heading", { level: 1, name: "Choose your opponent." }),
   ).toBeVisible();
-  await page.waitForLoadState("networkidle");
 
-  await page.getByRole("button", { name: "Start Training" }).click();
+  const startTrainingButton = page.getByRole("button", { name: "Start Training" });
+  await expect(startTrainingButton).toBeEnabled();
+  await startTrainingButton.click();
 
   await expect.poll(() => startRequests).toBe(1);
   await expect.poll(() => stateRequests).toBeGreaterThan(0);

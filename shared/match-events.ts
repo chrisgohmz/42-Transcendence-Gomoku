@@ -1,3 +1,5 @@
+import type { AiDifficultyId } from "./ai-difficulty";
+
 export type MatchSubscribePayload = {
   matchId: string;
   participantId: string;
@@ -15,7 +17,6 @@ export type Cell = { occupied: false } | { occupied: true; seat: Seat; moveNumbe
 
 export type MatchStatus = "WAITING" | "IN_PROGRESS" | "FINISHED" | "CANCELLED";
 export type MatchMode = "ai";
-export type SharedAiDifficultyId = "beginner" | "apprentice" | "expert" | "master";
 
 export interface ParticipantSummary {
   participantId: string;
@@ -37,7 +38,7 @@ export interface MoveSummary extends LastMove {
 }
 
 export interface GameUpdatePayload {
-  aiDifficulty?: SharedAiDifficultyId;
+  aiDifficulty?: AiDifficultyId;
   matchId: string;
   mode?: MatchMode;
   status: MatchStatus;

@@ -1,9 +1,10 @@
 import { z } from "zod";
 
+import { aiDifficultyIds } from "./ai-difficulty";
 import type { GameUpdatePayload, MatchSubscribePayload } from "./match-events";
 
 const seatSchema = z.enum(["BLACK", "WHITE"]);
-const aiDifficultySchema = z.enum(["beginner", "apprentice", "expert", "master"]);
+const aiDifficultySchema = z.enum(aiDifficultyIds);
 const matchModeSchema = z.enum(["ai"]);
 const matchStatusSchema = z.enum(["WAITING", "IN_PROGRESS", "FINISHED", "CANCELLED"]);
 const visibilitySchema = z.enum(["PUBLIC", "PRIVATE"]);
