@@ -298,6 +298,7 @@ model Match {
   createdByUserId String?
   startedAt       DateTime?
   finishedAt      DateTime?
+  metadata        Json?
   createdAt       DateTime        @default(now())
   updatedAt       DateTime        @updatedAt
 

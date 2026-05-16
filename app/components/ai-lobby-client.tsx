@@ -34,7 +34,6 @@ import {
   type AiDifficultyId,
   type AiDifficultyTone,
 } from "@/lib/matches/ai-difficulty";
-import { getSoloAiParticipant } from "@/lib/matches/ai-solo";
 import {
   saveStoredMatchSession,
   type StoredMatchSession,
@@ -120,9 +119,7 @@ export default function AiLobbyClient() {
       return;
     }
 
-    const restoredIsAi =
-      restoredMatch.session.mode === "ai" ||
-      Boolean(restoredMatch.state && getSoloAiParticipant(restoredMatch.state.participants));
+    const restoredIsAi = restoredMatch.session.mode === "ai" || restoredMatch.state?.mode === "ai";
 
     if (restoredIsAi) {
       setActiveSession(restoredMatch.session);

@@ -77,6 +77,17 @@ describe("isGameUpdatePayload", () => {
     ).toBe(true);
   });
 
+  test("accepts structured solo AI metadata", () => {
+    expect(
+      isGameUpdatePayload({
+        ...basePayload,
+        aiDifficulty: "master",
+        lastMove: null,
+        mode: "ai",
+      }),
+    ).toBe(true);
+  });
+
   test("rejects payloads missing the lastMove field", () => {
     expect(isGameUpdatePayload(basePayload)).toBe(false);
   });
@@ -109,6 +120,17 @@ describe("isGameUpdatePayload", () => {
           requestId: null,
           stateVersion: 2,
         },
+      }),
+    ).toBe(false);
+  });
+
+  test("rejects malformed AI metadata", () => {
+    expect(
+      isGameUpdatePayload({
+        ...basePayload,
+        aiDifficulty: "nightmare",
+        lastMove: null,
+        mode: "ai",
       }),
     ).toBe(false);
   });

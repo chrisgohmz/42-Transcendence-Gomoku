@@ -19,7 +19,7 @@ import { Badge, PageHeader, PageShell, Surface } from "@/components/gomoku-ui";
 import MatchBoard, { formatBoardPoint } from "@/components/match-board";
 import { useSocketGame } from "@/hooks/useSocketGame";
 import { getAiDifficulty } from "@/lib/matches/ai-difficulty";
-import { getSoloAiParticipant, getSoloMatchDifficultyId } from "@/lib/matches/ai-solo";
+import { soloAiDisplayName } from "@/lib/matches/ai-solo";
 import {
   clearStoredMatchSession,
   type StoredMatchSession,
@@ -87,6 +87,14 @@ function seatTone(seat: Seat | null): "brass" | "mint" | "neutral" {
   return "neutral";
 }
 
+function oppositeSeat(seat: Seat | null): Seat | null {
+  if (seat === "BLACK") {
+    return "WHITE";
+  }
+
+  return seat === "WHITE" ? "BLACK" : null;
+}
+
 function statusTone(status: GameUpdatePayload["status"] | undefined): "brass" | "mint" | "red" {
   if (status === "IN_PROGRESS") {
     return "mint";
@@ -116,6 +124,7 @@ export default function AiMatchRoom({
   const [aiLastReason, setAiLastReason] = useState<string | null>(null);
   const [isSubmittingMove, setIsSubmittingMove] = useState(false);
   const [isAiThinking, setIsAiThinking] = useState(false);
+  const [failedAiTurnVersion, setFailedAiTurnVersion] = useState<number | null>(null);
   const [isResigning, setIsResigning] = useState(false);
   const requestedAiVersionRef = useRef<number | null>(null);
 
@@ -186,11 +195,13 @@ export default function AiMatchRoom({
     [participants],
   );
   const mySeat = getSessionSeat(state, session) ?? session.seat;
-  const aiParticipant = getSoloAiParticipant(participants);
-  const aiSeat = aiParticipant?.seat ?? null;
-  const aiName = aiParticipant?.displayName ?? "Kata Reader";
-  const difficultyId = session.aiDifficulty ?? getSoloMatchDifficultyId(participants);
-  const difficulty = getAiDifficulty(difficultyId);
+  const matchMode = effectiveUpdate?.mode ?? state?.mode ?? session.mode;
+  const aiSeat = matchMode === "ai" ? oppositeSeat(mySeat) : null;
+  const aiParticipant = aiSeat ? participantBySeat[aiSeat] : null;
+  const aiName = aiParticipant?.displayName ?? soloAiDisplayName;
+  const difficulty = getAiDifficulty(
+    session.aiDifficulty ?? effectiveUpdate?.aiDifficulty ?? state?.aiDifficulty,
+  );
   const moveHistory = useMemo(
     () => effectiveUpdate?.moves ?? state?.moves ?? [],
     [effectiveUpdate?.moves, state?.moves],
@@ -201,6 +212,11 @@ export default function AiMatchRoom({
     effectiveUpdate?.status === "IN_PROGRESS" &&
     aiSeat !== null &&
     effectiveUpdate.nextTurnSeat === aiSeat;
+  const canRetryAiTurn =
+    isAiTurn &&
+    !isAiThinking &&
+    typeof effectiveUpdate?.stateVersion === "number" &&
+    failedAiTurnVersion === effectiveUpdate.stateVersion;
   const isBusy = isRestoring || isLoadingState;
 
   const requestAiTurn = useCallback(
@@ -227,19 +243,23 @@ export default function AiMatchRoom({
           const errorPayload = await response.json().catch(() => null);
           const errorCode = getErrorCode(errorPayload);
           if (errorCode === "stale_state" || errorCode === "not_ai_turn") {
+            setFailedAiTurnVersion(null);
             await loadState();
             return;
           }
 
           setMoveError(getErrorMessage(errorPayload, `AI turn failed (${response.status})`));
+          setFailedAiTurnVersion(baseVersion);
           return;
         }
 
         const payload = (await response.json()) as { move?: { reason?: string } };
         setAiLastReason(payload.move?.reason ?? null);
+        setFailedAiTurnVersion(null);
         await loadState();
       } catch {
         setMoveError("Network error while the AI was thinking");
+        setFailedAiTurnVersion(baseVersion);
       } finally {
         setIsAiThinking(false);
       }
@@ -249,7 +269,12 @@ export default function AiMatchRoom({
 
   useEffect(() => {
     const stateVersion = effectiveUpdate?.stateVersion;
-    if (!isAiTurn || typeof stateVersion !== "number" || isAiThinking) {
+    if (
+      !isAiTurn ||
+      typeof stateVersion !== "number" ||
+      isAiThinking ||
+      failedAiTurnVersion === stateVersion
+    ) {
       return;
     }
 
@@ -259,7 +284,18 @@ export default function AiMatchRoom({
 
     requestedAiVersionRef.current = stateVersion;
     void requestAiTurn(stateVersion);
-  }, [effectiveUpdate?.stateVersion, isAiThinking, isAiTurn, requestAiTurn]);
+  }, [effectiveUpdate?.stateVersion, failedAiTurnVersion, isAiThinking, isAiTurn, requestAiTurn]);
+
+  function handleRetryAiTurn() {
+    const stateVersion = effectiveUpdate?.stateVersion;
+    if (!isAiTurn || typeof stateVersion !== "number" || isAiThinking) {
+      return;
+    }
+
+    setFailedAiTurnVersion(null);
+    requestedAiVersionRef.current = stateVersion;
+    void requestAiTurn(stateVersion);
+  }
 
   async function handleCellSelect(x: number, y: number) {
     if (!effectiveUpdate || !mySeat || effectiveUpdate.status !== "IN_PROGRESS") {
@@ -268,6 +304,7 @@ export default function AiMatchRoom({
 
     setIsSubmittingMove(true);
     setMoveError(null);
+    setFailedAiTurnVersion(null);
     setAiLastReason(null);
 
     try {
@@ -428,22 +465,34 @@ export default function AiMatchRoom({
                 </p>
               ) : null}
             </div>
-            <button
-              type="button"
-              className="btn btn-danger m-0 min-h-11 px-4"
-              onClick={() => {
-                void handleResign();
-              }}
-              disabled={!canResign || isResigning}
-              aria-busy={isResigning}
-            >
-              {isResigning ? (
-                <LoaderCircle aria-hidden="true" className="size-4 animate-spin" />
-              ) : (
-                <Flag aria-hidden="true" className="size-4" />
-              )}
-              Resign
-            </button>
+            <div className="flex flex-wrap justify-start gap-2 md:justify-end">
+              {canRetryAiTurn ? (
+                <button
+                  type="button"
+                  className="btn btn-subtle m-0 min-h-11 px-4"
+                  onClick={handleRetryAiTurn}
+                >
+                  <RefreshCcw aria-hidden="true" className="size-4" />
+                  Retry AI
+                </button>
+              ) : null}
+              <button
+                type="button"
+                className="btn btn-danger m-0 min-h-11 px-4"
+                onClick={() => {
+                  void handleResign();
+                }}
+                disabled={!canResign || isResigning}
+                aria-busy={isResigning}
+              >
+                {isResigning ? (
+                  <LoaderCircle aria-hidden="true" className="size-4 animate-spin" />
+                ) : (
+                  <Flag aria-hidden="true" className="size-4" />
+                )}
+                Resign
+              </button>
+            </div>
           </div>
         </section>
 

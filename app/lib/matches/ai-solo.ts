@@ -1,55 +1,60 @@
 import {
-  aiDifficultyOptions,
   defaultAiDifficultyId,
-  getAiDifficulty,
+  isAiDifficultyId,
   type AiDifficultyId,
 } from "@/lib/matches/ai-difficulty";
 
-export const soloAiDisplayNamePrefix = "Kata Reader";
+export const soloAiDisplayName = "Kata Reader";
+export const soloMatchMode = "ai";
 
 type SoloParticipant = {
-  displayName?: string;
-  displayNameSnapshot?: string;
   role?: string;
   seat?: string | null;
+  userId?: string | null;
 };
 
-function participantDisplayName(participant: SoloParticipant): string {
-  return participant.displayNameSnapshot ?? participant.displayName ?? "";
+export type SoloMatchMetadata = {
+  aiDifficulty: AiDifficultyId;
+  mode: typeof soloMatchMode;
+};
+
+export function createSoloMatchMetadata(difficultyId: AiDifficultyId): SoloMatchMetadata {
+  return {
+    aiDifficulty: difficultyId,
+    mode: soloMatchMode,
+  };
 }
 
-export function getAiDisplayName(difficultyId: AiDifficultyId): string {
-  return `${soloAiDisplayNamePrefix} · ${getAiDifficulty(difficultyId).name}`;
-}
-
-export function isSoloAiDisplayName(displayName: string): boolean {
-  return displayName.startsWith(soloAiDisplayNamePrefix);
-}
-
-export function getAiDifficultyIdFromDisplayName(displayName: string): AiDifficultyId {
-  const difficulty = aiDifficultyOptions.find((option) => displayName.endsWith(option.name));
-  return difficulty?.id ?? defaultAiDifficultyId;
+export function getAiDisplayName(): string {
+  return soloAiDisplayName;
 }
 
 export function getSoloAiParticipant<TParticipant extends SoloParticipant>(
   participants: TParticipant[],
 ): TParticipant | null {
   return (
-    participants.find((participant) => {
-      const displayName = participantDisplayName(participant);
-
-      return (
+    participants.find(
+      (participant) =>
         participant.role === "PLAYER" &&
-        (participant.seat === "BLACK" || participant.seat === "WHITE") &&
-        isSoloAiDisplayName(displayName)
-      );
-    }) ?? null
+        participant.userId === null &&
+        (participant.seat === "BLACK" || participant.seat === "WHITE"),
+    ) ?? null
   );
 }
 
-export function getSoloMatchDifficultyId(participants: SoloParticipant[]): AiDifficultyId {
-  const aiParticipant = getSoloAiParticipant(participants);
-  return aiParticipant
-    ? getAiDifficultyIdFromDisplayName(participantDisplayName(aiParticipant))
-    : defaultAiDifficultyId;
+export function getSoloMatchMetadata(metadata: unknown): SoloMatchMetadata | null {
+  if (!metadata || typeof metadata !== "object" || Array.isArray(metadata)) {
+    return null;
+  }
+
+  const record = metadata as Record<string, unknown>;
+  if (record["mode"] !== soloMatchMode || !isAiDifficultyId(record["aiDifficulty"])) {
+    return null;
+  }
+
+  return createSoloMatchMetadata(record["aiDifficulty"]);
+}
+
+export function getSoloMatchDifficultyId(metadata: unknown): AiDifficultyId {
+  return getSoloMatchMetadata(metadata)?.aiDifficulty ?? defaultAiDifficultyId;
 }

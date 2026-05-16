@@ -14,6 +14,8 @@ export type Seat = "BLACK" | "WHITE";
 export type Cell = { occupied: false } | { occupied: true; seat: Seat; moveNumber: number };
 
 export type MatchStatus = "WAITING" | "IN_PROGRESS" | "FINISHED" | "CANCELLED";
+export type MatchMode = "ai";
+export type SharedAiDifficultyId = "beginner" | "apprentice" | "expert" | "master";
 
 export interface ParticipantSummary {
   participantId: string;
@@ -35,7 +37,9 @@ export interface MoveSummary extends LastMove {
 }
 
 export interface GameUpdatePayload {
+  aiDifficulty?: SharedAiDifficultyId;
   matchId: string;
+  mode?: MatchMode;
   status: MatchStatus;
   visibility: "PUBLIC" | "PRIVATE";
   // ruleType: "GOMOKU" | "RENJU";

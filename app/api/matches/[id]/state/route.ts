@@ -1,5 +1,6 @@
 import { getCurrentSession } from "@/lib/auth";
 import { buildBoard } from "@/lib/game/state-builder";
+import { getSoloMatchMetadata } from "@/lib/matches/ai-solo";
 import { isActiveParticipantForUser } from "@/lib/matches/participant-access";
 import { prisma } from "@/lib/prisma";
 
@@ -43,8 +44,15 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     }
 
     const board = buildBoard(match.boardSize, match.participants, match.moves);
+    const soloMetadata = getSoloMatchMetadata(match.metadata);
 
     return Response.json({
+      ...(soloMetadata
+        ? {
+            aiDifficulty: soloMetadata.aiDifficulty,
+            mode: soloMetadata.mode,
+          }
+        : {}),
       matchId: match.id,
       status: match.status,
       visibility: match.visibility,

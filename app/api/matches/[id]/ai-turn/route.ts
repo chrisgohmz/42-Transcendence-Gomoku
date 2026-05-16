@@ -3,7 +3,11 @@ import { MatchStatus } from "@/../generated/prisma/enums";
 import { getCurrentSession } from "@/lib/auth";
 import { getAiDifficulty, getAiResponseDelayMs } from "@/lib/matches/ai-difficulty";
 import { chooseAiMove } from "@/lib/matches/ai-engine";
-import { getSoloAiParticipant, getSoloMatchDifficultyId } from "@/lib/matches/ai-solo";
+import {
+  getSoloAiParticipant,
+  getSoloMatchDifficultyId,
+  getSoloMatchMetadata,
+} from "@/lib/matches/ai-solo";
 import { buildGameUpdatePayload } from "@/lib/matches/game-update";
 import { evaluateMoveOutcome } from "@/lib/matches/move-rules";
 import { isActiveParticipantForUser } from "@/lib/matches/participant-access";
@@ -80,13 +84,13 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       return Response.json({ error: "participant_not_found" }, { status: 403 });
     }
 
+    const previewMetadata = getSoloMatchMetadata(previewMatch.metadata);
     const previewAiParticipant = getSoloAiParticipant(previewMatch.participants);
-    if (!previewAiParticipant || previewAiParticipant.userId !== null) {
+    if (!previewMetadata || !previewAiParticipant) {
       return Response.json({ error: "not_solo_match" }, { status: 409 });
     }
 
-    const difficultyId = getSoloMatchDifficultyId(previewMatch.participants);
-    const difficulty = getAiDifficulty(difficultyId);
+    const difficulty = getAiDifficulty(previewMetadata.aiDifficulty);
     await sleep(getConfiguredDelayMs(difficulty));
 
     const result = await prisma.$transaction(async (tx) => {
@@ -116,8 +120,9 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
         };
       }
 
+      const soloMetadata = getSoloMatchMetadata(match.metadata);
       const aiParticipant = getSoloAiParticipant(match.participants);
-      if (!aiParticipant || aiParticipant.userId !== null || !aiParticipant.seat) {
+      if (!soloMetadata || !aiParticipant || !aiParticipant.seat) {
         return {
           kind: "error" as const,
           payload: { error: "not_solo_match", status: 409 },
@@ -145,7 +150,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
         };
       }
 
-      const currentDifficultyId = getSoloMatchDifficultyId(match.participants);
+      const currentDifficultyId = getSoloMatchDifficultyId(match.metadata);
       const moveChoice = chooseAiMove({
         aiParticipantId: aiParticipant.id,
         boardSize: match.boardSize,

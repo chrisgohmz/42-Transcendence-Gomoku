@@ -2,7 +2,7 @@ import { MatchStatus, MatchVisibility, Role, Seat } from "@/../generated/prisma/
 import { getCurrentSession } from "@/lib/auth";
 import { getAiDifficulty } from "@/lib/matches/ai-difficulty";
 import { chooseAiMove, type AiMoveChoice } from "@/lib/matches/ai-engine";
-import { getAiDisplayName } from "@/lib/matches/ai-solo";
+import { createSoloMatchMetadata, getAiDisplayName } from "@/lib/matches/ai-solo";
 import { buildGameUpdatePayload } from "@/lib/matches/game-update";
 import { evaluateMoveOutcome, standardGomokuBoardSize } from "@/lib/matches/move-rules";
 import { publishGameUpdate } from "@/lib/matches/realtime-publisher";
@@ -56,6 +56,7 @@ export async function POST(request: Request) {
         data: {
           boardSize: standardGomokuBoardSize,
           createdByUserId: context.user.id,
+          metadata: createSoloMatchMetadata(difficulty.id),
           nextTurnSeat: Seat.BLACK,
           startedAt: new Date(),
           status: MatchStatus.IN_PROGRESS,
@@ -69,7 +70,7 @@ export async function POST(request: Request) {
                 userId: context.user.id,
               },
               {
-                displayNameSnapshot: getAiDisplayName(difficulty.id),
+                displayNameSnapshot: getAiDisplayName(),
                 role: Role.PLAYER,
                 seat: aiSeat,
                 userId: null,

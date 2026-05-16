@@ -43,6 +43,7 @@ test("AI lobby starts a solo match and renders the shared match board", async ({
   await expect(
     page.getByRole("heading", { level: 1, name: "Choose your opponent." }),
   ).toBeVisible();
+  await page.waitForLoadState("networkidle");
 
   await page.getByRole("button", { name: "Start Training" }).click();
 
@@ -83,10 +84,12 @@ function matchStateResponse() {
   );
 
   return {
+    aiDifficulty: "expert",
     board,
     boardSize: 15,
     endReason: null,
     matchId: "ai-match",
+    mode: "ai",
     moves: [],
     nextTurnSeat: "BLACK",
     participants: [
