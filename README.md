@@ -100,10 +100,18 @@ docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d database
 
 PostgreSQL 18 stores container data below a major-versioned directory, so the
 Compose volume targets `/var/lib/postgresql` and lets the image create its own
-versioned data subdirectory. If the database container exits with an
-`unused mount/volume` error, reset the disposable local database volume with
-`make db-reset`. Preserve and migrate the data with `pg_upgrade` instead if it
-contains data you need to keep.
+versioned data subdirectory. If the database container exits with an error that
+says there appears to be PostgreSQL data in `/var/lib/postgresql`, the existing
+local volume still has the old pre-18 layout. If that local database is
+disposable, reset only the database volume:
+
+```bash
+make db-volume-reset
+```
+
+Use `make db-reset` only when you also want to remove the other local Compose
+volumes. Preserve and migrate the data with `pg_upgrade` instead if it contains
+data you need to keep.
 
 ### Run the full stack with containers
 
