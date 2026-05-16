@@ -17,6 +17,11 @@ type SessionStorageLike = Pick<Storage, "getItem" | "removeItem" | "setItem">;
 const STORAGE_PREFIX = "match:session:v1:";
 const LEGACY_STORAGE_PREFIX = "proto:matchSession:v1:";
 export const activeMatchSessionKey = `${STORAGE_PREFIX}active`;
+export const matchSessionReadyEvent = "match:session-ready";
+export const matchSessionClearedEvent = "match:session-cleared";
+
+export type MatchSessionReadyEvent = CustomEvent<StoredMatchSession>;
+export type MatchSessionClearedEvent = CustomEvent<{ matchId: string }>;
 
 export function getStoredMatchSessionKey(matchId: string) {
   return `${STORAGE_PREFIX}${matchId}`;
@@ -92,6 +97,14 @@ export function saveStoredMatchSession(
   }
 }
 
+export function notifyStoredMatchSessionReady(session: StoredMatchSession) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  window.dispatchEvent(new CustomEvent(matchSessionReadyEvent, { detail: session }));
+}
+
 export function clearStoredMatchSession(
   matchId: string,
   storage: SessionStorageLike = sessionStorage,
@@ -108,6 +121,14 @@ export function clearStoredMatchSession(
   } catch {
     // Ignore storage failures; callers already clear in-memory state.
   }
+}
+
+export function notifyStoredMatchSessionCleared(matchId: string) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  window.dispatchEvent(new CustomEvent(matchSessionClearedEvent, { detail: { matchId } }));
 }
 
 function readStoredSession(

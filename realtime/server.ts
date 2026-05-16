@@ -139,6 +139,30 @@ io.on("connection", (socket) => {
     }
   });
 
+  socket.on(
+    "challenge:send",
+    (payload: { targetUsername: string; matchId: string; password?: string }) => {
+      const senderUsername = socket.data.user?.username;
+      if (!senderUsername) return;
+
+      io.to(`user:${payload.targetUsername}`).emit("challenge:receive", {
+        senderUsername,
+        matchId: payload.matchId,
+        password: payload.password,
+      });
+    },
+  );
+
+  socket.on("challenge:decline", (payload: { matchId?: string; targetUsername: string }) => {
+    const senderUsername = socket.data.user?.username;
+    if (!senderUsername) return;
+
+    io.to(`user:${payload.targetUsername}`).emit("challenge:declined", {
+      matchId: payload.matchId,
+      senderUsername,
+    });
+  });
+
   socket.on("disconnect", (reason) => {
     console.log(`Socket.IO client disconnected: ${socket.id} (${reason})`);
 

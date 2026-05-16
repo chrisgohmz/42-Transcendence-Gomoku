@@ -8,6 +8,7 @@ const transaction = mock();
 const createParticipant = mock();
 const updateMatch = mock();
 const publishGameUpdate = mock();
+const publishQueueMatched = mock();
 
 const tx = {
   match: {
@@ -33,6 +34,7 @@ await mock.module("@/lib/prisma", () => ({
 
 await mock.module("@/lib/matches/realtime-publisher", () => ({
   publishGameUpdate,
+  publishQueueMatched,
 }));
 
 const route = await import("./route");
@@ -109,7 +111,20 @@ function updatedMatch() {
     ...waitingMatch(),
     moves: [],
     nextTurnSeat: Seat.BLACK,
-    participants: [hostParticipant(), joinerParticipant()],
+    participants: [
+      {
+        ...hostParticipant(),
+        user: {
+          username: "black",
+        },
+      },
+      {
+        ...joinerParticipant(),
+        user: {
+          username: "white",
+        },
+      },
+    ],
     startedAt,
     stateVersion: 1,
     status: MatchStatus.IN_PROGRESS,
@@ -123,6 +138,7 @@ beforeEach(() => {
   createParticipant.mockReset();
   updateMatch.mockReset();
   publishGameUpdate.mockReset();
+  publishQueueMatched.mockReset();
 
   getCurrentSession.mockResolvedValue({
     user: {
@@ -137,6 +153,7 @@ beforeEach(() => {
   createParticipant.mockResolvedValue(joinerParticipant());
   updateMatch.mockResolvedValue(updatedMatch());
   publishGameUpdate.mockResolvedValue(undefined);
+  publishQueueMatched.mockResolvedValue(undefined);
 });
 
 describe("POST /api/matches/:id/join", () => {
@@ -159,8 +176,10 @@ describe("POST /api/matches/:id/join", () => {
 
     expect(response.status).toBe(200);
     expect(payload).toMatchObject({
+      displayName: "White",
       matchId: "match-1",
       participantId: "white-player",
+      role: Role.PLAYER,
       seat: Seat.WHITE,
       stateVersion: 1,
     });
@@ -178,6 +197,13 @@ describe("POST /api/matches/:id/join", () => {
           orderBy: { moveNumber: "asc" },
         },
         participants: {
+          include: {
+            user: {
+              select: {
+                username: true,
+              },
+            },
+          },
           orderBy: { joinedAt: "asc" },
         },
       },
@@ -193,6 +219,18 @@ describe("POST /api/matches/:id/join", () => {
           expect.objectContaining({ participantId: "white-player", seat: Seat.WHITE }),
         ],
         stateVersion: 1,
+        status: MatchStatus.IN_PROGRESS,
+      }),
+      2000,
+    );
+    expect(publishQueueMatched).toHaveBeenCalledWith(
+      "black",
+      expect.objectContaining({
+        displayName: "Black",
+        matchId: "match-1",
+        participantId: "black-player",
+        role: Role.PLAYER,
+        seat: Seat.BLACK,
         status: MatchStatus.IN_PROGRESS,
       }),
       2000,

@@ -1,34 +1,24 @@
 "use client";
 
-import {
-  Loader2,
-  RefreshCcw,
-  Search,
-  Swords,
-  X,
-} from "lucide-react";
-
+import { Loader2, RefreshCcw, Search, Swords, X } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 
 import CreateRoomCard from "@/components/create-room-card";
 import GameLobbyTable from "@/components/game-lobby-table";
-import {
-  Badge,
-  MetricCard,
-  PageHeader,
-  PageShell,
-  Surface,
-} from "@/components/gomoku-ui";
+import { Badge, MetricCard, PageHeader, PageShell, Surface } from "@/components/gomoku-ui";
 import HumanMatchRoom from "@/components/human-match-room";
 import { usePresence } from "@/components/presence-provider";
-
 import { useHumanLobby } from "@/hooks/useHumanLobby";
-import { useMatchmaking } from "@/hooks/useMatchmaking";
 import { useMatchInitialize } from "@/hooks/useMatchInitialize";
-
+import { useMatchmaking } from "@/hooks/useMatchmaking";
 import {
   clearStoredMatchSession,
+  matchSessionClearedEvent,
+  matchSessionReadyEvent,
+  notifyStoredMatchSessionCleared,
   saveStoredMatchSession,
+  type MatchSessionClearedEvent,
+  type MatchSessionReadyEvent,
   type StoredMatchSession,
 } from "@/lib/matches/match-session-storage";
 
@@ -53,8 +43,7 @@ export default function HumanLobbyClient() {
 
   const setRestoredSession = restoredMatch.setSession;
 
-  const [activeSession, setActiveSession] =
-    useState<StoredMatchSession | null>(null);
+  const [activeSession, setActiveSession] = useState<StoredMatchSession | null>(null);
 
   const [showLobby, setShowLobby] = useState(false);
   const [activeTab, setActiveTab] = useState<"lobby" | "history">("lobby");
@@ -147,11 +136,46 @@ export default function HumanLobbyClient() {
     }
   }, [activeTab, loadHistory]);
 
+  useEffect(() => {
+    const handleStoredSessionReady = (event: Event) => {
+      const session = (event as MatchSessionReadyEvent).detail;
+      if (!session?.matchId || !session.participantId) return;
+
+      handleSessionReady(session);
+    };
+
+    const handleStoredSessionCleared = (event: Event) => {
+      const { matchId } = (event as MatchSessionClearedEvent).detail;
+      if (!matchId) return;
+
+      setActiveSession((current) => {
+        if (current?.matchId !== matchId) {
+          return current;
+        }
+
+        setRestoredSession(null);
+        setShowLobby(true);
+        void loadMatches();
+        void loadHistory();
+        return null;
+      });
+    };
+
+    window.addEventListener(matchSessionReadyEvent, handleStoredSessionReady);
+    window.addEventListener(matchSessionClearedEvent, handleStoredSessionCleared);
+
+    return () => {
+      window.removeEventListener(matchSessionReadyEvent, handleStoredSessionReady);
+      window.removeEventListener(matchSessionClearedEvent, handleStoredSessionCleared);
+    };
+  }, [handleSessionReady, loadHistory, loadMatches, setRestoredSession]);
+
   /* NAVIGATION */
 
   const handleBackToLobby = useCallback(() => {
     if (activeSession) {
       clearStoredMatchSession(activeSession.matchId);
+      notifyStoredMatchSessionCleared(activeSession.matchId);
     }
     setRestoredSession(null);
     setShowLobby(true);
@@ -205,7 +229,7 @@ export default function HumanLobbyClient() {
   const totalPages = Math.max(1, Math.ceil(validHistory.length / HISTORY_PAGE_SIZE));
   const paginatedHistory = validHistory.slice(
     (historyPage - 1) * HISTORY_PAGE_SIZE,
-    historyPage * HISTORY_PAGE_SIZE
+    historyPage * HISTORY_PAGE_SIZE,
   );
 
   /* PAGE */
@@ -231,34 +255,32 @@ export default function HumanLobbyClient() {
         <Surface className="relative overflow-hidden border border-[var(--panel-border)] bg-[var(--panel-solid)]">
           {/* GLOW */}
           <div className="absolute inset-0 opacity-30">
-            <div className="absolute -left-24 top-0 h-64 w-64 rounded-full bg-[var(--mint-soft)] blur-3xl" />
+            <div className="absolute top-0 -left-24 h-64 w-64 rounded-full bg-[var(--mint-soft)] blur-3xl" />
 
-            <div className="absolute right-0 top-0 h-64 w-64 rounded-full bg-[var(--brass-soft)] blur-3xl" />
+            <div className="absolute top-0 right-0 h-64 w-64 rounded-full bg-[var(--brass-soft)] blur-3xl" />
           </div>
 
           <div className="relative flex h-full flex-col justify-between">
             {/* CONTENT */}
             <div className="px-8 pt-8">
-              <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-[var(--panel-border-soft)] bg-[var(--panel)] px-3 py-1 text-xs font-black uppercase tracking-wide text-[var(--mint)]">
+              <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-[var(--panel-border-soft)] bg-[var(--panel)] px-3 py-1 text-xs font-black tracking-wide text-[var(--mint)] uppercase">
                 <Swords className="size-3.5" />
                 Ranked Matchmaking
               </div>
 
               {status === "idle" ? (
                 <>
-                  <h2 className="mb-3 text-4xl font-black leading-none tracking-tight">
+                  <h2 className="mb-3 text-4xl leading-none font-black tracking-tight">
                     Find Your Next Opponent
                   </h2>
 
                   <p className="max-w-xl text-base text-[var(--muted-text)]">
-                    Jump into competitive online matches and get paired with
-                    players near your skill level.
+                    Jump into competitive online matches and get paired with players near your skill
+                    level.
                   </p>
 
                   {queueError ? (
-                    <p className="mt-4 text-sm font-bold text-[var(--danger)]">
-                      {queueError}
-                    </p>
+                    <p className="mt-4 text-sm font-bold text-[var(--danger)]">{queueError}</p>
                   ) : null}
 
                   <div className="mt-8">
@@ -274,7 +296,7 @@ export default function HumanLobbyClient() {
                 </>
               ) : (
                 <>
-                  <h2 className="mb-3 text-4xl font-black leading-none tracking-tight">
+                  <h2 className="mb-3 text-4xl leading-none font-black tracking-tight">
                     Searching For Match
                   </h2>
 
@@ -304,23 +326,11 @@ export default function HumanLobbyClient() {
 
             {/* LIVE STATS */}
             <div className="mt-8 grid gap-3 border-t border-[var(--panel-border-soft)] p-5 sm:grid-cols-3">
-              <MetricCard
-                label="Players Online"
-                value={onlineUsers.length}
-                tone="mint"
-              />
+              <MetricCard label="Players Online" value={onlineUsers.length} tone="mint" />
 
-              <MetricCard
-                label="Searching"
-                value={globalStats.searching}
-                tone="brass"
-              />
+              <MetricCard label="Searching" value={globalStats.searching} tone="brass" />
 
-              <MetricCard
-                label="Live Games"
-                value={globalStats.liveGames}
-                tone="plain"
-              />
+              <MetricCard label="Live Games" value={globalStats.liveGames} tone="plain" />
             </div>
           </div>
         </Surface>
@@ -385,7 +395,10 @@ export default function HumanLobbyClient() {
             >
               <RefreshCcw
                 className={`size-4 ${
-                  (isLoadingMatches && activeTab === "lobby") || (isLoadingHistory && activeTab === "history") ? "animate-spin" : ""
+                  (isLoadingMatches && activeTab === "lobby") ||
+                  (isLoadingHistory && activeTab === "history")
+                    ? "animate-spin"
+                    : ""
                 }`}
               />
             </button>
@@ -393,7 +406,7 @@ export default function HumanLobbyClient() {
         </div>
 
         {/* TABLE */}
-        <div className="px-5 pb-5 pt-2">
+        <div className="px-5 pt-2 pb-5">
           {activeTab === "lobby" && (
             <GameLobbyTable
               entries={entries}
@@ -429,7 +442,8 @@ export default function HumanLobbyClient() {
                   <>
                     {paginatedHistory.map((match) => {
                       const opponentParticipant = match.participants.find(
-                        (p) => p.role === "PLAYER" && p.participantId !== match.currentUserParticipantId
+                        (p) =>
+                          p.role === "PLAYER" && p.participantId !== match.currentUserParticipantId,
                       );
                       const opponentName = opponentParticipant?.displayName || "Unknown Player";
 
@@ -438,9 +452,17 @@ export default function HumanLobbyClient() {
                       const isDraw = match.result === "DRAW";
 
                       const resultTone = isWin ? "mint" : isLoss ? "red" : "neutral";
-                      const resultText = isWin ? "Victory" : isLoss ? "Defeat" : isDraw ? "Draw" : "Cancelled";
+                      const resultText = isWin
+                        ? "Victory"
+                        : isLoss
+                          ? "Defeat"
+                          : isDraw
+                            ? "Draw"
+                            : "Cancelled";
 
-                      const dateText = match.finishedAt ? new Date(match.finishedAt).toLocaleDateString() : "Unknown";
+                      const dateText = match.finishedAt
+                        ? new Date(match.finishedAt).toLocaleDateString()
+                        : "Unknown";
 
                       return (
                         <article
@@ -451,7 +473,9 @@ export default function HumanLobbyClient() {
                             <Badge tone={resultTone}>{resultText}</Badge>
                           </div>
                           <span className="truncate font-bold text-white">{opponentName}</span>
-                          <span className="font-bold tabular-nums text-[var(--muted-strong)]">{match.moveCount}</span>
+                          <span className="font-bold text-[var(--muted-strong)] tabular-nums">
+                            {match.moveCount}
+                          </span>
                           <span className="font-bold text-[var(--muted-strong)]">
                             {match.boardSize} x {match.boardSize}
                           </span>

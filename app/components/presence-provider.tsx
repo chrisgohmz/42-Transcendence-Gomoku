@@ -5,6 +5,8 @@ import type { Socket } from "socket.io-client";
 
 import { createSocket } from "@/lib/socket-client";
 
+import { ChallengeListener } from "./challenge-listener";
+
 type PresenceContextType = {
   onlineUsers: string[];
   socket: Socket | null;
@@ -57,6 +59,8 @@ export function PresenceProvider({
     nextSocket.on("connect_error", handleUnavailable);
     nextSocket.on("disconnect", handleUnavailable);
 
+    handleConnect();
+
     return () => {
       nextSocket.off("connect", handleConnect);
       nextSocket.off("presence:update", handlePresenceUpdate);
@@ -75,6 +79,7 @@ export function PresenceProvider({
       }}
     >
       {children}
+      <ChallengeListener />
     </PresenceContext.Provider>
   );
 }

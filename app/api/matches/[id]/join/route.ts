@@ -10,12 +10,12 @@ import { prisma } from "@/lib/prisma";
 export const dynamic = "force-dynamic";
 
 const joinMatchRequestSchema = z.preprocess(
-	(value) => (typeof value === "object" && value !== null && !Array.isArray(value) ? value : {}),
-	z.object({
-	  displayName: z.string().trim().min(1).max(80).optional(),
-	  password: z.string().optional(),
-	}),
-  );
+  (value) => (typeof value === "object" && value !== null && !Array.isArray(value) ? value : {}),
+  z.object({
+    displayName: z.string().trim().min(1).max(80).optional(),
+    password: z.string().optional(),
+  }),
+);
 
 function getErrorMessage(error: unknown): string {
   return error instanceof Error ? error.message : "Unknown error";
@@ -71,8 +71,11 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       return Response.json({ error: "match_full" }, { status: 409 });
     }
 
-	if (match.password && match.password !== validation.data.password) {
-      return Response.json({ error: "invalid_password", message: "Incorrect password." }, { status: 401 });
+    if (match.password && match.password !== validation.data.password) {
+      return Response.json(
+        { error: "invalid_password", message: "Incorrect password." },
+        { status: 401 },
+      );
     }
 
     const { joiner, updatedMatch } = await prisma.$transaction(async (tx) => {
@@ -140,12 +143,12 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
         };
         await publishQueueMatched(creator.user.username, session, timeoutMs);
       }
-
     } catch (publishError) {
       console.error(`[matches/${matchId}] realtime publish failed:`, getErrorMessage(publishError));
     }
 
     return Response.json({
+      displayName: joiner.displayNameSnapshot,
       matchId,
       participantId: joiner.id,
       role: joiner.role,

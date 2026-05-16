@@ -184,6 +184,7 @@ export default function HumanMatchRoom({
   );
   const canResign = effectiveUpdate?.status === "IN_PROGRESS" && mySeat !== null;
   const matchStatus = effectiveUpdate?.status ?? state?.status;
+  const canReturnToLobby = matchStatus === "FINISHED" || matchStatus === "CANCELLED";
   const isBusy = isRestoring || isLoadingState;
 
   async function handleCellSelect(x: number, y: number) {
@@ -282,7 +283,13 @@ export default function HumanMatchRoom({
             <button
               type="button"
               className="btn btn-subtle m-0 min-h-11 px-4"
-              onClick={onBackToLobby}
+              onClick={() => {
+                if (canReturnToLobby) {
+                  onBackToLobby();
+                }
+              }}
+              disabled={!canReturnToLobby}
+              title={canReturnToLobby ? "Back to lobby" : "Lobby unlocks when the match ends"}
             >
               <ArrowLeft aria-hidden="true" className="size-4" />
               Lobby

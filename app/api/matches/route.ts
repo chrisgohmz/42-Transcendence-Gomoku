@@ -27,8 +27,14 @@ export async function POST(request: Request) {
 
   try {
     const body = await request.json().catch(() => ({}));
-    const name = typeof body.name === "string" && body.name.trim().length > 0 ? body.name.trim() : null;
-    const password = typeof body.password === "string" && body.password.length > 0 ? body.password : null;
+    const name =
+      typeof body.name === "string" && body.name.trim().length > 0 ? body.name.trim() : null;
+    const password =
+      typeof body.password === "string" && body.password.length > 0 ? body.password : null;
+    const visibility =
+      body.visibility === MatchVisibility.PRIVATE
+        ? MatchVisibility.PRIVATE
+        : MatchVisibility.PUBLIC;
 
     const match = await prisma.match.create({
       data: {
@@ -36,7 +42,7 @@ export async function POST(request: Request) {
         password,
         boardSize: standardGomokuBoardSize,
         createdByUserId: context.user.id,
-        visibility: MatchVisibility.PUBLIC,
+        visibility,
         participants: {
           create: {
             displayNameSnapshot: context.user.displayName || context.user.username,
@@ -73,6 +79,7 @@ export async function POST(request: Request) {
     }
 
     return Response.json({
+      displayName: creator.displayNameSnapshot,
       matchId: match.id,
       participantId: creator.id,
       role: creator.role,

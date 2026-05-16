@@ -17,8 +17,8 @@ import { getCurrentSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
 import ProfileActions from "./profile-actions";
-import ProfilePresence, { LiveAvatar } from "./profile-presence";
 import ProfileBackButton from "./profile-back-button";
+import ProfilePresence, { LiveAvatar } from "./profile-presence";
 
 type ProfilePageProps = {
   params: Promise<{
@@ -119,10 +119,6 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
               targetUsername={userProfile.username}
               initialState={relationshipState}
             />
-            <button type="button" className="btn btn-danger m-0 min-h-10 px-4">
-              <Swords aria-hidden="true" className="size-4" />
-              Challenge
-            </button>
           </div>
         </div>
       </section>

@@ -1,6 +1,16 @@
 "use client";
 
-import { Check, MessageSquare, Search, Swords, UserMinus, UserPlus, Users, X } from "lucide-react";
+import {
+  Check,
+  Loader2,
+  MessageSquare,
+  Search,
+  Swords,
+  UserMinus,
+  UserPlus,
+  Users,
+  X,
+} from "lucide-react";
 import { useTranslations } from "next-intl";
 import Form from "next/form";
 import { usePathname, useRouter } from "next/navigation";
@@ -8,6 +18,7 @@ import { useEffect, useState } from "react";
 
 import { AvatarToken, Badge, PageHeader, PageShell, Surface } from "@/components/gomoku-ui";
 import { usePresence } from "@/components/presence-provider";
+import { useChallengePlayer } from "@/hooks/useChallengePlayer";
 import { Link } from "@/i18n/navigation";
 
 import { removeFriend, respondToRequest, sendFriendRequest } from "./actions";
@@ -56,6 +67,7 @@ export default function FriendsContent({
   const router = useRouter();
   const pathname = usePathname();
   const t = useTranslations("friends");
+  const { challengePlayer, challengingUsername } = useChallengePlayer();
 
   const [activeTab, setActiveTab] = useState<TabKey>("friends");
 
@@ -69,12 +81,14 @@ export default function FriendsContent({
   useEffect(() => {
     if (!socket) return;
 
-    socket.on("friendship:refresh", () => {
+    const handleRefresh = () => {
       router.refresh();
-    });
+    };
+
+    socket.on("friendship:refresh", handleRefresh);
 
     return () => {
-      socket.off("friendship:refresh");
+      socket.off("friendship:refresh", handleRefresh);
     };
   }, [socket, router]);
 
@@ -157,6 +171,19 @@ export default function FriendsContent({
     await removeFriend(friendshipId);
 
     router.refresh();
+  };
+
+  const handleChallenge = async (username: string) => {
+    setStatusMessage(null);
+
+    const didSend = await challengePlayer(username);
+
+    if (!didSend) {
+      setStatusMessage({
+        text: "Could not send the challenge. Make sure realtime is connected and try again.",
+        isError: true,
+      });
+    }
   };
 
   const activeRows =
@@ -300,7 +327,9 @@ export default function FriendsContent({
             <FriendsTable
               activeTab={activeTab}
               friends={activeRows}
+              challengingUsername={challengingUsername}
               onlineUsers={onlineUsers}
+              onChallenge={handleChallenge}
               onRemove={handleRemove}
               onRespond={handleRespond}
             />
@@ -313,14 +342,18 @@ export default function FriendsContent({
 
 function FriendsTable({
   activeTab,
+  challengingUsername,
   friends,
   onlineUsers,
+  onChallenge,
   onRemove,
   onRespond,
 }: {
   activeTab: TabKey;
+  challengingUsername: string | null;
   friends: FriendData[];
   onlineUsers: string[];
+  onChallenge: (username: string) => void;
   onRemove: (id: number) => void;
   onRespond: (id: number, accept: boolean) => void;
 }) {
@@ -349,6 +382,7 @@ function FriendsTable({
 
           const isRevealed = activeTab === "friends";
           const online = isRevealed && onlineUsers.includes(friend.username);
+          const isChallenging = challengingUsername === friend.username;
 
           return (
             <article
@@ -386,10 +420,19 @@ function FriendsTable({
 
                     <button
                       type="button"
+                      onClick={() => onChallenge(friend.username)}
+                      disabled={isChallenging}
                       className="icon-button"
                       aria-label={`Challenge ${friend.displayName}`}
                     >
-                      <Swords aria-hidden="true" className="size-4 text-[var(--brass)]" />
+                      {isChallenging ? (
+                        <Loader2
+                          aria-hidden="true"
+                          className="size-4 animate-spin text-[var(--brass)]"
+                        />
+                      ) : (
+                        <Swords aria-hidden="true" className="size-4 text-[var(--brass)]" />
+                      )}
                     </button>
 
                     <button
