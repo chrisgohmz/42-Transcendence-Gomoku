@@ -8,6 +8,7 @@ import {
   StepBack,
   Zap,
 } from "lucide-react";
+import { getTranslations, setRequestLocale } from "next-intl/server";
 
 import GomokuBoard from "@/components/gomoku-board";
 import { Badge, MetricCard, PageShell, Surface } from "@/components/gomoku-ui";
@@ -22,34 +23,63 @@ const moveHistory = [
   ["47", "D7", "black"],
 ] as const;
 
-const controls = [
-  { danger: false, icon: StepBack, label: "Undo" },
-  { danger: false, icon: RotateCcw, label: "Restart" },
-  { danger: false, icon: Settings, label: "Rules" },
-  { icon: Flag, label: "Resign", danger: true },
-] as const;
-
 const blackStone = "radial-gradient(circle at 32% 28%, #4a463d 0 8%, #12100d 36%, #030303 100%)";
 const whiteStone = "radial-gradient(circle at 34% 28%, #fffdf5 0 18%, #e8dfcf 54%, #a99f90 100%)";
 
-export default function GamePage() {
+type GamePageProps = {
+  params: Promise<{
+    locale: string;
+  }>;
+};
+
+export default async function GamePage({ params }: GamePageProps) {
+  const { locale } = await params;
+  setRequestLocale(locale);
+
+  const t = await getTranslations({ locale, namespace: "game" });
+  const controls = [
+    { danger: false, id: "undo", icon: StepBack, label: t("controls.undo") },
+    { danger: false, id: "restart", icon: RotateCcw, label: t("controls.restart") },
+    { danger: false, id: "rules", icon: Settings, label: t("controls.rules") },
+    { danger: true, id: "resign", icon: Flag, label: t("controls.resign") },
+  ] as const;
+  const roomDetails = [
+    { label: t("match.details.rulesLabel"), value: t("match.details.rulesValue") },
+    { label: t("match.details.captureLabel"), value: t("match.details.captureValue") },
+    { label: t("match.details.spectatorsLabel"), value: t("match.details.spectatorsValue") },
+    { label: t("match.details.openingLabel"), value: t("match.details.openingValue") },
+  ] as const;
+  const statusItems = [
+    t("status.openThree"),
+    t("status.whiteMustBlockD7"),
+    t("status.blackTempoRetained"),
+  ] as const;
+
   return (
     <PageShell>
-      <h1 className="sr-only">Active game vs AI</h1>
+      <h1 className="sr-only">{t("pageTitle")}</h1>
       <section className="grid gap-5 xl:grid-cols-[280px_minmax(0,1fr)_320px]">
         <aside className="grid content-start gap-5">
-          <Surface eyebrow="AI Opponent" title="Kata Reader" icon={BrainCircuit}>
-            <p className="m-0 text-sm leading-6 text-[var(--muted-text)]">
-              Depth 6 reads the center fight and recommends quiet threats before overplays.
-            </p>
+          <Surface eyebrow={t("ai.eyebrow")} title={t("ai.title")} icon={BrainCircuit}>
+            <p className="m-0 text-sm leading-6 text-[var(--muted-text)]">{t("ai.description")}</p>
             <div className="grid gap-3">
-              <MetricCard icon={CircleGauge} label="Position Confidence" tone="brass" value="72%" />
-              <MetricCard icon={Zap} label="Initiative Swing" tone="mint" value="+14" />
+              <MetricCard
+                icon={CircleGauge}
+                label={t("ai.metrics.positionConfidence")}
+                tone="brass"
+                value="72%"
+              />
+              <MetricCard
+                icon={Zap}
+                label={t("ai.metrics.initiativeSwing")}
+                tone="mint"
+                value="+14"
+              />
             </div>
             <div className="rounded-md border border-[var(--panel-border-soft)] bg-white/[0.035] p-3">
-              <p className="label m-0">Suggestion</p>
+              <p className="label m-0">{t("ai.suggestionLabel")}</p>
               <p className="mt-2 text-sm leading-6 text-[var(--muted-strong)]">
-                Extend at D7 to connect the lower diagonal and force white to defend.
+                {t("ai.suggestion")}
               </p>
             </div>
           </Surface>
@@ -60,7 +90,7 @@ export default function GamePage() {
             <PlayerPlate name="Kuroaki" rank="5-dan" rating="1867" stone={blackStone} />
             <div className="rounded-md border border-[var(--mint)]/35 bg-[var(--mint-soft)] px-8 py-3 text-center">
               <p className="m-0 text-xs font-black tracking-[0.18em] text-[var(--muted-strong)] uppercase">
-                Black to Move
+                {t("match.turn")}
               </p>
               <p className="m-0 text-4xl leading-none font-black text-[var(--mint)] tabular-nums">
                 01:32
@@ -82,7 +112,7 @@ export default function GamePage() {
               const Icon = item.icon;
               return (
                 <button
-                  key={item.label}
+                  key={item.id}
                   type="button"
                   className={`grid min-h-16 place-items-center gap-1 border-r border-[var(--panel-border-soft)] text-xs font-black last:border-r-0 hover:bg-white/[0.06] ${
                     item.danger ? "text-[var(--danger)]" : "text-[var(--muted-strong)]"
@@ -97,14 +127,9 @@ export default function GamePage() {
         </section>
 
         <aside className="grid content-start gap-5">
-          <Surface eyebrow="Room 1024" icon={Radio} title="Ranked Match">
+          <Surface eyebrow={t("match.roomEyebrow")} icon={Radio} title={t("match.roomTitle")}>
             <div className="grid gap-3 text-sm">
-              {[
-                ["Rules", "15 x 15 / Standard"],
-                ["Capture", "Disabled"],
-                ["Spectators", "3"],
-                ["Opening", "Free"],
-              ].map(([label, value]) => (
+              {roomDetails.map(({ label, value }) => (
                 <div key={label} className="flex items-center justify-between gap-3">
                   <span className="text-[var(--muted-text)]">{label}</span>
                   <span className="font-black">{value}</span>
@@ -113,7 +138,7 @@ export default function GamePage() {
             </div>
           </Surface>
 
-          <Surface eyebrow="Move History" title="Last sequence">
+          <Surface eyebrow={t("history.eyebrow")} title={t("history.title")}>
             <div className="grid gap-2">
               {moveHistory.map(([move, position, color]) => (
                 <div
@@ -133,24 +158,22 @@ export default function GamePage() {
                     aria-hidden="true"
                   />
                   <span className="font-black tabular-nums">{position}</span>
-                  {move === "47" ? <Badge tone="mint">last</Badge> : null}
+                  {move === "47" ? <Badge tone="mint">{t("history.lastBadge")}</Badge> : null}
                 </div>
               ))}
             </div>
           </Surface>
 
-          <Surface eyebrow="Game Status" title="Threat map">
+          <Surface eyebrow={t("status.eyebrow")} title={t("status.title")}>
             <div className="grid gap-3">
-              {["Open three on lower diagonal", "White must block D7", "Black tempo retained"].map(
-                (item) => (
-                  <div
-                    key={item}
-                    className="rounded-md border border-[var(--panel-border-soft)] bg-white/[0.035] p-3 text-sm font-bold text-[var(--muted-strong)]"
-                  >
-                    {item}
-                  </div>
-                ),
-              )}
+              {statusItems.map((item) => (
+                <div
+                  key={item}
+                  className="rounded-md border border-[var(--panel-border-soft)] bg-white/[0.035] p-3 text-sm font-bold text-[var(--muted-strong)]"
+                >
+                  {item}
+                </div>
+              ))}
             </div>
           </Surface>
         </aside>

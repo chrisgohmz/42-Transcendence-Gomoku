@@ -1,6 +1,7 @@
 "use client";
 
 import { RefreshCcw, Swords, Users } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useState } from "react";
 
 import CreateRoomCard from "@/components/create-room-card";
@@ -12,6 +13,7 @@ import { useMatchInitialize } from "@/hooks/useMatchInitialize";
 import type { StoredMatchSession } from "@/lib/matches/match-session-storage";
 
 export default function HumanLobbyClient() {
+  const t = useTranslations("human.page");
   const restoredMatch = useMatchInitialize();
   const setRestoredSession = restoredMatch.setSession;
   const [activeSession, setActiveSession] = useState<StoredMatchSession | null>(null);
@@ -71,10 +73,10 @@ export default function HumanLobbyClient() {
     return (
       <PageShell>
         <PageHeader
-          eyebrow="vs Human Lobby"
+          eyebrow={t("loading.eyebrow")}
           icon={Swords}
-          title="Checking your table."
-          lede="Loading the most recent active room."
+          title={t("loading.title")}
+          lede={t("loading.lede")}
         />
       </PageShell>
     );
@@ -83,14 +85,17 @@ export default function HumanLobbyClient() {
   return (
     <PageShell>
       <PageHeader
-        eyebrow="vs Human Lobby"
+        eyebrow={t("lobby.eyebrow")}
         icon={Swords}
-        title="Find a room or open your own."
-        lede="Create a ranked table, join a public room, or unlock a private duel without leaving the lobby view."
+        title={t("lobby.title")}
+        lede={t("lobby.lede")}
         actions={
           <>
             <Badge tone="mint">
-              <Users aria-hidden="true" className="size-3.5" />8 looking
+              <Users aria-hidden="true" className="size-3.5" />
+              {t("lobby.looking", {
+                count: 8,
+              })}
             </Badge>
             <button
               type="button"
@@ -102,24 +107,28 @@ export default function HumanLobbyClient() {
               aria-busy={isLoadingMatches}
             >
               <RefreshCcw aria-hidden="true" className="size-4" />
-              Refresh
+              {t("lobby.refresh")}
             </button>
           </>
         }
       />
 
       <div className="mb-5 flex max-w-full overflow-x-auto rounded-md border border-[var(--panel-border-soft)] bg-[var(--panel-solid)] p-1 sm:inline-flex">
-        {["Lobby", "My Room", "History"].map((item, index) => (
-          <button
-            key={item}
-            type="button"
-            className={`min-h-10 min-w-32 rounded-sm px-4 text-sm font-black ${
-              index === 0 ? "bg-[var(--mint-soft)] text-[var(--mint)]" : "text-[var(--muted-text)]"
-            }`}
-          >
-            {item}
-          </button>
-        ))}
+        {[t("lobby.tabs.lobby"), t("lobby.tabs.myRoom"), t("lobby.tabs.history")].map(
+          (item, index) => (
+            <button
+              key={item}
+              type="button"
+              className={`min-h-10 min-w-32 rounded-sm px-4 text-sm font-black ${
+                index === 0
+                  ? "bg-[var(--mint-soft)] text-[var(--mint)]"
+                  : "text-[var(--muted-text)]"
+              }`}
+            >
+              {item}
+            </button>
+          ),
+        )}
       </div>
 
       <section className="grid gap-5 xl:grid-cols-[340px_minmax(0,1fr)]">
@@ -132,10 +141,10 @@ export default function HumanLobbyClient() {
             }}
             submitLabel={createSubmitLabel}
           />
-          <MetricCard icon={Users} label="Players Looking" tone="mint" value="8" />
+          <MetricCard icon={Users} label={t("lobby.playersLooking")} tone="mint" value="8" />
         </aside>
 
-        <Surface eyebrow="Lobby" title="Room List">
+        <Surface eyebrow={t("lobby.roomListEyebrow")} title={t("lobby.roomListTitle")}>
           <GameLobbyTable
             entries={entries}
             error={tableError}

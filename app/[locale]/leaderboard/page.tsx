@@ -34,11 +34,11 @@ export default async function LeaderBoard({ params }: LeaderBoardProps) {
         eyebrow={t("eyebrow")}
         icon={Trophy}
         title={t("title")}
-        lede="Season rankings, rating movement, and self-placement for competitive Gomoku."
+        lede={t("lede")}
         actions={
           <>
             <div className="inline-flex rounded-md border border-[var(--panel-border-soft)] bg-[var(--panel-solid)] p-1">
-              {["All Players", "Friends"].map((item, index) => (
+              {[t("page.tabs.allPlayers"), t("page.tabs.friends")].map((item, index) => (
                 <button
                   key={item}
                   type="button"
@@ -54,16 +54,19 @@ export default async function LeaderBoard({ params }: LeaderBoardProps) {
             </div>
             <Badge tone="brass">
               <Globe2 aria-hidden="true" className="size-3.5" />
-              Global
+              {t("page.scope.global")}
             </Badge>
           </>
         }
       />
 
       <section className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_340px]">
-        <Surface eyebrow="Ranked Table" title="Top 100">
+        <Surface eyebrow={t("page.overview.eyebrow")} title={t("page.overview.title")}>
           {leaderboardUnavailable ? (
-            <LeaderboardUnavailable />
+            <LeaderboardUnavailable
+              description={t("page.unavailable.description")}
+              title={t("page.unavailable.title")}
+            />
           ) : (
             <>
               <LeaderboardTable entries={entries} />
@@ -71,7 +74,7 @@ export default async function LeaderBoard({ params }: LeaderBoardProps) {
                 <div className="grid gap-4 md:grid-cols-[120px_minmax(0,1fr)_repeat(3,110px)] md:items-center">
                   <div>
                     <p className="m-0 text-xs font-black tracking-[0.16em] text-[var(--muted-text)] uppercase">
-                      Your Rank
+                      {t("page.spotlight.rankLabel")}
                     </p>
                     <p className="m-0 font-serif text-4xl font-black text-[var(--brass)]">3</p>
                   </div>
@@ -81,12 +84,14 @@ export default async function LeaderBoard({ params }: LeaderBoardProps) {
                     </span>
                     <div>
                       <p className="m-0 text-xl font-black">Kuroishi</p>
-                      <p className="m-0 text-sm text-[var(--brass)]">1,842 rating</p>
+                      <p className="m-0 text-sm text-[var(--brass)]">
+                        {t("page.spotlight.rating", { rating: "1,842" })}
+                      </p>
                     </div>
                   </div>
-                  <MiniMetric label="Wins" value="254" />
-                  <MiniMetric label="Losses" value="81" />
-                  <MiniMetric label="Win Rate" value="75.8%" />
+                  <MiniMetric label={t("table.wins")} value="254" />
+                  <MiniMetric label={t("table.losses")} value="81" />
+                  <MiniMetric label={t("table.winRate")} value="75.8%" />
                 </div>
               </div>
             </>
@@ -94,19 +99,23 @@ export default async function LeaderBoard({ params }: LeaderBoardProps) {
         </Surface>
 
         <aside className="grid content-start gap-5">
-          <Surface eyebrow="Season" icon={Medal} title="Spring Ladder">
+          <Surface eyebrow={t("page.season.eyebrow")} icon={Medal} title={t("page.season.title")}>
             <div className="grid gap-3">
-              <MetricCard label="Days Left" tone="brass" value="18" />
-              <MetricCard label="Rated Matches" tone="mint" value="12,408" />
+              <MetricCard label={t("page.season.daysLeft")} tone="brass" value="18" />
+              <MetricCard label={t("page.season.ratedMatches")} tone="mint" value="12,408" />
             </div>
           </Surface>
 
-          <Surface eyebrow="Distribution" icon={BarChart3} title="Rank Bands">
+          <Surface
+            eyebrow={t("page.distribution.eyebrow")}
+            icon={BarChart3}
+            title={t("page.distribution.title")}
+          >
             <div className="grid gap-3">
               {[
-                ["Dan", "22%", "bg-[var(--brass)]"],
-                ["Kyu", "54%", "bg-[var(--mint)]"],
-                ["Unranked", "24%", "bg-[var(--danger)]"],
+                [t("page.distribution.labels.dan"), "22%", "bg-[var(--brass)]"],
+                [t("page.distribution.labels.kyu"), "54%", "bg-[var(--mint)]"],
+                [t("page.distribution.labels.unranked"), "24%", "bg-[var(--danger)]"],
               ].map(([label, value, color]) => (
                 <div key={label}>
                   <div className="mb-2 flex items-center justify-between text-sm font-bold">
@@ -124,7 +133,11 @@ export default async function LeaderBoard({ params }: LeaderBoardProps) {
             </div>
           </Surface>
 
-          <Surface eyebrow="Top Players" icon={Users} title="This Week">
+          <Surface
+            eyebrow={t("page.topPlayers.eyebrow")}
+            icon={Users}
+            title={t("page.topPlayers.title")}
+          >
             <div className="grid gap-2">
               {["Hoshi", "RenjuMaster", "Kuroishi"].map((name, index) => (
                 <div
@@ -136,7 +149,9 @@ export default async function LeaderBoard({ params }: LeaderBoardProps) {
                   </span>
                   <span className="truncate font-black">{name}</span>
                   <Badge tone={index === 0 ? "brass" : "neutral"}>
-                    {index === 0 ? "MVP" : "+7"}
+                    {index === 0
+                      ? t("page.topPlayers.badges.mvp")
+                      : t("page.topPlayers.badges.boost")}
                   </Badge>
                 </div>
               ))}
@@ -148,7 +163,7 @@ export default async function LeaderBoard({ params }: LeaderBoardProps) {
   );
 }
 
-function LeaderboardUnavailable() {
+function LeaderboardUnavailable({ description, title }: { description: string; title: string }) {
   return (
     <div
       className="grid min-h-[340px] place-items-center rounded-md border border-[var(--danger)]/35 bg-[rgb(216_60_52_/_0.14)] p-8 text-center"
@@ -158,11 +173,8 @@ function LeaderboardUnavailable() {
         <span className="mx-auto mb-4 grid size-12 place-items-center rounded-md border border-[var(--danger)]/35 bg-[rgb(216_60_52_/_0.18)]">
           <AlertTriangle aria-hidden="true" className="size-6 text-[var(--danger)]" />
         </span>
-        <h2 className="m-0 font-serif text-3xl leading-none font-black">Leaderboard unavailable</h2>
-        <p className="mt-3 mb-0 text-sm leading-6 text-[var(--muted-text)]">
-          Rankings could not be loaded. The preview standings are hidden until the live table
-          responds again.
-        </p>
+        <h2 className="m-0 font-serif text-3xl leading-none font-black">{title}</h2>
+        <p className="mt-3 mb-0 text-sm leading-6 text-[var(--muted-text)]">{description}</p>
       </div>
     </div>
   );

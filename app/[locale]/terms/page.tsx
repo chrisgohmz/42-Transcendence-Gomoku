@@ -20,56 +20,77 @@ export default async function TermsPage({ params }: TermsPageProps) {
     {
       body: t("sections.accountAccess.body"),
       icon: ShieldCheck,
+      id: "account-access",
       tone: "mint" as const,
       title: t("sections.accountAccess.title"),
     },
     {
       body: t("sections.fairPlay.body"),
       icon: Swords,
+      id: "fair-play",
       tone: "mint" as const,
       title: t("sections.fairPlay.title"),
     },
     {
-      body: "Cheating, harassment, account abuse, and attempts to interfere with another player's match can lead to restrictions or account removal.",
+      body: t("sections.enforcement.body"),
       icon: AlertTriangle,
+      id: "enforcement",
       tone: "red" as const,
-      title: "3. Enforcement",
+      title: t("sections.enforcement.title"),
+    },
+  ];
+
+  const badges = [
+    {
+      icon: ShieldCheck,
+      id: "account-access",
+      label: t("badges.accountAccess"),
+      tone: "mint" as const,
+    },
+    {
+      icon: Swords,
+      id: "fair-play",
+      label: t("badges.fairPlay"),
+      tone: "mint" as const,
+    },
+    {
+      icon: AlertTriangle,
+      id: "enforcement",
+      label: t("badges.enforcement"),
+      tone: "red" as const,
     },
   ];
 
   return (
     <PageShell>
       <PageHeader
-        eyebrow="Legal"
+        eyebrow={t("eyebrow")}
         icon={Scale}
         title={t("title")}
         lede={t("intro")}
-        actions={<Badge tone="brass">Last updated May 9, 2026</Badge>}
+        actions={<Badge tone="brass">{t("lastUpdated")}</Badge>}
       />
 
       <section className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_320px]">
-        <Surface eyebrow="Terms Document" title="Rules of the table">
+        <Surface eyebrow={t("document.eyebrow")} title={t("document.title")}>
           <div className="mb-4 grid gap-3 md:grid-cols-3">
-            <Badge tone="mint">
-              <ShieldCheck aria-hidden="true" className="size-3.5" />
-              Account access
-            </Badge>
-            <Badge tone="mint">
-              <Swords aria-hidden="true" className="size-3.5" />
-              Fair play
-            </Badge>
-            <Badge tone="red">
-              <AlertTriangle aria-hidden="true" className="size-3.5" />
-              Enforcement
-            </Badge>
+            {badges.map((badge) => {
+              const Icon = badge.icon;
+              return (
+                <Badge key={badge.id} tone={badge.tone}>
+                  <Icon aria-hidden="true" className="size-3.5" />
+                  {badge.label}
+                </Badge>
+              );
+            })}
           </div>
           <div className="grid gap-4">
             {sections.map((section) => {
               const Icon = section.icon;
               return (
                 <article
-                  id={section.title.toLowerCase().replaceAll(" ", "-").replaceAll(".", "")}
-                  key={section.title}
+                  id={section.id}
+                  key={section.id}
                   className="rounded-md border border-[var(--panel-border-soft)] bg-white/[0.035] p-5"
                 >
                   <div className="mb-4 flex items-center gap-3">
@@ -97,28 +118,26 @@ export default async function TermsPage({ params }: TermsPageProps) {
         </Surface>
 
         <aside className="grid content-start gap-5">
-          <Surface eyebrow="Contents" title="Sections">
+          <Surface eyebrow={t("contents.eyebrow")} title={t("contents.title")}>
             <nav className="grid gap-2">
               {sections.map((section) => (
-                <a
-                  key={section.title}
-                  href={`#${section.title.toLowerCase().replaceAll(" ", "-").replaceAll(".", "")}`}
-                  className="sidebar-link"
-                >
+                <a key={section.id} href={`#${section.id}`} className="sidebar-link">
                   {section.title}
                 </a>
               ))}
             </nav>
           </Surface>
 
-          <Surface eyebrow="Related" icon={FileCheck2} title="Legal links">
+          <Surface eyebrow={t("related.eyebrow")} icon={FileCheck2} title={t("related.title")}>
             <Link href="/privacy" className="sidebar-link">
-              Privacy Policy
+              {t("related.privacyPolicy")}
             </Link>
             <div className="rounded-md border border-[var(--brass)]/35 bg-[var(--brass-soft)] p-3">
-              <p className="m-0 text-sm font-black text-[var(--brass)]">By playing, you agree.</p>
+              <p className="m-0 text-sm font-black text-[var(--brass)]">
+                {t("related.agreementTitle")}
+              </p>
               <p className="m-0 mt-2 text-sm leading-6 text-[var(--muted-strong)]">
-                These terms apply to account, social, and match features.
+                {t("related.agreementBody")}
               </p>
             </div>
           </Surface>

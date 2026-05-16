@@ -33,13 +33,8 @@ export default function GameLobbyTable({
   const t = useTranslations("human.lobby");
   const rows = entries.map((entry, index) => {
     const id = entry.matchId ?? String(entry.roomId ?? index);
-    const state = entry.status
-      ? entry.status === "WAITING"
-        ? "Waiting"
-        : "Live"
-      : entry.requiresPassword
-        ? "Waiting"
-        : "Live";
+    const isLive = entry.status ? entry.status !== "WAITING" : !entry.requiresPassword;
+    const isPublic = !entry.requiresPassword;
 
     return {
       id,
@@ -52,8 +47,9 @@ export default function GameLobbyTable({
           : entry.requiresPassword
             ? "1/2"
             : "2/2",
-      privacy: entry.requiresPassword ? "Private" : "Public",
-      state,
+      privacy: isPublic ? t("privacy.public") : t("privacy.private"),
+      isLive,
+      isPublic,
       boardSize: entry.boardSize ?? 15,
     };
   });
@@ -66,11 +62,11 @@ export default function GameLobbyTable({
     >
       <div className="min-w-[760px]">
         <div className="grid grid-cols-[minmax(180px,1.25fr)_90px_88px_98px_78px_72px] gap-3 border-b border-[var(--panel-border-soft)] bg-black/20 px-4 py-3 text-xs font-black tracking-[0.12em] text-[var(--muted-text)] uppercase">
-          <span>Room</span>
-          <span>Rules</span>
-          <span>Players</span>
-          <span>Privacy</span>
-          <span>Ping</span>
+          <span>{t("headers.room")}</span>
+          <span>{t("headers.rules")}</span>
+          <span>{t("headers.players")}</span>
+          <span>{t("headers.privacy")}</span>
+          <span>{t("headers.ping")}</span>
           <span />
         </div>
         {error ? (
@@ -89,12 +85,12 @@ export default function GameLobbyTable({
             >
               <div className="flex min-w-0 items-center gap-3">
                 <span
-                  className={`size-2.5 rounded-full ${row.state === "Live" ? "bg-[var(--mint)] shadow-[0_0_12px_var(--mint)]" : "bg-[var(--brass)]"}`}
+                  className={`size-2.5 rounded-full ${row.isLive ? "bg-[var(--mint)] shadow-[0_0_12px_var(--mint)]" : "bg-[var(--brass)]"}`}
                 />
                 <span className="min-w-0">
                   <span className="block truncate font-black">{row.name}</span>
                   <span className="block truncate text-xs text-[var(--muted-text)]">
-                    Standard opening, ranked room
+                    {t("roomDescription")}
                   </span>
                 </span>
               </div>
@@ -102,8 +98,8 @@ export default function GameLobbyTable({
                 {row.boardSize} x {row.boardSize}
               </span>
               <span className="font-black tabular-nums">{row.players}</span>
-              <Badge tone={row.privacy === "Public" ? "mint" : "neutral"}>
-                {row.privacy === "Public" ? (
+              <Badge tone={row.isPublic ? "mint" : "neutral"}>
+                {row.isPublic ? (
                   <UnlockKeyhole aria-hidden="true" className="size-3.5" />
                 ) : (
                   <LockKeyhole aria-hidden="true" className="size-3.5" />
@@ -116,7 +112,7 @@ export default function GameLobbyTable({
               <button
                 type="button"
                 className="grid size-10 place-items-center rounded-md border border-[var(--panel-border-soft)] bg-white/[0.035] text-[var(--muted-strong)] hover:bg-white/[0.07]"
-                aria-label={`${t("join")} ${row.name}`}
+                aria-label={t("joinAria", { name: row.name })}
                 onClick={() => {
                   onJoin?.(row.entry);
                 }}
@@ -134,7 +130,7 @@ export default function GameLobbyTable({
         )}
         <div className="flex items-center gap-2 border-t border-[var(--panel-border-soft)] px-4 py-3 text-sm font-bold text-[var(--muted-text)]">
           <Radio aria-hidden="true" className="size-4 text-[var(--mint)]" />
-          Waiting rooms from the match service.
+          {t("footer")}
         </div>
       </div>
     </div>

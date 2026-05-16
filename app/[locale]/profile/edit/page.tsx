@@ -28,15 +28,15 @@ export default async function EditProfilePage({ params }: EditProfilePageProps) 
 
   return (
     <PageShell>
-      <PageHeader eyebrow="Profile Studio" title={t("title")} lede={t("lede")} />
+      <PageHeader eyebrow={t("page.eyebrow")} title={t("title")} lede={t("lede")} />
       <section className="grid gap-5 xl:grid-cols-[340px_minmax(0,1fr)]">
         <aside className="grid content-start gap-5">
-          <Surface eyebrow="Avatar" title="Public portrait">
+          <Surface eyebrow={t("page.avatar.eyebrow")} title={t("page.avatar.title")}>
             <div className="grid justify-items-center">
               <ProfilePicture initialImage={sessionData.user.avatarUrl} />
             </div>
           </Surface>
-          <Surface eyebrow="Preview" title="Public card">
+          <Surface eyebrow={t("page.preview.eyebrow")} title={t("page.preview.title")}>
             <div className="flex items-center gap-3 rounded-md border border-[var(--panel-border-soft)] bg-white/[0.035] p-3">
               <AvatarToken
                 image={sessionData.user.avatarUrl}
@@ -49,7 +49,7 @@ export default async function EditProfilePage({ params }: EditProfilePageProps) 
                   @{sessionData.user.username}
                 </p>
               </div>
-              <Badge tone="brass">5-dan</Badge>
+              <Badge tone="brass">{t("page.preview.rank")}</Badge>
             </div>
           </Surface>
         </aside>

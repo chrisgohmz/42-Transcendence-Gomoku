@@ -100,7 +100,7 @@ export default function LeaderboardTable({ entries }: LeaderboardTableProps) {
       {isPreview ? (
         <div className="flex items-center gap-2 rounded-md border border-[var(--brass)]/30 bg-[var(--brass-soft)] px-3 py-2 text-sm font-bold text-[var(--muted-strong)]">
           <Medal aria-hidden="true" className="size-4 text-[var(--brass)]" />
-          Preview standings are shown until completed matches report results.
+          {t("preview")}
         </div>
       ) : null}
 
@@ -112,7 +112,7 @@ export default function LeaderboardTable({ entries }: LeaderboardTableProps) {
           <span>{t("wins")}</span>
           <span>{t("losses")}</span>
           <span>{t("winRate")}</span>
-          <span>Trend</span>
+          <span>{t("trend")}</span>
         </div>
 
         {rows.map((entry) => (
@@ -143,7 +143,7 @@ export default function LeaderboardTable({ entries }: LeaderboardTableProps) {
                 </p>
                 <p className="m-0 flex items-center gap-1 truncate text-xs text-[var(--muted-text)]">
                   <TrendingUp aria-hidden="true" className="size-3 text-[var(--mint)]" />
-                  Active
+                  {t("active")}
                 </p>
               </div>
             </div>

@@ -21,7 +21,7 @@ export default function CreateRoomCard({
   const t = useTranslations("human.createRoom");
 
   return (
-    <Surface eyebrow="Challenge" icon={Swords} title={t("title")}>
+    <Surface eyebrow={t("eyebrow")} icon={Swords} title={t("title")}>
       <p className="m-0 text-sm leading-6 text-[var(--muted-text)]">{t("description")}</p>
 
       <form
@@ -36,9 +36,14 @@ export default function CreateRoomCard({
       >
         <div className="field">
           <label htmlFor="room-name" className="field-label">
-            Room name
+            {t("roomNameLabel")}
           </label>
-          <input id="room-name" name="roomName" placeholder="Quiet Fuseki" className="text-input" />
+          <input
+            id="room-name"
+            name="roomName"
+            placeholder={t("roomNamePlaceholder")}
+            className="text-input"
+          />
         </div>
 
         <div className="field">
@@ -64,23 +69,23 @@ export default function CreateRoomCard({
             className="min-h-11 rounded-md border border-[var(--mint)]/35 bg-[var(--mint-soft)] px-3 text-sm font-black text-[var(--mint)]"
           >
             <Eye aria-hidden="true" className="mr-2 inline size-4" />
-            Public
+            {t("publicRoom")}
           </button>
           <button
             type="button"
             className="min-h-11 rounded-md border border-[var(--panel-border-soft)] bg-white/[0.035] px-3 text-sm font-black text-[var(--muted-strong)]"
           >
             <EyeOff aria-hidden="true" className="mr-2 inline size-4" />
-            Private
+            {t("privateRoom")}
           </button>
         </div>
 
         <div className="grid grid-cols-2 gap-2">
           <Badge tone="neutral">
             <Timer aria-hidden="true" className="size-3.5" />
-            10m timer
+            {t("timerLabel")}
           </Badge>
-          <Badge tone="brass">15 x 15 board</Badge>
+          <Badge tone="brass">{t("boardSizeLabel")}</Badge>
         </div>
 
         <button

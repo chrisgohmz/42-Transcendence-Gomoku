@@ -41,12 +41,7 @@ export default function MessagesContent() {
 
   return (
     <PageShell>
-      <PageHeader
-        eyebrow="Messages"
-        icon={MessageSquare}
-        title={t("title")}
-        lede="A match-first inbox for rivals, rematches, and live room invites."
-      />
+      <PageHeader eyebrow={t("eyebrow")} icon={MessageSquare} title={t("title")} lede={t("lede")} />
 
       <section className="grid min-h-[760px] overflow-hidden rounded-md border border-[var(--panel-border-soft)] bg-[var(--panel)] shadow-[0_30px_90px_rgba(0,0,0,0.4)] xl:grid-cols-[350px_minmax(0,1fr)]">
         <aside className="border-b border-[var(--panel-border-soft)] bg-[var(--sidebar)] p-4 xl:border-r xl:border-b-0">
@@ -100,12 +95,12 @@ export default function MessagesContent() {
               <AvatarToken name={activeChat} online />
               <div className="min-w-0">
                 <h2 className="m-0 truncate font-serif text-3xl font-bold">{activeChat}</h2>
-                <p className="m-0 text-sm text-[var(--muted-text)]">Ready for rematch invites</p>
+                <p className="m-0 text-sm text-[var(--muted-text)]">{t("header.status")}</p>
               </div>
             </div>
             <Badge tone="mint">
               <ShieldCheck aria-hidden="true" className="size-3.5" />
-              trusted rival
+              {t("header.badge")}
             </Badge>
           </header>
 
@@ -129,20 +124,20 @@ export default function MessagesContent() {
                 <div>
                   <Badge tone="brass">
                     <Swords aria-hidden="true" className="size-3.5" />
-                    Match invite
+                    {t("invite.eyebrow")}
                   </Badge>
-                  <h3 className="mt-3 font-serif text-2xl font-bold">Private room: Study Fuseki</h3>
+                  <h3 className="mt-3 font-serif text-2xl font-bold">{t("invite.title")}</h3>
                   <p className="mt-2 text-sm leading-6 text-[var(--muted-text)]">
-                    15 x 15 standard, 10 minute timer. Accept to join the room lobby.
+                    {t("invite.description")}
                   </p>
                   <div className="mt-4 flex gap-2">
                     <button type="button" className="btn m-0 min-h-10 px-4">
                       <Check aria-hidden="true" className="size-4" />
-                      Accept
+                      {t("invite.accept")}
                     </button>
                     <button type="button" className="btn btn-danger m-0 min-h-10 px-4">
                       <X aria-hidden="true" className="size-4" />
-                      Decline
+                      {t("invite.decline")}
                     </button>
                   </div>
                 </div>

@@ -48,6 +48,48 @@ export const messages = {
       signIn: "登录",
       accountPage: "账户页面",
     },
+    dashboard: {
+      status: {
+        onlinePlayers: "{count} 名玩家在线",
+      },
+      hero: {
+        title: "掌控棋盘。",
+        lede: "从练习、真人对战到实时排行榜，一屏即可开始。下下一手之前，先快速看清局面。",
+      },
+      stats: {
+        playersOnline: "在线玩家",
+        openRooms: "开放房间",
+      },
+      board: {
+        label: "实时排位棋盘",
+      },
+      cards: {
+        ai: {
+          title: "与 AI 练习",
+          cta: "与 AI 练习",
+          body: "对着 Kata Reader 练习犀利的逼迫线路，并回顾建议的形状。",
+        },
+        human: {
+          title: "发起真人对战",
+          cta: "发起真人对战",
+          body: "创建房间、加入等待中的桌位，或者直接向对手发起挑战。",
+        },
+      },
+      snapshot: {
+        eyebrow: "排位概览",
+        title: "排名变动",
+      },
+      activity: {
+        eyebrow: "最近动态",
+        title: "房间正在活跃",
+        items: {
+          wonByOpenFour: "以活四取胜",
+          openedPrivateStudyRoom: "开启了私人研究房间",
+          crossed1900Rating: "等级分突破 1,900",
+          acceptedRematch: "接受了重赛",
+        },
+      },
+    },
   },
   clickButtons: {
     on: "开",
@@ -92,6 +134,29 @@ export const messages = {
       submitting: "正在登录...",
       newHere: "第一次来？",
       signupLink: "创建账户",
+      rememberThisTable: "记住这张棋桌",
+      forgotPassword: "忘记密码了？",
+      continueWithGithub: "使用 GitHub 继续",
+      page: {
+        hero: {
+          title: "回到棋桌。",
+        },
+        session: {
+          eyebrow: "会话",
+          status: "安全",
+        },
+        boardLabel: "安全的排位会话",
+        highlights: {
+          protected: {
+            title: "受保护的账户区域",
+            body: "登录后，你的房间、个人资料和社交队列即可解锁。",
+          },
+          rankedReady: {
+            title: "可直接进行排位的外壳",
+            body: "从练习棋盘切换到真人大厅时不会丢失上下文。",
+          },
+        },
+      },
     },
     signup: {
       title: "创建你的账户。",
@@ -104,6 +169,23 @@ export const messages = {
       submitting: "正在创建...",
       alreadyHaveAccount: "已经有账户？",
       signInLink: "登录",
+      page: {
+        hero: {
+          badge: "新玩家档案",
+          title: "占好位置、积累等级分、继续重赛。",
+        },
+        boardLabel: "新玩家席位",
+        highlights: {
+          ladder: {
+            title: "从排位梯子起步",
+            body: "你的账户已经准备好，可用于个人资料统计、好友功能和未来的排位流程。",
+          },
+          humans: {
+            title: "挑战真人玩家",
+            body: "创建房间、加入队列，并把你的对局历史放在同一个界面里。",
+          },
+        },
+      },
     },
     errors: {
       fixHighlightedFields: "请修正高亮字段。",
@@ -140,9 +222,77 @@ export const messages = {
     emailMissing: "未提供",
     sessionExpires: "会话过期时间:",
     backHome: "返回首页",
+    settings: {
+      eyebrow: "设置",
+      title: "账户设置",
+      emailVerified: "邮箱已验证",
+      emailPending: "邮箱待验证",
+      preferences: "设置菜单",
+      sidebar: {
+        profile: "资料",
+        security: "安全",
+        language: "语言",
+        privacy: "隐私",
+        notifications: "通知",
+        danger: "危险区域",
+      },
+      sections: {
+        profile: {
+          eyebrow: "资料",
+          title: "资料信息",
+          saveChanges: "保存更改",
+        },
+        security: {
+          eyebrow: "安全",
+          title: "邮箱与密码",
+          password: "密码",
+          updatedRecently: "最近更新",
+          sessionCreated: "会话创建时间",
+        },
+        language: {
+          eyebrow: "语言",
+          title: "语言和地区",
+          interfaceLanguage: "界面语言",
+          timeZone: "时区",
+        },
+        privacy: {
+          eyebrow: "隐私",
+          title: "可见性",
+          showOnlineStatus: "显示在线状态",
+          allowMatchInvites: "允许对局邀请",
+          hideRatingFromStrangers: "向陌生人隐藏等级分",
+        },
+        notifications: {
+          eyebrow: "通知",
+          title: "通知设置",
+          friendRequests: "好友请求",
+          matchReminders: "对局提醒",
+          marketingEmail: "营销邮件",
+        },
+        danger: {
+          eyebrow: "危险区域",
+          title: "账户删除",
+          description:
+            "删除账户后，资料访问将被移除，当前会话也会断开。对局记录可能仍会保留在汇总的排名历史中。",
+          deleteAccount: "删除账户",
+        },
+      },
+    },
   },
   friends: {
     title: "好友",
+    pageHeader: {
+      eyebrow: "社交",
+      lede: "管理好友、处理请求，并快速进入聊天或对战。",
+    },
+    roster: {
+      eyebrow: "列表",
+      titles: {
+        friends: "好友列表",
+        pending: "待处理请求",
+        sent: "已发送请求",
+      },
+    },
     searchPlaceholder: "按用户名搜索...",
     search: "搜索",
     tabs: {
@@ -158,6 +308,7 @@ export const messages = {
       wins: "胜场",
       losses: "负场",
       actions: "操作",
+      status: "状态",
     },
     actions: {
       chat: "聊天",
@@ -166,6 +317,22 @@ export const messages = {
       decline: "拒绝",
       cancelRequest: "取消请求",
       add: "添加",
+      challengeFriend: "向 {name} 发起对战",
+      messageFriend: "给 {name} 发消息",
+      removeFriend: "将 {name} 从好友中移除",
+      acceptFriend: "接受 {name}",
+      declineFriend: "拒绝 {name}",
+      cancelFriendRequest: "取消对 {name} 的请求",
+      confirmRemoveFriend: "确定要删除这位好友吗？",
+      signInToAddFriends: "请先登录后再添加好友。",
+      playerNotFound: "找不到该名称的玩家。",
+      cannotAddYourself: "不能添加自己。",
+      alreadyFriendsOrPending: "你们已经是好友，或者请求仍在待处理。",
+      signIn: "请先登录。",
+      requestNotFound: "未找到请求。",
+      unauthorized: "没有权限。",
+      invalidTransition: "无效的状态转换。",
+      friendshipNotFound: "未找到好友关系。",
     },
     empty: {
       friends: "暂无好友。在上面搜索并添加吧！",
@@ -184,11 +351,43 @@ export const messages = {
   human: {
     networkLoadError: "加载比赛时发生网络错误",
     requestFailed: "请求失败，状态码 {status}",
+    defaults: {
+      playerName: "玩家",
+    },
+    page: {
+      loading: {
+        eyebrow: "真人对战大厅",
+        title: "正在检查你的桌位。",
+        lede: "正在加载最近处于活动状态的房间。",
+      },
+      lobby: {
+        eyebrow: "真人对战大厅",
+        title: "寻找房间，或创建自己的房间。",
+        lede: "无需离开大厅视图，就能创建排位桌、加入公开房间或开启私人对局。",
+        looking: "{count} 人正在等待",
+        refresh: "刷新",
+        tabs: {
+          lobby: "大厅",
+          myRoom: "我的房间",
+          history: "记录",
+        },
+        playersLooking: "等待中的玩家",
+        roomListEyebrow: "大厅",
+        roomListTitle: "房间列表",
+      },
+    },
     createRoom: {
+      eyebrow: "发起对战",
       title: "创建房间",
       description: "留空密码即可创建公开房间。",
+      roomNameLabel: "房间名称",
+      roomNamePlaceholder: "安静布局",
       password: "密码",
       optionalPassword: "可选密码",
+      publicRoom: "公开",
+      privateRoom: "私密",
+      timerLabel: "10 分钟计时",
+      boardSizeLabel: "15 x 15 棋盘",
       submit: "创建房间",
       submitting: "创建中...",
       signInRequired: "请先登录再创建比赛。",
@@ -202,19 +401,219 @@ export const messages = {
       networkError: "加入比赛时发生网络错误",
     },
     lobby: {
-      playerRoom: "玩家房间",
-      password: "密码",
-      action: "操作",
+      headers: {
+        room: "房间",
+        rules: "规则",
+        players: "人数",
+        privacy: "可见性",
+        ping: "Ping",
+      },
       empty: "还没有房间。",
       roomName: "{player} 的房间",
-      publicRoom: "公开房间",
+      roomDescription: "标准开局的排位房间",
+      privacy: {
+        public: "公开",
+        private: "私密",
+      },
+      footer: "来自比赛服务的等待房间。",
+      joinAria: "加入 {name}",
       join: "加入",
+    },
+    match: {
+      page: {
+        eyebrow: "真人对战对局",
+        title: {
+          loading: "正在加载房间。",
+          waiting: "房间已开启。",
+          live: "进行中的房间。",
+          finished: "已结束的房间。",
+        },
+        lede: {
+          loading: "正在获取最新房间状态。",
+          waiting: "正在等待第二位玩家。",
+          live: "显示此桌的棋盘、轮次和结果。",
+          finished: "最终局面已锁定。",
+        },
+        refresh: "刷新",
+        lobby: "返回大厅",
+      },
+      status: {
+        loading: "加载中",
+        waiting: "等待中",
+        inProgress: "进行中",
+        finished: "已结束",
+      },
+      connection: {
+        eyebrow: "连接",
+        title: "实时",
+        socket: "Socket",
+        version: "版本",
+        you: "你",
+        spectator: "旁观者",
+        status: {
+          idle: "空闲",
+          connecting: "连接中",
+          connected: "已连接",
+          error: "错误",
+        },
+      },
+      state: {
+        eyebrow: "对局",
+        title: "状态",
+        match: "对局",
+        board: "棋盘",
+        next: "下一手",
+        result: "结果",
+        none: "无",
+      },
+      moves: {
+        eyebrow: "落子",
+        title: "记谱",
+        empty: "还没有落子。",
+      },
+      seat: {
+        black: "黑方",
+        white: "白方",
+        openSeat: "空位",
+        you: "你",
+        opponent: "对手",
+        turn: "回合",
+      },
+      board: {
+        ariaLabel: "真人五子棋棋盘",
+        emptyIntersection: "{point} 处为空",
+        stoneAt: "{point} 处有 {seat} 的棋子",
+      },
+      endReason: {
+        fiveInARow: "五连",
+        resign: "认输",
+        draw: "平局",
+        queueCancelled: "等待已取消",
+        queueExpired: "等待已过期",
+        abandoned: "已放弃",
+      },
+      statusLine: {
+        loading: "正在加载对局状态。",
+        waiting: "正在等待第二位玩家。",
+        winner: "{seat} 以 {reason} 获胜。",
+        winnerByResign: "{seat} 通过认输获胜。",
+        draw: "平局。",
+        yourMove: "轮到你了。",
+        toMove: "轮到 {seat}。",
+        resultFallback: "结果",
+      },
+      result: {
+        pending: "待定",
+        won: "{seat} 获胜",
+        draw: "平局",
+      },
+      actions: {
+        resign: "认输",
+      },
+      errors: {
+        stateRequestFailed: "状态请求失败 ({status})",
+        networkLoadState: "加载对局状态时发生网络错误",
+        submitMove: "提交落子时发生网络错误",
+        resignRequestFailed: "认输请求失败 ({status})",
+        networkResign: "认输时发生网络错误",
+      },
+    },
+  },
+  game: {
+    pageTitle: "与 AI 对局中",
+    ai: {
+      eyebrow: "AI 对手",
+      title: "定石读解 AI",
+      description: "深度 6 会读取中腹攻防，并在过度进攻前推荐更稳健的威胁。",
+      metrics: {
+        positionConfidence: "局面信心",
+        initiativeSwing: "主导权变化",
+      },
+      suggestionLabel: "建议",
+      suggestion: "向 D7 延伸，连接下方斜线并迫使白方防守。",
+    },
+    controls: {
+      undo: "悔棋",
+      restart: "重新开始",
+      rules: "规则",
+      resign: "认输",
+    },
+    match: {
+      roomEyebrow: "房间 1024",
+      roomTitle: "排位赛",
+      turn: "黑方落子",
+      details: {
+        rulesLabel: "规则",
+        rulesValue: "15 x 15 / 标准",
+        captureLabel: "提子",
+        captureValue: "禁用",
+        spectatorsLabel: "观众",
+        spectatorsValue: "3",
+        openingLabel: "开局方式",
+        openingValue: "自由",
+      },
+    },
+    history: {
+      eyebrow: "落子记录",
+      title: "最近一段",
+      lastBadge: "最新",
+    },
+    status: {
+      eyebrow: "对局状态",
+      title: "威胁图",
+      openThree: "下方斜线已形成活三",
+      whiteMustBlockD7: "白方必须挡住 D7",
+      blackTempoRetained: "黑方保留节奏",
     },
   },
   leaderboard: {
     eyebrow: "排名",
     title: "排行榜",
-    lede: "玩家排名稍后会从数据库加载。",
+    lede: "查看实时排行榜、等级变化和你当前的位置。",
+    page: {
+      tabs: {
+        allPlayers: "全部玩家",
+        friends: "好友",
+      },
+      scope: {
+        global: "全球",
+      },
+      overview: {
+        eyebrow: "排名表",
+        title: "前 100 名",
+      },
+      spotlight: {
+        rankLabel: "你的排名",
+        rating: "{rating} 等级分",
+      },
+      season: {
+        eyebrow: "赛季",
+        title: "春季天梯",
+        daysLeft: "剩余天数",
+        ratedMatches: "计分对局",
+      },
+      distribution: {
+        eyebrow: "分布",
+        title: "段位区间",
+        labels: {
+          dan: "段位",
+          kyu: "级位",
+          unranked: "未定级",
+        },
+      },
+      topPlayers: {
+        eyebrow: "热门玩家",
+        title: "本周",
+        badges: {
+          mvp: "MVP",
+          boost: "+7",
+        },
+      },
+      unavailable: {
+        title: "排行榜暂不可用",
+        description: "排行榜无法加载。实时表格再次响应之前，预览排名将被隐藏。",
+      },
+    },
     table: {
       rank: "排名",
       player: "玩家",
@@ -223,12 +622,21 @@ export const messages = {
       losses: "负场",
       winRate: "胜率",
       empty: "暂无排行榜数据。",
+      preview: "在已完成对局结果到达之前，将显示预览排名。",
+      trend: "趋势",
+      active: "活跃",
     },
   },
   messagesPage: {
+    eyebrow: "消息",
     title: "消息",
+    lede: "一个以对局为先的收件箱，收纳对手、重赛和实时房间邀请。",
     searchPlaceholder: "按用户名搜索...",
     search: "搜索",
+    header: {
+      status: "已准备好接收重赛邀请",
+      badge: "可信对手",
+    },
     previews: {
       mj: "当然！我先完成这个...",
       alex: "GG，打得不错。",
@@ -239,6 +647,13 @@ export const messages = {
     },
     composerPlaceholder: "给 {name} 发消息...",
     send: "发送",
+    invite: {
+      eyebrow: "对局邀请",
+      title: "私人房间：布石研究",
+      description: "15 x 15 标准规则，10 分钟计时。接受即可加入房间大厅。",
+      accept: "接受",
+      decline: "拒绝",
+    },
   },
   profile: {
     title: "个人资料",
@@ -246,6 +661,88 @@ export const messages = {
     editProfile: "编辑资料",
     statsTitle: "总战绩",
     friendStatsTitle: "总体统计",
+    publicPage: {
+      backToLeaderboard: "返回排行榜",
+      badge: "公开资料",
+      challenge: "发起对战",
+      progress: {
+        eyebrow: "等级分变化",
+        title: "赛季曲线",
+      },
+      recentMatches: {
+        eyebrow: "最近对局",
+        title: "对局样本",
+        results: {
+          won: "获胜",
+          lost: "失利",
+        },
+        items: {
+          wonAgainstTenkei: "战胜 Tenkei",
+          lostAgainstHoshi: "负于 Hoshi",
+          wonAgainstMokuren: "战胜 Mokuren",
+        },
+      },
+      headToHead: {
+        eyebrow: "交手记录",
+        title: "与你交手",
+        wins: "胜场",
+        losses: "负场",
+      },
+      achievements: {
+        eyebrow: "成就",
+        title: "已知标记",
+        items: {
+          sharpOpening: "犀利开局",
+          calmEndgame: "沉着收官",
+          fastRematch: "快速重赛",
+        },
+      },
+      safety: {
+        eyebrow: "安全",
+        title: "玩家操作",
+        reportPlayer: "举报玩家",
+        blockPlayer: "拉黑玩家",
+      },
+    },
+    page: {
+      hero: {
+        badge: "已登录",
+      },
+      recentMatches: {
+        eyebrow: "最近对局",
+        title: "对局记录",
+        results: {
+          won: "获胜",
+          lost: "失利",
+        },
+        notes: {
+          timeLeft: "剩余 {time}",
+          resigned: "认输",
+          fiveInARow: "五连取胜",
+        },
+      },
+      about: {
+        eyebrow: "关于我",
+        title: "玩家卡片",
+        body: "偏好稳健的中腹开局、快速重赛，以及能打乱天梯的斜线变化。",
+        rankLabel: "段位",
+        seasonLabel: "赛季",
+      },
+      achievements: {
+        eyebrow: "成就",
+        title: "徽章",
+        items: {
+          openFourSpecialist: "活四专家",
+          hundredRankedWins: "100 场排位胜利",
+          studyRoomHost: "研究房主持人",
+        },
+      },
+      progress: {
+        eyebrow: "赛季进度",
+        title: "下一段位",
+        range: "{from} 到 {to}",
+      },
+    },
     stats: {
       rating: "等级分",
       winRate: "胜率",
@@ -259,6 +756,18 @@ export const messages = {
     edit: {
       title: "编辑个人资料",
       lede: "更新您的显示名称并查看您的帐户详细信息。",
+      page: {
+        eyebrow: "个人资料工作室",
+        avatar: {
+          eyebrow: "头像",
+          title: "公开头像",
+        },
+        preview: {
+          eyebrow: "预览",
+          title: "公开资料卡",
+          rank: "5段",
+        },
+      },
       profileDetails: "个人资料详情",
       usernameReadonly: "用户名 (不可编辑)",
       displayName: "显示名称",
@@ -305,8 +814,30 @@ export const messages = {
   },
   legal: {
     terms: {
+      eyebrow: "法务",
+      lastUpdated: "最后更新：2026 年 5 月 9 日",
       title: "服务条款",
       intro: "在最终政策文案完成前，这些占位条款用于必需的应用外壳。",
+      document: {
+        eyebrow: "条款文件",
+        title: "对局规则",
+      },
+      badges: {
+        accountAccess: "账户访问",
+        fairPlay: "公平游戏",
+        enforcement: "处理措施",
+      },
+      contents: {
+        eyebrow: "目录",
+        title: "章节",
+      },
+      related: {
+        eyebrow: "相关",
+        title: "法务链接",
+        privacyPolicy: "隐私政策",
+        agreementTitle: "开始游戏即表示你同意这些条款。",
+        agreementBody: "这些条款适用于账户、社交和比赛功能。",
+      },
       sections: {
         accountAccess: {
           title: "1. 账户访问",
@@ -314,13 +845,34 @@ export const messages = {
         },
         fairPlay: {
           title: "2. 公平游戏",
-          body: "请尊重他人，避免 abusive 行为，也不要干扰其他玩家的比赛。",
+          body: "请尊重他人，避免骚扰或滥用行为，也不要干扰其他玩家的比赛。",
+        },
+        enforcement: {
+          title: "3. 处理措施",
+          body: "作弊、骚扰、账户滥用，以及试图干扰其他玩家比赛的行为，可能会导致功能限制或账户移除。",
         },
       },
     },
     privacy: {
+      eyebrow: "法务",
+      lastUpdated: "最后更新：2026 年 5 月 9 日",
       title: "隐私政策",
       intro: "在产品文案最终确定前，本占位政策记录核心数据范围。",
+      contents: {
+        eyebrow: "目录",
+        title: "本页内容",
+      },
+      metrics: {
+        documentSections: "文档章节",
+      },
+      document: {
+        eyebrow: "隐私文件",
+        title: "数据处理方式",
+      },
+      questions: {
+        title: "有隐私相关问题？",
+        body: "在新增分析、数据保留或审核相关的数据面之前，请先联系项目维护者。",
+      },
       sections: {
         accountData: {
           title: "1. 账户数据",
@@ -329,6 +881,10 @@ export const messages = {
         sessionCookies: {
           title: "2. 会话 Cookie",
           body: "会话和语言 Cookie 会在刷新后保留登录状态与界面偏好。",
+        },
+        socialMatchData: {
+          title: "3. 社交和比赛数据",
+          body: "好友请求、在线状态和比赛邀请用于支持社交玩法。在保留规则最终确定前，私信应按产品数据处理。",
         },
       },
     },

@@ -39,30 +39,30 @@ export default async function SignupPage({ params }: SignupPageProps) {
 
         <div className="grid min-h-[780px] content-between border-l border-[var(--panel-border-soft)] p-5 sm:p-8">
           <div>
-            <p className="eyebrow mb-2">New Player File</p>
+            <p className="eyebrow mb-2">{signup("page.hero.badge")}</p>
             <h2 className="font-serif text-5xl leading-none font-black text-pretty">
-              Claim a seat, build a rating, keep the rematches coming.
+              {signup("page.hero.title")}
             </h2>
           </div>
 
           <BoardShowpiece
-            label="New player seat"
+            label={signup("page.boardLabel")}
             className="min-h-[430px] border-0 bg-transparent shadow-none"
           />
 
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="kpi-card">
               <Crown aria-hidden="true" className="mb-4 size-5 text-[var(--brass)]" />
-              <p className="m-0 font-black">Start at the ladder</p>
+              <p className="m-0 font-black">{signup("page.highlights.ladder.title")}</p>
               <p className="mt-2 text-sm leading-6 text-[var(--muted-text)]">
-                Your account is ready for profile stats, friends, and future ranked flow.
+                {signup("page.highlights.ladder.body")}
               </p>
             </div>
             <div className="kpi-card">
               <Swords aria-hidden="true" className="mb-4 size-5 text-[var(--danger)]" />
-              <p className="m-0 font-black">Challenge humans</p>
+              <p className="m-0 font-black">{signup("page.highlights.humans.title")}</p>
               <p className="mt-2 text-sm leading-6 text-[var(--muted-text)]">
-                Create rooms, join queues, and keep your match history in one shell.
+                {signup("page.highlights.humans.body")}
               </p>
             </div>
           </div>
