@@ -156,7 +156,7 @@ export default function ProfileActions({
             type="button"
             onClick={() => handleAction("REMOVE")}
             disabled={isPending}
-            className="btn btn-subtle m-0 w-full px-4 py-2.5 text-sm hover:border-[var(--danger)] hover:text-[var(--danger)] disabled:opacity-50 disabled:hover:translate-y-0"
+            className="btn btn-subtle m-0 w-full px-4 py-2.5 text-sm hover:border-(--danger) hover:text-(--danger) disabled:opacity-50 disabled:hover:translate-y-0"
           >
             {isPending ? (
               <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" />

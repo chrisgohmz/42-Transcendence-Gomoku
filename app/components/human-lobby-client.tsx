@@ -252,18 +252,18 @@ export default function HumanLobbyClient() {
         {/* MATCHMAKING */}
         {/* ===================================================== */}
 
-        <Surface className="relative overflow-hidden border border-[var(--panel-border)] bg-[var(--panel-solid)]">
+        <Surface className="relative overflow-hidden border border-(--panel-border) bg-(--panel-solid)">
           {/* GLOW */}
           <div className="absolute inset-0 opacity-30">
-            <div className="absolute top-0 -left-24 h-64 w-64 rounded-full bg-[var(--mint-soft)] blur-3xl" />
+            <div className="absolute top-0 -left-24 h-64 w-64 rounded-full bg-(--mint-soft) blur-3xl" />
 
-            <div className="absolute top-0 right-0 h-64 w-64 rounded-full bg-[var(--brass-soft)] blur-3xl" />
+            <div className="absolute top-0 right-0 h-64 w-64 rounded-full bg-(--brass-soft) blur-3xl" />
           </div>
 
           <div className="relative flex h-full flex-col justify-between">
             {/* CONTENT */}
             <div className="px-8 pt-8">
-              <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-[var(--panel-border-soft)] bg-[var(--panel)] px-3 py-1 text-xs font-black tracking-wide text-[var(--mint)] uppercase">
+              <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-(--panel-border-soft) bg-(--panel) px-3 py-1 text-xs font-black tracking-wide text-(--mint) uppercase">
                 <Swords className="size-3.5" />
                 Ranked Matchmaking
               </div>
@@ -274,13 +274,13 @@ export default function HumanLobbyClient() {
                     Find Your Next Opponent
                   </h2>
 
-                  <p className="max-w-xl text-base text-[var(--muted-text)]">
+                  <p className="max-w-xl text-base text-(--muted-text)">
                     Jump into competitive online matches and get paired with players near your skill
                     level.
                   </p>
 
                   {queueError ? (
-                    <p className="mt-4 text-sm font-bold text-[var(--danger)]">{queueError}</p>
+                    <p className="mt-4 text-sm font-bold text-(--danger)">{queueError}</p>
                   ) : null}
 
                   <div className="mt-8">
@@ -300,14 +300,14 @@ export default function HumanLobbyClient() {
                     Searching For Match
                   </h2>
 
-                  <p className="max-w-xl text-base text-[var(--muted-text)]">
+                  <p className="max-w-xl text-base text-(--muted-text)">
                     {position !== null
                       ? `You are currently position ${position} in queue.`
                       : "Looking for an available opponent..."}
                   </p>
 
                   <div className="mt-8 flex items-center gap-4">
-                    <div className="flex size-14 items-center justify-center rounded-full bg-[var(--brass-soft)] text-[var(--brass)]">
+                    <div className="flex size-14 items-center justify-center rounded-full bg-(--brass-soft) text-(--brass)">
                       <Loader2 className="size-7 animate-spin" />
                     </div>
 
@@ -325,7 +325,7 @@ export default function HumanLobbyClient() {
             </div>
 
             {/* LIVE STATS */}
-            <div className="mt-8 grid gap-3 border-t border-[var(--panel-border-soft)] p-5 sm:grid-cols-3">
+            <div className="mt-8 grid gap-3 border-t border-(--panel-border-soft) p-5 sm:grid-cols-3">
               <MetricCard label="Players Online" value={onlineUsers.length} tone="mint" />
 
               <MetricCard label="Searching" value={globalStats.searching} tone="brass" />
@@ -357,15 +357,15 @@ export default function HumanLobbyClient() {
 
       <Surface className="overflow-hidden p-0">
         {/* HEADER */}
-        <div className="border-b border-[var(--panel-border-soft)] px-5 py-3">
+        <div className="border-b border-(--panel-border-soft) px-5 py-3">
           <div className="flex items-center gap-1">
             <button
               type="button"
               onClick={() => setActiveTab("lobby")}
               className={`rounded-md px-4 py-2 text-sm font-black transition-all ${
                 activeTab === "lobby"
-                  ? "bg-[var(--mint-soft)] text-[var(--mint)]"
-                  : "text-[var(--muted-text)] hover:text-white"
+                  ? "bg-(--mint-soft) text-(--mint)"
+                  : "text-(--muted-text) hover:text-white"
               }`}
             >
               Lobby
@@ -375,8 +375,8 @@ export default function HumanLobbyClient() {
               onClick={() => setActiveTab("history")}
               className={`rounded-md px-4 py-2 text-sm font-black transition-all ${
                 activeTab === "history"
-                  ? "bg-[var(--mint-soft)] text-[var(--mint)]"
-                  : "text-[var(--muted-text)] hover:text-white"
+                  ? "bg-(--mint-soft) text-(--mint)"
+                  : "text-(--muted-text) hover:text-white"
               }`}
             >
               History
@@ -385,7 +385,7 @@ export default function HumanLobbyClient() {
             {/* REFRESH */}
             <button
               type="button"
-              className="ml-1 flex size-9 items-center justify-center rounded-md text-[var(--muted-text)] transition hover:bg-[var(--panel)] hover:text-white"
+              className="ml-1 flex size-9 items-center justify-center rounded-md text-(--muted-text) transition hover:bg-(--panel) hover:text-white"
               onClick={() => {
                 if (activeTab === "lobby") void loadMatches();
                 if (activeTab === "history") void loadHistory();
@@ -413,16 +413,16 @@ export default function HumanLobbyClient() {
               error={tableError}
               isLoading={isLoadingMatches}
               joiningMatchId={joiningMatchId}
-              onJoinAction={(entry, password) => {
+              onJoin={(entry, password) => {
                 void joinMatch(entry, password);
               }}
             />
           )}
 
           {activeTab === "history" && (
-            <div className="overflow-x-auto rounded-md border border-[var(--panel-border-soft)] bg-white/[0.025]">
+            <div className="overflow-x-auto rounded-md border border-(--panel-border-soft) bg-white/2.5">
               <div className="min-w-[600px]">
-                <div className="grid grid-cols-[100px_minmax(150px,1fr)_80px_100px_120px] gap-3 border-b border-[var(--panel-border-soft)] bg-black/20 px-4 py-3 text-xs font-black tracking-[0.12em] text-[var(--muted-text)] uppercase">
+                <div className="grid grid-cols-[100px_minmax(150px,1fr)_80px_100px_120px] gap-3 border-b border-(--panel-border-soft) bg-black/20 px-4 py-3 text-xs font-black tracking-[0.12em] text-(--muted-text) uppercase">
                   <span>Result</span>
                   <span>Opponent</span>
                   <span>Moves</span>
@@ -431,11 +431,11 @@ export default function HumanLobbyClient() {
                 </div>
 
                 {isLoadingHistory ? (
-                  <div className="border-b border-[var(--panel-border-soft)] px-4 py-6 text-sm font-bold text-[var(--muted-text)]">
+                  <div className="border-b border-(--panel-border-soft) px-4 py-6 text-sm font-bold text-(--muted-text)">
                     Loading history...
                   </div>
                 ) : historyError ? (
-                  <div className="border-b border-[var(--panel-border-soft)] px-4 py-6 text-sm font-bold text-[var(--danger)]">
+                  <div className="border-b border-(--panel-border-soft) px-4 py-6 text-sm font-bold text-(--danger)">
                     {historyError}
                   </div>
                 ) : validHistory.length > 0 ? (
@@ -467,26 +467,26 @@ export default function HumanLobbyClient() {
                       return (
                         <article
                           key={match.matchId}
-                          className="grid grid-cols-[100px_minmax(150px,1fr)_80px_100px_120px] items-center gap-3 border-b border-[var(--panel-border-soft)] px-4 py-3 last:border-b-0 hover:bg-white/[0.05]"
+                          className="grid grid-cols-[100px_minmax(150px,1fr)_80px_100px_120px] items-center gap-3 border-b border-(--panel-border-soft) px-4 py-3 last:border-b-0 hover:bg-white/5"
                         >
                           <div>
                             <Badge tone={resultTone}>{resultText}</Badge>
                           </div>
                           <span className="truncate font-bold text-white">{opponentName}</span>
-                          <span className="font-bold text-[var(--muted-strong)] tabular-nums">
+                          <span className="font-bold text-(--muted-strong) tabular-nums">
                             {match.moveCount}
                           </span>
-                          <span className="font-bold text-[var(--muted-strong)]">
+                          <span className="font-bold text-(--muted-strong)">
                             {match.boardSize} x {match.boardSize}
                           </span>
-                          <span className="text-sm text-[var(--muted-strong)]">{dateText}</span>
+                          <span className="text-sm text-(--muted-strong)">{dateText}</span>
                         </article>
                       );
                     })}
 
                     {totalPages > 1 && (
-                      <div className="flex items-center justify-between border-t border-[var(--panel-border-soft)] px-4 py-3 text-sm">
-                        <span className="font-bold text-[var(--muted-text)]">
+                      <div className="flex items-center justify-between border-t border-(--panel-border-soft) px-4 py-3 text-sm">
+                        <span className="font-bold text-(--muted-text)">
                           Page {historyPage} of {totalPages}
                         </span>
                         <div className="flex gap-2">
@@ -494,7 +494,7 @@ export default function HumanLobbyClient() {
                             type="button"
                             onClick={() => setHistoryPage((p) => Math.max(1, p - 1))}
                             disabled={historyPage === 1}
-                            className="rounded-md border border-[var(--panel-border-soft)] bg-white/[0.035] px-4 py-1.5 font-bold text-[var(--muted-strong)] transition-colors hover:bg-white/[0.07] disabled:opacity-50"
+                            className="rounded-md border border-(--panel-border-soft) bg-white/3.5 px-4 py-1.5 font-bold text-(--muted-strong) transition-colors hover:bg-white/7 disabled:opacity-50"
                           >
                             Previous
                           </button>
@@ -502,7 +502,7 @@ export default function HumanLobbyClient() {
                             type="button"
                             onClick={() => setHistoryPage((p) => Math.min(totalPages, p + 1))}
                             disabled={historyPage === totalPages}
-                            className="rounded-md border border-[var(--panel-border-soft)] bg-white/[0.035] px-4 py-1.5 font-bold text-[var(--muted-strong)] transition-colors hover:bg-white/[0.07] disabled:opacity-50"
+                            className="rounded-md border border-(--panel-border-soft) bg-white/3.5 px-4 py-1.5 font-bold text-(--muted-strong) transition-colors hover:bg-white/7 disabled:opacity-50"
                           >
                             Next
                           </button>
@@ -511,7 +511,7 @@ export default function HumanLobbyClient() {
                     )}
                   </>
                 ) : (
-                  <div className="border-b border-[var(--panel-border-soft)] px-4 py-6 text-sm font-bold text-[var(--muted-text)]">
+                  <div className="border-b border-(--panel-border-soft) px-4 py-6 text-sm font-bold text-(--muted-text)">
                     No past matches found. Play a game to see your history here!
                   </div>
                 )}
