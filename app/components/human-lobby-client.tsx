@@ -13,6 +13,7 @@ import { useCallback, useEffect, useState } from "react";
 import CreateRoomCard from "@/components/create-room-card";
 import GameLobbyTable from "@/components/game-lobby-table";
 import {
+  Badge,
   MetricCard,
   PageHeader,
   PageShell,
@@ -31,6 +32,21 @@ import {
   type StoredMatchSession,
 } from "@/lib/matches/match-session-storage";
 
+type ClientHistoryEntry = {
+  matchId: string;
+  boardSize: number;
+  finishedAt: string | null;
+  result: "WIN" | "LOSS" | "DRAW" | "CANCELLED" | null;
+  moveCount: number;
+  currentUserParticipantId: string | null;
+  participants: {
+    participantId: string;
+    userId: string | null;
+    displayName: string;
+    role: string;
+  }[];
+};
+
 export default function HumanLobbyClient() {
   const { onlineUsers } = usePresence();
   const restoredMatch = useMatchInitialize();
@@ -41,15 +57,21 @@ export default function HumanLobbyClient() {
     useState<StoredMatchSession | null>(null);
 
   const [showLobby, setShowLobby] = useState(false);
+  const [activeTab, setActiveTab] = useState<"lobby" | "history">("lobby");
 
-  /**
-   * RESTORE SESSION
-   */
+  const [historyMatches, setHistoryMatches] = useState<ClientHistoryEntry[]>([]);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
+  const [historyError, setHistoryError] = useState<string | null>(null);
+
+  // Pagination memory
+  const [historyPage, setHistoryPage] = useState(1);
+  const HISTORY_PAGE_SIZE = 10;
+
+  /* RESTORE SESSION */
 
   useEffect(() => {
     if (!showLobby && restoredMatch.session) {
       setActiveSession(restoredMatch.session);
-      // Consume the restored ticket so it doesn't haunt future matches
       setRestoredSession(null);
     }
   }, [restoredMatch.session, showLobby, setRestoredSession]);
@@ -64,9 +86,7 @@ export default function HumanLobbyClient() {
     [setRestoredSession],
   );
 
-  /**
-   * LOBBY
-   */
+  /* LOBBY */
 
   const {
     createError,
@@ -83,9 +103,7 @@ export default function HumanLobbyClient() {
     onSessionReady: handleSessionReady,
   });
 
-  /**
-   * MATCHMAKING
-   */
+  /* MATCHMAKING */
 
   const {
     status,
@@ -98,13 +116,41 @@ export default function HumanLobbyClient() {
     onMatchFound: handleSessionReady,
   });
 
-  /**
-   * NAVIGATION
-   */
+  /* HISTORY */
+
+  const loadHistory = useCallback(async () => {
+    setIsLoadingHistory(true);
+    setHistoryError(null);
+    try {
+      const response = await fetch("/api/matches/history");
+      if (!response.ok) {
+        if (response.status === 401) {
+          setHistoryError("Please sign in to view your match history.");
+        } else {
+          setHistoryError("Failed to load history.");
+        }
+        return;
+      }
+      const data = await response.json();
+      setHistoryMatches(data.matches || []);
+      setHistoryPage(1);
+    } catch {
+      setHistoryError("Network error loading history.");
+    } finally {
+      setIsLoadingHistory(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (activeTab === "history") {
+      void loadHistory();
+    }
+  }, [activeTab, loadHistory]);
+
+  /* NAVIGATION */
 
   const handleBackToLobby = useCallback(() => {
     if (activeSession) {
-      // Throw away the old game ticket immediately
       clearStoredMatchSession(activeSession.matchId);
     }
     setRestoredSession(null);
@@ -112,7 +158,8 @@ export default function HumanLobbyClient() {
     setActiveSession(null);
     leaveQueue();
     void loadMatches();
-  }, [activeSession, loadMatches, leaveQueue, setRestoredSession]);
+    void loadHistory();
+  }, [activeSession, loadMatches, loadHistory, leaveQueue, setRestoredSession]);
 
   const handleSessionLost = useCallback(() => {
     setRestoredSession(null);
@@ -120,11 +167,10 @@ export default function HumanLobbyClient() {
     setShowLobby(true);
     leaveQueue();
     void loadMatches();
-  }, [loadMatches, setRestoredSession, leaveQueue]);
+    void loadHistory();
+  }, [loadMatches, loadHistory, setRestoredSession, leaveQueue]);
 
-  /**
-   * ACTIVE MATCH
-   */
+  /* ACTIVE MATCH */
 
   if (activeSession) {
     return (
@@ -139,9 +185,7 @@ export default function HumanLobbyClient() {
     );
   }
 
-  /**
-   * RESTORING SESSION
-   */
+  /* RESTORING SESSION */
 
   if (restoredMatch.isLoading && !showLobby) {
     return (
@@ -156,9 +200,15 @@ export default function HumanLobbyClient() {
     );
   }
 
-  /**
-   * PAGE
-   */
+  /* PREPARE PAGINATION DATA */
+  const validHistory = historyMatches.filter((match) => match.participants.length > 1);
+  const totalPages = Math.max(1, Math.ceil(validHistory.length / HISTORY_PAGE_SIZE));
+  const paginatedHistory = validHistory.slice(
+    (historyPage - 1) * HISTORY_PAGE_SIZE,
+    historyPage * HISTORY_PAGE_SIZE
+  );
+
+  /* PAGE */
 
   return (
     <PageShell>
@@ -299,33 +349,43 @@ export default function HumanLobbyClient() {
         {/* HEADER */}
         <div className="border-b border-[var(--panel-border-soft)] px-5 py-3">
           <div className="flex items-center gap-1">
-            {["Lobby", "My Room", "History"].map((item, index) => (
-              <button
-                key={item}
-                type="button"
-                className={`rounded-md px-4 py-2 text-sm font-black transition-all ${
-                  index === 0
-                    ? "bg-[var(--mint-soft)] text-[var(--mint)]"
-                    : "text-[var(--muted-text)] hover:text-white"
-                }`}
-              >
-                {item}
-              </button>
-            ))}
+            <button
+              type="button"
+              onClick={() => setActiveTab("lobby")}
+              className={`rounded-md px-4 py-2 text-sm font-black transition-all ${
+                activeTab === "lobby"
+                  ? "bg-[var(--mint-soft)] text-[var(--mint)]"
+                  : "text-[var(--muted-text)] hover:text-white"
+              }`}
+            >
+              Lobby
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab("history")}
+              className={`rounded-md px-4 py-2 text-sm font-black transition-all ${
+                activeTab === "history"
+                  ? "bg-[var(--mint-soft)] text-[var(--mint)]"
+                  : "text-[var(--muted-text)] hover:text-white"
+              }`}
+            >
+              History
+            </button>
 
             {/* REFRESH */}
             <button
               type="button"
               className="ml-1 flex size-9 items-center justify-center rounded-md text-[var(--muted-text)] transition hover:bg-[var(--panel)] hover:text-white"
               onClick={() => {
-                void loadMatches();
+                if (activeTab === "lobby") void loadMatches();
+                if (activeTab === "history") void loadHistory();
               }}
-              disabled={isLoadingMatches}
-              aria-busy={isLoadingMatches}
+              disabled={isLoadingMatches || isLoadingHistory}
+              aria-busy={isLoadingMatches || isLoadingHistory}
             >
               <RefreshCcw
                 className={`size-4 ${
-                  isLoadingMatches ? "animate-spin" : ""
+                  (isLoadingMatches && activeTab === "lobby") || (isLoadingHistory && activeTab === "history") ? "animate-spin" : ""
                 }`}
               />
             </button>
@@ -334,15 +394,106 @@ export default function HumanLobbyClient() {
 
         {/* TABLE */}
         <div className="px-5 pb-5 pt-2">
-          <GameLobbyTable
-            entries={entries}
-            error={tableError}
-            isLoading={isLoadingMatches}
-            joiningMatchId={joiningMatchId}
-            onJoin={(entry, password) => {
-              void joinMatch(entry, password);
-            }}
-          />
+          {activeTab === "lobby" && (
+            <GameLobbyTable
+              entries={entries}
+              error={tableError}
+              isLoading={isLoadingMatches}
+              joiningMatchId={joiningMatchId}
+              onJoinAction={(entry, password) => {
+                void joinMatch(entry, password);
+              }}
+            />
+          )}
+
+          {activeTab === "history" && (
+            <div className="overflow-x-auto rounded-md border border-[var(--panel-border-soft)] bg-white/[0.025]">
+              <div className="min-w-[600px]">
+                <div className="grid grid-cols-[100px_minmax(150px,1fr)_80px_100px_120px] gap-3 border-b border-[var(--panel-border-soft)] bg-black/20 px-4 py-3 text-xs font-black tracking-[0.12em] text-[var(--muted-text)] uppercase">
+                  <span>Result</span>
+                  <span>Opponent</span>
+                  <span>Moves</span>
+                  <span>Board</span>
+                  <span>Date</span>
+                </div>
+
+                {isLoadingHistory ? (
+                  <div className="border-b border-[var(--panel-border-soft)] px-4 py-6 text-sm font-bold text-[var(--muted-text)]">
+                    Loading history...
+                  </div>
+                ) : historyError ? (
+                  <div className="border-b border-[var(--panel-border-soft)] px-4 py-6 text-sm font-bold text-[var(--danger)]">
+                    {historyError}
+                  </div>
+                ) : validHistory.length > 0 ? (
+                  <>
+                    {paginatedHistory.map((match) => {
+                      const opponentParticipant = match.participants.find(
+                        (p) => p.role === "PLAYER" && p.participantId !== match.currentUserParticipantId
+                      );
+                      const opponentName = opponentParticipant?.displayName || "Unknown Player";
+
+                      const isWin = match.result === "WIN";
+                      const isLoss = match.result === "LOSS";
+                      const isDraw = match.result === "DRAW";
+
+                      const resultTone = isWin ? "mint" : isLoss ? "red" : "neutral";
+                      const resultText = isWin ? "Victory" : isLoss ? "Defeat" : isDraw ? "Draw" : "Cancelled";
+
+                      const dateText = match.finishedAt ? new Date(match.finishedAt).toLocaleDateString() : "Unknown";
+
+                      return (
+                        <article
+                          key={match.matchId}
+                          className="grid grid-cols-[100px_minmax(150px,1fr)_80px_100px_120px] items-center gap-3 border-b border-[var(--panel-border-soft)] px-4 py-3 last:border-b-0 hover:bg-white/[0.05]"
+                        >
+                          <div>
+                            <Badge tone={resultTone}>{resultText}</Badge>
+                          </div>
+                          <span className="truncate font-bold text-white">{opponentName}</span>
+                          <span className="font-bold tabular-nums text-[var(--muted-strong)]">{match.moveCount}</span>
+                          <span className="font-bold text-[var(--muted-strong)]">
+                            {match.boardSize} x {match.boardSize}
+                          </span>
+                          <span className="text-sm text-[var(--muted-strong)]">{dateText}</span>
+                        </article>
+                      );
+                    })}
+
+                    {totalPages > 1 && (
+                      <div className="flex items-center justify-between border-t border-[var(--panel-border-soft)] px-4 py-3 text-sm">
+                        <span className="font-bold text-[var(--muted-text)]">
+                          Page {historyPage} of {totalPages}
+                        </span>
+                        <div className="flex gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setHistoryPage((p) => Math.max(1, p - 1))}
+                            disabled={historyPage === 1}
+                            className="rounded-md border border-[var(--panel-border-soft)] bg-white/[0.035] px-4 py-1.5 font-bold text-[var(--muted-strong)] transition-colors hover:bg-white/[0.07] disabled:opacity-50"
+                          >
+                            Previous
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setHistoryPage((p) => Math.min(totalPages, p + 1))}
+                            disabled={historyPage === totalPages}
+                            className="rounded-md border border-[var(--panel-border-soft)] bg-white/[0.035] px-4 py-1.5 font-bold text-[var(--muted-strong)] transition-colors hover:bg-white/[0.07] disabled:opacity-50"
+                          >
+                            Next
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <div className="border-b border-[var(--panel-border-soft)] px-4 py-6 text-sm font-bold text-[var(--muted-text)]">
+                    No past matches found. Play a game to see your history here!
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       </Surface>
     </PageShell>
