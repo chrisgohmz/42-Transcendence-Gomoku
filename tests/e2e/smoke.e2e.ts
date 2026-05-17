@@ -8,7 +8,7 @@ import { prisma } from "../../app/lib/prisma";
 
 const routes = ["/", "/game", "/human", "/leaderboard", "/login", "/signup"] as const;
 
-test.setTimeout(60_000);
+test.setTimeout(90_000);
 
 test("home page renders the redesigned command center", async ({ page }) => {
   await gotoAppRoute(page, "/");

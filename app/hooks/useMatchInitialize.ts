@@ -12,14 +12,13 @@ import type { MatchStateResponse } from "@/lib/matches/match-state";
 export function useMatchInitialize() {
   const [session, setSession] = useState<StoredMatchSession | null>(null);
   const [state, setState] = useState<MatchStateResponse | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
 
     async function initialize() {
-      setIsLoading(true);
       setError(null);
 
       const storedSession = readActiveStoredMatchSession();
@@ -27,6 +26,8 @@ export function useMatchInitialize() {
         if (active) setIsLoading(false);
         return;
       }
+
+      if (active) setIsLoading(true);
 
       try {
         const searchParams = new URLSearchParams({

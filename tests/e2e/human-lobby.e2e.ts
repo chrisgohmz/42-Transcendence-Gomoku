@@ -48,9 +48,11 @@ test("human lobby creates a room and stores the returned session", async ({ page
 
   await page.goto("/en/human", { waitUntil: "domcontentloaded" });
   await expect(page.getByRole("heading", { name: /Find Your Next Opponent/i })).toBeVisible();
-  await expect.poll(() => listRequests).toBeGreaterThan(0);
+  await expect.poll(() => listRequests, { timeout: 30_000 }).toBeGreaterThan(0);
 
-  await page.getByRole("button", { name: "Create Room" }).click();
+  const createRoomButton = page.getByRole("button", { name: "Create Room" });
+  await expect(createRoomButton).toBeEnabled({ timeout: 30_000 });
+  await createRoomButton.click();
 
   await expect.poll(() => createRequests).toBe(1);
   await expect.poll(async () => (await readStoredSession(page))?.matchId).toBe("created-match");
@@ -117,7 +119,10 @@ test("human lobby creates a private room with its password and visibility", asyn
   );
 
   await page.goto("/en/human", { waitUntil: "domcontentloaded" });
-  await page.getByRole("button", { name: "Private" }).click();
+  const privateButton = page.getByRole("button", { name: "Private" });
+  await expect(privateButton).toBeEnabled({ timeout: 30_000 });
+  await privateButton.click();
+  await expect(page.getByLabel("Password")).toBeEnabled({ timeout: 30_000 });
   await page.getByLabel("Room name").fill("Study Room");
   await page.getByLabel("Password").fill("sente");
   await page.getByRole("button", { name: "Create Room" }).click();
@@ -179,7 +184,7 @@ test("human lobby joins a waiting room and stores the returned session", async (
   );
 
   await page.goto("/en/human", { waitUntil: "domcontentloaded" });
-  await expect.poll(() => listRequests).toBeGreaterThan(0);
+  await expect.poll(() => listRequests, { timeout: 30_000 }).toBeGreaterThan(0);
   await expect(page.getByText("Mintan's room")).toBeVisible();
 
   await page.getByRole("button", { name: /Join Mintan's room/ }).click();

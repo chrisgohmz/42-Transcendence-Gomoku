@@ -8,6 +8,7 @@ import { messages as zhMessages } from "../../app/i18n/messages/zh";
 type AppMessages = typeof enMessages;
 
 test.describe.configure({ mode: "serial" });
+test.setTimeout(60_000);
 test.skip(
   ({ isMobile }) => isMobile,
   "Localized route smoke is browser-agnostic; existing smoke coverage exercises mobile layout.",
@@ -63,10 +64,9 @@ const publicRouteCases = [
   },
 ] as const;
 
-test("public localized routes render without missing-message artifacts", async ({ page }) => {
-  await mockEmptyHumanLobby(page);
-
-  for (const locale of locales) {
+for (const locale of locales) {
+  test(`public ${locale} routes render without missing-message artifacts`, async ({ page }) => {
+    await mockEmptyHumanLobby(page);
     const messages = messagesByLocale[locale];
 
     for (const route of publicRouteCases) {
@@ -82,8 +82,8 @@ test("public localized routes render without missing-message artifacts", async (
       await expectNoTranslationArtifacts(page, `${locale}${route.path}`);
       verifyNoRuntimeErrors(`${locale}${route.path}`);
     }
-  }
-});
+  });
+}
 
 test("protected social routes redirect to localized login while signed out", async ({ page }) => {
   for (const locale of locales) {

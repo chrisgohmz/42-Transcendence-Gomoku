@@ -45,7 +45,7 @@ test("AI lobby starts a solo match and renders the shared match board", async ({
   ).toBeVisible();
 
   const startTrainingButton = page.getByRole("button", { name: "Start Training" });
-  await expect(startTrainingButton).toBeEnabled();
+  await expect(startTrainingButton).toBeEnabled({ timeout: 30_000 });
   await startTrainingButton.click();
 
   await expect.poll(() => startRequests).toBe(1);

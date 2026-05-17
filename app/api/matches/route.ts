@@ -128,7 +128,6 @@ export async function GET() {
   const matches = await prisma.match.findMany({
     where: {
       status: MatchStatus.WAITING,
-      visibility: MatchVisibility.PUBLIC,
     },
     orderBy: { createdAt: "desc" },
     include: {
