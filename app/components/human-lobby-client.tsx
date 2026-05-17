@@ -39,6 +39,7 @@ type ClientHistoryEntry = {
 };
 
 export default function HumanLobbyClient() {
+  const t = useTranslations("human.lobby");
   const { onlineUsers } = usePresence();
   const restoredMatch = useMatchInitialize();
 

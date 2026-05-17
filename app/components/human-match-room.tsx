@@ -75,7 +75,9 @@ function getErrorCode(payload: unknown): string | null {
   return typeof errorPayload.error === "string" ? errorPayload.error : null;
 }
 
-function statusTone(status: GameUpdatePayload["status"] | undefined): "brass" | "mint" | "red" {
+function statusTone(
+  status: GameUpdatePayload["status"] | undefined,
+): "brass" | "mint" | "red" | "neutral" {
   if (status === "IN_PROGRESS") {
     return "mint";
   }
@@ -306,8 +308,6 @@ export default function HumanMatchRoom({
   const pageHeaderLede = pageLede(matchStatus, t);
   const matchStatusText = matchStatusLabel(matchStatus, t);
   const socketStatusText = socketStatusLabel(socketStatus, t);
-  const statusLineText = statusLine(effectiveUpdate, mySeat, t);
-  const resultText = resultLabel(effectiveUpdate, t);
 
   // Visual local timer countdown
   const [timeLeft, setTimeLeft] = useState(600); // 10 minutes in seconds
@@ -495,7 +495,7 @@ export default function HumanMatchRoom({
             <div className="grid gap-3 text-sm">
               <DetailRow label="Match" value={session.matchId.slice(0, 8)} />
               <DetailRow label="Board" value={`${board.length} x ${board.length}`} />
-              <DetailRow label="Status" value={statusLine(effectiveUpdate, mySeat)} />
+              <DetailRow label="Status" value={statusLine(effectiveUpdate, mySeat, t)} />
             </div>
           </Surface>
         </aside>
