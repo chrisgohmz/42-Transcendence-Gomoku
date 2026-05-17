@@ -1,6 +1,7 @@
 "use client";
 
 import { Loader2, RefreshCcw, Search, Swords, X } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useState } from "react";
 
 import CreateRoomCard from "@/components/create-room-card";
@@ -215,10 +216,10 @@ export default function HumanLobbyClient() {
     return (
       <PageShell>
         <PageHeader
-          eyebrow="vs Human Lobby"
+          eyebrow={t("loading.eyebrow")}
           icon={Swords}
-          title="Checking your table."
-          lede="Loading the most recent active room."
+          title={t("loading.title")}
+          lede={t("loading.lede")}
         />
       </PageShell>
     );
@@ -237,7 +238,7 @@ export default function HumanLobbyClient() {
   return (
     <PageShell>
       <PageHeader
-        eyebrow="vs Human Lobby"
+        eyebrow={t("lobby.eyebrow")}
         icon={Swords}
         title="Play Online"
         lede="Queue into ranked matchmaking or create a private room with friends."

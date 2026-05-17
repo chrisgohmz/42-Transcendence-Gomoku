@@ -48,6 +48,48 @@ export const messages = {
       signIn: "ログイン",
       accountPage: "アカウントページ",
     },
+    dashboard: {
+      status: {
+        onlinePlayers: "{count} 人がオンライン",
+      },
+      hero: {
+        title: "盤面を極める。",
+        lede: "練習、対人戦、ライブランキングの確認をひとつの画面から始められます。次の五目を打つ前に、必要な情報をすばやく見渡しましょう。",
+      },
+      stats: {
+        playersOnline: "オンライン中のプレイヤー",
+        openRooms: "公開中のルーム",
+      },
+      board: {
+        label: "ライブ対局盤面",
+      },
+      cards: {
+        ai: {
+          title: "AI と練習",
+          cta: "AI と練習",
+          body: "Kata Reader を相手に鋭い攻め筋を練習し、推奨される形を確認しましょう。",
+        },
+        human: {
+          title: "対人戦に挑戦",
+          cta: "対人戦に挑戦",
+          body: "ルームを作成し、空席の卓に参加するか、ライバルへ直接対局を申し込みましょう。",
+        },
+      },
+      snapshot: {
+        eyebrow: "ランキング概況",
+        title: "順位変動",
+      },
+      activity: {
+        eyebrow: "最近の動き",
+        title: "ルームがにぎわっています",
+        items: {
+          wonByOpenFour: "オープンフォーで勝利",
+          openedPrivateStudyRoom: "プライベート研究ルームを開きました",
+          crossed1900Rating: "レーティングが 1,900 を超えました",
+          acceptedRematch: "再戦に応じました",
+        },
+      },
+    },
   },
   clickButtons: {
     on: "オン",
@@ -92,6 +134,29 @@ export const messages = {
       submitting: "ログイン中...",
       newHere: "初めてですか？",
       signupLink: "アカウントを作成",
+      rememberThisTable: "この卓を記憶する",
+      forgotPassword: "パスワードを忘れましたか？",
+      continueWithGithub: "GitHub で続行",
+      page: {
+        hero: {
+          title: "卓に戻る。",
+        },
+        session: {
+          eyebrow: "セッション",
+          status: "安全",
+        },
+        boardLabel: "保護されたランク戦セッション",
+        highlights: {
+          protected: {
+            title: "保護されたアカウント領域",
+            body: "サインインすると、ルーム、プロフィール、交流キューが利用可能になります。",
+          },
+          rankedReady: {
+            title: "ランク戦対応の外枠",
+            body: "練習盤から対人戦ロビーへ、文脈を保ったまま移れます。",
+          },
+        },
+      },
     },
     signup: {
       title: "アカウントを作成します。",
@@ -104,6 +169,23 @@ export const messages = {
       submitting: "作成中...",
       alreadyHaveAccount: "すでにアカウントをお持ちですか？",
       signInLink: "ログイン",
+      page: {
+        hero: {
+          badge: "新規プレイヤーファイル",
+          title: "席を確保して、レーティングを積み上げ、再戦を続けましょう。",
+        },
+        boardLabel: "新規プレイヤー席",
+        highlights: {
+          ladder: {
+            title: "ランキングの入口から始める",
+            body: "アカウントは準備完了です。プロフィール統計、フレンド機能、今後のランク戦に使えます。",
+          },
+          humans: {
+            title: "対人戦に挑戦",
+            body: "ルームを作成し、キューに参加し、対局履歴をひとつの画面で管理できます。",
+          },
+        },
+      },
     },
     errors: {
       fixHighlightedFields: "強調表示された項目を修正してください。",
@@ -140,9 +222,77 @@ export const messages = {
     emailMissing: "未設定",
     sessionExpires: "セッション期限:",
     backHome: "ホームへ戻る",
+    settings: {
+      eyebrow: "設定",
+      title: "アカウント設定",
+      emailVerified: "メール確認済み",
+      emailPending: "メール未確認",
+      preferences: "設定メニュー",
+      sidebar: {
+        profile: "プロフィール",
+        security: "セキュリティ",
+        language: "言語",
+        privacy: "プライバシー",
+        notifications: "通知",
+        danger: "危険ゾーン",
+      },
+      sections: {
+        profile: {
+          eyebrow: "プロフィール",
+          title: "プロフィール情報",
+          saveChanges: "変更を保存",
+        },
+        security: {
+          eyebrow: "セキュリティ",
+          title: "メールとパスワード",
+          password: "パスワード",
+          updatedRecently: "最近更新済み",
+          sessionCreated: "セッション作成日時",
+        },
+        language: {
+          eyebrow: "言語",
+          title: "言語と地域",
+          interfaceLanguage: "表示言語",
+          timeZone: "タイムゾーン",
+        },
+        privacy: {
+          eyebrow: "プライバシー",
+          title: "公開設定",
+          showOnlineStatus: "オンライン状態を表示",
+          allowMatchInvites: "対局招待を許可",
+          hideRatingFromStrangers: "見知らぬ相手にはレーティングを非表示",
+        },
+        notifications: {
+          eyebrow: "通知",
+          title: "通知設定",
+          friendRequests: "フレンド申請",
+          matchReminders: "対局リマインダー",
+          marketingEmail: "案内メール",
+        },
+        danger: {
+          eyebrow: "危険ゾーン",
+          title: "アカウント削除",
+          description:
+            "アカウントを削除するとプロフィールにアクセスできなくなり、現在のセッションは切断されます。対局記録は集計されたランキング履歴に残る場合があります。",
+          deleteAccount: "アカウントを削除",
+        },
+      },
+    },
   },
   friends: {
     title: "フレンド",
+    pageHeader: {
+      eyebrow: "ソーシャル",
+      lede: "フレンドを管理し、申請に対応して、チャットや対戦へすぐ移れます。",
+    },
+    roster: {
+      eyebrow: "一覧",
+      titles: {
+        friends: "フレンド一覧",
+        pending: "保留中の申請",
+        sent: "送信済みの申請",
+      },
+    },
     searchPlaceholder: "ユーザー名で検索...",
     search: "検索",
     tabs: {
@@ -158,6 +308,7 @@ export const messages = {
       wins: "勝利",
       losses: "敗北",
       actions: "操作",
+      status: "状態",
     },
     actions: {
       chat: "チャット",
@@ -166,6 +317,22 @@ export const messages = {
       decline: "拒否",
       cancelRequest: "リクエストを取り消す",
       add: "追加",
+      challengeFriend: "{name} に対戦を申し込む",
+      messageFriend: "{name} にメッセージを送る",
+      removeFriend: "{name} をフレンドから削除する",
+      acceptFriend: "{name} を承認する",
+      declineFriend: "{name} を拒否する",
+      cancelFriendRequest: "{name} への申請を取り消す",
+      confirmRemoveFriend: "このフレンドを削除しますか？",
+      signInToAddFriends: "フレンドを追加するにはサインインしてください。",
+      playerNotFound: "その名前のプレイヤーが見つかりませんでした。",
+      cannotAddYourself: "自分自身は追加できません。",
+      alreadyFriendsOrPending: "すでにフレンドか、申請が保留中です。",
+      signIn: "サインインしてください。",
+      requestNotFound: "リクエストが見つかりません。",
+      unauthorized: "権限がありません。",
+      invalidTransition: "無効な遷移です。",
+      friendshipNotFound: "フレンド関係が見つかりません。",
     },
     empty: {
       friends: "まだフレンドがいません。上で検索して追加しましょう！",
@@ -184,11 +351,43 @@ export const messages = {
   human: {
     networkLoadError: "マッチの読み込み中にネットワークエラーが発生しました",
     requestFailed: "ステータス {status} でリクエストに失敗しました",
+    defaults: {
+      playerName: "プレイヤー",
+    },
+    page: {
+      loading: {
+        eyebrow: "対人戦ロビー",
+        title: "卓を確認しています。",
+        lede: "最後にアクティブだったルームを読み込んでいます。",
+      },
+      lobby: {
+        eyebrow: "対人戦ロビー",
+        title: "ルームを探すか、自分で開く。",
+        lede: "ロビービューを離れずに、ランク戦の卓を作成したり、公開ルームに参加したり、プライベート対局を開始できます。",
+        looking: "待機中 {count} 人",
+        refresh: "更新",
+        tabs: {
+          lobby: "ロビー",
+          myRoom: "自分の部屋",
+          history: "履歴",
+        },
+        playersLooking: "対局待ちのプレイヤー",
+        roomListEyebrow: "ロビー",
+        roomListTitle: "ルーム一覧",
+      },
+    },
     createRoom: {
+      eyebrow: "対局を申し込む",
       title: "ルーム作成",
       description: "公開ルームを作成する場合は、パスワードを空欄にしてください。",
+      roomNameLabel: "ルーム名",
+      roomNamePlaceholder: "静かな布石",
       password: "パスワード",
       optionalPassword: "任意のパスワード",
+      publicRoom: "公開",
+      privateRoom: "非公開",
+      timerLabel: "10分持ち時間",
+      boardSizeLabel: "15 x 15 の盤",
       submit: "ルーム作成",
       submitting: "作成中...",
       signInRequired: "マッチを作成するにはサインインしてください。",
@@ -202,19 +401,225 @@ export const messages = {
       networkError: "マッチ参加中にネットワークエラーが発生しました",
     },
     lobby: {
-      playerRoom: "プレイヤールーム",
-      password: "パスワード",
-      action: "操作",
+      headers: {
+        room: "ルーム",
+        rules: "ルール",
+        players: "人数",
+        privacy: "公開範囲",
+        ping: "Ping",
+      },
       empty: "まだルームはありません。",
       roomName: "{player} のルーム",
-      publicRoom: "公開ルーム",
+      roomDescription: "標準開始のランク戦ルーム",
+      privacy: {
+        public: "公開",
+        private: "非公開",
+      },
+      footer: "マッチサービスから取得した待機ルームです。",
+      joinAria: "{name} に参加",
       join: "参加",
+    },
+    match: {
+      page: {
+        eyebrow: "対人戦対局",
+        title: {
+          loading: "ルームを読み込んでいます。",
+          waiting: "ルームは開いています。",
+          live: "対局中のルーム。",
+          finished: "対局終了のルーム。",
+          cancelled: "ルームは閉じられました。",
+        },
+        lede: {
+          loading: "最新のルーム状態を取得しています。",
+          waiting: "2人目の参加を待っています。",
+          live: "この卓の盤面、手番、結果を表示しています。",
+          finished: "最終局面は固定されています。",
+          cancelled: "このルームは利用できなくなりました。",
+        },
+        refresh: "更新",
+        lobby: "ロビーに戻る",
+      },
+      status: {
+        loading: "読み込み中",
+        waiting: "待機中",
+        inProgress: "進行中",
+        finished: "終了",
+        cancelled: "キャンセル",
+      },
+      connection: {
+        eyebrow: "接続",
+        title: "リアルタイム",
+        socket: "ソケット",
+        version: "バージョン",
+        you: "自分",
+        spectator: "観戦者",
+        status: {
+          idle: "待機中",
+          connecting: "接続中",
+          connected: "接続済み",
+          error: "エラー",
+        },
+      },
+      state: {
+        eyebrow: "対局",
+        title: "状態",
+        match: "対局",
+        board: "盤面",
+        next: "次の手番",
+        result: "結果",
+        none: "なし",
+      },
+      moves: {
+        eyebrow: "着手",
+        title: "棋譜",
+        empty: "まだ着手はありません。",
+      },
+      seat: {
+        black: "黒",
+        white: "白",
+        openSeat: "空き席",
+        you: "自分",
+        opponent: "相手",
+        turn: "手番",
+      },
+      board: {
+        ariaLabel: "対人五目並べの盤",
+        emptyIntersection: "{point} は空きです",
+        stoneAt: "{point} にある {seat} の石",
+      },
+      endReason: {
+        fiveInARow: "五連続",
+        resign: "投了",
+        draw: "引き分け",
+        queueCancelled: "待機取り消し",
+        queueExpired: "待機期限切れ",
+        abandoned: "中断",
+      },
+      statusLine: {
+        loading: "対局状態を読み込んでいます。",
+        waiting: "2人目の参加を待っています。",
+        winner: "{seat} が {reason} で勝ちました。",
+        winnerByResign: "{seat} が投了勝ちしました。",
+        draw: "引き分けです。",
+        yourMove: "あなたの番です。",
+        toMove: "{seat} の番です。",
+        cancelled: "{reason} によりルームは閉じられました。",
+        resultFallback: "結果",
+      },
+      result: {
+        pending: "未確定",
+        won: "{seat} の勝ち",
+        draw: "引き分け",
+        cancelled: "キャンセル",
+      },
+      actions: {
+        resign: "投了",
+      },
+      errors: {
+        stateRequestFailed: "状態の取得に失敗しました ({status})",
+        networkLoadState: "対局状態の読み込み中にネットワークエラーが発生しました",
+        submitMove: "手の送信中にネットワークエラーが発生しました",
+        resignRequestFailed: "投了リクエストに失敗しました ({status})",
+        networkResign: "投了中にネットワークエラーが発生しました",
+      },
+    },
+  },
+  game: {
+    pageTitle: "AIとの対局中",
+    ai: {
+      eyebrow: "AI対戦相手",
+      title: "定石読解AI",
+      description: "深さ6で中央の攻防を読み、強引な踏み込みよりも静かな脅威を提案します。",
+      metrics: {
+        positionConfidence: "局面信頼度",
+        initiativeSwing: "主導権変化",
+      },
+      suggestionLabel: "提案",
+      suggestion: "D7 に伸びて下側の斜め筋をつなぎ、白に受けを強います。",
+    },
+    controls: {
+      undo: "戻す",
+      restart: "再開",
+      rules: "ルール",
+      resign: "投了",
+    },
+    match: {
+      roomEyebrow: "ルーム 1024",
+      roomTitle: "ランク戦",
+      turn: "黒番",
+      details: {
+        rulesLabel: "ルール",
+        rulesValue: "15 x 15 / 標準",
+        captureLabel: "取り",
+        captureValue: "無効",
+        spectatorsLabel: "観戦者",
+        spectatorsValue: "3",
+        openingLabel: "開始方式",
+        openingValue: "自由",
+      },
+    },
+    history: {
+      eyebrow: "着手履歴",
+      title: "直近の手順",
+      lastBadge: "最新",
+    },
+    status: {
+      eyebrow: "対局状況",
+      title: "脅威マップ",
+      openThree: "下側の斜め筋で三連ができています",
+      whiteMustBlockD7: "白は D7 を止める必要があります",
+      blackTempoRetained: "黒のテンポを維持",
     },
   },
   leaderboard: {
     eyebrow: "ランキング",
-    title: "ランキング",
-    lede: "プレイヤーランキングは後でデータベースから読み込まれます。",
+    title: "ランキング表",
+    lede: "ライブのランキング、レート変動、そして自分の現在位置を確認できます。",
+    page: {
+      tabs: {
+        allPlayers: "全プレイヤー",
+        friends: "フレンド",
+      },
+      scope: {
+        global: "グローバル",
+      },
+      overview: {
+        eyebrow: "ランキング表",
+        title: "上位100名",
+      },
+      spotlight: {
+        rankLabel: "あなたの順位",
+        rating: "{rating} レーティング",
+      },
+      season: {
+        eyebrow: "シーズン",
+        title: "春のラダー",
+        daysLeft: "残り日数",
+        ratedMatches: "レート戦数",
+      },
+      distribution: {
+        eyebrow: "分布",
+        title: "ランク帯",
+        labels: {
+          dan: "段位",
+          kyu: "級位",
+          unranked: "未ランク",
+        },
+      },
+      topPlayers: {
+        eyebrow: "注目プレイヤー",
+        title: "今週",
+        badges: {
+          mvp: "MVP",
+          boost: "+7",
+        },
+      },
+      unavailable: {
+        title: "ランキングを読み込めません",
+        description:
+          "ランキングを読み込めませんでした。ライブテーブルが再び応答するまで、プレビュー順位は非表示です。",
+      },
+    },
     table: {
       rank: "順位",
       player: "プレイヤー",
@@ -223,12 +628,21 @@ export const messages = {
       losses: "敗北",
       winRate: "勝率",
       empty: "ランキングデータはまだありません。",
+      preview: "完了した対局の結果が届くまで、プレビュー順位を表示しています。",
+      trend: "推移",
+      active: "活動中",
     },
   },
   messagesPage: {
+    eyebrow: "メッセージ",
     title: "メッセージ",
+    lede: "ライバル、再戦、ライブのルーム招待をまとめた、対局優先の受信箱です。",
     searchPlaceholder: "ユーザー名で検索...",
     search: "検索",
+    header: {
+      status: "再戦の招待を受け付けています",
+      badge: "信頼できる相手",
+    },
     previews: {
       mj: "もちろん！これだけ終わらせます...",
       alex: "GG、いい対局でした。",
@@ -239,6 +653,14 @@ export const messages = {
     },
     composerPlaceholder: "{name} へメッセージ...",
     send: "送信",
+    invite: {
+      eyebrow: "対局招待",
+      title: "プライベートルーム: 布石研究",
+      description:
+        "15 x 15 の標準ルール、10 分持ち時間です。承認するとルームロビーに参加できます。",
+      accept: "承認",
+      decline: "辞退",
+    },
   },
   profile: {
     title: "プロフィール",
@@ -246,6 +668,88 @@ export const messages = {
     editProfile: "プロフィール編集",
     statsTitle: "総合戦績",
     friendStatsTitle: "全体の統計",
+    publicPage: {
+      backToLeaderboard: "ランキングへ戻る",
+      badge: "公開プロフィール",
+      challenge: "対局を申し込む",
+      progress: {
+        eyebrow: "レーティング推移",
+        title: "シーズン曲線",
+      },
+      recentMatches: {
+        eyebrow: "最近の対局",
+        title: "対局サンプル",
+        results: {
+          won: "勝利",
+          lost: "敗北",
+        },
+        items: {
+          wonAgainstTenkei: "Tenkei に勝利",
+          lostAgainstHoshi: "Hoshi に敗北",
+          wonAgainstMokuren: "Mokuren に勝利",
+        },
+      },
+      headToHead: {
+        eyebrow: "対戦成績",
+        title: "あなたとの対戦",
+        wins: "勝利",
+        losses: "敗北",
+      },
+      achievements: {
+        eyebrow: "実績",
+        title: "称号",
+        items: {
+          sharpOpening: "鋭い序盤",
+          calmEndgame: "落ち着いた終盤",
+          fastRematch: "素早い再戦",
+        },
+      },
+      safety: {
+        eyebrow: "安全",
+        title: "プレイヤー操作",
+        reportPlayer: "プレイヤーを通報",
+        blockPlayer: "プレイヤーをブロック",
+      },
+    },
+    page: {
+      hero: {
+        badge: "ログイン済み",
+      },
+      recentMatches: {
+        eyebrow: "最近の対局",
+        title: "対局記録",
+        results: {
+          won: "勝利",
+          lost: "敗北",
+        },
+        notes: {
+          timeLeft: "残り {time}",
+          resigned: "投了",
+          fiveInARow: "五連で勝利",
+        },
+      },
+      about: {
+        eyebrow: "自己紹介",
+        title: "プレイヤーカード",
+        body: "中央の落ち着いた立ち上がり、すばやい再戦、そしてラダーを崩す斜め筋が好みです。",
+        rankLabel: "段位",
+        seasonLabel: "シーズン",
+      },
+      achievements: {
+        eyebrow: "実績",
+        title: "バッジ",
+        items: {
+          openFourSpecialist: "活四の達人",
+          hundredRankedWins: "ランク戦 100 勝",
+          studyRoomHost: "研究ルームのホスト",
+        },
+      },
+      progress: {
+        eyebrow: "シーズン進行",
+        title: "次の昇段",
+        range: "{from} から {to} へ",
+      },
+    },
     stats: {
       rating: "レーティング",
       winRate: "勝率",
@@ -259,6 +763,18 @@ export const messages = {
     edit: {
       title: "プロフィール編集",
       lede: "スクリーンネームを更新し、アカウントの詳細を表示します。",
+      page: {
+        eyebrow: "プロフィールスタジオ",
+        avatar: {
+          eyebrow: "アバター",
+          title: "公開プロフィール画像",
+        },
+        preview: {
+          eyebrow: "プレビュー",
+          title: "公開プロフィールカード",
+          rank: "5段",
+        },
+      },
       profileDetails: "プロフィールの詳細",
       usernameReadonly: "ユーザー名 (編集不可)",
       displayName: "表示名",
@@ -305,30 +821,79 @@ export const messages = {
   },
   legal: {
     terms: {
+      eyebrow: "法務",
+      lastUpdated: "最終更新日: 2026年5月9日",
       title: "利用規約",
-      intro: "正式なポリシー文言が入るまでの必須アプリケーションシェル用プレースホルダー規約です。",
+      intro:
+        "正式な規約文面が確定するまでの間、この利用規約はアプリケーションで守るべき基本ルールを示します。",
+      document: {
+        eyebrow: "利用規約",
+        title: "プレイ時のルール",
+      },
+      badges: {
+        accountAccess: "アカウントアクセス",
+        fairPlay: "フェアプレイ",
+        enforcement: "対応措置",
+      },
+      contents: {
+        eyebrow: "目次",
+        title: "セクション",
+      },
+      related: {
+        eyebrow: "関連",
+        title: "法務リンク",
+        privacyPolicy: "プライバシーポリシー",
+        agreementTitle: "プレイを開始すると、本規約に同意したものとみなされます。",
+        agreementBody: "本規約は、アカウント、ソーシャル機能、対局機能に適用されます。",
+      },
       sections: {
         accountAccess: {
           title: "1. アカウントアクセス",
-          body: "ゲーム機能とソーシャル機能のテスト中は、自分の認証情報を使用し、セッションを安全に保ってください。",
+          body: "ご自身のアカウント認証情報を使用し、ゲーム機能やソーシャル機能を利用する際はセッションを安全に管理してください。",
         },
         fairPlay: {
           title: "2. フェアプレイ",
-          body: "敬意を持ってプレイし、迷惑行為や他のプレイヤーの対局を妨げる行為を避けてください。",
+          body: "他のプレイヤーを尊重し、迷惑行為や対局を妨害する行為を行わないでください。",
+        },
+        enforcement: {
+          title: "3. 対応措置",
+          body: "不正行為、ハラスメント、アカウントの不正利用、他のプレイヤーの対局を妨害する行為が確認された場合、機能制限またはアカウント削除の対象となることがあります。",
         },
       },
     },
     privacy: {
+      eyebrow: "法務",
+      lastUpdated: "最終更新日: 2026年5月9日",
       title: "プライバシーポリシー",
-      intro: "正式な文言が確定するまで、主要なデータ利用範囲を示すプレースホルダーポリシーです。",
+      intro:
+        "正式なポリシー文面が確定するまでの間、このプライバシーポリシーはアプリで扱う主なデータ範囲を示します。",
+      contents: {
+        eyebrow: "目次",
+        title: "このページの内容",
+      },
+      metrics: {
+        documentSections: "文書セクション",
+      },
+      document: {
+        eyebrow: "プライバシー文書",
+        title: "データの取り扱い",
+      },
+      questions: {
+        title: "プライバシーに関する質問がありますか？",
+        body: "新しい分析機能、データ保持、モデレーション関連のデータ利用を追加する前に、プロジェクトメンテナーへ相談してください。",
+      },
       sections: {
         accountData: {
           title: "1. アカウントデータ",
-          body: "ログイン、セッション、プロフィール、マッチ参加に必要なアカウント情報を保存します。",
+          body: "アプリは、ログイン、セッション管理、プロフィール表示、対局参加に必要なアカウント情報を保存します。",
         },
         sessionCookies: {
           title: "2. セッション Cookie",
-          body: "セッション Cookie とロケール Cookie により、ログイン状態と言語設定を更新後も保持します。",
+          body: "セッション Cookie とロケール Cookie により、ログイン状態を維持し、画面の言語設定を更新後も保持します。",
+        },
+        socialMatchData: {
+          title: "3. ソーシャル機能と対局データ",
+          body: "フレンド申請、オンライン状態、対局招待は、ソーシャルプレイを提供するために使用されます。プライベートメッセージは、保持ルールが確定するまでプロダクトデータとして扱ってください。",
         },
       },
     },

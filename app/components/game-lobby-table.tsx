@@ -37,13 +37,8 @@ export default function GameLobbyTable({
 
   const rows = entries.map((entry, index) => {
     const id = entry.matchId ?? String(entry.roomId ?? index);
-    const state = entry.status
-      ? entry.status === "WAITING"
-        ? "Waiting"
-        : "Live"
-      : entry.requiresPassword
-        ? "Waiting"
-        : "Live";
+    const isLive = entry.status ? entry.status !== "WAITING" : !entry.requiresPassword;
+    const isPublic = !entry.requiresPassword;
 
     return {
       id,
@@ -56,8 +51,9 @@ export default function GameLobbyTable({
           : entry.requiresPassword
             ? "1/2"
             : "2/2",
-      privacy: entry.requiresPassword ? "Private" : "Public",
-      state,
+      privacy: isPublic ? t("privacy.public") : t("privacy.private"),
+      isLive,
+      isPublic,
       boardSize: entry.boardSize ?? 15,
     };
   });
@@ -71,11 +67,11 @@ export default function GameLobbyTable({
       >
         <div className="min-w-[760px]">
           <div className="grid grid-cols-[minmax(180px,1.25fr)_90px_88px_98px_78px_72px] gap-3 border-b border-(--panel-border-soft) bg-black/20 px-4 py-3 text-xs font-black tracking-[0.12em] text-(--muted-text) uppercase">
-            <span>Room</span>
-            <span>Rules</span>
-            <span>Players</span>
-            <span>Privacy</span>
-            <span>Ping</span>
+            <span>{t("headers.room")}</span>
+            <span>{t("headers.rules")}</span>
+            <span>{t("headers.players")}</span>
+            <span>{t("headers.privacy")}</span>
+            <span>{t("headers.ping")}</span>
             <span />
           </div>
           {error && !passwordPrompt ? (
@@ -99,7 +95,7 @@ export default function GameLobbyTable({
                   <span className="min-w-0">
                     <span className="block truncate font-black">{row.name}</span>
                     <span className="block truncate text-xs text-(--muted-text)">
-                      Standard opening, ranked room
+                      {t("roomDescription")}
                     </span>
                   </span>
                 </div>

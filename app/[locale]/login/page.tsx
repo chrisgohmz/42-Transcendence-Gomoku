@@ -33,35 +33,37 @@ export default async function LoginPage({ params }: LoginPageProps) {
             <div>
               <p className="eyebrow mb-2">{shared("eyebrow")}</p>
               <h1 className="font-serif text-5xl leading-none font-black text-pretty">
-                Return to the table.
+                {login("page.hero.title")}
               </h1>
             </div>
             <div className="hidden rounded-md border border-[var(--mint)]/30 bg-[var(--mint-soft)] px-3 py-2 text-right sm:block">
               <p className="m-0 text-xs font-black tracking-[0.14em] text-[var(--muted-strong)] uppercase">
-                Session
+                {login("page.session.eyebrow")}
               </p>
-              <p className="m-0 text-lg font-black text-[var(--mint)]">Secure</p>
+              <p className="m-0 text-lg font-black text-[var(--mint)]">
+                {login("page.session.status")}
+              </p>
             </div>
           </div>
 
           <BoardShowpiece
-            label="Secure ranked session"
+            label={login("page.boardLabel")}
             className="min-h-[430px] border-0 bg-transparent shadow-none"
           />
 
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="kpi-card">
               <ShieldCheck aria-hidden="true" className="mb-4 size-5 text-[var(--mint)]" />
-              <p className="m-0 font-black">Protected account rooms</p>
+              <p className="m-0 font-black">{login("page.highlights.protected.title")}</p>
               <p className="mt-2 text-sm leading-6 text-[var(--muted-text)]">
-                Your rooms, profile, and social queue unlock after sign in.
+                {login("page.highlights.protected.body")}
               </p>
             </div>
             <div className="kpi-card">
               <Sparkles aria-hidden="true" className="mb-4 size-5 text-[var(--brass)]" />
-              <p className="m-0 font-black">Ranked-ready shell</p>
+              <p className="m-0 font-black">{login("page.highlights.rankedReady.title")}</p>
               <p className="mt-2 text-sm leading-6 text-[var(--muted-text)]">
-                Move from practice board to human lobby without losing context.
+                {login("page.highlights.rankedReady.body")}
               </p>
             </div>
           </div>

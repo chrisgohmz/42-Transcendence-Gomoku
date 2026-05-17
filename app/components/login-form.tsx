@@ -76,10 +76,10 @@ export function LoginForm() {
             name="remember"
             className="size-4 rounded border border-[var(--panel-border-soft)] bg-[var(--panel-solid)]"
           />
-          Remember this table
+          {login("rememberThisTable")}
         </label>
         <Link href="/privacy" className="text-link">
-          Forgot password?
+          {login("forgotPassword")}
         </Link>
       </div>
 
@@ -96,7 +96,7 @@ export function LoginForm() {
       <div className="grid gap-2">
         <button type="button" className="btn btn-subtle m-0 w-full">
           <GitBranch aria-hidden="true" className="size-4" />
-          Continue with GitHub
+          {login("continueWithGithub")}
         </button>
       </div>
 

@@ -27,6 +27,14 @@ type ProfilePageProps = {
   }>;
 };
 
+const recentMatches = [
+  { key: "wonAgainstTenkei", score: "+12" },
+  { key: "lostAgainstHoshi", score: "-8" },
+  { key: "wonAgainstMokuren", score: "+12" },
+] as const;
+
+const achievements = ["sharpOpening", "calmEndgame", "fastRematch"] as const;
+
 export default async function ProfilePage({ params }: ProfilePageProps) {
   const { locale, username } = await params;
   setRequestLocale(locale);
@@ -103,7 +111,7 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
               <div className="flex flex-wrap items-center gap-3">
                 <Badge tone="brass">
                   <Trophy aria-hidden="true" className="size-3.5" />
-                  Public Player File
+                  {t("publicPage.badge")}
                 </Badge>
                 <ProfilePresence username={userProfile.username} isRevealed={isRevealed} />
               </div>
@@ -137,7 +145,11 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
             <MetricCard icon={TrendingDown} label={t("stats.losses")} tone="red" value={losses} />
           </div>
 
-          <Surface eyebrow="Rating Progress" icon={BarChart3} title="Season curve">
+          <Surface
+            eyebrow={t("publicPage.progress.eyebrow")}
+            icon={BarChart3}
+            title={t("publicPage.progress.title")}
+          >
             <div className="grid h-64 items-end gap-3 rounded-md border border-[var(--panel-border-soft)] bg-black/20 p-4">
               <div className="flex h-full items-end gap-2">
                 {[34, 42, 38, 56, 62, 58, 76, 72, 81, 88, 84, 92].map((height, index) => (
@@ -152,49 +164,66 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
             </div>
           </Surface>
 
-          <Surface eyebrow="Recent Matches" title="Scouting sample">
+          <Surface
+            eyebrow={t("publicPage.recentMatches.eyebrow")}
+            title={t("publicPage.recentMatches.title")}
+          >
             <div className="grid gap-2">
-              {["Won against Tenkei", "Lost against Hoshi", "Won against Mokuren"].map(
-                (item, index) => (
-                  <article
-                    key={item}
-                    className="grid min-h-14 grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-md border border-[var(--panel-border-soft)] bg-white/[0.035] px-3"
-                  >
-                    <span className="truncate font-black">{item}</span>
-                    <Badge tone={index === 1 ? "red" : "mint"}>{index === 1 ? "-8" : "+12"}</Badge>
-                  </article>
-                ),
-              )}
+              {recentMatches.map((item) => (
+                <article
+                  key={item.key}
+                  className="grid min-h-14 grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-md border border-[var(--panel-border-soft)] bg-white/[0.035] px-3"
+                >
+                  <span className="truncate font-black">
+                    {t(`publicPage.recentMatches.items.${item.key}`)}
+                  </span>
+                  <Badge tone={item.key === "lostAgainstHoshi" ? "red" : "mint"}>
+                    {item.score}
+                  </Badge>
+                </article>
+              ))}
             </div>
           </Surface>
         </div>
 
         <aside className="grid content-start gap-5">
-          <Surface eyebrow="Head to Head" icon={Swords} title="Against you">
+          <Surface
+            eyebrow={t("publicPage.headToHead.eyebrow")}
+            icon={Swords}
+            title={t("publicPage.headToHead.title")}
+          >
             <div className="grid grid-cols-2 gap-3">
-              <MetricCard label="Wins" tone="mint" value="4" />
-              <MetricCard label="Losses" tone="red" value="2" />
+              <MetricCard label={t("publicPage.headToHead.wins")} tone="mint" value="4" />
+              <MetricCard label={t("publicPage.headToHead.losses")} tone="red" value="2" />
             </div>
           </Surface>
 
-          <Surface eyebrow="Achievements" icon={Award} title="Known marks">
+          <Surface
+            eyebrow={t("publicPage.achievements.eyebrow")}
+            icon={Award}
+            title={t("publicPage.achievements.title")}
+          >
             <div className="grid gap-2">
-              {["Sharp Opening", "Calm Endgame", "Fast Rematch"].map((item) => (
+              {achievements.map((item) => (
                 <Badge key={item} tone="brass">
                   <Award aria-hidden="true" className="size-3.5" />
-                  {item}
+                  {t(`publicPage.achievements.items.${item}`)}
                 </Badge>
               ))}
             </div>
           </Surface>
 
-          <Surface eyebrow="Safety" icon={Flag} title="Player controls">
+          <Surface
+            eyebrow={t("publicPage.safety.eyebrow")}
+            icon={Flag}
+            title={t("publicPage.safety.title")}
+          >
             <div className="grid gap-2">
               <button type="button" className="btn btn-subtle m-0 justify-start">
-                Report player
+                {t("publicPage.safety.reportPlayer")}
               </button>
               <button type="button" className="btn btn-danger m-0 justify-start">
-                Block player
+                {t("publicPage.safety.blockPlayer")}
               </button>
             </div>
           </Surface>

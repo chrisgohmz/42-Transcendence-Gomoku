@@ -1,5 +1,6 @@
 "use server";
 
+import { getLocale, getTranslations } from "next-intl/server";
 import { revalidatePath } from "next/cache";
 
 import { getCurrentSession } from "@/lib/auth";
@@ -7,15 +8,17 @@ import { deleteFriendshipAndNotify, getLowHighIds } from "@/lib/friendships/frie
 import { prisma } from "@/lib/prisma";
 
 export async function sendFriendRequest(targetUsername: string) {
+  const locale = await getLocale();
+  const t = await getTranslations({ locale, namespace: "friends" });
   const session = await getCurrentSession();
-  if (!session) return { error: "Please sign in to add friends." };
+  if (!session) return { error: t("actions.signInToAddFriends") };
 
   const targetUser = await prisma.user.findUnique({
     where: { username: targetUsername },
   });
 
-  if (!targetUser) return { error: "We could not find a player with that name." };
-  if (targetUser.id === session.user.id) return { error: "You cannot add yourself." };
+  if (!targetUser) return { error: t("actions.playerNotFound") };
+  if (targetUser.id === session.user.id) return { error: t("actions.cannotAddYourself") };
 
   const { userLowId, userHighId } = getLowHighIds(session.user.id, targetUser.id);
 
@@ -24,7 +27,7 @@ export async function sendFriendRequest(targetUsername: string) {
   });
 
   if (existing) {
-    return { error: "You are already friends or have a pending request." };
+    return { error: t("actions.alreadyFriendsOrPending") };
   }
 
   await prisma.friendship.create({
@@ -41,19 +44,21 @@ export async function sendFriendRequest(targetUsername: string) {
 }
 
 export async function respondToRequest(friendshipId: number, accept: boolean) {
+  const locale = await getLocale();
+  const t = await getTranslations({ locale, namespace: "friends" });
   const session = await getCurrentSession();
-  if (!session) return { error: "Please sign in." };
+  if (!session) return { error: t("actions.signIn") };
 
   const friendship = await prisma.friendship.findUnique({
     where: { id: friendshipId },
   });
-  if (!friendship) return { error: "Request not found." };
+  if (!friendship) return { error: t("actions.requestNotFound") };
   if (friendship.userLowId !== session.user.id && friendship.userHighId !== session.user.id) {
-    return { error: "Unauthorized." };
+    return { error: t("actions.unauthorized") };
   }
   if (accept) {
     if (friendship.status !== "PENDING" || friendship.requestedById === session.user.id) {
-      return { error: "Invalid transition." };
+      return { error: t("actions.invalidTransition") };
     }
     await prisma.friendship.update({
       where: { id: friendshipId },
@@ -72,14 +77,16 @@ export async function respondToRequest(friendshipId: number, accept: boolean) {
 }
 
 export async function removeFriend(friendshipId: number) {
+  const locale = await getLocale();
+  const t = await getTranslations({ locale, namespace: "friends" });
   const session = await getCurrentSession();
-  if (!session) return { error: "Please sign in." };
+  if (!session) return { error: t("actions.signIn") };
   const friendship = await prisma.friendship.findUnique({
     where: { id: friendshipId },
   });
-  if (!friendship) return { error: "Friendship not found." };
+  if (!friendship) return { error: t("actions.friendshipNotFound") };
   if (friendship.userLowId !== session.user.id && friendship.userHighId !== session.user.id) {
-    return { error: "Unauthorized." };
+    return { error: t("actions.unauthorized") };
   }
   await deleteFriendshipAndNotify(friendship);
 

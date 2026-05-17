@@ -46,13 +46,16 @@ function getStoredRole(role: string | undefined): StoredMatchSession["role"] {
   return role === "SPECTATOR" ? "SPECTATOR" : "PLAYER";
 }
 
-function saveMatchSession(session: MatchActionResponse): StoredMatchSession | null {
+function saveMatchSession(
+  session: MatchActionResponse,
+  defaultPlayerName: string,
+): StoredMatchSession | null {
   if (!session.matchId || !session.participantId) {
     return null;
   }
 
   const storedSession: StoredMatchSession = {
-    displayName: "Player",
+    displayName: defaultPlayerName,
     matchId: session.matchId,
     participantId: session.participantId,
     role: getStoredRole(session.role),
@@ -63,8 +66,8 @@ function saveMatchSession(session: MatchActionResponse): StoredMatchSession | nu
   return storedSession;
 }
 
-function mapMatchToEntry(match: Match): LobbyEntry {
-  const hostName = match.participants?.[0]?.displayName ?? "Player";
+function mapMatchToEntry(match: Match, defaultPlayerName: string): LobbyEntry {
+  const hostName = match.participants?.[0]?.displayName ?? defaultPlayerName;
 
   return {
     matchId: match.matchId,
@@ -85,6 +88,7 @@ export function useHumanLobby({
   const humanT = useTranslations("human");
   const createT = useTranslations("human.createRoom");
   const joinT = useTranslations("human.join");
+  const defaultPlayerName = humanT("defaults.playerName");
 
   const [matches, setMatches] = useState<Match[]>([]);
   const [isLoadingMatches, setIsLoadingMatches] = useState(false);
@@ -219,10 +223,13 @@ export function useHumanLobby({
           return;
         }
 
-        const storedSession = saveMatchSession({
-          ...result,
-          matchId: result.matchId ?? entry.matchId,
-        });
+        const storedSession = saveMatchSession(
+          {
+            ...result,
+            matchId: result.matchId ?? entry.matchId,
+          },
+          defaultPlayerName,
+        );
         if (storedSession) {
           onSessionReady?.(storedSession);
         }
@@ -233,14 +240,14 @@ export function useHumanLobby({
         setJoiningMatchId(null);
       }
     },
-    [humanT, joinT, onSessionReady],
+    [defaultPlayerName, humanT, joinT, onSessionReady],
   );
 
   return {
     createError,
     createRoom,
     createSubmitLabel: isCreating ? createT("submitting") : undefined,
-    entries: matches.map(mapMatchToEntry),
+    entries: matches.map((match) => mapMatchToEntry(match, defaultPlayerName)),
     isCreating,
     isLoadingMatches,
     joinMatch,

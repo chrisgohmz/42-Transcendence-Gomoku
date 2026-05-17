@@ -10,6 +10,7 @@ import {
   Swords,
   Trophy,
 } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { Badge, PageHeader, PageShell, Surface } from "@/components/gomoku-ui";
@@ -42,6 +43,9 @@ type HumanMatchRoomProps = {
 };
 
 type MatchMove = MatchStateResponse["moves"][number];
+type MatchStatus = GameUpdatePayload["status"];
+type SocketStatus = ReturnType<typeof useSocketGame>["status"];
+type TranslationFunction = (key: string, values?: Record<string, string | number>) => string;
 
 function emptyBoard(boardSize: number): Cell[][] {
   return Array.from({ length: boardSize }, () =>
@@ -80,7 +84,127 @@ function statusTone(status: GameUpdatePayload["status"] | undefined): "brass" | 
     return "brass";
   }
 
-  return "red";
+  if (status === "CANCELLED") {
+    return "red";
+  }
+
+  return "neutral";
+}
+
+function pageTitle(status: MatchStatus | undefined, t: TranslationFunction) {
+  if (status === "WAITING") {
+    return t("page.title.waiting");
+  }
+
+  if (status === "IN_PROGRESS") {
+    return t("page.title.live");
+  }
+
+  if (status === "FINISHED") {
+    return t("page.title.finished");
+  }
+
+  if (status === "CANCELLED") {
+    return t("page.title.cancelled");
+  }
+
+  return t("page.title.loading");
+}
+
+function pageLede(status: MatchStatus | undefined, t: TranslationFunction) {
+  if (status === "WAITING") {
+    return t("page.lede.waiting");
+  }
+
+  if (status === "IN_PROGRESS") {
+    return t("page.lede.live");
+  }
+
+  if (status === "FINISHED") {
+    return t("page.lede.finished");
+  }
+
+  if (status === "CANCELLED") {
+    return t("page.lede.cancelled");
+  }
+
+  return t("page.lede.loading");
+}
+
+function matchStatusLabel(status: MatchStatus | undefined, t: TranslationFunction) {
+  if (status === "WAITING") {
+    return t("status.waiting");
+  }
+
+  if (status === "IN_PROGRESS") {
+    return t("status.inProgress");
+  }
+
+  if (status === "FINISHED") {
+    return t("status.finished");
+  }
+
+  if (status === "CANCELLED") {
+    return t("status.cancelled");
+  }
+
+  return t("status.loading");
+}
+
+function socketStatusLabel(status: SocketStatus, t: TranslationFunction) {
+  if (status === "connecting") {
+    return t("connection.status.connecting");
+  }
+
+  if (status === "subscribed") {
+    return t("connection.status.connected");
+  }
+
+  if (status === "error") {
+    return t("connection.status.error");
+  }
+
+  return t("connection.status.idle");
+}
+
+function seatLabel(seat: Seat | null | undefined, t: TranslationFunction) {
+  if (seat === "BLACK") {
+    return t("seat.black");
+  }
+
+  if (seat === "WHITE") {
+    return t("seat.white");
+  }
+
+  return t("state.none");
+}
+
+function endReasonLabel(reason: string | null | undefined, t: TranslationFunction) {
+  if (reason === "five_in_a_row") {
+    return t("endReason.fiveInARow");
+  }
+
+  if (reason === "resign") {
+    return t("endReason.resign");
+  }
+
+  if (reason === "draw") {
+    return t("endReason.draw");
+  }
+
+  if (reason === "queue_cancelled") {
+    return t("endReason.queueCancelled");
+  }
+
+  if (reason === "queue_expired") {
+    return t("endReason.queueExpired");
+  }
+
+  if (reason === "abandoned") {
+    return t("endReason.abandoned");
+  }
+
+  return t("statusLine.resultFallback");
 }
 
 export default function HumanMatchRoom({
@@ -91,6 +215,7 @@ export default function HumanMatchRoom({
   restoreError,
   session,
 }: HumanMatchRoomProps) {
+  const t = useTranslations("human.match");
   const [state, setState] = useState<MatchStateResponse | null>(
     initialState?.matchId === session.matchId ? initialState : null,
   );
@@ -126,7 +251,12 @@ export default function HumanMatchRoom({
           onSessionLost();
         }
 
-        setLoadError(getErrorMessage(errorPayload, `State request failed (${response.status})`));
+        setLoadError(
+          getErrorMessage(
+            errorPayload,
+            t("errors.stateRequestFailed", { status: response.status }),
+          ),
+        );
         return;
       }
 
@@ -134,11 +264,11 @@ export default function HumanMatchRoom({
       setState(nextState);
       setLoadError(null);
     } catch {
-      setLoadError("Network error while loading match state");
+      setLoadError(t("errors.networkLoadState"));
     } finally {
       setIsLoadingState(false);
     }
-  }, [onSessionLost, session.matchId, session.participantId]);
+  }, [onSessionLost, session.matchId, session.participantId, t]);
 
   useEffect(() => {
     void loadState();
@@ -172,6 +302,12 @@ export default function HumanMatchRoom({
   const matchStatus = effectiveUpdate?.status ?? state?.status;
   const canReturnToLobby = matchStatus === "FINISHED" || matchStatus === "CANCELLED";
   const isBusy = isRestoring || isLoadingState;
+  const pageHeaderTitle = pageTitle(matchStatus, t);
+  const pageHeaderLede = pageLede(matchStatus, t);
+  const matchStatusText = matchStatusLabel(matchStatus, t);
+  const socketStatusText = socketStatusLabel(socketStatus, t);
+  const statusLineText = statusLine(effectiveUpdate, mySeat, t);
+  const resultText = resultLabel(effectiveUpdate, t);
 
   // Visual local timer countdown
   const [timeLeft, setTimeLeft] = useState(600); // 10 minutes in seconds
@@ -219,7 +355,7 @@ export default function HumanMatchRoom({
       });
       await loadState();
     } catch (error) {
-      setMoveError(error instanceof Error ? error.message : "Network error while submitting move");
+      setMoveError(error instanceof Error ? error.message : t("errors.submitMove"));
       if (error instanceof MoveSubmissionError && error.code === "stale_state") {
         await loadState();
       }
@@ -251,7 +387,12 @@ export default function HumanMatchRoom({
       if (!response.ok) {
         const errorPayload = await response.json().catch(() => null);
         const errorCode = getErrorCode(errorPayload);
-        setMoveError(getErrorMessage(errorPayload, `Resign request failed (${response.status})`));
+        setMoveError(
+          getErrorMessage(
+            errorPayload,
+            t("errors.resignRequestFailed", { status: response.status }),
+          ),
+        );
         if (errorCode === "stale_state") {
           await loadState();
         }
@@ -260,7 +401,7 @@ export default function HumanMatchRoom({
 
       await loadState();
     } catch {
-      setMoveError("Network error while resigning");
+      setMoveError(t("errors.networkResign"));
     } finally {
       setIsResigning(false);
     }
@@ -269,19 +410,15 @@ export default function HumanMatchRoom({
   return (
     <PageShell className="human-match-room">
       <PageHeader
-        eyebrow="vs Human Match"
+        eyebrow={t("page.eyebrow")}
         icon={Swords}
-        title={matchStatus === "WAITING" ? "Room is open." : "Live room."}
-        lede={
-          matchStatus === "FINISHED"
-            ? "The final position is locked."
-            : "Board, turn, and result for this table."
-        }
+        title={pageHeaderTitle}
+        lede={pageHeaderLede}
         actions={
           <>
             <Badge tone={statusTone(matchStatus)}>
               <CircleDot aria-hidden="true" className="size-3.5" />
-              {matchStatus ?? "Loading"}
+              {matchStatusText}
             </Badge>
 
             {mySeat !== null && (
@@ -314,7 +451,7 @@ export default function HumanMatchRoom({
               aria-busy={isLoadingState}
             >
               <RefreshCcw aria-hidden="true" className="size-4" />
-              Refresh
+              {t("page.refresh")}
             </button>
 
             <button
@@ -329,7 +466,7 @@ export default function HumanMatchRoom({
               title={canReturnToLobby ? "Back to lobby" : "Lobby unlocks when the match ends"}
             >
               <ArrowLeft aria-hidden="true" className="size-4" />
-              Lobby
+              {t("page.lobby")}
             </button>
           </>
         }
@@ -342,12 +479,15 @@ export default function HumanMatchRoom({
         <aside className="grid content-start gap-5">
           <Surface eyebrow="Connection" icon={Radio} title="Realtime">
             <div className="grid gap-3 text-sm">
-              <DetailRow label="Socket" value={socketStatus} />
+              <DetailRow label={t("connection.socket")} value={socketStatusText} />
               <DetailRow
-                label="Version"
+                label={t("connection.version")}
                 value={effectiveUpdate?.stateVersion ?? state?.stateVersion ?? 0}
               />
-              <DetailRow label="You" value={mySeat ?? "Spectator"} />
+              <DetailRow
+                label={t("connection.you")}
+                value={mySeat ? seatLabel(mySeat, t) : t("connection.spectator")}
+              />
             </div>
           </Surface>
 
@@ -364,7 +504,7 @@ export default function HumanMatchRoom({
           <MatchBoard
             board={board}
             disabled={isBusy || isSubmittingMove || matchStatus !== "IN_PROGRESS"}
-            label="Human Gomoku board"
+            label={t("board.ariaLabel")}
             lastMove={effectiveUpdate?.lastMove?.position ?? null}
             nextTurnSeat={effectiveUpdate?.nextTurnSeat ?? null}
             onCellSelect={(x, y) => {
@@ -387,7 +527,7 @@ export default function HumanMatchRoom({
         <aside className="grid content-start gap-5">
           <PlayerBar blackName={blackName} whiteName={whiteName} timer={formattedTime} />
 
-          <Surface eyebrow="Moves" title="Notation">
+          <Surface eyebrow={t("moves.eyebrow")} title={t("moves.title")}>
             <MoveHistory moves={moveHistory} participants={effectiveUpdate?.participants ?? []} />
           </Surface>
         </aside>
@@ -412,6 +552,7 @@ function MoveHistory({
   moves: MatchMove[];
   participants: ParticipantSummary[];
 }) {
+  const t = useTranslations("human.match");
   const seatByParticipant = new Map(
     participants.map((participant) => [participant.participantId, participant.seat]),
   );
@@ -420,7 +561,7 @@ function MoveHistory({
   if (recentMoves.length === 0) {
     return (
       <div className="rounded-md border border-dashed border-(--panel-border) bg-white/3.5 p-4 text-sm font-bold text-(--muted-text)">
-        No moves yet.
+        {t("moves.empty")}
       </div>
     );
   }
@@ -450,26 +591,39 @@ function MoveHistory({
   );
 }
 
-function statusLine(update: GameUpdatePayload | null, mySeat: Seat | null) {
+function statusLine(update: GameUpdatePayload | null, mySeat: Seat | null, t: TranslationFunction) {
   if (!update) {
-    return "Loading match state.";
+    return t("statusLine.loading");
   }
 
   if (update.status === "WAITING") {
-    return "Waiting for the second player.";
+    return t("statusLine.waiting");
   }
 
   if (update.status === "FINISHED") {
     if (update.winningSeat) {
-      return `${update.winningSeat} wins by ${update.endReason ?? "result"}.`;
+      if (update.endReason === "resign") {
+        return t("statusLine.winnerByResign", { seat: seatLabel(update.winningSeat, t) });
+      }
+
+      return t("statusLine.winner", {
+        seat: seatLabel(update.winningSeat, t),
+        reason: endReasonLabel(update.endReason, t),
+      });
     }
 
-    return `Draw by ${update.endReason ?? "result"}.`;
+    return t("statusLine.draw");
+  }
+
+  if (update.status === "CANCELLED") {
+    return t("statusLine.cancelled", { reason: endReasonLabel(update.endReason, t) });
   }
 
   if (mySeat && update.nextTurnSeat === mySeat) {
-    return "Your move.";
+    return t("statusLine.yourMove");
   }
 
-  return `${update.nextTurnSeat ?? "Opponent"} to move.`;
+  return t("statusLine.toMove", {
+    seat: seatLabel(update.nextTurnSeat, t),
+  });
 }

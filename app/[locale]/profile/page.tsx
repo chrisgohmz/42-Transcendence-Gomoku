@@ -4,9 +4,9 @@ import {
   Pencil,
   ShieldCheck,
   Trophy,
-  UserRound,
-  TrendingUp,
   TrendingDown,
+  TrendingUp,
+  UserRound,
 } from "lucide-react";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 
@@ -21,9 +21,24 @@ type ProfilePageProps = {
 };
 
 const recentMatches = [
-  ["Kuroaki vs Shiroyasha", "Won", "+14", "01:32 left"],
-  ["Kuroaki vs Tenkei", "Lost", "-8", "resigned"],
-  ["Kuroaki vs Mokuren", "Won", "+11", "five in row"],
+  {
+    match: "Kuroaki vs Shiroyasha",
+    result: "won",
+    delta: "+14",
+    note: { kind: "timeLeft", time: "01:32" },
+  },
+  {
+    match: "Kuroaki vs Tenkei",
+    result: "lost",
+    delta: "-8",
+    note: { kind: "resigned" },
+  },
+  {
+    match: "Kuroaki vs Mokuren",
+    result: "won",
+    delta: "+11",
+    note: { kind: "fiveInARow" },
+  },
 ] as const;
 
 export default async function ProfilePage({ params }: ProfilePageProps) {
@@ -49,7 +64,7 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
             <div className="min-w-0">
               <Badge tone="mint">
                 <ShieldCheck aria-hidden="true" className="size-3.5" />
-                Signed in
+                {t("page.hero.badge")}
               </Badge>
               <h1 className="mt-2 font-serif text-6xl leading-none font-bold max-sm:text-4xl">
                 {realUser.displayName}
@@ -78,23 +93,33 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
             <MetricCard icon={TrendingDown} label={t("stats.losses")} tone="red" value="0" />
           </div>
 
-          <Surface eyebrow="Recent Matches" title="Last table sessions">
+          <Surface eyebrow={t("page.recentMatches.eyebrow")} title={t("page.recentMatches.title")}>
             <div className="overflow-hidden rounded-md border border-[var(--panel-border-soft)] bg-white/[0.025]">
-              {recentMatches.map(([match, result, delta, note]) => (
+              {recentMatches.map((item) => (
                 <article
-                  key={match}
+                  key={item.match}
                   className="grid min-h-16 grid-cols-[minmax(0,1fr)_80px_70px_minmax(120px,0.5fr)] items-center gap-3 border-b border-[var(--panel-border-soft)] px-4 py-3 last:border-b-0"
                 >
-                  <span className="truncate font-black">{match}</span>
-                  <Badge tone={result === "Won" ? "mint" : "red"}>{result}</Badge>
+                  <span className="truncate font-black">{item.match}</span>
+                  <Badge tone={item.result === "won" ? "mint" : "red"}>
+                    {item.result === "won"
+                      ? t("page.recentMatches.results.won")
+                      : t("page.recentMatches.results.lost")}
+                  </Badge>
                   <span
                     className={`font-black tabular-nums ${
-                      delta.startsWith("+") ? "text-[var(--mint)]" : "text-[var(--danger)]"
+                      item.delta.startsWith("+") ? "text-[var(--mint)]" : "text-[var(--danger)]"
                     }`}
                   >
-                    {delta}
+                    {item.delta}
                   </span>
-                  <span className="truncate text-sm text-[var(--muted-text)]">{note}</span>
+                  <span className="truncate text-sm text-[var(--muted-text)]">
+                    {item.note.kind === "timeLeft"
+                      ? t("page.recentMatches.notes.timeLeft", { time: item.note.time })
+                      : item.note.kind === "resigned"
+                        ? t("page.recentMatches.notes.resigned")
+                        : t("page.recentMatches.notes.fiveInARow")}
+                  </span>
                 </article>
               ))}
             </div>
@@ -102,31 +127,37 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
         </div>
 
         <aside className="grid content-start gap-5">
-          <Surface eyebrow="About Me" icon={UserRound} title="Player card">
-            <p className="m-0 leading-7 text-[var(--muted-text)]">
-              Calm center openings, fast rematches, and a weakness for ladder-breaking diagonals.
-            </p>
+          <Surface eyebrow={t("page.about.eyebrow")} icon={UserRound} title={t("page.about.title")}>
+            <p className="m-0 leading-7 text-[var(--muted-text)]">{t("page.about.body")}</p>
             <div className="grid grid-cols-2 gap-3">
-              <MetricCard label="Rank" tone="brass" value="5-dan" />
-              <MetricCard label="Season" tone="mint" value="#3" />
+              <MetricCard label={t("page.about.rankLabel")} tone="brass" value="5-dan" />
+              <MetricCard label={t("page.about.seasonLabel")} tone="mint" value="#3" />
             </div>
           </Surface>
 
-          <Surface eyebrow="Achievements" icon={Award} title="Badges">
+          <Surface
+            eyebrow={t("page.achievements.eyebrow")}
+            icon={Award}
+            title={t("page.achievements.title")}
+          >
             <div className="grid gap-2">
-              {["Open Four Specialist", "100 Ranked Wins", "Study Room Host"].map((item) => (
+              {["openFourSpecialist", "hundredRankedWins", "studyRoomHost"].map((item) => (
                 <Badge key={item} tone="brass">
                   <Award aria-hidden="true" className="size-3.5" />
-                  {item}
+                  {item === "openFourSpecialist"
+                    ? t("page.achievements.items.openFourSpecialist")
+                    : item === "hundredRankedWins"
+                      ? t("page.achievements.items.hundredRankedWins")
+                      : t("page.achievements.items.studyRoomHost")}
                 </Badge>
               ))}
             </div>
           </Surface>
 
-          <Surface eyebrow="Season Progress" title="Next rank">
+          <Surface eyebrow={t("page.progress.eyebrow")} title={t("page.progress.title")}>
             <div>
               <div className="mb-2 flex items-center justify-between text-sm font-bold">
-                <span>5-dan to 6-dan</span>
+                <span>{t("page.progress.range", { from: "5-dan", to: "6-dan" })}</span>
                 <span className="text-[var(--mint)]">68%</span>
               </div>
               <span className="block h-2 overflow-hidden rounded-full bg-white/[0.08]">

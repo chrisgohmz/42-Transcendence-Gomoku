@@ -53,6 +53,48 @@ export const messages = {
       signIn: "Sign in",
       accountPage: "Account page",
     },
+    dashboard: {
+      status: {
+        onlinePlayers: "{count} players online",
+      },
+      hero: {
+        title: "Master the board.",
+        lede: "Choose a drill, challenge a human, or scan the live ladder before committing your next five-stone line.",
+      },
+      stats: {
+        playersOnline: "Players Online",
+        openRooms: "Open Rooms",
+      },
+      board: {
+        label: "Live ranked board",
+      },
+      cards: {
+        ai: {
+          title: "Train vs AI",
+          cta: "Train vs AI",
+          body: "Practice sharp forcing lines against Kata Reader and review the suggested shape.",
+        },
+        human: {
+          title: "Challenge Human",
+          cta: "Challenge Human",
+          body: "Create a room, join a waiting table, or send a direct challenge to a rival.",
+        },
+      },
+      snapshot: {
+        eyebrow: "Ranked Snapshot",
+        title: "Top movement",
+      },
+      activity: {
+        eyebrow: "Recent Activity",
+        title: "The room is moving",
+        items: {
+          wonByOpenFour: "won by open four",
+          openedPrivateStudyRoom: "opened a private study room",
+          crossed1900Rating: "crossed 1,900 rating",
+          acceptedRematch: "accepted a rematch",
+        },
+      },
+    },
   },
   clickButtons: {
     on: "ON",
@@ -99,6 +141,29 @@ export const messages = {
       submitting: "Signing in…",
       newHere: "New here?",
       signupLink: "Create an account",
+      rememberThisTable: "Remember this table",
+      forgotPassword: "Forgot password?",
+      continueWithGithub: "Continue with GitHub",
+      page: {
+        hero: {
+          title: "Return to the table.",
+        },
+        session: {
+          eyebrow: "Session",
+          status: "Secure",
+        },
+        boardLabel: "Secure ranked session",
+        highlights: {
+          protected: {
+            title: "Protected account rooms",
+            body: "Your rooms, profile, and social queue unlock after sign in.",
+          },
+          rankedReady: {
+            title: "Ranked-ready shell",
+            body: "Move from practice board to human lobby without losing context.",
+          },
+        },
+      },
     },
     signup: {
       title: "Create your account.",
@@ -111,6 +176,23 @@ export const messages = {
       submitting: "Creating account…",
       alreadyHaveAccount: "Already have an account?",
       signInLink: "Sign in",
+      page: {
+        hero: {
+          badge: "New player file",
+          title: "Claim a seat, build a rating, keep the rematches coming.",
+        },
+        boardLabel: "New player seat",
+        highlights: {
+          ladder: {
+            title: "Start at the ladder",
+            body: "Your account is ready for profile stats, friends, and future ranked flow.",
+          },
+          humans: {
+            title: "Challenge humans",
+            body: "Create rooms, join queues, and keep your match history in one shell.",
+          },
+        },
+      },
     },
     errors: {
       fixHighlightedFields: "Please fix the highlighted fields.",
@@ -147,9 +229,77 @@ export const messages = {
     emailMissing: "Not provided",
     sessionExpires: "Session expires:",
     backHome: "Back to home",
+    settings: {
+      eyebrow: "Settings",
+      title: "Account Settings",
+      emailVerified: "Email verified",
+      emailPending: "Email pending",
+      preferences: "Preferences",
+      sidebar: {
+        profile: "Profile",
+        security: "Security",
+        language: "Language",
+        privacy: "Privacy",
+        notifications: "Notifications",
+        danger: "Danger Zone",
+      },
+      sections: {
+        profile: {
+          eyebrow: "Profile",
+          title: "Profile Information",
+          saveChanges: "Save Changes",
+        },
+        security: {
+          eyebrow: "Security",
+          title: "Email and Password",
+          password: "Password",
+          updatedRecently: "Updated recently",
+          sessionCreated: "Session created",
+        },
+        language: {
+          eyebrow: "Language",
+          title: "Region",
+          interfaceLanguage: "Interface language",
+          timeZone: "Time zone",
+        },
+        privacy: {
+          eyebrow: "Privacy",
+          title: "Visibility",
+          showOnlineStatus: "Show online status",
+          allowMatchInvites: "Allow match invites",
+          hideRatingFromStrangers: "Hide rating from strangers",
+        },
+        notifications: {
+          eyebrow: "Notifications",
+          title: "Alerts",
+          friendRequests: "Friend requests",
+          matchReminders: "Match reminders",
+          marketingEmail: "Marketing email",
+        },
+        danger: {
+          eyebrow: "Danger Zone",
+          title: "Account Removal",
+          description:
+            "Deleting an account removes profile access and disconnects active sessions. Match records may remain in aggregate ranking history.",
+          deleteAccount: "Delete Account",
+        },
+      },
+    },
   },
   friends: {
     title: "Friends",
+    pageHeader: {
+      eyebrow: "Social",
+      lede: "Manage your friends, handle requests, and move into chat or a challenge.",
+    },
+    roster: {
+      eyebrow: "Roster",
+      titles: {
+        friends: "Friends Table",
+        pending: "Pending Requests",
+        sent: "Sent Requests",
+      },
+    },
     searchPlaceholder: "Search by username…",
     search: "Search",
     tabs: {
@@ -165,6 +315,7 @@ export const messages = {
       wins: "Wins",
       losses: "Losses",
       actions: "Actions",
+      status: "Status",
     },
     actions: {
       chat: "Chat",
@@ -173,6 +324,22 @@ export const messages = {
       decline: "Decline",
       cancelRequest: "Cancel Request",
       add: "Add",
+      challengeFriend: "Challenge {name}",
+      messageFriend: "Message {name}",
+      removeFriend: "Remove {name}",
+      acceptFriend: "Accept {name}",
+      declineFriend: "Decline {name}",
+      cancelFriendRequest: "Cancel request to {name}",
+      confirmRemoveFriend: "Are you sure you want to remove this friend?",
+      signInToAddFriends: "Please sign in to add friends.",
+      playerNotFound: "We could not find a player with that name.",
+      cannotAddYourself: "You cannot add yourself.",
+      alreadyFriendsOrPending: "You are already friends or have a pending request.",
+      signIn: "Please sign in.",
+      requestNotFound: "Request not found.",
+      unauthorized: "Unauthorized.",
+      invalidTransition: "Invalid transition.",
+      friendshipNotFound: "Friendship not found.",
     },
     empty: {
       friends: "No friends yet. Add someone above!",
@@ -191,11 +358,43 @@ export const messages = {
   human: {
     networkLoadError: "Network error while loading matches",
     requestFailed: "Request failed with status {status}",
+    defaults: {
+      playerName: "Player",
+    },
+    page: {
+      loading: {
+        eyebrow: "vs Human Lobby",
+        title: "Checking your table.",
+        lede: "Loading the most recent active room.",
+      },
+      lobby: {
+        eyebrow: "vs Human Lobby",
+        title: "Find a room or open your own.",
+        lede: "Create a ranked table, join a public room, or unlock a private duel without leaving the lobby view.",
+        looking: "{count} looking",
+        refresh: "Refresh",
+        tabs: {
+          lobby: "Lobby",
+          myRoom: "My Room",
+          history: "History",
+        },
+        playersLooking: "Players Looking",
+        roomListEyebrow: "Lobby",
+        roomListTitle: "Room List",
+      },
+    },
     createRoom: {
+      eyebrow: "Challenge",
       title: "Create Room",
       description: "Leave the password blank to create a public room.",
+      roomNameLabel: "Room name",
+      roomNamePlaceholder: "Quiet Fuseki",
       password: "Password",
       optionalPassword: "Optional password",
+      publicRoom: "Public",
+      privateRoom: "Private",
+      timerLabel: "10m timer",
+      boardSizeLabel: "15 x 15 board",
       submit: "Create Room",
       submitting: "Creating...",
       signInRequired: "Please sign in before creating a match.",
@@ -209,19 +408,225 @@ export const messages = {
       networkError: "Network error while joining match",
     },
     lobby: {
-      playerRoom: "Player Room",
-      password: "Password",
-      action: "Action",
+      headers: {
+        room: "Room",
+        rules: "Rules",
+        players: "Players",
+        privacy: "Privacy",
+        ping: "Ping",
+      },
       empty: "No rooms yet.",
       roomName: "{player}'s room",
-      publicRoom: "Public room",
+      roomDescription: "Standard opening, ranked room",
+      privacy: {
+        public: "Public",
+        private: "Private",
+      },
+      footer: "Waiting rooms from the match service.",
+      joinAria: "Join {name}",
       join: "Join",
+    },
+    match: {
+      page: {
+        eyebrow: "vs Human Match",
+        title: {
+          loading: "Loading room.",
+          waiting: "Room is open.",
+          live: "Live room.",
+          finished: "Room finished.",
+          cancelled: "Room closed.",
+        },
+        lede: {
+          loading: "Fetching the latest room state.",
+          waiting: "Waiting for the second player.",
+          live: "Board, turn, and result for this table.",
+          finished: "The final position is locked.",
+          cancelled: "This room is no longer available.",
+        },
+        refresh: "Refresh",
+        lobby: "Back to Lobby",
+      },
+      status: {
+        loading: "Loading",
+        waiting: "Waiting",
+        inProgress: "In progress",
+        finished: "Finished",
+        cancelled: "Cancelled",
+      },
+      connection: {
+        eyebrow: "Connection",
+        title: "Realtime",
+        socket: "Socket",
+        version: "Version",
+        you: "You",
+        spectator: "Spectator",
+        status: {
+          idle: "Idle",
+          connecting: "Connecting",
+          connected: "Connected",
+          error: "Error",
+        },
+      },
+      state: {
+        eyebrow: "Match",
+        title: "State",
+        match: "Match",
+        board: "Board",
+        next: "Next",
+        result: "Result",
+        none: "None",
+      },
+      moves: {
+        eyebrow: "Moves",
+        title: "Notation",
+        empty: "No moves yet.",
+      },
+      seat: {
+        black: "Black",
+        white: "White",
+        openSeat: "Open seat",
+        you: "You",
+        opponent: "Opponent",
+        turn: "Turn",
+      },
+      board: {
+        ariaLabel: "Human Gomoku board",
+        emptyIntersection: "Empty intersection {point}",
+        stoneAt: "{seat} stone at {point}",
+      },
+      endReason: {
+        fiveInARow: "five in a row",
+        resign: "resignation",
+        draw: "draw",
+        queueCancelled: "queue cancelled",
+        queueExpired: "queue expired",
+        abandoned: "abandoned",
+      },
+      statusLine: {
+        loading: "Loading match state.",
+        waiting: "Waiting for the second player.",
+        winner: "{seat} wins by {reason}.",
+        winnerByResign: "{seat} wins by resignation.",
+        draw: "Draw.",
+        yourMove: "Your move.",
+        toMove: "{seat} to move.",
+        cancelled: "Room closed by {reason}.",
+        resultFallback: "result",
+      },
+      result: {
+        pending: "Pending",
+        won: "{seat} won",
+        draw: "Draw",
+        cancelled: "Cancelled",
+      },
+      actions: {
+        resign: "Resign",
+      },
+      errors: {
+        stateRequestFailed: "State request failed ({status})",
+        networkLoadState: "Network error while loading match state",
+        submitMove: "Network error while submitting move",
+        resignRequestFailed: "Resign request failed ({status})",
+        networkResign: "Network error while resigning",
+      },
+    },
+  },
+  game: {
+    pageTitle: "Active game vs AI",
+    ai: {
+      eyebrow: "AI Opponent",
+      title: "Kata Reader",
+      description: "Depth 6 reads the center fight and recommends quiet threats before overplays.",
+      metrics: {
+        positionConfidence: "Position Confidence",
+        initiativeSwing: "Initiative Swing",
+      },
+      suggestionLabel: "Suggestion",
+      suggestion: "Extend at D7 to connect the lower diagonal and force white to defend.",
+    },
+    controls: {
+      undo: "Undo",
+      restart: "Restart",
+      rules: "Rules",
+      resign: "Resign",
+    },
+    match: {
+      roomEyebrow: "Room 1024",
+      roomTitle: "Ranked Match",
+      turn: "Black to Move",
+      details: {
+        rulesLabel: "Rules",
+        rulesValue: "15 x 15 / Standard",
+        captureLabel: "Capture",
+        captureValue: "Disabled",
+        spectatorsLabel: "Spectators",
+        spectatorsValue: "3",
+        openingLabel: "Opening",
+        openingValue: "Free",
+      },
+    },
+    history: {
+      eyebrow: "Move History",
+      title: "Last sequence",
+      lastBadge: "last",
+    },
+    status: {
+      eyebrow: "Game Status",
+      title: "Threat map",
+      openThree: "Open three on lower diagonal",
+      whiteMustBlockD7: "White must block D7",
+      blackTempoRetained: "Black tempo retained",
     },
   },
   leaderboard: {
     eyebrow: "Rankings",
     title: "Leaderboard",
-    lede: "Player rankings will be loaded from the database later.",
+    lede: "View the live ladder, rating movement, and your current standing.",
+    page: {
+      tabs: {
+        allPlayers: "All Players",
+        friends: "Friends",
+      },
+      scope: {
+        global: "Global",
+      },
+      overview: {
+        eyebrow: "Ranked Table",
+        title: "Top 100",
+      },
+      spotlight: {
+        rankLabel: "Your Rank",
+        rating: "{rating} rating",
+      },
+      season: {
+        eyebrow: "Season",
+        title: "Spring Ladder",
+        daysLeft: "Days Left",
+        ratedMatches: "Rated Matches",
+      },
+      distribution: {
+        eyebrow: "Distribution",
+        title: "Rank Bands",
+        labels: {
+          dan: "Dan",
+          kyu: "Kyu",
+          unranked: "Unranked",
+        },
+      },
+      topPlayers: {
+        eyebrow: "Top Players",
+        title: "This Week",
+        badges: {
+          mvp: "MVP",
+          boost: "+7",
+        },
+      },
+      unavailable: {
+        title: "Leaderboard unavailable",
+        description:
+          "Rankings could not be loaded. The preview standings are hidden until the live table responds again.",
+      },
+    },
     table: {
       rank: "Rank",
       player: "Player",
@@ -230,12 +635,21 @@ export const messages = {
       losses: "Losses",
       winRate: "Win Rate",
       empty: "No leaderboard data yet.",
+      preview: "Preview standings are shown until completed matches report results.",
+      trend: "Trend",
+      active: "Active",
     },
   },
   messagesPage: {
+    eyebrow: "Messages",
     title: "Messages",
+    lede: "A match-first inbox for rivals, rematches, and live room invites.",
     searchPlaceholder: "Search by username…",
     search: "Search",
+    header: {
+      status: "Ready for rematch invites",
+      badge: "trusted rival",
+    },
     previews: {
       mj: "Absolutely! Let me just finish…",
       alex: "GG well played.",
@@ -246,6 +660,13 @@ export const messages = {
     },
     composerPlaceholder: "Message {name}...",
     send: "Send",
+    invite: {
+      eyebrow: "Match invite",
+      title: "Private room: Study Fuseki",
+      description: "15 x 15 standard, 10 minute timer. Accept to join the room lobby.",
+      accept: "Accept",
+      decline: "Decline",
+    },
   },
   profile: {
     title: "Profile",
@@ -253,6 +674,88 @@ export const messages = {
     editProfile: "Edit Profile",
     statsTitle: "Your Overall Statistics",
     friendStatsTitle: "Overall Statistics",
+    publicPage: {
+      backToLeaderboard: "Back to leaderboard",
+      badge: "Public profile",
+      challenge: "Challenge",
+      progress: {
+        eyebrow: "Rating Progress",
+        title: "Season curve",
+      },
+      recentMatches: {
+        eyebrow: "Recent Matches",
+        title: "Scouting sample",
+        results: {
+          won: "Won",
+          lost: "Lost",
+        },
+        items: {
+          wonAgainstTenkei: "Won against Tenkei",
+          lostAgainstHoshi: "Lost against Hoshi",
+          wonAgainstMokuren: "Won against Mokuren",
+        },
+      },
+      headToHead: {
+        eyebrow: "Head to Head",
+        title: "Against you",
+        wins: "Wins",
+        losses: "Losses",
+      },
+      achievements: {
+        eyebrow: "Achievements",
+        title: "Known marks",
+        items: {
+          sharpOpening: "Sharp Opening",
+          calmEndgame: "Calm Endgame",
+          fastRematch: "Fast Rematch",
+        },
+      },
+      safety: {
+        eyebrow: "Safety",
+        title: "Player controls",
+        reportPlayer: "Report player",
+        blockPlayer: "Block player",
+      },
+    },
+    page: {
+      hero: {
+        badge: "Signed in",
+      },
+      recentMatches: {
+        eyebrow: "Recent Matches",
+        title: "Match history",
+        results: {
+          won: "Won",
+          lost: "Lost",
+        },
+        notes: {
+          timeLeft: "{time} left",
+          resigned: "resigned",
+          fiveInARow: "five in a row",
+        },
+      },
+      about: {
+        eyebrow: "About Me",
+        title: "Player card",
+        body: "Calm center openings, fast rematches, and a weakness for ladder-breaking diagonals.",
+        rankLabel: "Rank",
+        seasonLabel: "Season",
+      },
+      achievements: {
+        eyebrow: "Achievements",
+        title: "Badges",
+        items: {
+          openFourSpecialist: "Open Four Specialist",
+          hundredRankedWins: "100 Ranked Wins",
+          studyRoomHost: "Study Room Host",
+        },
+      },
+      progress: {
+        eyebrow: "Season Progress",
+        title: "Next rank",
+        range: "{from} to {to}",
+      },
+    },
     stats: {
       rating: "Rating",
       winRate: "Win Rate",
@@ -266,6 +769,18 @@ export const messages = {
     edit: {
       title: "Edit Profile",
       lede: "Update your screen name and view your account details.",
+      page: {
+        eyebrow: "Profile Studio",
+        avatar: {
+          eyebrow: "Avatar",
+          title: "Public portrait",
+        },
+        preview: {
+          eyebrow: "Preview",
+          title: "Public card",
+          rank: "5-dan",
+        },
+      },
       profileDetails: "Profile Details",
       usernameReadonly: "Username (Not editable)",
       displayName: "Display Name",
@@ -312,9 +827,31 @@ export const messages = {
   },
   legal: {
     terms: {
+      eyebrow: "Legal",
+      lastUpdated: "Last updated May 9, 2026",
       title: "Terms of Service",
       intro:
         "These placeholder terms define the required application shell until final policy copy lands.",
+      document: {
+        eyebrow: "Terms Document",
+        title: "Rules of the table",
+      },
+      badges: {
+        accountAccess: "Account access",
+        fairPlay: "Fair play",
+        enforcement: "Enforcement",
+      },
+      contents: {
+        eyebrow: "Contents",
+        title: "Sections",
+      },
+      related: {
+        eyebrow: "Related",
+        title: "Legal links",
+        privacyPolicy: "Privacy Policy",
+        agreementTitle: "By playing, you agree.",
+        agreementBody: "These terms apply to account, social, and match features.",
+      },
       sections: {
         accountAccess: {
           title: "1. Account Access",
@@ -324,12 +861,33 @@ export const messages = {
           title: "2. Fair Play",
           body: "Play respectfully, avoid abusive behavior, and do not interfere with other players' matches.",
         },
+        enforcement: {
+          title: "3. Enforcement",
+          body: "Cheating, harassment, account abuse, and attempts to interfere with another player's match can lead to restrictions or account removal.",
+        },
       },
     },
     privacy: {
+      eyebrow: "Legal",
+      lastUpdated: "Last updated May 9, 2026",
       title: "Privacy Policy",
       intro:
         "This placeholder policy documents the core data surfaces while the product copy is finalized.",
+      contents: {
+        eyebrow: "Contents",
+        title: "On this page",
+      },
+      metrics: {
+        documentSections: "Document Sections",
+      },
+      document: {
+        eyebrow: "Privacy Document",
+        title: "How data is handled",
+      },
+      questions: {
+        title: "Questions about privacy?",
+        body: "Contact the project maintainers before adding new analytics, retention, or moderation data surfaces.",
+      },
       sections: {
         accountData: {
           title: "1. Account Data",
@@ -338,6 +896,10 @@ export const messages = {
         sessionCookies: {
           title: "2. Session Cookies",
           body: "Session and locale cookies keep users signed in and preserve interface preferences across refreshes.",
+        },
+        socialMatchData: {
+          title: "3. Social and Match Data",
+          body: "Friend requests, presence, and match invitations are used to power social play. Private messages should be treated as product data until retention rules are finalized.",
         },
       },
     },

@@ -52,6 +52,14 @@ export default async function AccountPage({ params }: AccountPageProps) {
 
   const t = await getTranslations({ locale, namespace: "account" });
   const format = await getFormatter({ locale });
+  const settingsNavItems = [
+    { id: "profile", label: t("settings.sidebar.profile") },
+    { id: "security", label: t("settings.sidebar.security") },
+    { id: "language", label: t("settings.sidebar.language") },
+    { id: "privacy", label: t("settings.sidebar.privacy") },
+    { id: "notifications", label: t("settings.sidebar.notifications") },
+    { id: "danger", label: t("settings.sidebar.danger") },
+  ] as const;
   let session: SessionPayload | null = null;
   let loadError: string | null = null;
 
@@ -68,13 +76,13 @@ export default async function AccountPage({ params }: AccountPageProps) {
   return (
     <PageShell>
       <PageHeader
-        eyebrow="Settings"
+        eyebrow={t("settings.eyebrow")}
         icon={ShieldCheck}
-        title="Account Settings"
+        title={t("settings.title")}
         lede={session ? t("signedInLede") : t("signedOutLede")}
         actions={
           <Badge tone={session?.user.emailVerified ? "mint" : "brass"}>
-            {session?.user.emailVerified ? "Email verified" : "Email pending"}
+            {session?.user.emailVerified ? t("settings.emailVerified") : t("settings.emailPending")}
           </Badge>
         }
       />
@@ -91,83 +99,125 @@ export default async function AccountPage({ params }: AccountPageProps) {
       {session ? (
         <section className="grid gap-5 xl:grid-cols-[260px_minmax(0,1fr)]">
           <aside className="command-panel content-start">
-            <p className="eyebrow m-0 mb-3">Preferences</p>
+            <p className="eyebrow m-0 mb-3">{t("settings.preferences")}</p>
             <div className="grid gap-2">
-              {["Profile", "Security", "Language", "Privacy", "Notifications", "Danger Zone"].map(
-                (item, index) => (
-                  <a
-                    key={item}
-                    href={`#${item.toLowerCase().replaceAll(" ", "-")}`}
-                    className={`sidebar-link ${index === 0 ? "border-[var(--mint)]/35 bg-[var(--mint-soft)] text-[var(--mint)]" : ""}`}
-                  >
-                    {item}
-                  </a>
-                ),
-              )}
+              {settingsNavItems.map((item, index) => (
+                <a
+                  key={item.id}
+                  href={`#${item.id}`}
+                  className={`sidebar-link ${index === 0 ? "border-[var(--mint)]/35 bg-[var(--mint-soft)] text-[var(--mint)]" : ""}`}
+                >
+                  {item.label}
+                </a>
+              ))}
             </div>
           </aside>
 
           <div className="grid gap-5">
             <section className="grid gap-5 xl:grid-cols-2">
-              <Surface eyebrow="Profile" icon={UserRound} title="Profile Information">
-                <SettingsRow label={t("displayName")} value={session.user.displayName} />
-                <SettingsRow label={t("username")} value={session.user.username} />
-                <SettingsRow label={t("email")} value={session.user.email ?? t("emailMissing")} />
-                <button type="button" className="btn m-0 w-fit">
-                  Save Changes
-                </button>
-              </Surface>
+              <section id="profile" className="scroll-mt-24">
+                <Surface
+                  eyebrow={t("settings.sections.profile.eyebrow")}
+                  icon={UserRound}
+                  title={t("settings.sections.profile.title")}
+                >
+                  <SettingsRow label={t("displayName")} value={session.user.displayName} />
+                  <SettingsRow label={t("username")} value={session.user.username} />
+                  <SettingsRow label={t("email")} value={session.user.email ?? t("emailMissing")} />
+                  <button type="button" className="btn m-0 w-fit">
+                    {t("settings.sections.profile.saveChanges")}
+                  </button>
+                </Surface>
+              </section>
 
-              <Surface eyebrow="Security" icon={KeyRound} title="Email and Password">
-                <SettingsRow
-                  label={t("sessionExpires")}
-                  value={format.dateTime(new Date(session.session.expiresAt), {
-                    dateStyle: "medium",
-                    timeStyle: "short",
-                  })}
-                />
-                <SettingsRow label="Password" value="Updated recently" />
-                <SettingsRow
-                  label="Session created"
-                  value={format.dateTime(new Date(session.session.createdAt), {
-                    dateStyle: "medium",
-                  })}
-                />
-                <LogoutButton />
-              </Surface>
+              <section id="security" className="scroll-mt-24">
+                <Surface
+                  eyebrow={t("settings.sections.security.eyebrow")}
+                  icon={KeyRound}
+                  title={t("settings.sections.security.title")}
+                >
+                  <SettingsRow
+                    label={t("sessionExpires")}
+                    value={format.dateTime(new Date(session.session.expiresAt), {
+                      dateStyle: "medium",
+                      timeStyle: "short",
+                    })}
+                  />
+                  <SettingsRow
+                    label={t("settings.sections.security.password")}
+                    value={t("settings.sections.security.updatedRecently")}
+                  />
+                  <SettingsRow
+                    label={t("settings.sections.security.sessionCreated")}
+                    value={format.dateTime(new Date(session.session.createdAt), {
+                      dateStyle: "medium",
+                    })}
+                  />
+                  <LogoutButton />
+                </Surface>
+              </section>
             </section>
 
             <section className="grid gap-5 xl:grid-cols-3">
-              <Surface eyebrow="Language" icon={Globe2} title="Region">
-                <SettingsRow label="Interface language" value={<LocaleSwitcher />} />
-                <SettingsRow label="Time zone" value="Asia/Singapore" />
-              </Surface>
+              <section id="language" className="scroll-mt-24">
+                <Surface
+                  eyebrow={t("settings.sections.language.eyebrow")}
+                  icon={Globe2}
+                  title={t("settings.sections.language.title")}
+                >
+                  <SettingsRow
+                    label={t("settings.sections.language.interfaceLanguage")}
+                    value={<LocaleSwitcher />}
+                  />
+                  <SettingsRow
+                    label={t("settings.sections.language.timeZone")}
+                    value="Asia/Singapore"
+                  />
+                </Surface>
+              </section>
 
-              <Surface eyebrow="Privacy" icon={LockKeyhole} title="Visibility">
-                <ToggleRow enabled label="Show online status" />
-                <ToggleRow enabled label="Allow match invites" />
-                <ToggleRow label="Hide rating from strangers" />
-              </Surface>
+              <section id="privacy" className="scroll-mt-24">
+                <Surface
+                  eyebrow={t("settings.sections.privacy.eyebrow")}
+                  icon={LockKeyhole}
+                  title={t("settings.sections.privacy.title")}
+                >
+                  <ToggleRow enabled label={t("settings.sections.privacy.showOnlineStatus")} />
+                  <ToggleRow enabled label={t("settings.sections.privacy.allowMatchInvites")} />
+                  <ToggleRow label={t("settings.sections.privacy.hideRatingFromStrangers")} />
+                </Surface>
+              </section>
 
-              <Surface eyebrow="Notifications" icon={Bell} title="Alerts">
-                <ToggleRow enabled label="Friend requests" />
-                <ToggleRow enabled label="Match reminders" />
-                <ToggleRow label="Marketing email" />
-              </Surface>
+              <section id="notifications" className="scroll-mt-24">
+                <Surface
+                  eyebrow={t("settings.sections.notifications.eyebrow")}
+                  icon={Bell}
+                  title={t("settings.sections.notifications.title")}
+                >
+                  <ToggleRow enabled label={t("settings.sections.notifications.friendRequests")} />
+                  <ToggleRow enabled label={t("settings.sections.notifications.matchReminders")} />
+                  <ToggleRow label={t("settings.sections.notifications.marketingEmail")} />
+                </Surface>
+              </section>
             </section>
 
-            <Surface eyebrow="Danger Zone" icon={Trash2} title="Account Removal">
-              <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_auto] md:items-center">
-                <p className="m-0 text-sm leading-6 text-[var(--muted-text)]">
-                  Deleting an account removes profile access and disconnects active sessions. Match
-                  records may remain in aggregate ranking history.
-                </p>
-                <button type="button" className="btn btn-danger m-0">
-                  <Trash2 aria-hidden="true" className="size-4" />
-                  Delete Account
-                </button>
-              </div>
-            </Surface>
+            <section id="danger" className="scroll-mt-24">
+              <Surface
+                eyebrow={t("settings.sections.danger.eyebrow")}
+                icon={Trash2}
+                title={t("settings.sections.danger.title")}
+              >
+                <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_auto] md:items-center">
+                  <p className="m-0 text-sm leading-6 text-[var(--muted-text)]">
+                    {t("settings.sections.danger.description")}
+                  </p>
+                  <button type="button" className="btn btn-danger m-0">
+                    <Trash2 aria-hidden="true" className="size-4" />
+                    {t("settings.sections.danger.deleteAccount")}
+                  </button>
+                </div>
+              </Surface>
+            </section>
           </div>
         </section>
       ) : null}

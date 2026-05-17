@@ -78,6 +78,13 @@ export default function FriendsContent({
 
   const [searchValue, setSearchValue] = useState(searchQuery);
 
+  const rosterTitle =
+    activeTab === "friends"
+      ? t("roster.titles.friends")
+      : activeTab === "pending"
+        ? t("roster.titles.pending")
+        : t("roster.titles.sent");
+
   useEffect(() => {
     if (!socket) return;
 
@@ -164,7 +171,7 @@ export default function FriendsContent({
   };
 
   const handleRemove = async (friendshipId: number) => {
-    if (!window.confirm("Are you sure you want to remove this friend?")) {
+    if (!window.confirm(t("actions.confirmRemoveFriend"))) {
       return;
     }
 
@@ -192,10 +199,10 @@ export default function FriendsContent({
   return (
     <PageShell>
       <PageHeader
-        eyebrow="Friends"
+        eyebrow={t("pageHeader.eyebrow")}
         icon={Users}
         title={t("title")}
-        lede="Manage friends, answer requests, and jump into chat or challenge."
+        lede={t("pageHeader.lede")}
       />
 
       {statusMessage ? (
@@ -213,16 +220,7 @@ export default function FriendsContent({
       ) : null}
 
       <section className="grid gap-5">
-        <Surface
-          eyebrow="Roster"
-          title={
-            activeTab === "friends"
-              ? "Friends Table"
-              : activeTab === "pending"
-                ? "Pending Requests"
-                : "Sent Requests"
-          }
-        >
+        <Surface eyebrow={t("roster.eyebrow")} title={rosterTitle}>
           <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
             <div className="inline-flex overflow-hidden rounded-md border border-(--panel-border-soft) bg-(--panel-solid) p-1">
               {[
@@ -353,20 +351,22 @@ function FriendsTable({
   onRemove: (id: number) => void;
   onRespond: (id: number, accept: boolean) => void;
 }) {
+  const t = useTranslations("friends");
+
   return (
     <div
       className="overflow-x-auto rounded-md border border-(--panel-border-soft) bg-white/2.5"
       data-testid="friends-table"
     >
       <div className="min-w-[920px]">
-        <div className="grid grid-cols-[minmax(220px,1fr)_110px_100px_80px_80px_92px_170px] gap-3 border-b border-(--panel-border-soft) bg-black/20 px-4 py-3 text-xs font-black tracking-[0.12em] text-(--muted-text) uppercase">
-          <span>Player</span>
-          <span>Rating</span>
-          <span>Win Rate</span>
-          <span>Wins</span>
-          <span>Losses</span>
-          <span>Status</span>
-          <span>Actions</span>
+        <div className="grid grid-cols-[minmax(220px,1fr)_110px_100px_80px_80px_92px_170px] gap-3 border-b border-[var(--panel-border-soft)] bg-black/20 px-4 py-3 text-xs font-black tracking-[0.12em] text-[var(--muted-text)] uppercase">
+          <span>{t("table.friend")}</span>
+          <span>{t("table.rating")}</span>
+          <span>{t("table.winRate")}</span>
+          <span>{t("table.wins")}</span>
+          <span>{t("table.losses")}</span>
+          <span>{t("table.status")}</span>
+          <span>{t("table.actions")}</span>
         </div>
 
         {friends.map((friend) => {
@@ -401,7 +401,9 @@ function FriendsTable({
 
               <span className="font-black text-(--muted-text) tabular-nums">{losses}</span>
 
-              <Badge tone={online ? "mint" : "neutral"}>{online ? "Online" : "Offline"}</Badge>
+              <Badge tone={online ? "mint" : "neutral"}>
+                {online ? t("status.online") : t("status.offline")}
+              </Badge>
 
               <div className="flex items-center gap-2">
                 {activeTab === "friends" ? (
@@ -409,7 +411,7 @@ function FriendsTable({
                     <Link
                       href={`/messages?user=${friend.username}`}
                       className="icon-button"
-                      aria-label={`Message ${friend.displayName}`}
+                      aria-label={t("actions.messageFriend", { name: friend.displayName })}
                     >
                       <MessageSquare aria-hidden="true" className="size-4" />
                     </Link>
@@ -419,7 +421,7 @@ function FriendsTable({
                       onClick={() => onChallenge(friend.username)}
                       disabled={isChallenging}
                       className="icon-button disabled:opacity-50"
-                      aria-label={`Challenge ${friend.displayName}`}
+                      aria-label={t("actions.challengeFriend", { name: friend.displayName })}
                     >
                       {isChallenging ? (
                         <Loader2
@@ -435,7 +437,7 @@ function FriendsTable({
                       type="button"
                       onClick={() => onRemove(friend.id)}
                       className="icon-button"
-                      aria-label={`Remove ${friend.displayName}`}
+                      aria-label={t("actions.removeFriend", { name: friend.displayName })}
                     >
                       <UserMinus aria-hidden="true" className="size-4 text-(--danger)" />
                     </button>
@@ -446,7 +448,7 @@ function FriendsTable({
                       type="button"
                       onClick={() => onRespond(friend.id, true)}
                       className="icon-button"
-                      aria-label={`Accept ${friend.displayName}`}
+                      aria-label={t("actions.acceptFriend", { name: friend.displayName })}
                     >
                       <Check aria-hidden="true" className="size-4 text-(--mint)" />
                     </button>
@@ -455,7 +457,7 @@ function FriendsTable({
                       type="button"
                       onClick={() => onRespond(friend.id, false)}
                       className="icon-button"
-                      aria-label={`Decline ${friend.displayName}`}
+                      aria-label={t("actions.declineFriend", { name: friend.displayName })}
                     >
                       <X aria-hidden="true" className="size-4 text-(--danger)" />
                     </button>
@@ -465,7 +467,7 @@ function FriendsTable({
                     type="button"
                     onClick={() => onRespond(friend.id, false)}
                     className="icon-button"
-                    aria-label={`Cancel request to ${friend.displayName}`}
+                    aria-label={t("actions.cancelFriendRequest", { name: friend.displayName })}
                   >
                     <X aria-hidden="true" className="size-4 text-(--danger)" />
                   </button>
