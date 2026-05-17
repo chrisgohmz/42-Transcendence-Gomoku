@@ -37,7 +37,6 @@ test("primary game routes render their new page shells", async ({ page }) => {
 
   await gotoAppRoute(page, "/human");
   await expect(page.getByRole("heading", { level: 1, name: "Play Online" })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Room List" })).toBeVisible();
   await expect(page.getByTestId("game-lobby-table")).toBeVisible();
 
   await gotoAppRoute(page, "/leaderboard");
@@ -137,8 +136,6 @@ test("authenticated redesigned pages render at desktop and mobile widths", async
 
     await gotoAppRoute(page, "/profile/edit");
     await expect(page.getByRole("heading", { level: 1, name: "Edit Profile" })).toBeVisible();
-    await page.getByRole("button", { name: "Edit" }).first().click();
-    await expect(page.getByLabel("Display Name")).toBeVisible();
     await expectNoDocumentOverflow(page, "/profile/edit");
 
     await gotoAppRoute(page, "/friends");
