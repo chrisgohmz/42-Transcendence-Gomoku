@@ -39,7 +39,7 @@ type ClientHistoryEntry = {
 };
 
 export default function HumanLobbyClient() {
-  const t = useTranslations("human.lobby");
+  const pageT = useTranslations("human.page");
   const { onlineUsers } = usePresence();
   const restoredMatch = useMatchInitialize();
 
@@ -217,10 +217,10 @@ export default function HumanLobbyClient() {
     return (
       <PageShell>
         <PageHeader
-          eyebrow={t("loading.eyebrow")}
+          eyebrow={pageT("loading.eyebrow")}
           icon={Swords}
-          title={t("loading.title")}
-          lede={t("loading.lede")}
+          title={pageT("loading.title")}
+          lede={pageT("loading.lede")}
         />
       </PageShell>
     );
@@ -239,7 +239,7 @@ export default function HumanLobbyClient() {
   return (
     <PageShell>
       <PageHeader
-        eyebrow={t("lobby.eyebrow")}
+        eyebrow={pageT("lobby.eyebrow")}
         icon={Swords}
         title="Play Online"
         lede="Queue into ranked matchmaking or create a private room with friends."
