@@ -15,3 +15,5 @@ public/uploads
 playwright-report
 test-results
 output/playwright
+.next
+.docker-data
