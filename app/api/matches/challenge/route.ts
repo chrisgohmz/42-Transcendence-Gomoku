@@ -2,7 +2,14 @@ import { randomUUID } from "node:crypto";
 
 import { hashPassword } from "better-auth/crypto";
 
-import { FriendshipStatus, MatchVisibility, Role, Seat } from "@/../generated/prisma/enums";
+import {
+  FriendshipStatus,
+  MatchResult,
+  MatchStatus,
+  MatchVisibility,
+  Role,
+  Seat,
+} from "@/../generated/prisma/enums";
 import { getCurrentSession } from "@/lib/auth";
 import { createChallengeMatchMetadata } from "@/lib/matches/challenge-metadata";
 import { buildGameUpdatePayload } from "@/lib/matches/game-update";
@@ -22,6 +29,37 @@ function getOptionalTrimmedString(value: unknown) {
 
 function getLowHighIds(id1: string, id2: string) {
   return id1 < id2 ? { userLowId: id1, userHighId: id2 } : { userLowId: id2, userHighId: id1 };
+}
+
+async function cancelUndeliveredChallenge(matchId: string) {
+  const now = new Date();
+
+  await prisma.$transaction(async (tx) => {
+    await tx.match.updateMany({
+      where: {
+        id: matchId,
+        status: MatchStatus.WAITING,
+      },
+      data: {
+        endReason: "challenge_invite_failed",
+        finishedAt: now,
+        nextTurnSeat: null,
+        status: MatchStatus.CANCELLED,
+      },
+    });
+
+    await tx.matchParticipant.updateMany({
+      where: {
+        leftAt: null,
+        matchId,
+        result: null,
+      },
+      data: {
+        leftAt: now,
+        result: MatchResult.CANCELLED,
+      },
+    });
+  });
 }
 
 export async function POST(request: Request) {
@@ -127,7 +165,6 @@ export async function POST(request: Request) {
     });
 
     try {
-      await publishGameUpdate(gameUpdate, timeoutMs);
       await publishChallengeReceived(
         target.username,
         {
@@ -140,7 +177,26 @@ export async function POST(request: Request) {
       );
     } catch (publishError) {
       console.error(
-        `[matches/${match.id}] challenge publish failed:`,
+        `[matches/${match.id}] challenge invite publish failed:`,
+        getErrorMessage(publishError),
+      );
+
+      await cancelUndeliveredChallenge(match.id);
+
+      return Response.json(
+        {
+          error: "failed_to_deliver_challenge",
+          detail: getErrorMessage(publishError),
+        },
+        { status: 502 },
+      );
+    }
+
+    try {
+      await publishGameUpdate(gameUpdate, timeoutMs);
+    } catch (publishError) {
+      console.error(
+        `[matches/${match.id}] realtime publish failed:`,
         getErrorMessage(publishError),
       );
     }

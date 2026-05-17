@@ -1,25 +1,18 @@
 "use client";
 
-import { useCallback, useEffect, useState, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { Socket } from "socket.io-client";
 
 import type { StoredMatchSession } from "@/lib/matches/match-session-storage";
-import { createSocket } from "@/lib/socket-client";
 
 type QueueStatus = "idle" | "queued" | "matched";
 
-let socketInstance: Socket | null = null;
-function getSocket() {
-  if (!socketInstance) {
-    socketInstance = createSocket();
-  }
-  return socketInstance;
-}
-
 export function useMatchmaking({
   onMatchFound,
+  socket,
 }: {
   onMatchFound?: (session: StoredMatchSession) => void;
+  socket: Socket | null;
 }) {
   const [status, setStatus] = useState<QueueStatus>("idle");
   const [position, setPosition] = useState<number | null>(null);
@@ -33,7 +26,12 @@ export function useMatchmaking({
   }, [status]);
 
   useEffect(() => {
-    const socket = getSocket();
+    if (!socket) {
+      setPosition(null);
+      setStatus("idle");
+      queuedSessionRef.current = null;
+      return;
+    }
 
     const handleStatus = (data: any) => {
       if (data.kind === "queued") {
@@ -112,20 +110,26 @@ export function useMatchmaking({
       socket.off("stats:update", handleStatsUpdate);
       socket.off("game:update", handleGameUpdate);
     };
-  }, [onMatchFound]);
+  }, [onMatchFound, socket]);
 
   const joinQueue = useCallback(() => {
+    if (!socket) {
+      setError("Realtime is not connected");
+      setStatus("idle");
+      return;
+    }
+
     setError(null);
     setStatus("queued");
-    getSocket().emit("queue:join");
-  }, []);
+    socket.emit("queue:join");
+  }, [socket]);
 
   const leaveQueue = useCallback(() => {
-    getSocket().emit("queue:leave");
+    socket?.emit("queue:leave");
     setStatus("idle");
     setPosition(null);
     queuedSessionRef.current = null;
-  }, []);
+  }, [socket]);
 
   return { status, position, error, joinQueue, leaveQueue, globalStats };
 }

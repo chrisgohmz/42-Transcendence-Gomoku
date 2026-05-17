@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, mock, test } from "bun:test";
 
 import {
   FriendshipStatus,
+  MatchResult,
   MatchStatus,
   MatchVisibility,
   Role,
@@ -13,10 +14,22 @@ const getCurrentSession = mock();
 const findUser = mock();
 const findFriendship = mock();
 const createMatch = mock();
+const transaction = mock();
+const updateManyMatches = mock();
+const updateManyParticipants = mock();
 const publishGameUpdate = mock();
 const publishChallengeReceived = mock();
 const hashPassword = mock();
 const verifyPassword = mock();
+
+const tx = {
+  match: {
+    updateMany: updateManyMatches,
+  },
+  matchParticipant: {
+    updateMany: updateManyParticipants,
+  },
+};
 
 await mock.module("@/lib/auth", () => ({
   getCurrentSession,
@@ -30,6 +43,7 @@ await mock.module("@/lib/prisma", () => ({
     match: {
       create: createMatch,
     },
+    $transaction: transaction,
     user: {
       findUnique: findUser,
     },
@@ -114,6 +128,9 @@ beforeEach(() => {
   findUser.mockReset();
   findFriendship.mockReset();
   createMatch.mockReset();
+  transaction.mockReset();
+  updateManyMatches.mockReset();
+  updateManyParticipants.mockReset();
   publishGameUpdate.mockReset();
   publishChallengeReceived.mockReset();
   hashPassword.mockReset();
@@ -137,6 +154,11 @@ beforeEach(() => {
   createMatch.mockImplementation((args: { data: Record<string, unknown> }) =>
     Promise.resolve(createdMatch(args)),
   );
+  transaction.mockImplementation((callback: (transactionClient: typeof tx) => unknown) =>
+    callback(tx),
+  );
+  updateManyMatches.mockResolvedValue({ count: 1 });
+  updateManyParticipants.mockResolvedValue({ count: 1 });
   publishGameUpdate.mockResolvedValue(undefined);
   publishChallengeReceived.mockResolvedValue(undefined);
   hashPassword.mockImplementation((rawValue: string) => {
@@ -220,5 +242,57 @@ describe("POST /api/matches/challenge", () => {
       challengePayload,
       expect.any(Number),
     );
+  });
+
+  test("cancels the room and returns an error when invite delivery fails", async () => {
+    publishChallengeReceived.mockRejectedValueOnce(new Error("realtime down"));
+
+    const response = await route.POST(request({ targetUsername: "white" }));
+    const payload = await response.json();
+
+    expect(response.status).toBe(502);
+    expect(payload).toMatchObject({
+      detail: "realtime down",
+      error: "failed_to_deliver_challenge",
+    });
+    expect(updateManyMatches).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        endReason: "challenge_invite_failed",
+        finishedAt: expect.any(Date),
+        nextTurnSeat: null,
+        status: MatchStatus.CANCELLED,
+      }),
+      where: {
+        id: "match-1",
+        status: MatchStatus.WAITING,
+      },
+    });
+    expect(updateManyParticipants).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        leftAt: expect.any(Date),
+        result: MatchResult.CANCELLED,
+      }),
+      where: {
+        leftAt: null,
+        matchId: "match-1",
+        result: null,
+      },
+    });
+    expect(publishGameUpdate).not.toHaveBeenCalled();
+  });
+
+  test("keeps a delivered challenge when the follow-up game update publish fails", async () => {
+    publishGameUpdate.mockRejectedValueOnce(new Error("game update down"));
+
+    const response = await route.POST(request({ targetUsername: "white" }));
+    const payload = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(payload).toMatchObject({
+      matchId: "match-1",
+      participantId: "black-player",
+    });
+    expect(publishChallengeReceived).toHaveBeenCalledTimes(1);
+    expect(transaction).not.toHaveBeenCalled();
   });
 });

@@ -40,7 +40,7 @@ type ClientHistoryEntry = {
 
 export default function HumanLobbyClient() {
   const pageT = useTranslations("human.page");
-  const { onlineUsers } = usePresence();
+  const { onlineUsers, socket } = usePresence();
   const restoredMatch = useMatchInitialize();
 
   const setRestoredSession = restoredMatch.setSession;
@@ -105,6 +105,7 @@ export default function HumanLobbyClient() {
     globalStats,
   } = useMatchmaking({
     onMatchFound: handleSessionReady,
+    socket,
   });
 
   /* HISTORY */
