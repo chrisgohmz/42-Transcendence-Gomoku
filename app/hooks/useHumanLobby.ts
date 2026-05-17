@@ -2,7 +2,6 @@
 
 import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useState } from "react";
-import { de } from "zod/v4/locales";
 
 import type { LobbyEntry } from "@/components/game-lobby-table";
 import {
