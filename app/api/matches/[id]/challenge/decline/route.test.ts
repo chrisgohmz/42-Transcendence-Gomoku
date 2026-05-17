@@ -53,7 +53,7 @@ const route = await import("./route");
 
 const createdAt = new Date("2026-05-12T00:00:00.000Z");
 
-function request(body: Record<string, unknown> = { password: "sente" }) {
+function request(body: Record<string, unknown> = { declineToken: "decline-token" }) {
   return new Request("http://localhost/api/matches/match-1/challenge/decline", {
     method: "POST",
     headers: {
@@ -85,7 +85,12 @@ function challengeMatch() {
     endReason: null,
     finishedAt: null,
     id: "match-1",
-    metadata: null,
+    metadata: {
+      declineTokenHash: "hashed-decline-token",
+      kind: "human-challenge",
+      targetUserId: "user-white",
+      targetUsername: "white",
+    },
     nextTurnSeat: null,
     participants: [
       {
@@ -177,24 +182,59 @@ describe("POST /api/matches/:id/challenge/decline", () => {
     expect(findMatch).not.toHaveBeenCalled();
   });
 
-  test("does not cancel or notify when password verification fails", async () => {
+  test("does not cancel or notify when decline token verification fails", async () => {
     verifyPassword.mockResolvedValueOnce(false);
 
-    const response = await route.POST(request({ password: "wrong" }), context());
+    const response = await route.POST(request({ declineToken: "wrong" }), context());
     const payload = await response.json();
 
     expect(response.status).toBe(409);
     expect(payload).toMatchObject({ error: "challenge_not_cancellable" });
     expect(verifyPassword).toHaveBeenCalledWith({
-      hash: "hashed-room-password",
+      hash: "hashed-decline-token",
       password: "wrong",
     });
     expect(transaction).not.toHaveBeenCalled();
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
+  test("does not let a private room password cancel a non-challenge room", async () => {
+    findMatch.mockResolvedValueOnce({
+      ...challengeMatch(),
+      metadata: null,
+    });
+
+    const response = await route.POST(request({ declineToken: "sente" }), context());
+    const payload = await response.json();
+
+    expect(response.status).toBe(409);
+    expect(payload).toMatchObject({ error: "challenge_not_cancellable" });
+    expect(verifyPassword).not.toHaveBeenCalled();
+    expect(transaction).not.toHaveBeenCalled();
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  test("does not let a user decline someone else's challenge invite", async () => {
+    getCurrentSession.mockResolvedValueOnce({
+      user: {
+        displayName: "Red",
+        id: "user-red",
+        username: "red",
+      },
+    });
+
+    const response = await route.POST(request(), context());
+    const payload = await response.json();
+
+    expect(response.status).toBe(409);
+    expect(payload).toMatchObject({ error: "challenge_not_cancellable" });
+    expect(verifyPassword).not.toHaveBeenCalled();
+    expect(transaction).not.toHaveBeenCalled();
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
   test("cancels the challenge before publishing a server-derived decline notification", async () => {
-    const response = await route.POST(request({ password: "sente" }), context());
+    const response = await route.POST(request({ declineToken: "decline-token" }), context());
     const payload = await response.json();
 
     expect(response.status).toBe(200);
@@ -221,6 +261,10 @@ describe("POST /api/matches/:id/challenge/decline", () => {
         matchId: "match-1",
         result: null,
       },
+    });
+    expect(verifyPassword).toHaveBeenCalledWith({
+      hash: "hashed-decline-token",
+      password: "decline-token",
     });
     expect(fetchMock).toHaveBeenCalledTimes(1);
     expect(getFetchBody(0)).toEqual({

@@ -2,6 +2,7 @@ import { verifyPassword } from "better-auth/crypto";
 
 import { MatchResult, MatchStatus, MatchVisibility } from "@/../generated/prisma/enums";
 import { getCurrentSession } from "@/lib/auth";
+import { getChallengeMatchMetadata } from "@/lib/matches/challenge-metadata";
 import { publishChallengeDeclined } from "@/lib/matches/realtime-publisher";
 import { prisma } from "@/lib/prisma";
 
@@ -11,13 +12,13 @@ function getErrorMessage(error: unknown): string {
   return error instanceof Error ? error.message : "Unknown error";
 }
 
-async function verifyChallengePassword(hash: string | null, password: string) {
-  if (!hash || !password) {
+async function verifyDeclineToken(hash: string, token: string) {
+  if (!token) {
     return false;
   }
 
   try {
-    return await verifyPassword({ hash, password });
+    return await verifyPassword({ hash, password: token });
   } catch {
     return false;
   }
@@ -37,10 +38,10 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       typeof bodyValue === "object" && bodyValue !== null && !Array.isArray(bodyValue)
         ? bodyValue
         : {};
-    const password = typeof body.password === "string" ? body.password : "";
+    const declineToken = typeof body.declineToken === "string" ? body.declineToken : "";
 
-    if (!password) {
-      return Response.json({ error: "missing_password" }, { status: 400 });
+    if (!declineToken) {
+      return Response.json({ error: "missing_decline_token" }, { status: 400 });
     }
 
     const match = await prisma.match.findUnique({
@@ -62,10 +63,14 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       return Response.json({ error: "match_not_found" }, { status: 404 });
     }
 
+    const challengeMetadata = getChallengeMatchMetadata(match.metadata);
+
     if (
       match.status !== MatchStatus.WAITING ||
       match.visibility !== MatchVisibility.PRIVATE ||
-      !(await verifyChallengePassword(match.password, password))
+      !challengeMetadata ||
+      challengeMetadata.targetUserId !== context.user.id ||
+      !(await verifyDeclineToken(challengeMetadata.declineTokenHash, declineToken))
     ) {
       return Response.json({ error: "challenge_not_cancellable" }, { status: 409 });
     }

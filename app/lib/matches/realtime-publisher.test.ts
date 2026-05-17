@@ -2,12 +2,18 @@ import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
 import type { GameUpdatePayload } from "../../../shared/match-events";
 import { internalRealtimeSecretHeader } from "../../../shared/realtime-internal";
-import { publishGameUpdate, resolveGameUpdateUrl } from "./realtime-publisher";
+import {
+  publishChallengeReceived,
+  publishGameUpdate,
+  resolveChallengeReceivedUrl,
+  resolveGameUpdateUrl,
+} from "./realtime-publisher";
 
 const fetchMock = mock(async () => new Response(null, { status: 200 }));
 const originalFetch = globalThis.fetch;
 const envKeys = [
   "BETTER_AUTH_SECRET",
+  "REALTIME_CHALLENGE_RECEIVED_URL",
   "REALTIME_INTERNAL_SECRET",
   "REALTIME_INTERNAL_URL",
   "REALTIME_PUBLISH_TIMEOUT_MS",
@@ -83,6 +89,21 @@ describe("resolveGameUpdateUrl", () => {
   });
 });
 
+describe("resolveChallengeReceivedUrl", () => {
+  test("derives the challenge receive endpoint from the game endpoint", () => {
+    process.env["REALTIME_INTERNAL_URL"] = "http://localhost:3001/internal/game-update";
+
+    expect(resolveChallengeReceivedUrl()).toBe("http://localhost:3001/internal/challenge-received");
+  });
+
+  test("uses the explicit challenge receive endpoint when configured", () => {
+    process.env["REALTIME_CHALLENGE_RECEIVED_URL"] =
+      "http://localhost:3001/custom/challenge-received";
+
+    expect(resolveChallengeReceivedUrl()).toBe("http://localhost:3001/custom/challenge-received");
+  });
+});
+
 describe("publishGameUpdate", () => {
   test("posts full game state with the internal header and no-store cache", async () => {
     process.env["REALTIME_INTERNAL_URL"] = "http://localhost:3001/internal/game-update";
@@ -134,5 +155,47 @@ describe("publishGameUpdate", () => {
       () => publishGameUpdate(payload),
       "Failed to publish game:update(503)",
     );
+  });
+});
+
+describe("publishChallengeReceived", () => {
+  test("posts challenge invite secrets only to the internal realtime endpoint", async () => {
+    process.env["REALTIME_CHALLENGE_RECEIVED_URL"] =
+      "http://localhost:3001/internal/challenge-received";
+    process.env["REALTIME_INTERNAL_SECRET"] = "game-secret";
+
+    await publishChallengeReceived(
+      "white",
+      {
+        declineToken: "decline-token",
+        matchId: "match-1",
+        password: "room-password",
+        senderUsername: "black",
+      },
+      5000,
+    );
+
+    const call = fetchMock.mock.calls[0] as [string, RequestInit] | undefined;
+
+    expect(call).toBeDefined();
+
+    const [url, init] = call!;
+
+    expect(url).toBe("http://localhost:3001/internal/challenge-received");
+    expect(init).toMatchObject({
+      body: JSON.stringify({
+        declineToken: "decline-token",
+        matchId: "match-1",
+        password: "room-password",
+        senderUsername: "black",
+        username: "white",
+      }),
+      cache: "no-store",
+      method: "POST",
+    });
+    expect(init.headers).toEqual({
+      "Content-Type": "application/json",
+      [internalRealtimeSecretHeader]: "game-secret",
+    });
   });
 });

@@ -4,7 +4,6 @@ import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { useCallback, useState } from "react";
 
-import { usePresence } from "@/components/presence-provider";
 import {
   notifyStoredMatchSessionReady,
   saveStoredMatchSession,
@@ -46,29 +45,21 @@ function saveChallengeSession(session: ChallengeMatchResponse, defaultDisplayNam
 
 export function useChallengePlayer() {
   const router = useRouter();
-  const { socket } = usePresence();
   const humanT = useTranslations("human.defaults");
   const challengeT = useTranslations("human.challenge");
   const [challengingUsername, setChallengingUsername] = useState<string | null>(null);
 
   const challengePlayer = useCallback(
     async (targetUsername: string) => {
-      if (!socket) {
-        return false;
-      }
-
       setChallengingUsername(targetUsername);
 
       try {
-        const password = crypto.randomUUID();
-
-        const response = await fetch("/api/matches", {
+        const response = await fetch("/api/matches/challenge", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             name: challengeT("roomName", { name: targetUsername }),
-            password,
-            visibility: "PRIVATE",
+            targetUsername,
           }),
         });
 
@@ -83,12 +74,6 @@ export function useChallengePlayer() {
           return false;
         }
 
-        socket.emit("challenge:send", {
-          matchId: session.matchId,
-          password,
-          targetUsername,
-        });
-
         router.push("/human");
         return true;
       } catch (error) {
@@ -98,7 +83,7 @@ export function useChallengePlayer() {
         setChallengingUsername(null);
       }
     },
-    [challengeT, humanT, router, socket],
+    [challengeT, humanT, router],
   );
 
   return {

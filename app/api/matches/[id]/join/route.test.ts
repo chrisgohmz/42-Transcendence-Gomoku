@@ -99,6 +99,7 @@ function waitingMatch() {
     endReason: null,
     finishedAt: null,
     id: "match-1",
+    metadata: null,
     nextTurnSeat: null,
     password: null,
     participants: [hostParticipant()],
@@ -278,6 +279,29 @@ describe("POST /api/matches/:id/join", () => {
       hash: "hashed-room-password",
       password: "wrong",
     });
+    expect(transaction).not.toHaveBeenCalled();
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  test("rejects challenge rooms when the signed-in user is not the invitee", async () => {
+    findMatch.mockResolvedValueOnce({
+      ...waitingMatch(),
+      metadata: {
+        declineTokenHash: "hashed-decline-token",
+        kind: "human-challenge",
+        targetUserId: "user-red",
+        targetUsername: "red",
+      },
+      password: "hashed-room-password",
+      visibility: MatchVisibility.PRIVATE,
+    });
+
+    const response = await route.POST(request({ password: "sente" }), context());
+    const payload = await response.json();
+
+    expect(response.status).toBe(403);
+    expect(payload).toMatchObject({ error: "challenge_not_for_user" });
+    expect(verifyPassword).not.toHaveBeenCalled();
     expect(transaction).not.toHaveBeenCalled();
     expect(fetchMock).not.toHaveBeenCalled();
   });

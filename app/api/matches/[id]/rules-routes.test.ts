@@ -17,6 +17,7 @@ const createMove = mock();
 const updateMatchMany = mock();
 const updateParticipant = mock();
 const publishGameUpdate = mock();
+const publishChallengeReceived = mock();
 const getCurrentSession = mock();
 
 const tx = {
@@ -40,6 +41,7 @@ await mock.module("@/lib/prisma", () => ({
 }));
 
 await mock.module("@/lib/matches/realtime-publisher", () => ({
+  publishChallengeReceived,
   publishGameUpdate,
 }));
 

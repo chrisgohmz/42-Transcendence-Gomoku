@@ -17,6 +17,7 @@ import {
 import type { Seat } from "../../shared/match-events";
 
 type IncomingChallenge = {
+  declineToken?: string;
   senderUsername: string;
   matchId: string;
   password?: string;
@@ -113,7 +114,7 @@ export function ChallengeListener() {
     await fetch(`/api/matches/${encodeURIComponent(incoming.matchId)}/challenge/decline`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ password: incoming.password }),
+      body: JSON.stringify({ declineToken: incoming.declineToken }),
     }).catch(() => undefined);
     setIncoming(null);
   };

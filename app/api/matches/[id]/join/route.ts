@@ -4,6 +4,7 @@ import { z } from "zod";
 import { Prisma } from "@/../generated/prisma/client";
 import { MatchStatus, Role, Seat } from "@/../generated/prisma/enums";
 import { getCurrentSession } from "@/lib/auth";
+import { getChallengeMatchMetadata } from "@/lib/matches/challenge-metadata";
 import { buildGameUpdatePayload } from "@/lib/matches/game-update";
 import { publishGameUpdate, publishQueueMatched } from "@/lib/matches/realtime-publisher";
 import { prisma } from "@/lib/prisma";
@@ -70,6 +71,11 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
 
     if (match.status !== MatchStatus.WAITING) {
       return Response.json({ error: "match_not_available" }, { status: 409 });
+    }
+
+    const challengeMetadata = getChallengeMatchMetadata(match.metadata);
+    if (challengeMetadata && challengeMetadata.targetUserId !== context.user.id) {
+      return Response.json({ error: "challenge_not_for_user" }, { status: 403 });
     }
 
     const alreadyJoined = match.participants.some(
