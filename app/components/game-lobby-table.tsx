@@ -90,7 +90,7 @@ export default function GameLobbyTable({
               >
                 <div className="flex min-w-0 items-center gap-3">
                   <span
-                    className={`size-2.5 rounded-full ${row.state === "Live" ? "bg-(--mint) shadow-[0_0_12px_var(--mint)]" : "bg-(--brass)"}`}
+                    className={`size-2.5 rounded-full ${row.isLive ? "bg-(--mint) shadow-[0_0_12px_var(--mint)]" : "bg-(--brass)"}`}
                   />
                   <span className="min-w-0">
                     <span className="block truncate font-black">{row.name}</span>
