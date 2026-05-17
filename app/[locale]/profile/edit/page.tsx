@@ -38,7 +38,7 @@ export default async function EditProfilePage({ params }: EditProfilePageProps) 
           Return to Profile
         </Link>
       </div>
-      
+
       <PageHeader eyebrow={t("page.eyebrow")} title={t("title")} lede={t("lede")} />
       <section className="grid gap-5 xl:grid-cols-[340px_minmax(0,1fr)]">
         <aside className="grid content-start gap-5">
