@@ -6,7 +6,7 @@ import {
 export async function handleInternalQueueMatched(
   request: Request,
   io: any,
-  internalSecret = readRealtimeInternalSecret()
+  internalSecret = readRealtimeInternalSecret(),
 ) {
   if (!internalSecret) {
     return Response.json({ error: "internal_secret_unconfigured" }, { status: 503 });

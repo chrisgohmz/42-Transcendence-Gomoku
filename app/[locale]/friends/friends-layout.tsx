@@ -247,9 +247,7 @@ export default function FriendsContent({
                   type="button"
                   onClick={() => setActiveTab(tab.key as TabKey)}
                   className={`min-h-10 rounded-sm px-4 text-sm font-black ${
-                    activeTab === tab.key
-                      ? "bg-(--mint-soft) text-(--mint)"
-                      : "text-(--muted-text)"
+                    activeTab === tab.key ? "bg-(--mint-soft) text-(--mint)" : "text-(--muted-text)"
                   }`}
                 >
                   {tab.label} <span className="tabular-nums">{tab.count}</span>
@@ -280,9 +278,7 @@ export default function FriendsContent({
               {searchValue.trim().length >= 3 && searchValue === searchQuery && (
                 <div className="absolute top-full left-0 z-50 mt-2 w-full rounded-md border border-(--panel-border) bg-(--panel-solid) p-2 shadow-xl">
                   {searchResults.length === 0 ? (
-                    <p className="p-2 text-sm font-bold text-(--danger)">
-                      {t("empty.search")}
-                    </p>
+                    <p className="p-2 text-sm font-bold text-(--danger)">{t("empty.search")}</p>
                   ) : (
                     <div className="grid gap-1">
                       {searchResults.map((user) => (

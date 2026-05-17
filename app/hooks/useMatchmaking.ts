@@ -1,9 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useState, useRef } from "react";
-import { createSocket } from "@/lib/socket-client";
-import type { StoredMatchSession } from "@/lib/matches/match-session-storage";
 import type { Socket } from "socket.io-client";
+
+import type { StoredMatchSession } from "@/lib/matches/match-session-storage";
+import { createSocket } from "@/lib/socket-client";
 
 type QueueStatus = "idle" | "queued" | "matched";
 
@@ -52,7 +53,6 @@ export function useMatchmaking({
           matchId: session.matchId,
           participantId: session.participantId,
         });
-
       } else if (data.kind === "matched") {
         setStatus("matched");
         queuedSessionRef.current = null;

@@ -65,12 +65,12 @@ export default function GameLobbyTable({
   return (
     <>
       <div
-        className="overflow-x-auto rounded-md border border-[var(--panel-border-soft)] bg-white/[0.025]"
+        className="overflow-x-auto rounded-md border border-(--panel-border-soft) bg-white/2.5"
         data-testid="game-lobby-table"
         aria-busy={isLoading}
       >
         <div className="min-w-[760px]">
-          <div className="grid grid-cols-[minmax(180px,1.25fr)_90px_88px_98px_78px_72px] gap-3 border-b border-[var(--panel-border-soft)] bg-black/20 px-4 py-3 text-xs font-black tracking-[0.12em] text-[var(--muted-text)] uppercase">
+          <div className="grid grid-cols-[minmax(180px,1.25fr)_90px_88px_98px_78px_72px] gap-3 border-b border-(--panel-border-soft) bg-black/20 px-4 py-3 text-xs font-black tracking-[0.12em] text-(--muted-text) uppercase">
             <span>Room</span>
             <span>Rules</span>
             <span>Players</span>
@@ -81,7 +81,7 @@ export default function GameLobbyTable({
           {error && !passwordPrompt ? (
             <div
               role="alert"
-              className="border-b border-[var(--panel-border-soft)] px-4 py-3 text-sm font-bold text-[var(--danger)]"
+              className="border-b border-(--panel-border-soft) px-4 py-3 text-sm font-bold text-(--danger)"
             >
               {error}
             </div>
@@ -90,20 +90,20 @@ export default function GameLobbyTable({
             rows.map((row) => (
               <article
                 key={row.id}
-                className="grid min-h-16 grid-cols-[minmax(180px,1.25fr)_90px_88px_98px_78px_72px] items-center gap-3 border-b border-[var(--panel-border-soft)] px-4 py-3 last:border-b-0 hover:bg-white/[0.05]"
+                className="grid min-h-16 grid-cols-[minmax(180px,1.25fr)_90px_88px_98px_78px_72px] items-center gap-3 border-b border-(--panel-border-soft) px-4 py-3 last:border-b-0 hover:bg-white/5"
               >
                 <div className="flex min-w-0 items-center gap-3">
                   <span
-                    className={`size-2.5 rounded-full ${row.state === "Live" ? "bg-[var(--mint)] shadow-[0_0_12px_var(--mint)]" : "bg-[var(--brass)]"}`}
+                    className={`size-2.5 rounded-full ${row.state === "Live" ? "bg-(--mint) shadow-[0_0_12px_var(--mint)]" : "bg-(--brass)"}`}
                   />
                   <span className="min-w-0">
                     <span className="block truncate font-black">{row.name}</span>
-                    <span className="block truncate text-xs text-[var(--muted-text)]">
+                    <span className="block truncate text-xs text-(--muted-text)">
                       Standard opening, ranked room
                     </span>
                   </span>
                 </div>
-                <span className="text-sm font-bold text-[var(--muted-strong)]">
+                <span className="text-sm font-bold text-(--muted-strong)">
                   {row.boardSize} x {row.boardSize}
                 </span>
                 <span className="font-black tabular-nums">{row.players}</span>
@@ -115,12 +115,10 @@ export default function GameLobbyTable({
                   )}
                   {row.privacy}
                 </Badge>
-                <span className="text-sm font-black text-[var(--brass)] tabular-nums">
-                  {row.ping}
-                </span>
+                <span className="text-sm font-black text-(--brass) tabular-nums">{row.ping}</span>
                 <button
                   type="button"
-                  className="grid size-10 place-items-center rounded-md border border-[var(--panel-border-soft)] bg-white/[0.035] text-[var(--muted-strong)] hover:bg-white/[0.07]"
+                  className="grid size-10 place-items-center rounded-md border border-(--panel-border-soft) bg-white/3.5 text-(--muted-strong) hover:bg-white/7"
                   aria-label={`${t("join")} ${row.name}`}
                   onClick={() => {
                     if (row.entry.requiresPassword) {
@@ -138,12 +136,12 @@ export default function GameLobbyTable({
               </article>
             ))
           ) : (
-            <div className="border-b border-[var(--panel-border-soft)] px-4 py-6 text-sm font-bold text-[var(--muted-text)]">
+            <div className="border-b border-(--panel-border-soft) px-4 py-6 text-sm font-bold text-(--muted-text)">
               {t("empty")}
             </div>
           )}
-          <div className="flex items-center gap-2 border-t border-[var(--panel-border-soft)] px-4 py-3 text-sm font-bold text-[var(--muted-text)]">
-            <Radio aria-hidden="true" className="size-4 text-[var(--mint)]" />
+          <div className="flex items-center gap-2 border-t border-(--panel-border-soft) px-4 py-3 text-sm font-bold text-(--muted-text)">
+            <Radio aria-hidden="true" className="size-4 text-(--mint)" />
             Waiting rooms from the match service.
           </div>
         </div>
@@ -152,18 +150,18 @@ export default function GameLobbyTable({
       {passwordPrompt && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4 backdrop-blur-sm">
           <div
-            className="w-full max-w-sm overflow-hidden rounded-xl border border-[var(--panel-border-soft)] bg-[#0e0e11] shadow-2xl"
+            className="w-full max-w-sm overflow-hidden rounded-xl border border-(--panel-border-soft) bg-[#0e0e11] shadow-2xl"
             role="dialog"
             aria-modal="true"
           >
-            <div className="flex items-center justify-between border-b border-[var(--panel-border-soft)] bg-white/[0.02] px-5 py-4">
+            <div className="flex items-center justify-between border-b border-(--panel-border-soft) bg-white/2 px-5 py-4">
               <h3 className="flex items-center gap-2 font-black text-white">
-                <LockKeyhole aria-hidden="true" className="size-4 text-[var(--brass)]" />
+                <LockKeyhole aria-hidden="true" className="size-4 text-(--brass)" />
                 Private Room
               </h3>
               <button
                 onClick={() => setPasswordPrompt(null)}
-                className="rounded-md text-[var(--muted-text)] transition-colors hover:text-white"
+                className="rounded-md text-(--muted-text) transition-colors hover:text-white"
                 aria-label="Close"
                 disabled={Boolean(joiningMatchId)}
               >
@@ -180,12 +178,16 @@ export default function GameLobbyTable({
               }}
               className="p-5"
             >
-              <p className="mb-4 text-sm leading-relaxed text-[var(--muted-text)]">
-                Enter the password to join <strong className="text-white">{passwordPrompt.name || passwordPrompt.player}</strong>'s room.
+              <p className="mb-4 text-sm leading-relaxed text-(--muted-text)">
+                Enter the password to join{" "}
+                <strong className="text-white">
+                  {passwordPrompt.name || passwordPrompt.player}
+                </strong>
+                's room.
               </p>
 
               {error ? (
-                <p className="mb-4 rounded bg-[var(--danger)]/10 p-2 text-sm font-bold text-[var(--danger)]">
+                <p className="mb-4 rounded bg-(--danger)/10 p-2 text-sm font-bold text-(--danger)">
                   {error}
                 </p>
               ) : null}
@@ -203,7 +205,7 @@ export default function GameLobbyTable({
                 <button
                   type="button"
                   onClick={() => setPasswordPrompt(null)}
-                  className="rounded-md px-4 py-2 text-sm font-bold text-[var(--muted-text)] transition-colors hover:bg-white/[0.05] hover:text-white"
+                  className="rounded-md px-4 py-2 text-sm font-bold text-(--muted-text) transition-colors hover:bg-white/5 hover:text-white"
                   disabled={Boolean(joiningMatchId)}
                 >
                   Cancel
@@ -211,7 +213,7 @@ export default function GameLobbyTable({
                 <button
                   type="submit"
                   disabled={!passwordInput || Boolean(joiningMatchId)}
-                  className="min-h-10 rounded-md border border-[var(--mint)]/35 bg-[var(--mint-soft)] px-5 text-sm font-black text-[var(--mint)] transition-colors hover:bg-[var(--mint)]/20 disabled:opacity-50"
+                  className="min-h-10 rounded-md border border-(--mint)/35 bg-(--mint-soft) px-5 text-sm font-black text-(--mint) transition-colors hover:bg-(--mint)/20 disabled:opacity-50"
                 >
                   {joiningMatchId ? "Joining..." : "Join Game"}
                 </button>

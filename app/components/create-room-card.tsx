@@ -35,10 +35,10 @@ export default function CreateRoomCard({
             <p className="eyebrow m-0 mb-2">Challenge</p>
             <h2 className="m-0 font-serif text-3xl leading-none font-bold">{t("title")}</h2>
           </div>
-          <Swords aria-hidden="true" className="size-6 text-[var(--brass)]" />
+          <Swords aria-hidden="true" className="size-6 text-(--brass)" />
         </div>
 
-        <p className="m-0 mb-3 text-sm leading-6 text-[var(--muted-text)]">{t("description")}</p>
+        <p className="m-0 mb-3 text-sm leading-6 text-(--muted-text)">{t("description")}</p>
         <form
           className="flex flex-1 flex-col gap-4"
           onSubmit={(event) => {
@@ -73,9 +73,7 @@ export default function CreateRoomCard({
             <div className="field-shell">
               <LockKeyhole
                 aria-hidden="true"
-                className={`size-4 ${
-                  isPrivate ? "text-[var(--brass)]" : "text-[var(--muted-text)]"
-                }`}
+                className={`size-4 ${isPrivate ? "text-(--brass)" : "text-(--muted-text)"}`}
               />
               <input
                 id="room-password"
@@ -95,8 +93,8 @@ export default function CreateRoomCard({
               onClick={() => setIsPrivate(false)}
               className={`min-h-11 rounded-md border px-3 text-sm font-black transition-colors ${
                 !isPrivate
-                  ? "border-[var(--mint)]/35 bg-[var(--mint-soft)] text-[var(--mint)]"
-                  : "border-[var(--panel-border-soft)] bg-white/[0.035] text-[var(--muted-strong)] hover:bg-white/[0.05]"
+                  ? "border-(--mint)/35 bg-(--mint-soft) text-(--mint)"
+                  : "border-(--panel-border-soft) bg-white/3.5 text-(--muted-strong) hover:bg-white/5"
               }`}
             >
               <Eye aria-hidden="true" className="mr-2 inline size-4" />
@@ -107,8 +105,8 @@ export default function CreateRoomCard({
               onClick={() => setIsPrivate(true)}
               className={`min-h-11 rounded-md border px-3 text-sm font-black transition-colors ${
                 isPrivate
-                  ? "border-[var(--brass)]/35 bg-[var(--brass)]/10 text-[var(--brass)]"
-                  : "border-[var(--panel-border-soft)] bg-white/[0.035] text-[var(--muted-strong)] hover:bg-white/[0.05]"
+                  ? "border-(--brass)/35 bg-(--brass)/10 text-(--brass)"
+                  : "border-(--panel-border-soft) bg-white/3.5 text-(--muted-strong) hover:bg-white/5"
               }`}
             >
               <EyeOff aria-hidden="true" className="mr-2 inline size-4" />
@@ -136,7 +134,7 @@ export default function CreateRoomCard({
             </button>
 
             {error ? (
-              <p role="alert" className="m-0 text-sm font-bold text-[var(--danger)]">
+              <p role="alert" className="m-0 text-sm font-bold text-(--danger)">
                 {error}
               </p>
             ) : null}
