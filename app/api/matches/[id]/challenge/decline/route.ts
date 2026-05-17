@@ -1,11 +1,26 @@
+import { verifyPassword } from "better-auth/crypto";
+
 import { MatchResult, MatchStatus, MatchVisibility } from "@/../generated/prisma/enums";
 import { getCurrentSession } from "@/lib/auth";
+import { publishChallengeDeclined } from "@/lib/matches/realtime-publisher";
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
 
 function getErrorMessage(error: unknown): string {
   return error instanceof Error ? error.message : "Unknown error";
+}
+
+async function verifyChallengePassword(hash: string | null, password: string) {
+  if (!hash || !password) {
+    return false;
+  }
+
+  try {
+    return await verifyPassword({ hash, password });
+  } catch {
+    return false;
+  }
 }
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -17,8 +32,12 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
 
   try {
     const { id: matchId } = await params;
-    const body = await request.json().catch(() => ({}));
-    const password = typeof body.password === "string" ? body.password : null;
+    const bodyValue = await request.json().catch(() => ({}));
+    const body =
+      typeof bodyValue === "object" && bodyValue !== null && !Array.isArray(bodyValue)
+        ? bodyValue
+        : {};
+    const password = typeof body.password === "string" ? body.password : "";
 
     if (!password) {
       return Response.json({ error: "missing_password" }, { status: 400 });
@@ -27,7 +46,15 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     const match = await prisma.match.findUnique({
       where: { id: matchId },
       include: {
-        participants: true,
+        participants: {
+          include: {
+            user: {
+              select: {
+                username: true,
+              },
+            },
+          },
+        },
       },
     });
 
@@ -38,11 +65,14 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     if (
       match.status !== MatchStatus.WAITING ||
       match.visibility !== MatchVisibility.PRIVATE ||
-      match.password !== password
+      !(await verifyChallengePassword(match.password, password))
     ) {
       return Response.json({ error: "challenge_not_cancellable" }, { status: 409 });
     }
 
+    const creator = match.participants.find(
+      (participant) => participant.userId === match.createdByUserId,
+    );
     const now = new Date();
 
     await prisma.$transaction(async (tx) => {
@@ -68,6 +98,25 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
         },
       });
     });
+
+    if (creator?.user?.username) {
+      try {
+        const timeoutMs = Number(process.env["REALTIME_PUBLISH_TIMEOUT_MS"] ?? 2000);
+        await publishChallengeDeclined(
+          creator.user.username,
+          {
+            matchId,
+            senderUsername: context.user.username,
+          },
+          timeoutMs,
+        );
+      } catch (publishError) {
+        console.error(
+          `[matches/${matchId}] challenge decline publish failed:`,
+          getErrorMessage(publishError),
+        );
+      }
+    }
 
     return Response.json({ matchId, status: MatchStatus.CANCELLED });
   } catch (error) {

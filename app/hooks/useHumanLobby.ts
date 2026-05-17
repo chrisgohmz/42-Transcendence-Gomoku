@@ -38,6 +38,12 @@ type ErrorResponse = {
   error?: string;
 };
 
+export type CreateRoomOptions = {
+  name?: string;
+  password?: string;
+  visibility?: "PUBLIC" | "PRIVATE";
+};
+
 function getErrorMessage(payload: ErrorResponse | null, fallback: string) {
   return payload?.message ?? payload?.detail ?? payload?.error ?? fallback;
 }
@@ -135,11 +141,12 @@ export function useHumanLobby({
   }, [loadMatches]);
 
   const createRoom = useCallback(
-    async (options?: { name?: string; password?: string }) => {
+    async (options?: CreateRoomOptions) => {
       setIsCreating(true);
       setCreateError(null);
 
       try {
+        const visibility = options?.visibility ?? "PUBLIC";
         const response = await fetch("/api/matches", {
           method: "POST",
           headers: {
@@ -147,7 +154,10 @@ export function useHumanLobby({
           },
           body: JSON.stringify({
             name: options?.name,
-            password: options?.password,
+            ...(visibility === "PRIVATE" && options?.password
+              ? { password: options.password }
+              : {}),
+            visibility,
           }),
         });
 
@@ -187,7 +197,7 @@ export function useHumanLobby({
         setIsCreating(false);
       }
     },
-    [createT, humanT, onSessionReady],
+    [createT, defaultPlayerName, humanT, onSessionReady],
   );
 
   const joinMatch = useCallback(

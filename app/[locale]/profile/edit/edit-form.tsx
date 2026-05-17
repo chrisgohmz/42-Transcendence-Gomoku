@@ -57,7 +57,7 @@ export default function EditProfileForm({
 
   return (
     <div className="grid gap-5">
-      <Surface eyebrow="Basic Information" icon={UserRound} title={t("profileDetails")}>
+      <Surface eyebrow={t("basicInformation")} icon={UserRound} title={t("profileDetails")}>
         {!isEditingDisplayName ? (
           <div className="grid gap-4">
             <div className="flex items-center justify-between rounded-md border border-[var(--panel-border-soft)] bg-white/[0.035] p-4">
@@ -82,7 +82,7 @@ export default function EditProfileForm({
                 className="h-10 px-4 font-black"
               >
                 <Pencil aria-hidden="true" className="mr-2 size-4" />
-                Edit
+                {t("edit")}
               </Button>
             </div>
 
@@ -159,12 +159,14 @@ export default function EditProfileForm({
         )}
       </Surface>
 
-      <Surface eyebrow="Security" icon={LockKeyhole} title={t("changePassword")}>
+      <Surface eyebrow={t("security")} icon={LockKeyhole} title={t("changePassword")}>
         {!isEditingPassword ? (
           <div className="grid gap-4">
             <div className="flex items-center justify-between rounded-md border border-[var(--panel-border-soft)] bg-white/[0.035] p-4">
               <div className="grid gap-1">
-                <span className="text-sm font-bold text-[var(--muted-text)]">Password</span>
+                <span className="text-sm font-bold text-[var(--muted-text)]">
+                  {t("passwordReadonly")}
+                </span>
                 <span className="mt-1 font-medium tracking-[0.2em] text-[var(--muted-text)]">
                   ••••••••
                 </span>
@@ -176,7 +178,7 @@ export default function EditProfileForm({
                 className="h-10 px-4 font-black"
               >
                 <Pencil aria-hidden="true" className="mr-2 size-4" />
-                Change
+                {t("change")}
               </Button>
             </div>
 

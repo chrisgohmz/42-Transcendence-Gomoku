@@ -9,13 +9,17 @@ import { Badge, Surface } from "@/components/gomoku-ui";
 type CreateRoomCardProps = {
   error?: string | null;
   isCreating?: boolean;
-  onCreateRoomAction?: (data: { name?: string; password?: string }) => void;
+  onCreateRoomAction?: (data: {
+    name?: string;
+    password?: string;
+    visibility: "PUBLIC" | "PRIVATE";
+  }) => void;
   submitLabel?: string;
 };
 
 function getFormString(formData: FormData, name: string) {
   const value = formData.get(name);
-  return typeof value === "string" && value ? value : undefined;
+  return typeof value === "string" && value.trim() ? value.trim() : undefined;
 }
 
 export default function CreateRoomCard({
@@ -32,7 +36,7 @@ export default function CreateRoomCard({
       <div className="flex h-full flex-col">
         <div className="mb-2 flex items-start justify-between gap-4">
           <div>
-            <p className="eyebrow m-0 mb-2">Challenge</p>
+            <p className="eyebrow m-0 mb-2">{t("eyebrow")}</p>
             <h2 className="m-0 font-serif text-3xl leading-none font-bold">{t("title")}</h2>
           </div>
           <Swords aria-hidden="true" className="size-6 text-(--brass)" />
@@ -49,19 +53,25 @@ export default function CreateRoomCard({
 
             const formData = new FormData(event.currentTarget);
             const name = getFormString(formData, "roomName");
-            const password = isPrivate ? getFormString(formData, "roomPassword") : undefined;
+            const visibility = isPrivate ? "PRIVATE" : "PUBLIC";
+            const password =
+              visibility === "PRIVATE" ? getFormString(formData, "roomPassword") : undefined;
 
-            onCreateRoomAction?.({ name, password });
+            if (visibility === "PRIVATE" && !password) {
+              return;
+            }
+
+            onCreateRoomAction?.({ name, password, visibility });
           }}
         >
           <div className="field">
             <label htmlFor="room-name" className="field-label">
-              Room name
+              {t("roomNameLabel")}
             </label>
             <input
               id="room-name"
               name="roomName"
-              placeholder="Quiet Fuseki"
+              placeholder={t("roomNamePlaceholder")}
               className="text-input"
             />
           </div>
@@ -83,6 +93,7 @@ export default function CreateRoomCard({
                 placeholder={t("optionalPassword")}
                 className="text-input field-input disabled:cursor-not-allowed"
                 disabled={!isPrivate}
+                required={isPrivate}
               />
             </div>
           </div>
@@ -98,7 +109,7 @@ export default function CreateRoomCard({
               }`}
             >
               <Eye aria-hidden="true" className="mr-2 inline size-4" />
-              Public
+              {t("publicRoom")}
             </button>
             <button
               type="button"
@@ -110,16 +121,16 @@ export default function CreateRoomCard({
               }`}
             >
               <EyeOff aria-hidden="true" className="mr-2 inline size-4" />
-              Private
+              {t("privateRoom")}
             </button>
           </div>
 
           <div className="grid grid-cols-2 gap-2">
             <Badge tone="neutral">
               <Timer aria-hidden="true" className="size-3.5" />
-              10m timer
+              {t("timerLabel")}
             </Badge>
-            <Badge tone="neutral">15 x 15 board</Badge>
+            <Badge tone="neutral">{t("boardSizeLabel")}</Badge>
           </div>
 
           <div className="mt-auto flex flex-col gap-3 pt-2">

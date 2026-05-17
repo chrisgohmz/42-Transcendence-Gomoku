@@ -13,7 +13,7 @@ test("human lobby creates a room and stores the returned session", async ({ page
 
       if (request.method() === "POST") {
         createRequests += 1;
-        expect(request.postDataJSON()).toEqual({});
+        expect(request.postDataJSON()).toEqual({ visibility: "PUBLIC" });
         await route.fulfill({
           body: JSON.stringify({
             matchId: "created-match",
@@ -66,6 +66,65 @@ test("human lobby creates a room and stores the returned session", async ({ page
   await expect(page).toHaveURL(/\/en\/human$/);
   await expect(page.getByTestId("human-match-room")).toBeVisible();
   await expect(page.getByTestId("human-match-board")).toBeVisible();
+});
+
+test("human lobby creates a private room with its password and visibility", async ({ page }) => {
+  let createRequests = 0;
+
+  await page.route(
+    (url) => url.pathname === "/api/matches",
+    async (route) => {
+      const request = route.request();
+
+      if (request.method() === "POST") {
+        createRequests += 1;
+        expect(request.postDataJSON()).toEqual({
+          name: "Study Room",
+          password: "sente",
+          visibility: "PRIVATE",
+        });
+        await route.fulfill({
+          body: JSON.stringify({
+            matchId: "private-match",
+            participantId: "creator-private",
+            role: "PLAYER",
+            seat: "BLACK",
+          }),
+          contentType: "application/json",
+          status: 200,
+        });
+        return;
+      }
+
+      await route.fulfill({
+        body: JSON.stringify([]),
+        contentType: "application/json",
+        status: 200,
+      });
+    },
+  );
+  await page.route(
+    (url) => url.pathname === "/api/matches/private-match/state",
+    async (route) => {
+      await route.fulfill({
+        body: JSON.stringify(
+          matchStateResponse("private-match", "creator-private", "BLACK", "WAITING"),
+        ),
+        contentType: "application/json",
+        status: 200,
+      });
+    },
+  );
+
+  await page.goto("/en/human", { waitUntil: "domcontentloaded" });
+  await page.getByRole("button", { name: "Private" }).click();
+  await page.getByLabel("Room name").fill("Study Room");
+  await page.getByLabel("Password").fill("sente");
+  await page.getByRole("button", { name: "Create Room" }).click();
+
+  await expect.poll(() => createRequests).toBe(1);
+  await expect.poll(async () => (await readStoredSession(page))?.matchId).toBe("private-match");
+  await expect(page.getByTestId("human-match-room")).toBeVisible();
 });
 
 test("human lobby joins a waiting room and stores the returned session", async ({ page }) => {

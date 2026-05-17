@@ -58,7 +58,7 @@ const publicRouteCases = [
   },
   {
     path: "/human",
-    heading: () => "Play Online",
+    heading: (messages: AppMessages) => messages.human.page.lobby.title,
     visibleText: (messages: AppMessages) => messages.human.createRoom.title,
   },
 ] as const;

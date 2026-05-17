@@ -116,9 +116,9 @@ export default function HumanLobbyClient() {
       const response = await fetch("/api/matches/history");
       if (!response.ok) {
         if (response.status === 401) {
-          setHistoryError("Please sign in to view your match history.");
+          setHistoryError(pageT("lobby.history.signInRequired"));
         } else {
-          setHistoryError("Failed to load history.");
+          setHistoryError(pageT("lobby.history.failed"));
         }
         return;
       }
@@ -126,11 +126,11 @@ export default function HumanLobbyClient() {
       setHistoryMatches(data.matches || []);
       setHistoryPage(1);
     } catch {
-      setHistoryError("Network error loading history.");
+      setHistoryError(pageT("lobby.history.networkError"));
     } finally {
       setIsLoadingHistory(false);
     }
-  }, []);
+  }, [pageT]);
 
   useEffect(() => {
     if (activeTab === "history") {
@@ -241,8 +241,8 @@ export default function HumanLobbyClient() {
       <PageHeader
         eyebrow={pageT("lobby.eyebrow")}
         icon={Swords}
-        title="Play Online"
-        lede="Queue into ranked matchmaking or create a private room with friends."
+        title={pageT("lobby.title")}
+        lede={pageT("lobby.lede")}
       />
 
       {/* ===================================================== */}
@@ -267,18 +267,17 @@ export default function HumanLobbyClient() {
             <div className="px-8 pt-8">
               <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-(--panel-border-soft) bg-(--panel) px-3 py-1 text-xs font-black tracking-wide text-(--mint) uppercase">
                 <Swords className="size-3.5" />
-                Ranked Matchmaking
+                {pageT("lobby.matchmakingEyebrow")}
               </div>
 
               {status === "idle" ? (
                 <>
                   <h2 className="mb-3 text-4xl leading-none font-black tracking-tight">
-                    Find Your Next Opponent
+                    {pageT("lobby.findTitle")}
                   </h2>
 
                   <p className="max-w-xl text-base text-(--muted-text)">
-                    Jump into competitive online matches and get paired with players near your skill
-                    level.
+                    {pageT("lobby.findLede")}
                   </p>
 
                   {queueError ? (
@@ -292,20 +291,20 @@ export default function HumanLobbyClient() {
                       onClick={joinQueue}
                     >
                       <Search className="mr-2 size-5" />
-                      Find Match
+                      {pageT("lobby.findAction")}
                     </button>
                   </div>
                 </>
               ) : (
                 <>
                   <h2 className="mb-3 text-4xl leading-none font-black tracking-tight">
-                    Searching For Match
+                    {pageT("lobby.searchingTitle")}
                   </h2>
 
                   <p className="max-w-xl text-base text-(--muted-text)">
                     {position !== null
-                      ? `You are currently position ${position} in queue.`
-                      : "Looking for an available opponent..."}
+                      ? pageT("lobby.queuePosition", { position })
+                      : pageT("lobby.lookingForOpponent")}
                   </p>
 
                   <div className="mt-8 flex items-center gap-4">
@@ -319,7 +318,7 @@ export default function HumanLobbyClient() {
                       onClick={leaveQueue}
                     >
                       <X className="mr-2 size-4" />
-                      Cancel Search
+                      {pageT("lobby.cancelSearch")}
                     </button>
                   </div>
                 </>
@@ -328,11 +327,23 @@ export default function HumanLobbyClient() {
 
             {/* LIVE STATS */}
             <div className="mt-8 grid gap-3 border-t border-(--panel-border-soft) p-5 sm:grid-cols-3">
-              <MetricCard label="Players Online" value={onlineUsers.length} tone="mint" />
+              <MetricCard
+                label={pageT("lobby.stats.playersOnline")}
+                value={onlineUsers.length}
+                tone="mint"
+              />
 
-              <MetricCard label="Searching" value={globalStats.searching} tone="brass" />
+              <MetricCard
+                label={pageT("lobby.stats.searching")}
+                value={globalStats.searching}
+                tone="brass"
+              />
 
-              <MetricCard label="Live Games" value={globalStats.liveGames} tone="plain" />
+              <MetricCard
+                label={pageT("lobby.stats.liveGames")}
+                value={globalStats.liveGames}
+                tone="plain"
+              />
             </div>
           </div>
         </Surface>
@@ -370,7 +381,7 @@ export default function HumanLobbyClient() {
                   : "text-(--muted-text) hover:text-white"
               }`}
             >
-              Lobby
+              {pageT("lobby.tabs.lobby")}
             </button>
             <button
               type="button"
@@ -381,7 +392,7 @@ export default function HumanLobbyClient() {
                   : "text-(--muted-text) hover:text-white"
               }`}
             >
-              History
+              {pageT("lobby.tabs.history")}
             </button>
 
             {/* REFRESH */}
@@ -425,16 +436,16 @@ export default function HumanLobbyClient() {
             <div className="overflow-x-auto rounded-md border border-(--panel-border-soft) bg-white/2.5">
               <div className="min-w-[600px]">
                 <div className="grid grid-cols-[100px_minmax(150px,1fr)_80px_100px_120px] gap-3 border-b border-(--panel-border-soft) bg-black/20 px-4 py-3 text-xs font-black tracking-[0.12em] text-(--muted-text) uppercase">
-                  <span>Result</span>
-                  <span>Opponent</span>
-                  <span>Moves</span>
-                  <span>Board</span>
-                  <span>Date</span>
+                  <span>{pageT("lobby.history.headers.result")}</span>
+                  <span>{pageT("lobby.history.headers.opponent")}</span>
+                  <span>{pageT("lobby.history.headers.moves")}</span>
+                  <span>{pageT("lobby.history.headers.board")}</span>
+                  <span>{pageT("lobby.history.headers.date")}</span>
                 </div>
 
                 {isLoadingHistory ? (
                   <div className="border-b border-(--panel-border-soft) px-4 py-6 text-sm font-bold text-(--muted-text)">
-                    Loading history...
+                    {pageT("lobby.history.loading")}
                   </div>
                 ) : historyError ? (
                   <div className="border-b border-(--panel-border-soft) px-4 py-6 text-sm font-bold text-(--danger)">
@@ -447,7 +458,8 @@ export default function HumanLobbyClient() {
                         (p) =>
                           p.role === "PLAYER" && p.participantId !== match.currentUserParticipantId,
                       );
-                      const opponentName = opponentParticipant?.displayName || "Unknown Player";
+                      const opponentName =
+                        opponentParticipant?.displayName || pageT("lobby.history.unknownPlayer");
 
                       const isWin = match.result === "WIN";
                       const isLoss = match.result === "LOSS";
@@ -455,16 +467,16 @@ export default function HumanLobbyClient() {
 
                       const resultTone = isWin ? "mint" : isLoss ? "red" : "neutral";
                       const resultText = isWin
-                        ? "Victory"
+                        ? pageT("lobby.history.results.win")
                         : isLoss
-                          ? "Defeat"
+                          ? pageT("lobby.history.results.loss")
                           : isDraw
-                            ? "Draw"
-                            : "Cancelled";
+                            ? pageT("lobby.history.results.draw")
+                            : pageT("lobby.history.results.cancelled");
 
                       const dateText = match.finishedAt
                         ? new Date(match.finishedAt).toLocaleDateString()
-                        : "Unknown";
+                        : pageT("lobby.history.unknownDate");
 
                       return (
                         <article
@@ -489,7 +501,7 @@ export default function HumanLobbyClient() {
                     {totalPages > 1 && (
                       <div className="flex items-center justify-between border-t border-(--panel-border-soft) px-4 py-3 text-sm">
                         <span className="font-bold text-(--muted-text)">
-                          Page {historyPage} of {totalPages}
+                          {pageT("lobby.history.pagination", { page: historyPage, totalPages })}
                         </span>
                         <div className="flex gap-2">
                           <button
@@ -498,7 +510,7 @@ export default function HumanLobbyClient() {
                             disabled={historyPage === 1}
                             className="rounded-md border border-(--panel-border-soft) bg-white/3.5 px-4 py-1.5 font-bold text-(--muted-strong) transition-colors hover:bg-white/7 disabled:opacity-50"
                           >
-                            Previous
+                            {pageT("lobby.history.previous")}
                           </button>
                           <button
                             type="button"
@@ -506,7 +518,7 @@ export default function HumanLobbyClient() {
                             disabled={historyPage === totalPages}
                             className="rounded-md border border-(--panel-border-soft) bg-white/3.5 px-4 py-1.5 font-bold text-(--muted-strong) transition-colors hover:bg-white/7 disabled:opacity-50"
                           >
-                            Next
+                            {pageT("lobby.history.next")}
                           </button>
                         </div>
                       </div>
@@ -514,7 +526,7 @@ export default function HumanLobbyClient() {
                   </>
                 ) : (
                   <div className="border-b border-(--panel-border-soft) px-4 py-6 text-sm font-bold text-(--muted-text)">
-                    No past matches found. Play a game to see your history here!
+                    {pageT("lobby.history.empty")}
                   </div>
                 )}
               </div>

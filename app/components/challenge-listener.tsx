@@ -1,6 +1,7 @@
 "use client";
 
 import { Swords, Loader2 } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
@@ -36,6 +37,7 @@ function getStoredRole(role: string | undefined): StoredMatchSession["role"] {
 export function ChallengeListener() {
   const { socket } = usePresence();
   const router = useRouter();
+  const t = useTranslations("human.challenge");
 
   const [incoming, setIncoming] = useState<IncomingChallenge | null>(null);
   const [isJoining, setIsJoining] = useState(false);
@@ -85,7 +87,7 @@ export function ChallengeListener() {
         }
 
         const storedSession: StoredMatchSession = {
-          displayName: session.displayName ?? "Player",
+          displayName: session.displayName ?? t("defaultDisplayName"),
           matchId: session.matchId,
           participantId: session.participantId,
           role: getStoredRole(session.role),
@@ -107,16 +109,12 @@ export function ChallengeListener() {
   };
 
   const handleDecline = async () => {
-    if (!incoming || !socket) return;
+    if (!incoming) return;
     await fetch(`/api/matches/${encodeURIComponent(incoming.matchId)}/challenge/decline`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ password: incoming.password }),
     }).catch(() => undefined);
-    socket.emit("challenge:decline", {
-      matchId: incoming.matchId,
-      targetUsername: incoming.senderUsername,
-    });
     setIncoming(null);
   };
 
@@ -126,7 +124,7 @@ export function ChallengeListener() {
       {declinedBy && (
         <div className="animate-in slide-in-from-bottom-5 fade-in fixed right-5 bottom-5 z-50 rounded-lg border border-[var(--danger)]/35 bg-[#0e0e11] px-4 py-3 shadow-2xl">
           <p className="text-sm font-bold text-[var(--danger)]">
-            {declinedBy} declined your challenge.
+            {t("declinedToast", { name: declinedBy })}
           </p>
         </div>
       )}
@@ -142,14 +140,16 @@ export function ChallengeListener() {
             <div className="flex items-center justify-between border-b border-[var(--panel-border-soft)] bg-[var(--mint)]/10 px-5 py-4">
               <h3 className="flex items-center gap-2 font-black text-[var(--mint)]">
                 <Swords aria-hidden="true" className="size-5" />
-                Match Challenge!
+                {t("title")}
               </h3>
             </div>
 
             <div className="p-6 text-center">
               <p className="mb-6 text-base leading-relaxed text-[var(--muted-text)]">
-                <strong className="text-lg text-white">{incoming.senderUsername}</strong> has
-                challenged you to a game of Gomoku.
+                {t.rich("body", {
+                  name: incoming.senderUsername,
+                  strong: (chunks) => <strong className="text-lg text-white">{chunks}</strong>,
+                })}
               </p>
 
               <div className="flex justify-center gap-3">
@@ -159,7 +159,7 @@ export function ChallengeListener() {
                   disabled={isJoining}
                   className="flex-1 rounded-md border border-[var(--danger)]/35 px-4 py-2.5 text-sm font-bold text-[var(--danger)] transition-colors hover:bg-[var(--danger)]/10 disabled:opacity-50"
                 >
-                  Decline
+                  {t("decline")}
                 </button>
                 <button
                   type="button"
@@ -167,7 +167,7 @@ export function ChallengeListener() {
                   disabled={isJoining}
                   className="flex flex-1 items-center justify-center rounded-md border border-[var(--mint)]/35 bg-[var(--mint-soft)] px-4 py-2.5 text-sm font-black text-[var(--mint)] transition-colors hover:bg-[var(--mint)]/20 disabled:opacity-50"
                 >
-                  {isJoining ? <Loader2 className="size-4 animate-spin" /> : "Accept Game"}
+                  {isJoining ? <Loader2 className="size-4 animate-spin" /> : t("accept")}
                 </button>
               </div>
             </div>

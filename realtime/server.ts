@@ -8,10 +8,11 @@ import { Server } from "socket.io";
 
 import { prisma } from "@/lib/prisma";
 
-import { readRealtimeInternalSecret } from "../shared/realtime-internal";
+import { challengeDeclinedPath, readRealtimeInternalSecret } from "../shared/realtime-internal";
 import { registerMatchSubscription } from "./handlers/match-subscription";
 import { registerMatchmakingQueue } from "./handlers/matchmaking-queue";
 import { resolveFriendshipNotificationTarget } from "./lib/friendship-notifications";
+import { handleInternalChallengeDeclined } from "./lib/internal-challenge-declined";
 import { handleInternalFriendshipUpdate } from "./lib/internal-friendship-update";
 import { handleInternalGameUpdate } from "./lib/internal-game-update";
 import { handleInternalQueueMatched } from "./lib/internal-queue-matched";
@@ -153,16 +154,6 @@ io.on("connection", (socket) => {
     },
   );
 
-  socket.on("challenge:decline", (payload: { matchId?: string; targetUsername: string }) => {
-    const senderUsername = socket.data.user?.username;
-    if (!senderUsername) return;
-
-    io.to(`user:${payload.targetUsername}`).emit("challenge:declined", {
-      matchId: payload.matchId,
-      senderUsername,
-    });
-  });
-
   socket.on("disconnect", (reason) => {
     console.log(`Socket.IO client disconnected: ${socket.id} (${reason})`);
 
@@ -199,6 +190,10 @@ Bun.serve({
 
     if (url.pathname === "/internal/queue-matched" && request.method === "POST") {
       return handleInternalQueueMatched(request, io, realtimeInternalSecret);
+    }
+
+    if (url.pathname === challengeDeclinedPath && request.method === "POST") {
+      return handleInternalChallengeDeclined(request, io, realtimeInternalSecret);
     }
 
     if (url.pathname === socketPath) {

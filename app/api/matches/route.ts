@@ -1,15 +1,20 @@
-import { Role, MatchStatus, Seat, MatchVisibility } from "../../../generated/prisma/enums";
-import { getCurrentSession } from "../../lib/auth";
-import { buildGameUpdatePayload } from "../../lib/matches/game-update";
-import { cleanupStaleMatchSessions } from "../../lib/matches/matchmaking";
-import { standardGomokuBoardSize } from "../../lib/matches/move-rules";
-import { publishGameUpdate } from "../../lib/matches/realtime-publisher";
-import { prisma } from "../../lib/prisma";
+import { hashPassword } from "better-auth/crypto";
+
+import { Role, MatchStatus, Seat, MatchVisibility } from "@/../generated/prisma/enums";
+import { getCurrentSession } from "@/lib/auth";
+import { buildGameUpdatePayload } from "@/lib/matches/game-update";
+import { standardGomokuBoardSize } from "@/lib/matches/move-rules";
+import { publishGameUpdate } from "@/lib/matches/realtime-publisher";
+import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
 
 function getErrorMessage(error: unknown): string {
   return error instanceof Error ? error.message : "Unknown error";
+}
+
+function getOptionalTrimmedString(value: unknown) {
+  return typeof value === "string" && value.trim().length > 0 ? value.trim() : null;
 }
 
 export async function POST(request: Request) {
@@ -26,15 +31,31 @@ export async function POST(request: Request) {
   }
 
   try {
-    const body = await request.json().catch(() => ({}));
-    const name =
-      typeof body.name === "string" && body.name.trim().length > 0 ? body.name.trim() : null;
-    const password =
-      typeof body.password === "string" && body.password.length > 0 ? body.password : null;
+    const bodyValue = await request.json().catch(() => ({}));
+    const body =
+      typeof bodyValue === "object" && bodyValue !== null && !Array.isArray(bodyValue)
+        ? bodyValue
+        : {};
+    const name = getOptionalTrimmedString(body.name);
+    const rawPassword = getOptionalTrimmedString(body.password);
     const visibility =
       body.visibility === MatchVisibility.PRIVATE
         ? MatchVisibility.PRIVATE
         : MatchVisibility.PUBLIC;
+    const password =
+      visibility === MatchVisibility.PRIVATE && rawPassword
+        ? await hashPassword(rawPassword)
+        : null;
+
+    if (visibility === MatchVisibility.PRIVATE && !rawPassword) {
+      return Response.json(
+        {
+          error: "private_room_password_required",
+          message: "Private rooms require a password.",
+        },
+        { status: 400 },
+      );
+    }
 
     const match = await prisma.match.create({
       data: {
@@ -100,6 +121,8 @@ export async function POST(request: Request) {
 }
 
 export async function GET() {
+  const { cleanupStaleMatchSessions } = await import("@/lib/matches/matchmaking");
+
   await cleanupStaleMatchSessions();
 
   const matches = await prisma.match.findMany({

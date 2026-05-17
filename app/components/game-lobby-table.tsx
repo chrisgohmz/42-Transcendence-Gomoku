@@ -103,8 +103,8 @@ export default function GameLobbyTable({
                   {row.boardSize} x {row.boardSize}
                 </span>
                 <span className="font-black tabular-nums">{row.players}</span>
-                <Badge tone={row.privacy === "Public" ? "mint" : "neutral"}>
-                  {row.privacy === "Public" ? (
+                <Badge tone={row.isPublic ? "mint" : "neutral"}>
+                  {row.isPublic ? (
                     <UnlockKeyhole aria-hidden="true" className="size-3.5" />
                   ) : (
                     <LockKeyhole aria-hidden="true" className="size-3.5" />
@@ -115,7 +115,7 @@ export default function GameLobbyTable({
                 <button
                   type="button"
                   className="grid size-10 place-items-center rounded-md border border-(--panel-border-soft) bg-white/3.5 text-(--muted-strong) hover:bg-white/7"
-                  aria-label={`${t("join")} ${row.name}`}
+                  aria-label={t("joinAria", { name: row.name })}
                   onClick={() => {
                     if (row.entry.requiresPassword) {
                       setPasswordPrompt(row.entry);
@@ -138,7 +138,7 @@ export default function GameLobbyTable({
           )}
           <div className="flex items-center gap-2 border-t border-(--panel-border-soft) px-4 py-3 text-sm font-bold text-(--muted-text)">
             <Radio aria-hidden="true" className="size-4 text-(--mint)" />
-            Waiting rooms from the match service.
+            {t("footer")}
           </div>
         </div>
       </div>
@@ -153,12 +153,12 @@ export default function GameLobbyTable({
             <div className="flex items-center justify-between border-b border-(--panel-border-soft) bg-white/2 px-5 py-4">
               <h3 className="flex items-center gap-2 font-black text-white">
                 <LockKeyhole aria-hidden="true" className="size-4 text-(--brass)" />
-                Private Room
+                {t("privateRoomTitle")}
               </h3>
               <button
                 onClick={() => setPasswordPrompt(null)}
                 className="rounded-md text-(--muted-text) transition-colors hover:text-white"
-                aria-label="Close"
+                aria-label={t("close")}
                 disabled={Boolean(joiningMatchId)}
               >
                 <X className="size-5" />
@@ -175,11 +175,10 @@ export default function GameLobbyTable({
               className="p-5"
             >
               <p className="mb-4 text-sm leading-relaxed text-(--muted-text)">
-                Enter the password to join{" "}
-                <strong className="text-white">
-                  {passwordPrompt.name || passwordPrompt.player}
-                </strong>
-                's room.
+                {t.rich("privateRoomPrompt", {
+                  name: passwordPrompt.name || passwordPrompt.player,
+                  strong: (chunks) => <strong className="text-white">{chunks}</strong>,
+                })}
               </p>
 
               {error ? (
@@ -191,7 +190,7 @@ export default function GameLobbyTable({
               <input
                 type="password"
                 autoFocus
-                placeholder="Room password"
+                placeholder={t("passwordPlaceholder")}
                 value={passwordInput}
                 onChange={(e) => setPasswordInput(e.target.value)}
                 className="text-input mb-6 w-full"
@@ -204,14 +203,14 @@ export default function GameLobbyTable({
                   className="rounded-md px-4 py-2 text-sm font-bold text-(--muted-text) transition-colors hover:bg-white/5 hover:text-white"
                   disabled={Boolean(joiningMatchId)}
                 >
-                  Cancel
+                  {t("cancel")}
                 </button>
                 <button
                   type="submit"
                   disabled={!passwordInput || Boolean(joiningMatchId)}
                   className="min-h-10 rounded-md border border-(--mint)/35 bg-(--mint-soft) px-5 text-sm font-black text-(--mint) transition-colors hover:bg-(--mint)/20 disabled:opacity-50"
                 >
-                  {joiningMatchId ? "Joining..." : "Join Game"}
+                  {joiningMatchId ? t("joining") : t("joinGame")}
                 </button>
               </div>
             </form>

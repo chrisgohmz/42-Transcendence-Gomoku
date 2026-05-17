@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { useCallback, useState } from "react";
 
@@ -24,13 +25,13 @@ function getStoredRole(role: string | undefined): StoredMatchSession["role"] {
   return role === "SPECTATOR" ? "SPECTATOR" : "PLAYER";
 }
 
-function saveChallengeSession(session: ChallengeMatchResponse) {
+function saveChallengeSession(session: ChallengeMatchResponse, defaultDisplayName: string) {
   if (!session.matchId || !session.participantId) {
     return null;
   }
 
   const storedSession: StoredMatchSession = {
-    displayName: session.displayName ?? "Player",
+    displayName: session.displayName ?? defaultDisplayName,
     matchId: session.matchId,
     participantId: session.participantId,
     role: getStoredRole(session.role),
@@ -46,6 +47,8 @@ function saveChallengeSession(session: ChallengeMatchResponse) {
 export function useChallengePlayer() {
   const router = useRouter();
   const { socket } = usePresence();
+  const humanT = useTranslations("human.defaults");
+  const challengeT = useTranslations("human.challenge");
   const [challengingUsername, setChallengingUsername] = useState<string | null>(null);
 
   const challengePlayer = useCallback(
@@ -63,7 +66,7 @@ export function useChallengePlayer() {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            name: `Challenge for ${targetUsername}`,
+            name: challengeT("roomName", { name: targetUsername }),
             password,
             visibility: "PRIVATE",
           }),
@@ -75,7 +78,7 @@ export function useChallengePlayer() {
 
         const session = (await response.json()) as ChallengeMatchResponse;
 
-        const storedSession = saveChallengeSession(session);
+        const storedSession = saveChallengeSession(session, humanT("playerName"));
         if (!storedSession || !session.matchId) {
           return false;
         }
@@ -95,7 +98,7 @@ export function useChallengePlayer() {
         setChallengingUsername(null);
       }
     },
-    [router, socket],
+    [challengeT, humanT, router, socket],
   );
 
   return {

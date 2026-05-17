@@ -1,3 +1,4 @@
+import { verifyPassword } from "better-auth/crypto";
 import { z } from "zod";
 
 import { Prisma } from "@/../generated/prisma/client";
@@ -19,6 +20,18 @@ const joinMatchRequestSchema = z.preprocess(
 
 function getErrorMessage(error: unknown): string {
   return error instanceof Error ? error.message : "Unknown error";
+}
+
+async function verifyMatchPassword(hash: string, password: string | undefined) {
+  if (!password) {
+    return false;
+  }
+
+  try {
+    return await verifyPassword({ hash, password });
+  } catch {
+    return false;
+  }
 }
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -71,7 +84,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       return Response.json({ error: "match_full" }, { status: 409 });
     }
 
-    if (match.password && match.password !== validation.data.password) {
+    if (match.password && !(await verifyMatchPassword(match.password, validation.data.password))) {
       return Response.json(
         { error: "invalid_password", message: "Incorrect password." },
         { status: 401 },

@@ -22,6 +22,7 @@ export default function ProfileActions({
   initialState,
 }: ProfileActionsProps) {
   const t = useTranslations("friends");
+  const profileT = useTranslations("profile.publicPage");
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const { socket } = usePresence();
@@ -140,7 +141,7 @@ export default function ProfileActions({
             ) : (
               <Swords aria-hidden="true" className="h-4 w-4" />
             )}
-            <span>Challenge</span>
+            <span>{profileT("challenge")}</span>
           </button>
 
           <button
