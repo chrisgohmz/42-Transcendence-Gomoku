@@ -47,7 +47,7 @@ test("human lobby creates a room and stores the returned session", async ({ page
   );
 
   await page.goto("/en/human", { waitUntil: "domcontentloaded" });
-  await expect(page.getByRole("heading", { name: /Find a room/i })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /Find Your Next Opponent/i })).toBeVisible();
   await expect.poll(() => listRequests).toBeGreaterThan(0);
 
   await page.getByRole("button", { name: "Create Room" }).click();
