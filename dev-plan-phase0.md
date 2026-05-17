@@ -921,7 +921,7 @@ Slice 11: add result_stats_sync
   - Implement:
     - Do not change the Prisma schema. Use the existing UserGameStats / AchievementDefinition / UserAchievement tables
     - Treat matches with Match.status FINISHED / CANCELLED and populated MatchParticipant.result as eligible for statistics updates
-    - For PLAYER participants with a userId, recalculate or idempotently upsert matchesPlayed / wins / losses / draws / botMatchesPlayed / botWins / streak / lastPlayedAt by ruleType + boardSize
+    - For PLAYER participants with a userId, aggregate terminal MatchParticipant records and compute matchesPlayed / wins / losses / draws / botMatchesPlayed / botWins / streak / lastPlayedAt by ruleType + boardSize, then overwrite UserGameStats (source of truth is MatchParticipant; no delta adds)
     - Define level / progress as pure derived functions from rating, wins, matchesPlayed, and achievement points
     - Upsert lightweight achievement progress such as first win, win streak, and AI win into the existing tables
   - Confirm: a terminal match fixture recalculates stats, and calling the same sync twice does not double-count values
@@ -952,7 +952,7 @@ Slice 13: add profile stats REST API
   - Implement:
     - Read the authenticated user's UserGameStats, UserAchievement, and terminal Match / MatchParticipant records, then return wins / losses / rating / rank / level / progress / recentMatches
     - Include opponent displayName, finishedAt, result, endReason, and moveCount in recentMatches
-    - Calculate rank with the same sort rule as leaderboard, returning null for unranked users
+    - Calculate rank via the shared rank helper in app/lib/leaderboard.ts, returning null for unranked users (defined in Slice 15)
     - Keep the existing GET /api/matches/history for game-record details; make the profile stats API a lightweight summary for profile display
   - Confirm: as a logged-in user, GET /api/profile/stats returns stat cards and the latest 20 recent-match summaries
 
@@ -985,6 +985,7 @@ Slice 15: make leaderboard REST read model use live data
   - Implement:
     - Treat terminal Match / MatchParticipant.result records as the authoritative source for leaderboard, with UserGameStats as the materialized read model maintained by result-sync
     - Preserve the current sort rule: rating desc, wins desc, losses asc
+    - Provide a single rank calculation helper in app/lib/leaderboard.ts and reuse it from Slice 13
     - Explicitly define leaderboard eligibility such as boardSize=15, ruleType=GOMOKU, and bot-only exclusion
     - Return current user rank and top 100 entries over REST
   - Confirm: after adding a terminal match and running stats sync, GET /api/leaderboard changes rank, wins/losses, and winRate to match the DB results
@@ -1015,6 +1016,7 @@ Slice 17: add stats refresh realtime signal
     - realtime/lib/internal-stats-update.test.ts
   - Implement:
     - After stats sync succeeds, app sends an internal stats update to realtime for the affected userId / username
+    - app posts to realtime /internal/stats-update over HTTP using the shared realtime-internal secret header (same internal HTTP pattern as game-update)
     - realtime sends `stats:refresh` through the existing user-room pattern
     - Keep the payload lightweight, such as userId, reason, matchId, and updatedAt; fetch actual data again over REST
   - Confirm: after match termination, the affected user's Socket.IO client receives stats:refresh
@@ -1030,7 +1032,7 @@ Slice 18: connect profile / leaderboard realtime refetch
   - Implement:
     - Refetch GET /api/profile/stats and GET /api/leaderboard when `stats:refresh` arrives
     - Ignore payloads for other users
-    - Add light debouncing for bursts of events
+    - Add 800ms debounce for bursts of events
   - Confirm: after a match ends, wins/losses and rank/progress display on /profile and /leaderboard change without a manual refresh
 ```
 

@@ -921,7 +921,7 @@ Slice 11: result_stats_sync を追加
   - Implement:
     - Prisma schema は変更しない。既存の UserGameStats / AchievementDefinition / UserAchievement を使う
     - Match.status が FINISHED / CANCELLED で、MatchParticipant.result が入った match を統計更新対象にする
-    - userId がある PLAYER だけを対象に、ruleType + boardSize ごとに matchesPlayed / wins / losses / draws / botMatchesPlayed / botWins / streak / lastPlayedAt を再計算または idempotent upsert する
+    - userId がある PLAYER だけを対象に、終局済み MatchParticipant を集計して ruleType + boardSize ごとの matchesPlayed / wins / losses / draws / botMatchesPlayed / botWins / streak / lastPlayedAt を算出し、UserGameStats を上書きする（source of truth は MatchParticipant、差分加算はしない）
     - level / progress は rating、wins、matchesPlayed、achievement points から派生できる純粋関数として定義する
     - 初回勝利・連勝・AI 勝利など軽量な achievement progress を既存テーブルへ upsert する
   - Confirm: fixture の終局 match から統計を再計算し、同じ sync を 2 回呼んでも値が二重加算されない
@@ -952,7 +952,7 @@ Slice 13: profile stats REST API を追加
   - Implement:
     - 認証済みユーザーの UserGameStats、UserAchievement、終局済み Match / MatchParticipant を読み、wins / losses / rating / rank / level / progress / recentMatches を返す
     - recentMatches は opponent displayName、finishedAt、result、endReason、moveCount を含める
-    - rank は leaderboard と同じ sort rule で算出し、未ランクなら null を返す
+    - rank は app/lib/leaderboard.ts の共通 rank 算出関数を使用し、未ランクなら null を返す（Slice 15 で関数を定義）
     - 既存 GET /api/matches/history は棋譜詳細用として残し、profile stats API はプロフィール表示向けの軽量 summary にする
   - Confirm: ログイン済みで GET /api/profile/stats が統計カードと最近の対戦 20 件分の summary を返す
 
@@ -985,6 +985,7 @@ Slice 15: leaderboard REST read model を実データ化
   - Implement:
     - leaderboard の authoritative source は終局済み Match / MatchParticipant.result とし、UserGameStats は result-sync 済みの materialized read model として扱う
     - rating desc、wins desc、losses asc の既存 sort rule を維持する
+    - rank 算出の単一関数を app/lib/leaderboard.ts に用意し、Slice 13 からも利用する
     - boardSize=15、ruleType=GOMOKU、bot-only 対象外など leaderboard 対象条件を明示する
     - 現在ユーザーの rank と entries top 100 を REST で返す
   - Confirm: 終局 match を追加して stats sync 後、GET /api/leaderboard の順位・勝敗・winRate が DB 結果に合わせて変わる
@@ -1015,6 +1016,7 @@ Slice 17: stats refresh realtime signal を追加
     - realtime/lib/internal-stats-update.test.ts
   - Implement:
     - app は stats sync 成功後、影響 userId / username に対して internal stats update を realtime に送る
+    - app は shared/realtime-internal.ts の secret ヘッダを使い、HTTP POST で realtime の /internal/stats-update に送る（game-update と同じ internal HTTP パターン）
     - realtime は既存 user room パターンに乗せて `stats:refresh` を送る
     - payload は userId、reason、matchId、updatedAt 程度の軽量情報に留め、実データは REST で再取得する
   - Confirm: 終局後に該当ユーザーの Socket.IO client が stats:refresh を受け取る
@@ -1030,7 +1032,7 @@ Slice 18: profile / leaderboard の realtime refetch を接続
   - Implement:
     - `stats:refresh` を受けたら GET /api/profile/stats と GET /api/leaderboard を再取得する
     - 受信対象ユーザー以外の payload は無視する
-    - 連続イベントに備えて軽い debounce を入れる
+    - 連続イベントに備えて 800ms の debounce を入れる
   - Confirm: 対局終了後、/profile と /leaderboard の勝敗・rank/progress 表示が手動更新なしで変わる
 ```
 
