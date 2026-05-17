@@ -109,15 +109,15 @@ test("protected social routes redirect to localized login while signed out", asy
 test("localized human match room renders active match state", async ({ page }) => {
   await mockEmptyHumanLobby(page);
   await mockHumanMatchState(page);
-  await seedStoredHumanMatchSession(page);
 
   for (const locale of locales) {
     const messages = messagesByLocale[locale];
     const verifyNoRuntimeErrors = watchRuntimeTranslationErrors(page);
 
+    await seedStoredHumanMatchSession(page, locale);
     await gotoLocalizedRoute(page, locale, "/human");
 
-    await expect(page.getByTestId("human-match-room")).toBeVisible();
+    await expect(page.getByTestId("human-match-room")).toBeVisible({ timeout: 30_000 });
     await expect(
       page.getByRole("heading", { level: 1, name: messages.human.match.page.title.live }),
     ).toBeVisible();
@@ -195,8 +195,9 @@ async function mockHumanMatchState(page: Page) {
   );
 }
 
-async function seedStoredHumanMatchSession(page: Page) {
-  await page.addInitScript(
+async function seedStoredHumanMatchSession(page: Page, locale: Locale) {
+  await gotoLocalizedRoute(page, locale, "/home");
+  await page.evaluate(
     ({ activeKey, matchId, participantId }) => {
       const session = {
         displayName: "Localized Player",

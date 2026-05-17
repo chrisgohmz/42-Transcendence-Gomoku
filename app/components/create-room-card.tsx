@@ -2,7 +2,7 @@
 
 import { Eye, EyeOff, LockKeyhole, Plus, Swords, Timer } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { Badge, Surface } from "@/components/gomoku-ui";
 
@@ -29,7 +29,12 @@ export default function CreateRoomCard({
   submitLabel,
 }: CreateRoomCardProps) {
   const t = useTranslations("human.createRoom");
+  const [isClientReady, setIsClientReady] = useState(false);
   const [isPrivate, setIsPrivate] = useState(false);
+
+  useEffect(() => {
+    setIsClientReady(true);
+  }, []);
 
   return (
     <Surface className="h-full">
@@ -102,6 +107,7 @@ export default function CreateRoomCard({
             <button
               type="button"
               onClick={() => setIsPrivate(false)}
+              disabled={!isClientReady}
               className={`min-h-11 rounded-md border px-3 text-sm font-black transition-colors ${
                 !isPrivate
                   ? "border-(--mint)/35 bg-(--mint-soft) text-(--mint)"
@@ -114,6 +120,7 @@ export default function CreateRoomCard({
             <button
               type="button"
               onClick={() => setIsPrivate(true)}
+              disabled={!isClientReady}
               className={`min-h-11 rounded-md border px-3 text-sm font-black transition-colors ${
                 isPrivate
                   ? "border-(--brass)/35 bg-(--brass)/10 text-(--brass)"
@@ -137,7 +144,7 @@ export default function CreateRoomCard({
             <button
               type="submit"
               className="btn btn-danger m-0 w-full"
-              disabled={isCreating}
+              disabled={!isClientReady || isCreating}
               aria-busy={isCreating}
             >
               <Plus aria-hidden="true" className="size-4" />
