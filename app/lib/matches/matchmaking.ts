@@ -8,6 +8,7 @@ import {
   Seat,
 } from "../../../generated/prisma/enums";
 import { prisma } from "../prisma";
+import { syncUserGameStatsForUser } from "../stats/result-sync";
 import { standardGomokuBoardSize } from "./move-rules";
 
 const matchmakingLockKey = 42_300_030;
@@ -125,6 +126,50 @@ type LifecycleOptions = {
 type QueueOptions = LifecycleOptions & {
   boardSize?: number;
 };
+
+function getErrorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : "Unknown error";
+}
+
+function uniqueUserIds(entries: Array<{ userId: string | null }>): string[] {
+  const userIds = new Set<string>();
+  for (const entry of entries) {
+    if (typeof entry.userId === "string") {
+      userIds.add(entry.userId);
+    }
+  }
+  return [...userIds];
+}
+
+async function syncStatsForMatchIds(
+  tx: MatchmakingTransaction,
+  matchIds: string[],
+  reason: string,
+) {
+  if (matchIds.length === 0) {
+    return;
+  }
+
+  const participants = await tx.matchParticipant.findMany({
+    where: {
+      matchId: { in: matchIds },
+      role: Role.PLAYER,
+      userId: { not: null },
+    },
+    select: { userId: true },
+  });
+
+  const userIds = uniqueUserIds(participants);
+  if (userIds.length === 0) {
+    return;
+  }
+
+  try {
+    await Promise.all(userIds.map((userId) => syncUserGameStatsForUser(userId, { tx })));
+  } catch (error) {
+    console.error(`[matchmaking] stats sync failed (${reason}):`, getErrorMessage(error));
+  }
+}
 
 function readPositiveInteger(value: string | undefined, fallback: number): number {
   if (!value) {
@@ -328,6 +373,10 @@ async function cancelMatches(
       result: MatchResult.CANCELLED,
     },
   });
+
+  if (updatedMatches.count > 0) {
+    await syncStatsForMatchIds(tx, matchIds, endReason);
+  }
 
   return updatedMatches.count;
 }
@@ -580,6 +629,8 @@ export async function cancelMatchmakingQueue(
         result: MatchResult.CANCELLED,
       },
     });
+
+    await syncStatsForMatchIds(tx, [match.id], endReasonQueueCancelled);
 
     return {
       kind: "cancelled",

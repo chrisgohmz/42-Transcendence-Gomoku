@@ -17,6 +17,7 @@ const updateMatch = mock();
 const updateMatches = mock();
 const createParticipant = mock();
 const findParticipant = mock();
+const findParticipants = mock();
 const updateParticipants = mock();
 
 const tx = {
@@ -30,6 +31,7 @@ const tx = {
   matchParticipant: {
     create: createParticipant,
     findFirst: findParticipant,
+    findMany: findParticipants,
     updateMany: updateParticipants,
   },
 };
@@ -113,11 +115,13 @@ beforeEach(() => {
   updateMatches.mockReset();
   createParticipant.mockReset();
   findParticipant.mockReset();
+  findParticipants.mockReset();
   updateParticipants.mockReset();
 
   transaction.mockImplementation((callback: (transactionClient: typeof tx) => unknown) =>
     callback(tx),
   );
+  findParticipants.mockResolvedValue([]);
 });
 
 describe("joinMatchmakingQueue", () => {
