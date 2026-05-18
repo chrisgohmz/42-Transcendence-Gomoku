@@ -2,9 +2,12 @@ import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
 const deleteFriendship = mock();
 const findManyUsers = mock();
-const publishFriendshipUpdate = mock();
 const consoleError = mock();
+const fetchMock = mock(async () => new Response(null, { status: 200 }));
 const originalConsoleError = console.error;
+const originalFetch = globalThis.fetch;
+const originalRealtimeInternalSecret = process.env["REALTIME_INTERNAL_SECRET"];
+const originalRealtimeFriendshipInternalUrl = process.env["REALTIME_FRIENDSHIP_INTERNAL_URL"];
 
 await mock.module("@/lib/prisma", () => ({
   prisma: {
@@ -17,21 +20,21 @@ await mock.module("@/lib/prisma", () => ({
   },
 }));
 
-await mock.module("./realtime-publisher", () => ({
-  publishFriendshipUpdate,
-}));
-
 const { deleteFriendshipAndNotify, getLowHighIds } = await import("./friendship-mutations");
 
 beforeEach(() => {
   deleteFriendship.mockReset();
   findManyUsers.mockReset();
-  publishFriendshipUpdate.mockReset();
   consoleError.mockReset();
+  fetchMock.mockReset();
   console.error = consoleError as unknown as typeof console.error;
+  globalThis.fetch = fetchMock as unknown as typeof fetch;
+  process.env["REALTIME_INTERNAL_SECRET"] = "friend-secret";
+  process.env["REALTIME_FRIENDSHIP_INTERNAL_URL"] =
+    "http://localhost:3001/internal/friendship-update";
 
   deleteFriendship.mockResolvedValue({});
-  publishFriendshipUpdate.mockResolvedValue(undefined);
+  fetchMock.mockResolvedValue(new Response(null, { status: 200 }));
   findManyUsers.mockResolvedValue([
     { id: "user-high", username: "bob" },
     { id: "user-low", username: "alice" },
@@ -40,6 +43,19 @@ beforeEach(() => {
 
 afterEach(() => {
   console.error = originalConsoleError;
+  globalThis.fetch = originalFetch;
+
+  if (originalRealtimeInternalSecret === undefined) {
+    delete process.env["REALTIME_INTERNAL_SECRET"];
+  } else {
+    process.env["REALTIME_INTERNAL_SECRET"] = originalRealtimeInternalSecret;
+  }
+
+  if (originalRealtimeFriendshipInternalUrl === undefined) {
+    delete process.env["REALTIME_FRIENDSHIP_INTERNAL_URL"];
+  } else {
+    process.env["REALTIME_FRIENDSHIP_INTERNAL_URL"] = originalRealtimeFriendshipInternalUrl;
+  }
 });
 
 describe("getLowHighIds", () => {
@@ -73,11 +89,16 @@ describe("deleteFriendshipAndNotify", () => {
         username: true,
       },
     });
-    expect(publishFriendshipUpdate).toHaveBeenCalledWith(["alice", "bob"]);
+
+    const call = fetchMock.mock.calls[0] as [string, RequestInit] | undefined;
+
+    expect(call).toBeDefined();
+    expect(call?.[0]).toBe("http://localhost:3001/internal/friendship-update");
+    expect(call?.[1].body).toBe(JSON.stringify({ usernames: ["alice", "bob"] }));
   });
 
   test("keeps the delete successful when realtime notification fails", async () => {
-    publishFriendshipUpdate.mockRejectedValueOnce(new Error("realtime down"));
+    fetchMock.mockResolvedValueOnce(new Response(null, { status: 503 }));
 
     await deleteFriendshipAndNotify({
       id: 42,

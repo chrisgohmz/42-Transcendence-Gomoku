@@ -2,7 +2,7 @@
 
 import { Eye, EyeOff, LockKeyhole, Plus, Swords, Timer } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { useState } from "react";
+import { useEffect, useId, useState } from "react";
 
 import { Badge, Surface } from "@/components/gomoku-ui";
 
@@ -29,7 +29,14 @@ export default function CreateRoomCard({
   submitLabel,
 }: CreateRoomCardProps) {
   const t = useTranslations("human.createRoom");
+  const [isClientReady, setIsClientReady] = useState(false);
   const [isPrivate, setIsPrivate] = useState(false);
+  const roomNameId = useId();
+  const roomPasswordId = useId();
+
+  useEffect(() => {
+    setIsClientReady(true);
+  }, []);
 
   return (
     <Surface className="h-full">
@@ -65,11 +72,11 @@ export default function CreateRoomCard({
           }}
         >
           <div className="field">
-            <label htmlFor="room-name" className="field-label">
+            <label htmlFor={roomNameId} className="field-label">
               {t("roomNameLabel")}
             </label>
             <input
-              id="room-name"
+              id={roomNameId}
               name="roomName"
               placeholder={t("roomNamePlaceholder")}
               className="text-input"
@@ -77,7 +84,7 @@ export default function CreateRoomCard({
           </div>
 
           <div className={`field transition-opacity ${isPrivate ? "" : "opacity-55"}`}>
-            <label htmlFor="room-password" className="field-label">
+            <label htmlFor={roomPasswordId} className="field-label">
               {t("password")}
             </label>
             <div className="field-shell">
@@ -86,7 +93,7 @@ export default function CreateRoomCard({
                 className={`size-4 ${isPrivate ? "text-(--brass)" : "text-(--muted-text)"}`}
               />
               <input
-                id="room-password"
+                id={roomPasswordId}
                 name="roomPassword"
                 type="password"
                 autoComplete="new-password"
@@ -102,6 +109,7 @@ export default function CreateRoomCard({
             <button
               type="button"
               onClick={() => setIsPrivate(false)}
+              disabled={!isClientReady}
               className={`min-h-11 rounded-md border px-3 text-sm font-black transition-colors ${
                 !isPrivate
                   ? "border-(--mint)/35 bg-(--mint-soft) text-(--mint)"
@@ -114,6 +122,7 @@ export default function CreateRoomCard({
             <button
               type="button"
               onClick={() => setIsPrivate(true)}
+              disabled={!isClientReady}
               className={`min-h-11 rounded-md border px-3 text-sm font-black transition-colors ${
                 isPrivate
                   ? "border-(--brass)/35 bg-(--brass)/10 text-(--brass)"
@@ -137,7 +146,7 @@ export default function CreateRoomCard({
             <button
               type="submit"
               className="btn btn-danger m-0 w-full"
-              disabled={isCreating}
+              disabled={!isClientReady || isCreating}
               aria-busy={isCreating}
             >
               <Plus aria-hidden="true" className="size-4" />

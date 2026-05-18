@@ -198,6 +198,10 @@ function endReasonLabel(reason: string | null | undefined, t: TranslationFunctio
     return t("endReason.queueCancelled");
   }
 
+  if (reason === "host_cancelled") {
+    return t("endReason.hostCancelled");
+  }
+
   if (reason === "queue_expired") {
     return t("endReason.queueExpired");
   }
@@ -226,6 +230,7 @@ export default function HumanMatchRoom({
   const [moveError, setMoveError] = useState<string | null>(null);
   const [isSubmittingMove, setIsSubmittingMove] = useState(false);
   const [isResigning, setIsResigning] = useState(false);
+  const [isCancellingWaitingMatch, setIsCancellingWaitingMatch] = useState(false);
 
   useEffect(() => {
     if (initialState?.matchId === session.matchId) {
@@ -302,7 +307,8 @@ export default function HumanMatchRoom({
 
   const canResign = effectiveUpdate?.status === "IN_PROGRESS" && mySeat !== null;
   const matchStatus = effectiveUpdate?.status ?? state?.status;
-  const canReturnToLobby = matchStatus === "FINISHED" || matchStatus === "CANCELLED";
+  const canReturnToLobby =
+    matchStatus === "WAITING" || matchStatus === "FINISHED" || matchStatus === "CANCELLED";
   const isBusy = isRestoring || isLoadingState;
   const pageHeaderTitle = pageTitle(matchStatus, t);
   const pageHeaderLede = pageLede(matchStatus, t);
@@ -407,6 +413,54 @@ export default function HumanMatchRoom({
     }
   }
 
+  async function handleReturnToLobby() {
+    if (!canReturnToLobby || isCancellingWaitingMatch) {
+      return;
+    }
+
+    if (matchStatus !== "WAITING") {
+      onBackToLobby();
+      return;
+    }
+
+    setIsCancellingWaitingMatch(true);
+    setMoveError(null);
+
+    try {
+      const response = await fetch(`/api/matches/${encodeURIComponent(session.matchId)}/cancel`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          participantId: session.participantId,
+          baseVersion: effectiveUpdate?.stateVersion ?? state?.stateVersion ?? null,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorPayload = await response.json().catch(() => null);
+        const errorCode = getErrorCode(errorPayload);
+        setMoveError(
+          getErrorMessage(
+            errorPayload,
+            t("errors.cancelRequestFailed", { status: response.status }),
+          ),
+        );
+        if (errorCode === "stale_state" || errorCode === "match_not_waiting") {
+          await loadState();
+        }
+        return;
+      }
+
+      onBackToLobby();
+    } catch {
+      setMoveError(t("errors.networkCancel"));
+    } finally {
+      setIsCancellingWaitingMatch(false);
+    }
+  }
+
   return (
     <PageShell className="human-match-room">
       <PageHeader
@@ -458,14 +512,23 @@ export default function HumanMatchRoom({
               type="button"
               className="btn btn-subtle m-0 min-h-11 px-4"
               onClick={() => {
-                if (canReturnToLobby) {
-                  onBackToLobby();
-                }
+                void handleReturnToLobby();
               }}
-              disabled={!canReturnToLobby}
-              title={canReturnToLobby ? "Back to lobby" : "Lobby unlocks when the match ends"}
+              disabled={!canReturnToLobby || isCancellingWaitingMatch}
+              aria-busy={isCancellingWaitingMatch}
+              title={
+                canReturnToLobby
+                  ? matchStatus === "WAITING"
+                    ? "Cancel room and return to lobby"
+                    : "Back to lobby"
+                  : "Lobby unlocks when the match ends"
+              }
             >
-              <ArrowLeft aria-hidden="true" className="size-4" />
+              {isCancellingWaitingMatch ? (
+                <LoaderCircle aria-hidden="true" className="size-4 animate-spin" />
+              ) : (
+                <ArrowLeft aria-hidden="true" className="size-4" />
+              )}
               {t("page.lobby")}
             </button>
           </>
@@ -473,10 +536,10 @@ export default function HumanMatchRoom({
       />
 
       <section
-        className="grid gap-5 xl:grid-cols-[260px_minmax(0,1fr)_300px]"
+        className="grid min-w-0 items-start gap-5 xl:grid-cols-[minmax(0,260px)_minmax(0,1fr)_minmax(0,300px)]"
         data-testid="human-match-room"
       >
-        <aside className="grid content-start gap-5">
+        <aside className="grid min-w-0 content-start gap-5">
           <Surface eyebrow="Connection" icon={Radio} title="Realtime">
             <div className="grid gap-3 text-sm">
               <DetailRow label={t("connection.socket")} value={socketStatusText} />
@@ -500,7 +563,7 @@ export default function HumanMatchRoom({
           </Surface>
         </aside>
 
-        <section className="board-room overflow-hidden p-3 sm:p-5">
+        <section className="board-room min-w-0 place-items-center overflow-hidden p-3 sm:p-5">
           <MatchBoard
             board={board}
             disabled={isBusy || isSubmittingMove || matchStatus !== "IN_PROGRESS"}
@@ -524,7 +587,7 @@ export default function HumanMatchRoom({
           ) : null}
         </section>
 
-        <aside className="grid content-start gap-5">
+        <aside className="grid min-w-0 content-start gap-5">
           <PlayerBar blackName={blackName} whiteName={whiteName} timer={formattedTime} />
 
           <Surface eyebrow={t("moves.eyebrow")} title={t("moves.title")}>
@@ -538,9 +601,9 @@ export default function HumanMatchRoom({
 
 function DetailRow({ label, value }: { label: string; value: string | number }) {
   return (
-    <div className="flex min-h-10 items-center justify-between gap-3 rounded-md border border-(--panel-border-soft) bg-white/3.5 px-3">
+    <div className="grid min-h-10 min-w-0 grid-cols-[auto_minmax(0,1fr)] items-center gap-3 rounded-md border border-(--panel-border-soft) bg-white/3.5 px-3">
       <span className="text-(--muted-text)">{label}</span>
-      <span className="min-w-0 truncate font-black">{value}</span>
+      <span className="min-w-0 truncate text-right font-black">{value}</span>
     </div>
   );
 }

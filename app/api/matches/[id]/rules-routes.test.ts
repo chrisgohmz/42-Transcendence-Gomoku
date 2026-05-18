@@ -16,8 +16,11 @@ const findMove = mock();
 const createMove = mock();
 const updateMatchMany = mock();
 const updateParticipant = mock();
+const updateManyParticipants = mock();
 const publishGameUpdate = mock();
+const publishChallengeDeclined = mock();
 const publishChallengeReceived = mock();
+const publishQueueMatched = mock();
 const getCurrentSession = mock();
 
 const tx = {
@@ -31,6 +34,7 @@ const tx = {
   },
   matchParticipant: {
     update: updateParticipant,
+    updateMany: updateManyParticipants,
   },
 };
 
@@ -41,8 +45,10 @@ await mock.module("@/lib/prisma", () => ({
 }));
 
 await mock.module("@/lib/matches/realtime-publisher", () => ({
+  publishChallengeDeclined,
   publishChallengeReceived,
   publishGameUpdate,
+  publishQueueMatched,
 }));
 
 await mock.module("@/lib/auth", () => ({
@@ -51,6 +57,7 @@ await mock.module("@/lib/auth", () => ({
 
 const movesRoute = await import("./moves/route");
 const resignRoute = await import("./resign/route");
+const cancelRoute = await import("./cancel/route");
 
 const createdAt = new Date("2026-05-10T00:00:00.000Z");
 const startedAt = new Date("2026-05-10T00:01:00.000Z");
@@ -157,6 +164,7 @@ beforeEach(() => {
   createMove.mockReset();
   updateMatchMany.mockReset();
   updateParticipant.mockReset();
+  updateManyParticipants.mockReset();
   publishGameUpdate.mockReset();
   getCurrentSession.mockReset();
 
@@ -321,6 +329,98 @@ describe("POST /api/matches/:id/resign", () => {
     expect(response.status).toBe(409);
     expect(payload).toEqual({ error: "stale_state" });
     expect(updateParticipant).not.toHaveBeenCalled();
+    expect(publishGameUpdate).not.toHaveBeenCalled();
+  });
+});
+
+describe("POST /api/matches/:id/cancel", () => {
+  test("cancels a waiting room for the host before returning to the lobby", async () => {
+    const storedMatch = matchRecord({
+      createdByUserId: "user-black",
+      moves: [],
+      nextTurnSeat: null,
+      participants: [participants()[0]],
+      stateVersion: 0,
+      status: MatchStatus.WAITING,
+    });
+
+    findMatch.mockResolvedValueOnce(storedMatch);
+    updateMatchMany.mockResolvedValueOnce({ count: 1 });
+    updateManyParticipants.mockResolvedValueOnce({ count: 1 });
+
+    const response = await cancelRoute.POST(
+      jsonRequest("/api/matches/match-1/cancel", {
+        participantId: "black-player",
+        baseVersion: 0,
+      }),
+      context(),
+    );
+    const payload = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(payload).toMatchObject({
+      accepted: true,
+      endReason: "host_cancelled",
+      ok: true,
+      stateVersion: 1,
+    });
+    expect(updateMatchMany.mock.calls[0]?.[0]).toMatchObject({
+      where: {
+        id: "match-1",
+        stateVersion: 0,
+        status: MatchStatus.WAITING,
+      },
+      data: {
+        endReason: "host_cancelled",
+        nextTurnSeat: null,
+        stateVersion: 1,
+        status: MatchStatus.CANCELLED,
+        winningSeat: null,
+      },
+    });
+    expect(updateManyParticipants.mock.calls[0]?.[0]).toMatchObject({
+      where: {
+        leftAt: null,
+        matchId: "match-1",
+        result: null,
+      },
+      data: {
+        leftAt: expect.any(Date),
+        result: MatchResult.CANCELLED,
+      },
+    });
+    expect(publishGameUpdate.mock.calls[0]?.[0]).toMatchObject({
+      endReason: "host_cancelled",
+      matchId: "match-1",
+      status: MatchStatus.CANCELLED,
+    });
+  });
+
+  test("rejects waiting-room cancellation when the match already advanced", async () => {
+    const storedMatch = matchRecord({
+      createdByUserId: "user-black",
+      moves: [],
+      nextTurnSeat: null,
+      participants: [participants()[0]],
+      stateVersion: 1,
+      status: MatchStatus.WAITING,
+    });
+
+    findMatch.mockResolvedValueOnce(storedMatch);
+
+    const response = await cancelRoute.POST(
+      jsonRequest("/api/matches/match-1/cancel", {
+        participantId: "black-player",
+        baseVersion: 0,
+      }),
+      context(),
+    );
+    const payload = await response.json();
+
+    expect(response.status).toBe(409);
+    expect(payload).toEqual({ error: "stale_state" });
+    expect(updateMatchMany).not.toHaveBeenCalled();
+    expect(updateManyParticipants).not.toHaveBeenCalled();
     expect(publishGameUpdate).not.toHaveBeenCalled();
   });
 });

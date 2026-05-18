@@ -17,3 +17,10 @@ export const resignMatchRequestSchema = z.object({
 });
 
 export type ResignMatchRequest = z.infer<typeof resignMatchRequestSchema>;
+
+export const cancelWaitingMatchRequestSchema = z.object({
+  baseVersion: z.number().int().nullable().optional(),
+  participantId: z.string().min(1),
+});
+
+export type CancelWaitingMatchRequest = z.infer<typeof cancelWaitingMatchRequestSchema>;

@@ -9,21 +9,21 @@ export default function PlayerBar({ blackName, whiteName, timer }: PlayerBarProp
   const whiteStone = "radial-gradient(circle at 34% 28%, #fffdf5 0 18%, #e8dfcf 54%, #a99f90 100%)";
 
   return (
-    <div className="mx-auto w-full max-w-5xl">
-      <div className="grid grid-cols-1 gap-4 rounded-lg border border-(--panel-border-soft) bg-[#08110e]/90 p-4 shadow-[0_18px_60px_rgba(0,0,0,0.32)]">
+    <div className="mx-auto w-full max-w-5xl min-w-0">
+      <div className="grid min-w-0 grid-cols-1 gap-4 rounded-lg border border-(--panel-border-soft) bg-[#08110e]/90 p-4 shadow-[0_18px_60px_rgba(0,0,0,0.32)]">
         <div className="flex min-w-0 items-center gap-3">
           <span
             className="h-11 w-11 shrink-0 rounded-full border border-(--brass)/30 shadow-[inset_-8px_-10px_16px_rgba(0,0,0,0.28),inset_5px_5px_10px_rgba(255,255,255,0.22),0_10px_22px_rgba(0,0,0,0.28)]"
             style={{ background: blackStone }}
             aria-hidden="true"
           />
-          <div>
+          <div className="min-w-0">
             <p className="text-xs font-bold tracking-[0.18em] text-(--brass) uppercase">Black</p>
             <p className="mt-1 truncate text-lg font-bold">{blackName}</p>
           </div>
         </div>
 
-        <div className="rounded-md border border-(--mint)/30 bg-(--mint-soft) px-6 py-4 text-center">
+        <div className="min-w-0 rounded-md border border-(--mint)/30 bg-(--mint-soft) px-4 py-4 text-center">
           <p className="text-xs font-bold tracking-[0.18em] text-(--muted-strong) uppercase">
             Timer
           </p>
@@ -36,7 +36,7 @@ export default function PlayerBar({ blackName, whiteName, timer }: PlayerBarProp
             style={{ background: whiteStone }}
             aria-hidden="true"
           />
-          <div>
+          <div className="min-w-0">
             <p className="text-xs font-bold tracking-[0.18em] text-(--brass) uppercase">White</p>
             <p className="mt-1 truncate text-lg font-bold">{whiteName}</p>
           </div>

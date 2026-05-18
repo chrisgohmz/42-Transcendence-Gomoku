@@ -3,6 +3,7 @@ import { expect, type Page, test } from "@playwright/test";
 const activeSessionKey = "match:session:v1:active";
 
 test("human lobby creates a room and stores the returned session", async ({ page }) => {
+  let cancelRequests = 0;
   let createRequests = 0;
   let listRequests = 0;
 
@@ -45,12 +46,44 @@ test("human lobby creates a room and stores the returned session", async ({ page
       });
     },
   );
+  await page.route(
+    (url) => url.pathname === "/api/matches/created-match/cancel",
+    async (route) => {
+      cancelRequests += 1;
+      expect(route.request().postDataJSON()).toEqual({
+        participantId: "creator-1",
+        baseVersion: 0,
+      });
+      await route.fulfill({
+        body: JSON.stringify({
+          accepted: true,
+          endReason: "host_cancelled",
+          ok: true,
+          stateVersion: 1,
+        }),
+        contentType: "application/json",
+        status: 200,
+      });
+    },
+  );
+  await page.route(
+    (url) => url.pathname === "/api/matches/history",
+    async (route) => {
+      await route.fulfill({
+        body: JSON.stringify({ matches: [] }),
+        contentType: "application/json",
+        status: 200,
+      });
+    },
+  );
 
   await page.goto("/en/human", { waitUntil: "domcontentloaded" });
   await expect(page.getByRole("heading", { name: /Find Your Next Opponent/i })).toBeVisible();
-  await expect.poll(() => listRequests).toBeGreaterThan(0);
+  await expect.poll(() => listRequests, { timeout: 30_000 }).toBeGreaterThan(0);
 
-  await page.getByRole("button", { name: "Create Room" }).click();
+  const createRoomButton = page.getByRole("button", { name: "Create Room" });
+  await expect(createRoomButton).toBeEnabled({ timeout: 30_000 });
+  await createRoomButton.click();
 
   await expect.poll(() => createRequests).toBe(1);
   await expect.poll(async () => (await readStoredSession(page))?.matchId).toBe("created-match");
@@ -66,6 +99,12 @@ test("human lobby creates a room and stores the returned session", async ({ page
   await expect(page).toHaveURL(/\/en\/human$/);
   await expect(page.getByTestId("human-match-room")).toBeVisible();
   await expect(page.getByTestId("human-match-board")).toBeVisible();
+
+  await page.getByRole("button", { name: "Back to Lobby" }).click();
+
+  await expect.poll(() => cancelRequests).toBe(1);
+  await expect.poll(async () => await readStoredSession(page)).toBeNull();
+  await expect(page.getByRole("heading", { name: /Find Your Next Opponent/i })).toBeVisible();
 });
 
 test("human lobby creates a private room with its password and visibility", async ({ page }) => {
@@ -117,10 +156,15 @@ test("human lobby creates a private room with its password and visibility", asyn
   );
 
   await page.goto("/en/human", { waitUntil: "domcontentloaded" });
-  await page.getByRole("button", { name: "Private" }).click();
-  await page.getByLabel("Room name").fill("Study Room");
-  await page.getByLabel("Password").fill("sente");
-  await page.getByRole("button", { name: "Create Room" }).click();
+  const privateButton = page.getByRole("button", { name: "Private" }).filter({ visible: true });
+  const roomNameInput = page.getByLabel("Room name").filter({ visible: true });
+  const passwordInput = page.getByLabel("Password").filter({ visible: true });
+  await expect(privateButton).toBeEnabled({ timeout: 30_000 });
+  await privateButton.click();
+  await expect(passwordInput).toBeEnabled({ timeout: 30_000 });
+  await roomNameInput.fill("Study Room");
+  await passwordInput.fill("sente");
+  await page.getByRole("button", { name: "Create Room" }).filter({ visible: true }).click();
 
   await expect.poll(() => createRequests).toBe(1);
   await expect.poll(async () => (await readStoredSession(page))?.matchId).toBe("private-match");
@@ -179,7 +223,7 @@ test("human lobby joins a waiting room and stores the returned session", async (
   );
 
   await page.goto("/en/human", { waitUntil: "domcontentloaded" });
-  await expect.poll(() => listRequests).toBeGreaterThan(0);
+  await expect.poll(() => listRequests, { timeout: 30_000 }).toBeGreaterThan(0);
   await expect(page.getByText("Mintan's room")).toBeVisible();
 
   await page.getByRole("button", { name: /Join Mintan's room/ }).click();

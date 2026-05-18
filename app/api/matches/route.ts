@@ -2,6 +2,7 @@ import { hashPassword } from "better-auth/crypto";
 
 import { Role, MatchStatus, Seat, MatchVisibility } from "@/../generated/prisma/enums";
 import { getCurrentSession } from "@/lib/auth";
+import { getChallengeMatchMetadata } from "@/lib/matches/challenge-metadata";
 import { buildGameUpdatePayload } from "@/lib/matches/game-update";
 import { standardGomokuBoardSize } from "@/lib/matches/move-rules";
 import { publishGameUpdate } from "@/lib/matches/realtime-publisher";
@@ -15,6 +16,16 @@ function getErrorMessage(error: unknown): string {
 
 function getOptionalTrimmedString(value: unknown) {
   return typeof value === "string" && value.trim().length > 0 ? value.trim() : null;
+}
+
+function isLobbyListedMatch({
+  metadata,
+  visibility,
+}: {
+  metadata: unknown;
+  visibility: MatchVisibility;
+}) {
+  return visibility === MatchVisibility.PUBLIC || !getChallengeMatchMetadata(metadata);
 }
 
 export async function POST(request: Request) {
@@ -128,7 +139,6 @@ export async function GET() {
   const matches = await prisma.match.findMany({
     where: {
       status: MatchStatus.WAITING,
-      visibility: MatchVisibility.PUBLIC,
     },
     orderBy: { createdAt: "desc" },
     include: {
@@ -136,7 +146,7 @@ export async function GET() {
     },
   });
 
-  const body = matches.map((r) => ({
+  const body = matches.filter(isLobbyListedMatch).map((r) => ({
     matchId: r.id,
     name: r.name,
     requiresPassword: r.password !== null,

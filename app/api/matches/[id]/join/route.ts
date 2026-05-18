@@ -97,7 +97,31 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       );
     }
 
-    const { joiner, updatedMatch } = await prisma.$transaction(async (tx) => {
+    const result = await prisma.$transaction(async (tx) => {
+      const startedAt = new Date();
+      const guardedTransition = await tx.match.updateMany({
+        where: {
+          id: matchId,
+          stateVersion: match.stateVersion,
+          status: MatchStatus.WAITING,
+        },
+        data: {
+          stateVersion: {
+            increment: 1,
+          },
+          status: MatchStatus.IN_PROGRESS,
+          nextTurnSeat: Seat.BLACK,
+          startedAt,
+        },
+      });
+
+      if (guardedTransition.count !== 1) {
+        return {
+          kind: "error" as const,
+          payload: { error: "match_not_available", status: 409 },
+        };
+      }
+
       const joiner = await tx.matchParticipant.create({
         data: {
           matchId,
@@ -108,16 +132,8 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
         },
       });
 
-      const updatedMatch = await tx.match.update({
+      const updatedMatch = await tx.match.findUnique({
         where: { id: matchId },
-        data: {
-          stateVersion: {
-            increment: 1,
-          },
-          status: MatchStatus.IN_PROGRESS,
-          nextTurnSeat: Seat.BLACK,
-          startedAt: new Date(),
-        },
         include: {
           moves: {
             orderBy: { moveNumber: "asc" },
@@ -135,9 +151,21 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
         },
       });
 
-      return { joiner, updatedMatch };
+      if (!updatedMatch) {
+        throw new Error("Joined match was not found.");
+      }
+
+      return {
+        kind: "ok" as const,
+        payload: { joiner, updatedMatch },
+      };
     });
 
+    if (result.kind === "error") {
+      return Response.json({ error: result.payload.error }, { status: result.payload.status });
+    }
+
+    const { joiner, updatedMatch } = result.payload;
     const gameUpdate = buildGameUpdatePayload({
       match: updatedMatch,
       participants: updatedMatch.participants,

@@ -58,10 +58,10 @@ type SurfaceProps = {
 
 export function Surface({ children, className, eyebrow, icon: Icon, title }: SurfaceProps) {
   return (
-    <section className={cn("surface-panel", className)}>
+    <section className={cn("surface-panel w-full min-w-0", className)}>
       {title || eyebrow || Icon ? (
-        <div className="flex items-start justify-between gap-4">
-          <div>
+        <div className="flex min-w-0 items-start justify-between gap-4">
+          <div className="min-w-0">
             {eyebrow ? <p className="eyebrow m-0 mb-2">{eyebrow}</p> : null}
             {title ? <h2 className="font-serif text-3xl leading-none font-bold">{title}</h2> : null}
           </div>

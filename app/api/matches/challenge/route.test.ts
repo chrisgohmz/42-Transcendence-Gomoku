@@ -18,7 +18,9 @@ const transaction = mock();
 const updateManyMatches = mock();
 const updateManyParticipants = mock();
 const publishGameUpdate = mock();
+const publishChallengeDeclined = mock();
 const publishChallengeReceived = mock();
+const publishQueueMatched = mock();
 const hashPassword = mock();
 const verifyPassword = mock();
 
@@ -51,8 +53,10 @@ await mock.module("@/lib/prisma", () => ({
 }));
 
 await mock.module("@/lib/matches/realtime-publisher", () => ({
+  publishChallengeDeclined,
   publishChallengeReceived,
   publishGameUpdate,
+  publishQueueMatched,
 }));
 
 await mock.module("better-auth/crypto", () => ({
@@ -109,16 +113,16 @@ function createdMatch(args: { data: Record<string, unknown> }) {
     endReason: null,
     finishedAt: null,
     id: "match-1",
-    metadata: args.data.metadata,
+    metadata: args.data["metadata"],
     nextTurnSeat: null,
     participants: [creatorParticipant()],
-    password: args.data.password,
+    password: args.data["password"],
     ruleType: RuleType.GOMOKU,
     startedAt: null,
     stateVersion: 0,
     status: MatchStatus.WAITING,
     updatedAt: createdAt,
-    visibility: args.data.visibility,
+    visibility: args.data["visibility"],
     winningSeat: null,
   };
 }

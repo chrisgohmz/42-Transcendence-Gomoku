@@ -555,9 +555,9 @@ function SeatPanel({
 
 function DetailRow({ label, value }: { label: string; value: string | number }) {
   return (
-    <div className="flex min-h-10 items-center justify-between gap-3 rounded-md border border-[var(--panel-border-soft)] bg-white/[0.035] px-3">
+    <div className="grid min-h-10 min-w-0 grid-cols-[auto_minmax(0,1fr)] items-center gap-3 rounded-md border border-[var(--panel-border-soft)] bg-white/[0.035] px-3">
       <span className="text-[var(--muted-text)]">{label}</span>
-      <span className="min-w-0 truncate font-black">{value}</span>
+      <span className="min-w-0 truncate text-right font-black">{value}</span>
     </div>
   );
 }

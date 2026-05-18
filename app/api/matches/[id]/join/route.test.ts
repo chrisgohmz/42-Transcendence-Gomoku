@@ -6,9 +6,14 @@ const getCurrentSession = mock();
 const findMatch = mock();
 const transaction = mock();
 const createParticipant = mock();
-const updateMatch = mock();
+const findUpdatedMatch = mock();
+const updateMatchMany = mock();
 const fetchMock = mock();
 const hashPassword = mock();
+const publishChallengeDeclined = mock();
+const publishChallengeReceived = mock();
+const publishGameUpdate = mock();
+const publishQueueMatched = mock();
 const verifyPassword = mock();
 const originalFetch = globalThis.fetch;
 const originalQueueMatchedUrl = process.env["REALTIME_QUEUE_MATCHED_URL"];
@@ -17,7 +22,8 @@ const originalRealtimeSecret = process.env["REALTIME_INTERNAL_SECRET"];
 
 const tx = {
   match: {
-    update: updateMatch,
+    findUnique: findUpdatedMatch,
+    updateMany: updateMatchMany,
   },
   matchParticipant: {
     create: createParticipant,
@@ -40,6 +46,13 @@ await mock.module("@/lib/prisma", () => ({
 await mock.module("better-auth/crypto", () => ({
   hashPassword,
   verifyPassword,
+}));
+
+await mock.module("@/lib/matches/realtime-publisher", () => ({
+  publishChallengeDeclined,
+  publishChallengeReceived,
+  publishGameUpdate,
+  publishQueueMatched,
 }));
 
 const route = await import("./route");
@@ -143,9 +156,12 @@ beforeEach(() => {
   findMatch.mockReset();
   transaction.mockReset();
   createParticipant.mockReset();
-  updateMatch.mockReset();
+  findUpdatedMatch.mockReset();
+  updateMatchMany.mockReset();
   fetchMock.mockReset();
   hashPassword.mockReset();
+  publishGameUpdate.mockReset();
+  publishQueueMatched.mockReset();
   verifyPassword.mockReset();
 
   globalThis.fetch = fetchMock as unknown as typeof fetch;
@@ -164,8 +180,11 @@ beforeEach(() => {
     callback(tx),
   );
   createParticipant.mockResolvedValue(joinerParticipant());
-  updateMatch.mockResolvedValue(updatedMatch());
+  findUpdatedMatch.mockResolvedValue(updatedMatch());
+  updateMatchMany.mockResolvedValue({ count: 1 });
   fetchMock.mockResolvedValue(new Response(null, { status: 200 }));
+  publishGameUpdate.mockResolvedValue(undefined);
+  publishQueueMatched.mockResolvedValue(undefined);
   verifyPassword.mockResolvedValue(true);
 });
 
@@ -215,7 +234,7 @@ describe("POST /api/matches/:id/join", () => {
       seat: Seat.WHITE,
       stateVersion: 1,
     });
-    expect(updateMatch).toHaveBeenCalledWith({
+    expect(updateMatchMany).toHaveBeenCalledWith({
       data: {
         nextTurnSeat: Seat.BLACK,
         startedAt: expect.any(Date),
@@ -224,6 +243,22 @@ describe("POST /api/matches/:id/join", () => {
         },
         status: MatchStatus.IN_PROGRESS,
       },
+      where: {
+        id: "match-1",
+        stateVersion: 0,
+        status: MatchStatus.WAITING,
+      },
+    });
+    expect(createParticipant).toHaveBeenCalledWith({
+      data: {
+        displayNameSnapshot: "White",
+        matchId: "match-1",
+        role: Role.PLAYER,
+        seat: Seat.WHITE,
+        userId: "user-white",
+      },
+    });
+    expect(findUpdatedMatch).toHaveBeenCalledWith({
       include: {
         moves: {
           orderBy: { moveNumber: "asc" },
@@ -241,8 +276,44 @@ describe("POST /api/matches/:id/join", () => {
       },
       where: { id: "match-1" },
     });
-    expect(fetchMock).toHaveBeenCalled();
+    expect(publishGameUpdate).toHaveBeenCalled();
+    expect(publishQueueMatched).toHaveBeenCalledWith(
+      "black",
+      expect.objectContaining({
+        displayName: "Black",
+        matchId: "match-1",
+        participantId: "black-player",
+        role: Role.PLAYER,
+        seat: Seat.BLACK,
+        status: MatchStatus.IN_PROGRESS,
+      }),
+      2000,
+    );
     expect(verifyPassword).not.toHaveBeenCalled();
+  });
+
+  test("rejects the join when cancellation wins the waiting-room transition race", async () => {
+    findMatch.mockResolvedValueOnce(waitingMatch());
+    updateMatchMany.mockResolvedValueOnce({ count: 0 });
+
+    const response = await route.POST(request(), context());
+    const payload = await response.json();
+
+    expect(response.status).toBe(409);
+    expect(payload).toEqual({ error: "match_not_available" });
+    expect(updateMatchMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: {
+          id: "match-1",
+          stateVersion: 0,
+          status: MatchStatus.WAITING,
+        },
+      }),
+    );
+    expect(createParticipant).not.toHaveBeenCalled();
+    expect(findUpdatedMatch).not.toHaveBeenCalled();
+    expect(publishGameUpdate).not.toHaveBeenCalled();
+    expect(publishQueueMatched).not.toHaveBeenCalled();
   });
 
   test("verifies a private match password before starting the match", async () => {

@@ -7,7 +7,9 @@ import { prisma } from "@/lib/prisma";
 import { isMatchSubscribePayload } from "../../shared/match-events-validation";
 import { matchRoomId } from "../lib/rooms";
 
-type MatchSubscriptionStore = Pick<typeof prisma, "match">;
+type MatchSubscriptionStore = {
+  match: Pick<typeof prisma.match, "findFirst">;
+};
 
 function emitMatchError(socket: Socket, error: string) {
   socket.emit("match:error", { error });
