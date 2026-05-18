@@ -1,5 +1,5 @@
 import { Prisma } from "@/../generated/prisma/client";
-import { MatchStatus } from "@/../generated/prisma/enums";
+import { MatchStatus, Role } from "@/../generated/prisma/enums";
 import { getCurrentSession } from "@/lib/auth";
 import { getAiDifficulty, getAiResponseDelayMs } from "@/lib/matches/ai-difficulty";
 import { chooseAiMove } from "@/lib/matches/ai-engine";
@@ -13,6 +13,7 @@ import { evaluateMoveOutcome } from "@/lib/matches/move-rules";
 import { isActiveParticipantForUser } from "@/lib/matches/participant-access";
 import { publishGameUpdate } from "@/lib/matches/realtime-publisher";
 import { prisma } from "@/lib/prisma";
+import { syncUserGameStatsForUser } from "@/lib/stats/result-sync";
 
 export const dynamic = "force-dynamic";
 
@@ -23,6 +24,18 @@ type AiTurnRequestBody = {
 
 function getErrorMessage(error: unknown): string {
   return error instanceof Error ? error.message : "Unknown error";
+}
+
+function getHumanPlayerUserIds(
+  participants: Array<{ role: Role; userId: string | null }>,
+): string[] {
+  const userIds = new Set<string>();
+  for (const participant of participants) {
+    if (participant.role === Role.PLAYER && participant.userId) {
+      userIds.add(participant.userId);
+    }
+  }
+  return [...userIds];
 }
 
 async function readBody(request: Request): Promise<AiTurnRequestBody> {
@@ -242,6 +255,18 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
 
     if (result.kind === "error") {
       return Response.json({ error: result.payload.error }, { status: result.payload.status });
+    }
+
+    if (result.payload.match.status === MatchStatus.FINISHED) {
+      const userIds = getHumanPlayerUserIds(result.payload.participants);
+
+      if (userIds.length > 0) {
+        try {
+          await Promise.all(userIds.map((userId) => syncUserGameStatsForUser(userId)));
+        } catch (syncError) {
+          console.error(`[matches/${matchId}] stats sync failed:`, getErrorMessage(syncError));
+        }
+      }
     }
 
     const gameUpdate = buildGameUpdatePayload({
