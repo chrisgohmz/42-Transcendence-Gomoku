@@ -16,6 +16,10 @@ const updateMatch = mock();
 const updateManyParticipants = mock();
 const fetchMock = mock();
 const hashPassword = mock();
+const publishChallengeDeclined = mock();
+const publishChallengeReceived = mock();
+const publishGameUpdate = mock();
+const publishQueueMatched = mock();
 const verifyPassword = mock();
 const originalChallengeDeclinedUrl = process.env["REALTIME_CHALLENGE_DECLINED_URL"];
 const originalFetch = globalThis.fetch;
@@ -49,6 +53,13 @@ await mock.module("better-auth/crypto", () => ({
   verifyPassword,
 }));
 
+await mock.module("@/lib/matches/realtime-publisher", () => ({
+  publishChallengeDeclined,
+  publishChallengeReceived,
+  publishGameUpdate,
+  publishQueueMatched,
+}));
+
 const route = await import("./route");
 
 const createdAt = new Date("2026-05-12T00:00:00.000Z");
@@ -67,14 +78,6 @@ function context(matchId = "match-1") {
   return {
     params: Promise.resolve({ id: matchId }),
   };
-}
-
-function getFetchBody(callIndex: number) {
-  const call = fetchMock.mock.calls[callIndex];
-  expect(call).toBeDefined();
-  const init = call?.[1] as RequestInit;
-
-  return JSON.parse(init.body as string);
 }
 
 function challengeMatch() {
@@ -127,6 +130,7 @@ beforeEach(() => {
   updateManyParticipants.mockReset();
   fetchMock.mockReset();
   hashPassword.mockReset();
+  publishChallengeDeclined.mockReset();
   verifyPassword.mockReset();
 
   globalThis.fetch = fetchMock as unknown as typeof fetch;
@@ -148,6 +152,7 @@ beforeEach(() => {
   updateMatch.mockResolvedValue({});
   updateManyParticipants.mockResolvedValue({ count: 1 });
   fetchMock.mockResolvedValue(new Response(null, { status: 200 }));
+  publishChallengeDeclined.mockResolvedValue(undefined);
   verifyPassword.mockResolvedValue(true);
 });
 
@@ -195,7 +200,7 @@ describe("POST /api/matches/:id/challenge/decline", () => {
       password: "wrong",
     });
     expect(transaction).not.toHaveBeenCalled();
-    expect(fetchMock).not.toHaveBeenCalled();
+    expect(publishChallengeDeclined).not.toHaveBeenCalled();
   });
 
   test("does not let a private room password cancel a non-challenge room", async () => {
@@ -211,7 +216,7 @@ describe("POST /api/matches/:id/challenge/decline", () => {
     expect(payload).toMatchObject({ error: "challenge_not_cancellable" });
     expect(verifyPassword).not.toHaveBeenCalled();
     expect(transaction).not.toHaveBeenCalled();
-    expect(fetchMock).not.toHaveBeenCalled();
+    expect(publishChallengeDeclined).not.toHaveBeenCalled();
   });
 
   test("does not let a user decline someone else's challenge invite", async () => {
@@ -230,7 +235,7 @@ describe("POST /api/matches/:id/challenge/decline", () => {
     expect(payload).toMatchObject({ error: "challenge_not_cancellable" });
     expect(verifyPassword).not.toHaveBeenCalled();
     expect(transaction).not.toHaveBeenCalled();
-    expect(fetchMock).not.toHaveBeenCalled();
+    expect(publishChallengeDeclined).not.toHaveBeenCalled();
   });
 
   test("cancels the challenge before publishing a server-derived decline notification", async () => {
@@ -266,11 +271,13 @@ describe("POST /api/matches/:id/challenge/decline", () => {
       hash: "hashed-decline-token",
       password: "decline-token",
     });
-    expect(fetchMock).toHaveBeenCalledTimes(1);
-    expect(getFetchBody(0)).toEqual({
-      matchId: "match-1",
-      senderUsername: "white",
-      username: "black",
-    });
+    expect(publishChallengeDeclined).toHaveBeenCalledWith(
+      "black",
+      {
+        matchId: "match-1",
+        senderUsername: "white",
+      },
+      2000,
+    );
   });
 });
