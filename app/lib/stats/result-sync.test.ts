@@ -1,11 +1,13 @@
-import { describe, expect, test } from "bun:test";
+import { describe, expect, mock, test } from "bun:test";
 
-import { MatchResult, MatchVisibility, RuleType } from "../../../generated/prisma/enums";
+import { MatchResult, MatchVisibility, Role, RuleType } from "../../../generated/prisma/enums";
 import {
   buildAchievementProgress,
   buildUserGameStatsSnapshots,
   summarizeMatchResults,
+  syncUserGameStatsForUser,
   type ResultSyncMatchSummary,
+  type ResultSyncOptions,
 } from "./result-sync";
 
 function summary(overrides: Partial<ResultSyncMatchSummary>): ResultSyncMatchSummary {
@@ -18,6 +20,61 @@ function summary(overrides: Partial<ResultSyncMatchSummary>): ResultSyncMatchSum
     visibility: MatchVisibility.PUBLIC,
     isBotMatch: false,
     ...overrides,
+  };
+}
+
+function createResultSyncClient(options: {
+  existingAchievements?: Array<{
+    achievementId: number;
+    completedAt: Date | null;
+    progress: number;
+  }>;
+  totalMoves: number;
+}) {
+  const userAchievementUpsert = mock(async (_args: unknown) => ({}));
+
+  return {
+    client: {
+      achievementDefinition: {
+        findMany: mock(async () => [
+          { id: 1, code: "first_win" },
+          { id: 2, code: "ten_moves" },
+          { id: 3, code: "ai_win" },
+          { id: 4, code: "win_streak_3" },
+        ]),
+      },
+      matchMove: {
+        count: mock(async () => options.totalMoves),
+      },
+      matchParticipant: {
+        findMany: mock(async () => [
+          {
+            id: "participant-1",
+            result: MatchResult.LOSS,
+            match: {
+              id: "match-1",
+              boardSize: 15,
+              ruleType: RuleType.GOMOKU,
+              finishedAt: new Date("2026-05-10T10:00:00.000Z"),
+              visibility: MatchVisibility.PUBLIC,
+              participants: [
+                { role: Role.PLAYER, userId: "user-1" },
+                { role: Role.PLAYER, userId: "user-2" },
+              ],
+            },
+          },
+        ]),
+      },
+      userAchievement: {
+        findMany: mock(async () => options.existingAchievements ?? []),
+        upsert: userAchievementUpsert,
+      },
+      userGameStats: {
+        findMany: mock(async () => []),
+        upsert: mock(async () => ({})),
+      },
+    },
+    userAchievementUpsert,
   };
 }
 
@@ -114,5 +171,61 @@ describe("result sync", () => {
 
     const winStreak = progress.find((item) => item.code === "win_streak_3");
     expect(winStreak?.progress).toBe(3);
+  });
+
+  test("persists partial achievement progress without completing it", async () => {
+    const { client, userAchievementUpsert } = createResultSyncClient({
+      totalMoves: 5,
+    });
+
+    await syncUserGameStatsForUser("user-1", {
+      now: new Date("2026-05-18T00:00:00.000Z"),
+      tx: client as unknown as ResultSyncOptions["tx"],
+    });
+
+    expect(userAchievementUpsert).toHaveBeenCalledTimes(1);
+    expect(userAchievementUpsert.mock.calls[0]?.[0]).toMatchObject({
+      create: {
+        achievementId: 2,
+        completedAt: null,
+        progress: 5,
+        userId: "user-1",
+      },
+      update: {
+        completedAt: null,
+        progress: 5,
+      },
+      where: {
+        userId_achievementId: {
+          achievementId: 2,
+          userId: "user-1",
+        },
+      },
+    });
+  });
+
+  test("preserves an existing achievement completion when progress later decreases", async () => {
+    const completedAt = new Date("2026-05-12T00:00:00.000Z");
+    const { client, userAchievementUpsert } = createResultSyncClient({
+      existingAchievements: [{ achievementId: 2, completedAt, progress: 10 }],
+      totalMoves: 5,
+    });
+
+    await syncUserGameStatsForUser("user-1", {
+      now: new Date("2026-05-18T00:00:00.000Z"),
+      tx: client as unknown as ResultSyncOptions["tx"],
+    });
+
+    expect(userAchievementUpsert).toHaveBeenCalledTimes(1);
+    expect(userAchievementUpsert.mock.calls[0]?.[0]).toMatchObject({
+      create: {
+        completedAt,
+        progress: 5,
+      },
+      update: {
+        completedAt,
+        progress: 5,
+      },
+    });
   });
 });

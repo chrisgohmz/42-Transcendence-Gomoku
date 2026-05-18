@@ -456,10 +456,7 @@ export async function syncUserGameStatsForUser(
           continue;
         }
 
-        const completedAt =
-          snapshot.progress > 0
-            ? (existingAchievement?.completedAt ?? snapshot.completedAt ?? now)
-            : null;
+        const completedAt = existingAchievement?.completedAt ?? snapshot.completedAt;
 
         updates.push(
           client.userAchievement.upsert({

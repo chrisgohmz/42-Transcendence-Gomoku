@@ -452,30 +452,78 @@ const seedStatsAndAchievements = async (
     ],
   });
 
-  const firstWin = await prisma.achievementDefinition.create({
-    data: {
+  const firstWin = await prisma.achievementDefinition.upsert({
+    where: { code: "first_win" },
+    update: {
+      name: "First Victory",
+      description: "Win your first public match.",
+      points: 10,
+    },
+    create: {
       code: "first_win",
       name: "First Victory",
       description: "Win your first public match.",
       points: 10,
     },
   });
-  const socialLink = await prisma.achievementDefinition.create({
-    data: {
+  const socialLink = await prisma.achievementDefinition.upsert({
+    where: { code: "first_friend" },
+    update: {
+      name: "Social Link",
+      description: "Add your first friend.",
+      points: 5,
+    },
+    create: {
       code: "first_friend",
       name: "Social Link",
       description: "Add your first friend.",
       points: 5,
     },
   });
-  const strategist = await prisma.achievementDefinition.create({
-    data: {
+  const strategist = await prisma.achievementDefinition.upsert({
+    where: { code: "ten_moves" },
+    update: {
+      name: "Strategist",
+      description: "Record at least 10 moves across matches.",
+      points: 15,
+    },
+    create: {
       code: "ten_moves",
       name: "Strategist",
       description: "Record at least 10 moves across matches.",
       points: 15,
     },
   });
+  await Promise.all([
+    prisma.achievementDefinition.upsert({
+      where: { code: "ai_win" },
+      update: {
+        name: "AI Victor",
+        description: "Win a match against an AI opponent.",
+        points: 10,
+      },
+      create: {
+        code: "ai_win",
+        name: "AI Victor",
+        description: "Win a match against an AI opponent.",
+        points: 10,
+      },
+    }),
+    prisma.achievementDefinition.upsert({
+      where: { code: "win_streak_3" },
+      update: {
+        name: "Hat Trick",
+        description: "Win three matches in a row.",
+        points: 20,
+      },
+      create: {
+        code: "win_streak_3",
+        name: "Hat Trick",
+        description: "Win three matches in a row.",
+        points: 20,
+      },
+    }),
+  ]);
 
   await prisma.userAchievement.createMany({
     data: [
