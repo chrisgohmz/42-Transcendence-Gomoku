@@ -126,7 +126,9 @@ test("authenticated redesigned pages render at desktop and mobile widths", async
   try {
     await gotoAppRoute(page, "/account");
     await expect(page.getByRole("heading", { level: 1, name: "Account Settings" })).toBeVisible();
-    await expect(page.getByText(user.email, { exact: true })).toBeVisible();
+    await expect(
+      page.getByText(user.email, { exact: true }).filter({ visible: true }),
+    ).toBeVisible();
     await expectNoDocumentOverflow(page, "/account");
 
     await gotoAppRoute(page, "/profile");
@@ -140,13 +142,15 @@ test("authenticated redesigned pages render at desktop and mobile widths", async
 
     await gotoAppRoute(page, "/friends");
     await expect(page.getByRole("heading", { level: 1, name: "Friends" })).toBeVisible();
-    await expect(page.getByText(friend.displayName, { exact: true })).toBeVisible();
-    await expect(page.getByTestId("friends-table")).toBeVisible();
+    await expect(
+      page.getByText(friend.displayName, { exact: true }).filter({ visible: true }),
+    ).toBeVisible();
+    await expect(page.getByTestId("friends-table").filter({ visible: true })).toBeVisible();
     await expectNoDocumentOverflow(page, "/friends");
 
     await gotoAppRoute(page, "/messages");
     await expect(page.getByRole("heading", { level: 1, name: "Messages" })).toBeVisible();
-    await expect(page.getByPlaceholder("Message MJ...")).toBeVisible();
+    await expect(page.getByRole("textbox", { name: "Message MJ..." })).toBeVisible();
     await expectNoDocumentOverflow(page, "/messages");
   } finally {
     await cleanupTestUsers([user.username, friend.username]);
