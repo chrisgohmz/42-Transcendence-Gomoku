@@ -198,6 +198,10 @@ function endReasonLabel(reason: string | null | undefined, t: TranslationFunctio
     return t("endReason.queueCancelled");
   }
 
+  if (reason === "host_cancelled") {
+    return t("endReason.hostCancelled");
+  }
+
   if (reason === "queue_expired") {
     return t("endReason.queueExpired");
   }
@@ -226,6 +230,7 @@ export default function HumanMatchRoom({
   const [moveError, setMoveError] = useState<string | null>(null);
   const [isSubmittingMove, setIsSubmittingMove] = useState(false);
   const [isResigning, setIsResigning] = useState(false);
+  const [isCancellingWaitingMatch, setIsCancellingWaitingMatch] = useState(false);
 
   useEffect(() => {
     if (initialState?.matchId === session.matchId) {
@@ -408,6 +413,54 @@ export default function HumanMatchRoom({
     }
   }
 
+  async function handleReturnToLobby() {
+    if (!canReturnToLobby || isCancellingWaitingMatch) {
+      return;
+    }
+
+    if (matchStatus !== "WAITING") {
+      onBackToLobby();
+      return;
+    }
+
+    setIsCancellingWaitingMatch(true);
+    setMoveError(null);
+
+    try {
+      const response = await fetch(`/api/matches/${encodeURIComponent(session.matchId)}/cancel`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          participantId: session.participantId,
+          baseVersion: effectiveUpdate?.stateVersion ?? state?.stateVersion ?? null,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorPayload = await response.json().catch(() => null);
+        const errorCode = getErrorCode(errorPayload);
+        setMoveError(
+          getErrorMessage(
+            errorPayload,
+            t("errors.cancelRequestFailed", { status: response.status }),
+          ),
+        );
+        if (errorCode === "stale_state" || errorCode === "match_not_waiting") {
+          await loadState();
+        }
+        return;
+      }
+
+      onBackToLobby();
+    } catch {
+      setMoveError(t("errors.networkCancel"));
+    } finally {
+      setIsCancellingWaitingMatch(false);
+    }
+  }
+
   return (
     <PageShell className="human-match-room">
       <PageHeader
@@ -459,14 +512,23 @@ export default function HumanMatchRoom({
               type="button"
               className="btn btn-subtle m-0 min-h-11 px-4"
               onClick={() => {
-                if (canReturnToLobby) {
-                  onBackToLobby();
-                }
+                void handleReturnToLobby();
               }}
-              disabled={!canReturnToLobby}
-              title={canReturnToLobby ? "Back to lobby" : "Lobby unlocks when the match ends"}
+              disabled={!canReturnToLobby || isCancellingWaitingMatch}
+              aria-busy={isCancellingWaitingMatch}
+              title={
+                canReturnToLobby
+                  ? matchStatus === "WAITING"
+                    ? "Cancel room and return to lobby"
+                    : "Back to lobby"
+                  : "Lobby unlocks when the match ends"
+              }
             >
-              <ArrowLeft aria-hidden="true" className="size-4" />
+              {isCancellingWaitingMatch ? (
+                <LoaderCircle aria-hidden="true" className="size-4 animate-spin" />
+              ) : (
+                <ArrowLeft aria-hidden="true" className="size-4" />
+              )}
               {t("page.lobby")}
             </button>
           </>

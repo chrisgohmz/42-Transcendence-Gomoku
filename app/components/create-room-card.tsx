@@ -2,7 +2,7 @@
 
 import { Eye, EyeOff, LockKeyhole, Plus, Swords, Timer } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { useEffect, useState } from "react";
+import { useEffect, useId, useState } from "react";
 
 import { Badge, Surface } from "@/components/gomoku-ui";
 
@@ -31,6 +31,8 @@ export default function CreateRoomCard({
   const t = useTranslations("human.createRoom");
   const [isClientReady, setIsClientReady] = useState(false);
   const [isPrivate, setIsPrivate] = useState(false);
+  const roomNameId = useId();
+  const roomPasswordId = useId();
 
   useEffect(() => {
     setIsClientReady(true);
@@ -70,11 +72,11 @@ export default function CreateRoomCard({
           }}
         >
           <div className="field">
-            <label htmlFor="room-name" className="field-label">
+            <label htmlFor={roomNameId} className="field-label">
               {t("roomNameLabel")}
             </label>
             <input
-              id="room-name"
+              id={roomNameId}
               name="roomName"
               placeholder={t("roomNamePlaceholder")}
               className="text-input"
@@ -82,7 +84,7 @@ export default function CreateRoomCard({
           </div>
 
           <div className={`field transition-opacity ${isPrivate ? "" : "opacity-55"}`}>
-            <label htmlFor="room-password" className="field-label">
+            <label htmlFor={roomPasswordId} className="field-label">
               {t("password")}
             </label>
             <div className="field-shell">
@@ -91,7 +93,7 @@ export default function CreateRoomCard({
                 className={`size-4 ${isPrivate ? "text-(--brass)" : "text-(--muted-text)"}`}
               />
               <input
-                id="room-password"
+                id={roomPasswordId}
                 name="roomPassword"
                 type="password"
                 autoComplete="new-password"

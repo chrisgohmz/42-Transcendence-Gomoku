@@ -4,6 +4,12 @@ import { MatchStatus, MatchVisibility, Role, RuleType, Seat } from "@/../generat
 
 const getCurrentSession = mock();
 const createMatch = mock();
+const findManyMatches = mock();
+const cleanupExecuteRaw = mock();
+const cleanupFindManyMatches = mock();
+const cleanupUpdateManyMatches = mock();
+const cleanupUpdateManyParticipants = mock();
+const transaction = mock();
 const fetchMock = mock();
 const hashPassword = mock();
 const verifyPassword = mock();
@@ -17,8 +23,10 @@ await mock.module("@/lib/auth", () => ({
 
 await mock.module("@/lib/prisma", () => ({
   prisma: {
+    $transaction: transaction,
     match: {
       create: createMatch,
+      findMany: findManyMatches,
     },
   },
 }));
@@ -56,7 +64,7 @@ function creatorParticipant() {
   };
 }
 
-function createdMatch() {
+function createdMatch(overrides: Record<string, unknown> = {}) {
   return {
     boardSize: 15,
     createdAt,
@@ -74,12 +82,19 @@ function createdMatch() {
     updatedAt: createdAt,
     visibility: MatchVisibility.PUBLIC,
     winningSeat: null,
+    ...overrides,
   };
 }
 
 beforeEach(() => {
   getCurrentSession.mockReset();
   createMatch.mockReset();
+  findManyMatches.mockReset();
+  cleanupExecuteRaw.mockReset();
+  cleanupFindManyMatches.mockReset();
+  cleanupUpdateManyMatches.mockReset();
+  cleanupUpdateManyParticipants.mockReset();
+  transaction.mockReset();
   fetchMock.mockReset();
   hashPassword.mockReset();
   verifyPassword.mockReset();
@@ -96,6 +111,22 @@ beforeEach(() => {
     },
   });
   createMatch.mockResolvedValue(createdMatch());
+  findManyMatches.mockResolvedValue([]);
+  cleanupFindManyMatches.mockResolvedValue([]);
+  cleanupUpdateManyMatches.mockResolvedValue({ count: 0 });
+  cleanupUpdateManyParticipants.mockResolvedValue({ count: 0 });
+  transaction.mockImplementation((callback: (transactionClient: unknown) => unknown) =>
+    callback({
+      $executeRaw: cleanupExecuteRaw,
+      match: {
+        findMany: cleanupFindManyMatches,
+        updateMany: cleanupUpdateManyMatches,
+      },
+      matchParticipant: {
+        updateMany: cleanupUpdateManyParticipants,
+      },
+    }),
+  );
   fetchMock.mockResolvedValue(new Response(null, { status: 200 }));
   hashPassword.mockResolvedValue("hashed-room-password");
 });
@@ -112,6 +143,57 @@ afterAll(() => {
   } else {
     process.env["REALTIME_INTERNAL_SECRET"] = originalRealtimeSecret;
   }
+});
+
+describe("GET /api/matches", () => {
+  test("lists public and user-created private rooms without exposing challenge invites", async () => {
+    findManyMatches.mockResolvedValueOnce([
+      createdMatch({
+        id: "public-match",
+        name: "Open Study",
+        password: null,
+        visibility: MatchVisibility.PUBLIC,
+      }),
+      createdMatch({
+        id: "private-match",
+        name: "Study Room",
+        password: "hashed-room-password",
+        visibility: MatchVisibility.PRIVATE,
+      }),
+      createdMatch({
+        id: "challenge-match",
+        name: "Ada vs Bob",
+        password: "hashed-challenge-password",
+        metadata: {
+          declineTokenHash: "hashed-decline-token",
+          kind: "human-challenge",
+          targetUserId: "user-bob",
+          targetUsername: "bob",
+        },
+        visibility: MatchVisibility.PRIVATE,
+      }),
+    ]);
+
+    const response = await route.GET();
+    const payload = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(findManyMatches).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: {
+          status: MatchStatus.WAITING,
+        },
+      }),
+    );
+    expect(payload.map((match: { matchId: string }) => match.matchId)).toEqual([
+      "public-match",
+      "private-match",
+    ]);
+    expect(payload[1]).toMatchObject({
+      matchId: "private-match",
+      requiresPassword: true,
+    });
+  });
 });
 
 describe("POST /api/matches", () => {
