@@ -5,8 +5,6 @@ import {
   joinMatchmakingQueue,
 } from "@/lib/matches/matchmaking";
 
-export const dynamic = "force-dynamic";
-
 function getErrorMessage(error: unknown): string {
   return error instanceof Error ? error.message : "Unknown error";
 }

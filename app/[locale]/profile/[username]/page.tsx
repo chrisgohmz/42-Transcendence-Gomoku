@@ -11,8 +11,10 @@ import {
 } from "lucide-react";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { notFound } from "next/navigation";
+import { Suspense } from "react";
 
 import { Badge, MetricCard, PageShell, Surface } from "@/components/gomoku-ui";
+import { PageLoadingShell } from "@/components/page-loading-shell";
 import { getCurrentSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
@@ -35,7 +37,15 @@ const recentMatches = [
 
 const achievements = ["sharpOpening", "calmEndgame", "fastRematch"] as const;
 
-export default async function ProfilePage({ params }: ProfilePageProps) {
+export default function ProfilePage({ params }: ProfilePageProps) {
+  return (
+    <Suspense fallback={<PageLoadingShell />}>
+      <PublicProfilePageContent params={params} />
+    </Suspense>
+  );
+}
+
+async function PublicProfilePageContent({ params }: ProfilePageProps) {
   const { locale, username } = await params;
   setRequestLocale(locale);
   const t = await getTranslations({ locale, namespace: "profile" });

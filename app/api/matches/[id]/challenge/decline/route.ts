@@ -6,8 +6,6 @@ import { getChallengeMatchMetadata } from "@/lib/matches/challenge-metadata";
 import { publishChallengeDeclined } from "@/lib/matches/realtime-publisher";
 import { prisma } from "@/lib/prisma";
 
-export const dynamic = "force-dynamic";
-
 function getErrorMessage(error: unknown): string {
   return error instanceof Error ? error.message : "Unknown error";
 }

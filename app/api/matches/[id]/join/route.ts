@@ -9,8 +9,6 @@ import { buildGameUpdatePayload } from "@/lib/matches/game-update";
 import { publishGameUpdate, publishQueueMatched } from "@/lib/matches/realtime-publisher";
 import { prisma } from "@/lib/prisma";
 
-export const dynamic = "force-dynamic";
-
 const joinMatchRequestSchema = z.preprocess(
   (value) => (typeof value === "object" && value !== null && !Array.isArray(value) ? value : {}),
   z.object({

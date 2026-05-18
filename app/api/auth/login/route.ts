@@ -7,8 +7,6 @@ import { resolveApiLocale } from "../../../lib/i18n/api";
 import { prisma } from "../../../lib/prisma";
 import { fieldIssuesToMap, validateLoginInput } from "../../../lib/validation/auth-profile";
 
-export const dynamic = "force-dynamic";
-
 type LoginBody = {
   email?: unknown;
   password?: unknown;

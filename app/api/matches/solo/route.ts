@@ -8,8 +8,6 @@ import { evaluateMoveOutcome, standardGomokuBoardSize } from "@/lib/matches/move
 import { publishGameUpdate } from "@/lib/matches/realtime-publisher";
 import { prisma } from "@/lib/prisma";
 
-export const dynamic = "force-dynamic";
-
 type SoloMatchRequestBody = {
   difficulty?: unknown;
   playerSeat?: unknown;

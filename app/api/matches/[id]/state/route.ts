@@ -4,8 +4,6 @@ import { getSoloMatchMetadata } from "@/lib/matches/ai-solo";
 import { isActiveParticipantForUser } from "@/lib/matches/participant-access";
 import { prisma } from "@/lib/prisma";
 
-export const dynamic = "force-dynamic";
-
 function getErrorMessage(error: unknown): string {
   return error instanceof Error ? error.message : "Unknown error";
 }

@@ -1,5 +1,7 @@
 import { setRequestLocale } from "next-intl/server";
+import { Suspense } from "react";
 
+import { PageLoadingShell } from "@/components/page-loading-shell";
 import { redirect } from "@/i18n/navigation";
 import { getCurrentSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -20,7 +22,15 @@ function getSearchQuery(query: string | string[] | undefined) {
   return rawQuery?.trim() ?? "";
 }
 
-export default async function FriendsPage({ params, searchParams }: FriendsPageProps) {
+export default function FriendsPage({ params, searchParams }: FriendsPageProps) {
+  return (
+    <Suspense fallback={<PageLoadingShell />}>
+      <FriendsPageContent params={params} searchParams={searchParams} />
+    </Suspense>
+  );
+}
+
+async function FriendsPageContent({ params, searchParams }: FriendsPageProps) {
   const { locale } = await params;
   const { query } = await searchParams;
   setRequestLocale(locale);

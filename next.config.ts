@@ -8,6 +8,10 @@ const currentDirectory = dirname(fileURLToPath(import.meta.url));
 const withNextIntl = createNextIntlPlugin("./app/i18n/request.ts");
 
 const nextConfig: NextConfig = {
+  cacheComponents: true,
+  experimental: {
+    instantNavigationDevToolsToggle: true,
+  },
   turbopack: {
     root: currentDirectory,
   },

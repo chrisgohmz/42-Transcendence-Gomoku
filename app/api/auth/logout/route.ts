@@ -2,8 +2,6 @@ import { headers } from "next/headers";
 
 import { auth } from "../../../lib/auth";
 
-export const dynamic = "force-dynamic";
-
 export async function POST() {
   const authResponse = await auth.api
     .signOut({

@@ -7,10 +7,10 @@ import { notFound } from "next/navigation";
 import "../../node_modules/shadcn/dist/tailwind.css";
 import "../../node_modules/tw-animate-css/dist/tw-animate.css";
 import "../globals.css";
-import type { ReactNode } from "react";
+import { Suspense, type ReactNode } from "react";
 
 import AppSidebar from "@/components/app-sidebar";
-import { PresenceProvider } from "@/components/presence-provider";
+import { PresenceProvider, PresenceSessionSync } from "@/components/presence-provider";
 import { routing } from "@/i18n/routing";
 import { getCurrentSession } from "@/lib/auth";
 import { cn } from "@/lib/utils";
@@ -61,15 +61,16 @@ export default async function RootLayout({ children, params }: RootLayoutProps) 
   }
 
   setRequestLocale(locale);
-  const context = await getCurrentSession();
-  const username = context?.user?.username;
   const socketUrl = process.env["SOCKET_PUBLIC_URL"];
 
   return (
     <html lang={locale} className={cn("dark font-sans", manrope.variable, cormorant.variable)}>
       <body>
         <NextIntlClientProvider>
-          <PresenceProvider currentUsername={username} socketUrl={socketUrl}>
+          <PresenceProvider socketUrl={socketUrl}>
+            <Suspense fallback={null}>
+              <PresenceSession />
+            </Suspense>
             <a className="skip-link" href="#app-main">
               Skip to Content
             </a>
@@ -81,7 +82,9 @@ export default async function RootLayout({ children, params }: RootLayoutProps) 
               <div className="absolute bottom-[-5rem] left-[var(--sidebar-width)] h-80 w-[720px] rotate-180 bg-[url('/ui/bamboo-accent.svg')] bg-contain bg-left-bottom bg-no-repeat opacity-[0.08] mix-blend-screen" />
             </div>
             <div className="app-frame relative z-10">
-              <AppSidebar />
+              <Suspense fallback={<AppSidebarFallback />}>
+                <AppSidebar />
+              </Suspense>
               <div id="app-main" className="app-content">
                 {children}
               </div>
@@ -90,5 +93,45 @@ export default async function RootLayout({ children, params }: RootLayoutProps) 
         </NextIntlClientProvider>
       </body>
     </html>
+  );
+}
+
+async function PresenceSession() {
+  const context = await getCurrentSession();
+
+  return <PresenceSessionSync username={context?.user.username} />;
+}
+
+function AppSidebarFallback() {
+  return (
+    <>
+      <aside className="app-sidebar" aria-hidden="true">
+        <div className="sidebar-brand">
+          <div className="size-[52px] rounded-md bg-white/[0.08]" />
+          <span className="grid flex-1 gap-2">
+            <span className="h-5 w-36 rounded-sm bg-white/[0.08]" />
+            <span className="h-3 w-28 rounded-sm bg-white/[0.05]" />
+          </span>
+        </div>
+        <div className="mt-8 grid gap-3">
+          <div className="h-4 w-12 rounded-sm bg-white/[0.05]" />
+          <div className="h-11 rounded-md bg-white/[0.05]" />
+          <div className="h-11 rounded-md bg-white/[0.05]" />
+          <div className="h-11 rounded-md bg-white/[0.05]" />
+        </div>
+        <div className="mt-8 grid gap-3">
+          <div className="h-4 w-14 rounded-sm bg-white/[0.05]" />
+          <div className="h-11 rounded-md bg-white/[0.05]" />
+          <div className="h-11 rounded-md bg-white/[0.05]" />
+          <div className="h-11 rounded-md bg-white/[0.05]" />
+        </div>
+        <div className="mt-auto h-28 rounded-md bg-white/[0.05]" />
+      </aside>
+      <header className="mobile-topbar" aria-hidden="true">
+        <div className="size-10 rounded-md bg-white/[0.08]" />
+        <div className="h-5 flex-1 rounded-sm bg-white/[0.06]" />
+        <div className="size-10 rounded-md bg-white/[0.06]" />
+      </header>
+    </>
   );
 }

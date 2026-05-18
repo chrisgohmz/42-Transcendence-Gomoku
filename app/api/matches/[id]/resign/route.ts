@@ -9,8 +9,6 @@ import { publishGameUpdate } from "@/lib/matches/realtime-publisher";
 import { prisma } from "@/lib/prisma";
 import { syncUserGameStatsForUser } from "@/lib/stats/result-sync";
 
-export const dynamic = "force-dynamic";
-
 function getErrorMessage(error: unknown): string {
   return error instanceof Error ? error.message : "Unknown error";
 }

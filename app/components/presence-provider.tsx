@@ -9,11 +9,13 @@ import { ChallengeListener } from "./challenge-listener";
 
 type PresenceContextType = {
   onlineUsers: string[];
+  setCurrentUsername: (username?: string) => void;
   socket: Socket | null;
 };
 
 const PresenceContext = createContext<PresenceContextType>({
   onlineUsers: [],
+  setCurrentUsername: () => undefined,
   socket: null,
 });
 
@@ -27,10 +29,15 @@ export function PresenceProvider({
   socketUrl?: string;
 }) {
   const [onlineUsers, setOnlineUsers] = useState<string[]>([]);
+  const [activeUsername, setCurrentUsername] = useState(currentUsername);
   const [socket, setSocket] = useState<Socket | null>(null);
 
   useEffect(() => {
-    if (!currentUsername) {
+    setCurrentUsername(currentUsername);
+  }, [currentUsername]);
+
+  useEffect(() => {
+    if (!activeUsername) {
       setOnlineUsers([]);
       setSocket(null);
       return;
@@ -42,8 +49,7 @@ export function PresenceProvider({
 
     const handleConnect = () => {
       nextSocket.emit("presence:subscribe");
-      // IMPORTANT
-      nextSocket.emit("register", currentUsername);
+      nextSocket.emit("register", activeUsername);
     };
 
     const handlePresenceUpdate = (users: string[]) => {
@@ -69,12 +75,13 @@ export function PresenceProvider({
       nextSocket.disconnect();
       setSocket(null);
     };
-  }, [currentUsername, socketUrl]);
+  }, [activeUsername, socketUrl]);
 
   return (
     <PresenceContext.Provider
       value={{
         onlineUsers,
+        setCurrentUsername,
         socket,
       }}
     >
@@ -86,4 +93,14 @@ export function PresenceProvider({
 
 export function usePresence() {
   return useContext(PresenceContext);
+}
+
+export function PresenceSessionSync({ username }: { username?: string }) {
+  const { setCurrentUsername } = usePresence();
+
+  useEffect(() => {
+    setCurrentUsername(username);
+  }, [setCurrentUsername, username]);
+
+  return null;
 }

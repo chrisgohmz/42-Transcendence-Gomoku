@@ -1,3 +1,5 @@
+import { cacheLife } from "next/cache";
+
 import type { Prisma } from "../../generated/prisma/client";
 import { prisma } from "./prisma";
 
@@ -67,6 +69,9 @@ export function toLeaderboardEntries(stats: LeaderboardStat[]): LeaderboardEntry
 }
 
 export async function getLeaderboardEntries(): Promise<LeaderboardEntry[]> {
+  "use cache";
+  cacheLife("minutes");
+
   const stats = await prisma.userGameStats.findMany(leaderboardQueryArgs);
 
   return toLeaderboardEntries(stats);

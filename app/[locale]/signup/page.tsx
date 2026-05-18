@@ -1,7 +1,9 @@
 import { Crown, Swords } from "lucide-react";
 import { getTranslations, setRequestLocale } from "next-intl/server";
+import { Suspense } from "react";
 
 import { BoardShowpiece, PageShell } from "@/components/gomoku-ui";
+import { PageLoadingShell } from "@/components/page-loading-shell";
 import { SignupForm } from "@/components/signup-form";
 import { redirect } from "@/i18n/navigation";
 import { getCurrentSession } from "@/lib/auth";
@@ -12,7 +14,15 @@ type SignupPageProps = {
   }>;
 };
 
-export default async function SignupPage({ params }: SignupPageProps) {
+export default function SignupPage({ params }: SignupPageProps) {
+  return (
+    <Suspense fallback={<PageLoadingShell wide={false} />}>
+      <SignupPageContent params={params} />
+    </Suspense>
+  );
+}
+
+async function SignupPageContent({ params }: SignupPageProps) {
   const { locale } = await params;
   setRequestLocale(locale);
 

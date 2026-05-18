@@ -4,8 +4,6 @@ import { apiErrorResponse } from "../../../lib/api-errors";
 import { getCurrentSession, serializeUserForResponse } from "../../../lib/auth";
 import { resolveApiLocale } from "../../../lib/i18n/api";
 
-export const dynamic = "force-dynamic";
-
 export async function GET(request: Request) {
   const context = await getCurrentSession();
   const t = await getTranslations({ locale: resolveApiLocale(request), namespace: "auth.errors" });

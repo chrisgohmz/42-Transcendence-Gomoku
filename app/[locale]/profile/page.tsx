@@ -9,8 +9,10 @@ import {
   UserRound,
 } from "lucide-react";
 import { getTranslations, setRequestLocale } from "next-intl/server";
+import { Suspense } from "react";
 
 import { AvatarToken, Badge, MetricCard, PageShell, Surface } from "@/components/gomoku-ui";
+import { PageLoadingShell } from "@/components/page-loading-shell";
 import { Link, redirect } from "@/i18n/navigation";
 import { getCurrentSession } from "@/lib/auth";
 
@@ -41,7 +43,15 @@ const recentMatches = [
   },
 ] as const;
 
-export default async function ProfilePage({ params }: ProfilePageProps) {
+export default function ProfilePage({ params }: ProfilePageProps) {
+  return (
+    <Suspense fallback={<PageLoadingShell />}>
+      <ProfilePageContent params={params} />
+    </Suspense>
+  );
+}
+
+async function ProfilePageContent({ params }: ProfilePageProps) {
   const { locale } = await params;
   setRequestLocale(locale);
 

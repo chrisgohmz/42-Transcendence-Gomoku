@@ -1,7 +1,9 @@
 import { ArrowLeft } from "lucide-react";
 import { getTranslations, setRequestLocale } from "next-intl/server";
+import { Suspense } from "react";
 
 import { AvatarToken, Badge, PageHeader, PageShell, Surface } from "@/components/gomoku-ui";
+import { PageLoadingShell } from "@/components/page-loading-shell";
 import { Link, redirect } from "@/i18n/navigation";
 import { getCurrentSession } from "@/lib/auth";
 
@@ -14,7 +16,15 @@ type EditProfilePageProps = {
   }>;
 };
 
-export default async function EditProfilePage({ params }: EditProfilePageProps) {
+export default function EditProfilePage({ params }: EditProfilePageProps) {
+  return (
+    <Suspense fallback={<PageLoadingShell />}>
+      <EditProfilePageContent params={params} />
+    </Suspense>
+  );
+}
+
+async function EditProfilePageContent({ params }: EditProfilePageProps) {
   const { locale } = await params;
   setRequestLocale(locale);
 

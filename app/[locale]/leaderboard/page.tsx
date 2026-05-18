@@ -1,11 +1,12 @@
 import { AlertTriangle, BarChart3, Globe2, Medal, Trophy, Users } from "lucide-react";
 import { getTranslations, setRequestLocale } from "next-intl/server";
+import { connection } from "next/server";
+import { Suspense } from "react";
 
 import { Badge, MetricCard, PageHeader, PageShell, Surface } from "@/components/gomoku-ui";
 import LeaderboardTable from "@/components/leaderboardtable";
+import { PageLoadingShell } from "@/components/page-loading-shell";
 import { getLeaderboardEntries, type LeaderboardEntry } from "@/lib/leaderboard";
-
-export const dynamic = "force-dynamic";
 
 type LeaderBoardProps = {
   params: Promise<{
@@ -13,9 +14,18 @@ type LeaderBoardProps = {
   }>;
 };
 
-export default async function LeaderBoard({ params }: LeaderBoardProps) {
+export default function LeaderBoard({ params }: LeaderBoardProps) {
+  return (
+    <Suspense fallback={<PageLoadingShell />}>
+      <LeaderBoardContent params={params} />
+    </Suspense>
+  );
+}
+
+async function LeaderBoardContent({ params }: LeaderBoardProps) {
   const { locale } = await params;
   setRequestLocale(locale);
+  await connection();
 
   const t = await getTranslations({ locale, namespace: "leaderboard" });
   let entries: LeaderboardEntry[] = [];

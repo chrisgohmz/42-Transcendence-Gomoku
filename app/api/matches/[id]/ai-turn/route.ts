@@ -15,8 +15,6 @@ import { publishGameUpdate } from "@/lib/matches/realtime-publisher";
 import { prisma } from "@/lib/prisma";
 import { syncUserGameStatsForUser } from "@/lib/stats/result-sync";
 
-export const dynamic = "force-dynamic";
-
 type AiTurnRequestBody = {
   baseVersion?: unknown;
   participantId?: unknown;

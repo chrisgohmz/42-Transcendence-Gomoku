@@ -7,8 +7,6 @@ import { isActiveParticipantForUser } from "@/lib/matches/participant-access";
 import { publishGameUpdate } from "@/lib/matches/realtime-publisher";
 import { prisma } from "@/lib/prisma";
 
-export const dynamic = "force-dynamic";
-
 const endReasonHostCancelled = "host_cancelled";
 
 function getErrorMessage(error: unknown): string {

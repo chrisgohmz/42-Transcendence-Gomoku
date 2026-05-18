@@ -15,8 +15,6 @@ import { resolveApiLocale } from "../../../lib/i18n/api";
 import { prisma } from "../../../lib/prisma";
 import { fieldIssuesToMap, validateSignupInput } from "../../../lib/validation/auth-profile";
 
-export const dynamic = "force-dynamic";
-
 type SignupBody = {
   displayName?: unknown;
   email?: unknown;

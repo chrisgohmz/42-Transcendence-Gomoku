@@ -1,10 +1,11 @@
 import { Bell, Globe2, KeyRound, LockKeyhole, ShieldCheck, Trash2, UserRound } from "lucide-react";
 import { getFormatter, getTranslations, setRequestLocale } from "next-intl/server";
-import type { ReactNode } from "react";
+import { Suspense, type ReactNode } from "react";
 
 import { Badge, PageHeader, PageShell, Surface } from "@/components/gomoku-ui";
 import { LocaleSwitcher } from "@/components/locale-switcher";
 import { LogoutButton } from "@/components/logout-button";
+import { PageLoadingShell } from "@/components/page-loading-shell";
 import { redirect } from "@/i18n/navigation";
 import { getCurrentSession, serializeUserForResponse } from "@/lib/auth";
 
@@ -46,7 +47,15 @@ type AccountPageProps = {
   }>;
 };
 
-export default async function AccountPage({ params }: AccountPageProps) {
+export default function AccountPage({ params }: AccountPageProps) {
+  return (
+    <Suspense fallback={<PageLoadingShell />}>
+      <AccountPageContent params={params} />
+    </Suspense>
+  );
+}
+
+async function AccountPageContent({ params }: AccountPageProps) {
   const { locale } = await params;
   setRequestLocale(locale);
 

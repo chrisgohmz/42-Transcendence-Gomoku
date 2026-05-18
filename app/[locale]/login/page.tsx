@@ -1,8 +1,10 @@
 import { ShieldCheck, Sparkles } from "lucide-react";
 import { getTranslations, setRequestLocale } from "next-intl/server";
+import { Suspense } from "react";
 
 import { BoardShowpiece, PageShell } from "@/components/gomoku-ui";
 import { LoginForm } from "@/components/login-form";
+import { PageLoadingShell } from "@/components/page-loading-shell";
 import { redirect } from "@/i18n/navigation";
 import { getCurrentSession } from "@/lib/auth";
 
@@ -12,7 +14,15 @@ type LoginPageProps = {
   }>;
 };
 
-export default async function LoginPage({ params }: LoginPageProps) {
+export default function LoginPage({ params }: LoginPageProps) {
+  return (
+    <Suspense fallback={<PageLoadingShell wide={false} />}>
+      <LoginPageContent params={params} />
+    </Suspense>
+  );
+}
+
+async function LoginPageContent({ params }: LoginPageProps) {
   const { locale } = await params;
   setRequestLocale(locale);
 
