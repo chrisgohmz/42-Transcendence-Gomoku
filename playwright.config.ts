@@ -6,6 +6,14 @@ const shouldStartWebServer =
 const webServerCommand =
   process.env["PLAYWRIGHT_WEB_SERVER_COMMAND"] ??
   (process.env["CI"] ? "bun run build && bun run start" : "bun run dev");
+const webServerEnv: Record<string, string> = Object.fromEntries(
+  Object.entries(process.env).filter((entry): entry is [string, string] => Boolean(entry[1])),
+);
+
+webServerEnv["GITHUB_CLIENT_ID"] ||= "playwright-github-client";
+webServerEnv["GITHUB_CLIENT_SECRET"] ||= "playwright-github-secret";
+webServerEnv["GOOGLE_CLIENT_ID"] ||= "playwright-google-client";
+webServerEnv["GOOGLE_CLIENT_SECRET"] ||= "playwright-google-secret";
 
 export default defineConfig({
   testDir: "./tests/e2e",
@@ -27,6 +35,7 @@ export default defineConfig({
   webServer: shouldStartWebServer
     ? {
         command: webServerCommand,
+        env: webServerEnv,
         reuseExistingServer: !process.env["CI"],
         stderr: "pipe",
         stdout: "pipe",

@@ -50,7 +50,7 @@ test("auth pages expose usable sign-in and sign-up forms", async ({ page }) => {
   await expect(page.getByRole("heading", { name: "Welcome back." })).toBeVisible();
   await expect(page.getByLabel("Email")).toBeVisible();
   await expect(page.getByLabel("Password")).toBeVisible();
-  await expect(page.getByRole("button", { name: "Sign in" })).toBeVisible();
+  await expect(page.getByRole("button", { exact: true, name: "Sign in" })).toBeVisible();
 
   await gotoAppRoute(page, "/signup");
   await expect(page.getByRole("heading", { name: "Create your account." })).toBeVisible();
@@ -216,7 +216,7 @@ async function createAndSignInTestUser(page: Page, testInfo: TestInfo): Promise<
     await gotoAppRoute(page, "/login");
     await page.getByLabel("Email").fill(email);
     await page.getByLabel("Password").fill("password123");
-    await page.getByRole("button", { name: "Sign in" }).click();
+    await page.getByRole("button", { exact: true, name: "Sign in" }).click();
     await expect(page).toHaveURL(/\/en\/profile$/);
   } catch (error) {
     await cleanupTestUsers([username]);
