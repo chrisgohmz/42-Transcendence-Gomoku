@@ -2,8 +2,6 @@
 
 import { useEffect, useRef, useState, useCallback } from "react";
 
-import { createSocket } from "@/lib/socket-client";
-
 type LeaderboardEntry = {
   playerId: string;
   rank: number;
@@ -28,7 +26,6 @@ export function useLeaderboard(initial?: LeaderboardSnapshot | null, debounceMs 
   const [error, setError] = useState<string | null>(null);
 
   const timerRef = useRef<number | null>(null);
-  const socketRef = useRef<any>(null);
   const abortRef = useRef<AbortController | null>(null);
 
   const fetchSnapshot = useCallback(async (signal?: AbortSignal) => {
@@ -68,22 +65,6 @@ export function useLeaderboard(initial?: LeaderboardSnapshot | null, debounceMs 
       fetchSnapshot(abortRef.current.signal);
     }
 
-    // setup socket listener
-    const socket = createSocket();
-    socketRef.current = socket;
-
-    const onStatsRefresh = (payload: { userId?: string; reason?: string }) => {
-      // If payload contains userId but it's not relevant, we still refresh
-      // but you can filter here if you only want refresh for certain users.
-      refreshDebounced();
-    };
-
-    try {
-      socket.on("stats:refresh", onStatsRefresh);
-    } catch {
-      // socket might not be connected; ignore
-    }
-
     return () => {
       if (timerRef.current) {
         window.clearTimeout(timerRef.current);
@@ -92,13 +73,6 @@ export function useLeaderboard(initial?: LeaderboardSnapshot | null, debounceMs 
       if (abortRef.current) {
         abortRef.current.abort();
         abortRef.current = null;
-      }
-      if (socketRef.current) {
-        try {
-          socketRef.current.off("stats:refresh", onStatsRefresh);
-          socketRef.current.disconnect();
-        } catch {}
-        socketRef.current = null;
       }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -109,6 +83,7 @@ export function useLeaderboard(initial?: LeaderboardSnapshot | null, debounceMs 
     currentUser,
     loading,
     error,
+    refreshDebounced,
     refresh: () => {
       if (timerRef.current) {
         window.clearTimeout(timerRef.current);
