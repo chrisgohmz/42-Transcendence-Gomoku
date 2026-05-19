@@ -6,13 +6,11 @@ import { useCallback, useEffect, useState } from "react";
 import type { ProfileStatsSnapshot } from "@/lib/stats/profile-stats";
 
 type ErrorResponse = {
-  error?: string;
   message?: string;
-  detail?: string;
 };
 
 function getErrorMessage(payload: ErrorResponse | null) {
-  return payload?.message ?? payload?.detail ?? payload?.error ?? null;
+  return payload?.message ?? null;
 }
 
 export function useProfileStats() {
@@ -48,7 +46,7 @@ export function useProfileStats() {
     } catch (caught) {
       console.error("Error loading profile stats:", caught);
       setData(null);
-      setError(caught instanceof Error ? caught.message : t("page.errors.network"));
+      setError(t("page.errors.network"));
     } finally {
       setIsLoading(false);
     }

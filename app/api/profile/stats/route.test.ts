@@ -1,7 +1,9 @@
-import { beforeEach, describe, expect, mock, test } from "bun:test";
+import { afterAll, beforeEach, describe, expect, mock, test } from "bun:test";
 
 const getCurrentSession = mock();
 const getProfileStatsForUser = mock();
+const consoleError = mock(() => {});
+const originalConsoleError = console.error;
 
 await mock.module("@/lib/auth", () => ({
   getCurrentSession,
@@ -13,13 +15,11 @@ await mock.module("@/lib/stats/profile-stats", () => ({
 
 const route = await import("./route");
 
-function request() {
-  return new Request("http://localhost/api/profile/stats");
-}
-
 beforeEach(() => {
   getCurrentSession.mockReset();
   getProfileStatsForUser.mockReset();
+  consoleError.mockReset();
+  console.error = consoleError as unknown as typeof console.error;
 
   getCurrentSession.mockResolvedValue({
     user: {
@@ -70,6 +70,10 @@ beforeEach(() => {
   });
 });
 
+afterAll(() => {
+  console.error = originalConsoleError;
+});
+
 describe("GET /api/profile/stats", () => {
   test("requires authentication", async () => {
     getCurrentSession.mockResolvedValueOnce(null);
@@ -108,6 +112,7 @@ describe("GET /api/profile/stats", () => {
     const payload = await response.json();
 
     expect(response.status).toBe(500);
-    expect(payload).toMatchObject({ error: "failed_to_load_profile_stats" });
+    expect(payload).toEqual({ error: "failed_to_load_profile_stats" });
+    expect(consoleError).toHaveBeenCalled();
   });
 });

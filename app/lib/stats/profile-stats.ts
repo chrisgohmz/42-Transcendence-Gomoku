@@ -1,22 +1,21 @@
 import type { Prisma } from "../../../generated/prisma/client";
-import { MatchResult, Role, RuleType } from "../../../generated/prisma/enums";
-import { LEADERBOARD_BOARD_SIZE, formatWinRate } from "../leaderboard";
+import { MatchResult, Role } from "../../../generated/prisma/enums";
+import {
+  LEADERBOARD_BOARD_SIZE,
+  LEADERBOARD_RULE_TYPE,
+  buildLeaderboardAheadWhere,
+  formatWinRate,
+  type LeaderboardRankInput,
+} from "../leaderboard";
 import { getMatchHistoryForUser, type MatchHistoryEntry } from "../matches/match-history";
 import { prisma } from "../prisma";
 import { calculateAchievementPoints, calculateLevelProgress } from "./progression";
 
 export const PROFILE_RECENT_MATCHES_LIMIT = 20;
 
-type RankedStats = {
-  rating: number | null;
-  wins: number;
-  losses: number;
-  matchesPlayed: number;
-};
-
 export type ProfileRecentMatch = {
   matchId: string;
-  opponentDisplayName: string;
+  opponentDisplayName: string | null;
   opponentUserId: string | null;
   finishedAt: string | null;
   result: MatchResult | null;
@@ -66,12 +65,6 @@ const statsSelect = {
   lastPlayedAt: true,
 } satisfies Prisma.UserGameStatsSelect;
 
-const leaderboardBaseWhere = {
-  boardSize: LEADERBOARD_BOARD_SIZE,
-  ruleType: RuleType.GOMOKU,
-  matchesPlayed: { gt: 0 },
-} satisfies Prisma.UserGameStatsWhereInput;
-
 function getOpponent(entry: MatchHistoryEntry, currentUserId: string) {
   const opponents = entry.participants.filter(
     (participant) => participant.role === Role.PLAYER && participant.userId !== currentUserId,
@@ -86,7 +79,7 @@ function getOpponent(entry: MatchHistoryEntry, currentUserId: string) {
         userId: opponent.userId,
       }
     : {
-        displayName: "Unknown",
+        displayName: null,
         userId: null,
       };
 }
@@ -105,30 +98,18 @@ function toRecentMatch(entry: MatchHistoryEntry, currentUserId: string): Profile
   };
 }
 
-async function getRankForUser(stats: RankedStats | null): Promise<number | null> {
-  if (!stats || stats.matchesPlayed === 0) {
+async function getRankForUser(stats: LeaderboardRankInput | null): Promise<number | null> {
+  if (!stats) {
     return null;
   }
 
-  const aheadByRating =
-    stats.rating === null ? { rating: { not: null } } : { rating: { gt: stats.rating } };
-
-  const aheadWithinRating = {
-    rating: stats.rating === null ? null : stats.rating,
-    OR: [
-      { wins: { gt: stats.wins } },
-      {
-        wins: stats.wins,
-        losses: { lt: stats.losses },
-      },
-    ],
-  };
+  const aheadWhere = buildLeaderboardAheadWhere(stats);
+  if (!aheadWhere) {
+    return null;
+  }
 
   const aheadCount = await prisma.userGameStats.count({
-    where: {
-      ...leaderboardBaseWhere,
-      OR: [aheadByRating, aheadWithinRating],
-    },
+    where: aheadWhere,
   });
 
   return aheadCount + 1;
@@ -140,7 +121,7 @@ export async function getProfileStatsForUser(userId: string): Promise<ProfileSta
       where: {
         userId_ruleType_boardSize: {
           userId,
-          ruleType: RuleType.GOMOKU,
+          ruleType: LEADERBOARD_RULE_TYPE,
           boardSize: LEADERBOARD_BOARD_SIZE,
         },
       },

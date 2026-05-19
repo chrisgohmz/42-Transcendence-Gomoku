@@ -1,10 +1,6 @@
 import { getCurrentSession } from "@/lib/auth";
 import { getProfileStatsForUser } from "@/lib/stats/profile-stats";
 
-function getErrorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : "Unknown error";
-}
-
 export async function GET() {
   const context = await getCurrentSession();
 
@@ -23,10 +19,11 @@ export async function GET() {
 
     return Response.json(snapshot);
   } catch (error) {
+    console.error("Error loading profile stats:", error);
+
     return Response.json(
       {
         error: "failed_to_load_profile_stats",
-        detail: getErrorMessage(error),
       },
       { status: 500 },
     );
