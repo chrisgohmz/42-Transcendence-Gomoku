@@ -6,7 +6,7 @@ import { BoardShowpiece, PageShell } from "@/components/gomoku-ui";
 import { LoginForm } from "@/components/login-form";
 import { PageLoadingShell } from "@/components/page-loading-shell";
 import { redirect } from "@/i18n/navigation";
-import { getCurrentSession } from "@/lib/auth";
+import { getConfiguredOAuthProviders, getCurrentSession } from "@/lib/auth";
 
 type LoginPageProps = {
   params: Promise<{
@@ -34,6 +34,7 @@ async function LoginPageContent({ params }: LoginPageProps) {
 
   const shared = await getTranslations({ locale, namespace: "auth.shared" });
   const login = await getTranslations({ locale, namespace: "auth.login" });
+  const oauthProviders = getConfiguredOAuthProviders();
 
   return (
     <PageShell wide={false}>
@@ -84,7 +85,7 @@ async function LoginPageContent({ params }: LoginPageProps) {
             <p className="eyebrow">{shared("eyebrow")}</p>
             <h2 className="font-serif text-4xl leading-none font-black">{login("title")}</h2>
             <p className="mt-4 mb-7 leading-7 text-[var(--muted-text)]">{login("lede")}</p>
-            <LoginForm />
+            <LoginForm oauthProviders={oauthProviders} />
           </section>
         </div>
       </section>

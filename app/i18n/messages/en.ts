@@ -134,6 +134,10 @@ export const messages = {
       password: "Password",
       passwordHelper: "At least 8 characters.",
     },
+    oauth: {
+      continueWithProvider: "Sign in with {provider}",
+      startError: "Unable to start {provider} sign-in right now.",
+    },
     login: {
       title: "Welcome back.",
       lede: "Sign in to create rooms, play matches, and access your private pages.",
@@ -143,7 +147,6 @@ export const messages = {
       signupLink: "Create an account",
       rememberThisTable: "Remember this table",
       forgotPassword: "Forgot password?",
-      continueWithGithub: "Continue with GitHub",
       page: {
         hero: {
           title: "Return to the table.",
@@ -167,7 +170,7 @@ export const messages = {
     },
     signup: {
       title: "Create your account.",
-      lede: "Use an email and password to start playing immediately. No third-party provider setup required.",
+      lede: "Use email and password, or continue with a connected provider to start playing immediately.",
       username: "Username",
       usernameHelper: "Minimum 3 characters.",
       displayName: "Display name",
@@ -238,6 +241,7 @@ export const messages = {
       sidebar: {
         profile: "Profile",
         security: "Security",
+        connections: "Connections",
         language: "Language",
         privacy: "Privacy",
         notifications: "Notifications",
@@ -255,6 +259,25 @@ export const messages = {
           password: "Password",
           updatedRecently: "Updated recently",
           sessionCreated: "Session created",
+        },
+        connections: {
+          eyebrow: "OAuth",
+          title: "Connected Providers",
+          description:
+            "Link GitHub or Google so you can sign in through OAuth without changing your local password flow.",
+          connected: "Connected",
+          notConnected: "Not connected",
+          ready: "Ready for OAuth",
+          notConfigured: "OAuth credentials are not configured for this provider.",
+          connect: "Connect",
+          connectWithProvider: "Connect {provider}",
+          connectedWithProvider: "{provider} connected",
+          connecting: "Connecting...",
+          disconnect: "Disconnect",
+          disconnecting: "Disconnecting...",
+          connectError: "Unable to connect {provider} right now.",
+          disconnectError: "Unable to disconnect {provider} right now.",
+          lastAccount: "Add another sign-in method before disconnecting this one.",
         },
         language: {
           eyebrow: "Language",

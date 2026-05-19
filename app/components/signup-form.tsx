@@ -5,13 +5,15 @@ import { useLocale, useTranslations } from "next-intl";
 import { useActionState } from "react";
 
 import { FieldErrorList } from "@/components/field-error-list";
+import { OAuthProviderButtons } from "@/components/oauth-provider-buttons";
 import { Link } from "@/i18n/navigation";
+import type { OAuthProviderId } from "@/lib/oauth-providers";
 import { authValidationLimits } from "@/lib/validation/auth-profile-limits";
 
 import { initialSignupActionState } from "../auth-action-state";
 import { signupAction } from "../auth-actions";
 
-export function SignupForm() {
+export function SignupForm({ oauthProviders }: { oauthProviders: OAuthProviderId[] }) {
   const locale = useLocale();
   const shared = useTranslations("auth.shared");
   const signup = useTranslations("auth.signup");
@@ -125,6 +127,12 @@ export function SignupForm() {
       <button className="btn m-0 w-full" type="submit" disabled={pending}>
         {pending ? signup("submitting") : signup("submit")}
       </button>
+
+      <OAuthProviderButtons
+        callbackPath={`/${locale}/account`}
+        errorPath={`/${locale}/signup`}
+        providers={oauthProviders}
+      />
 
       <p className="m-0 text-xs leading-5 text-[var(--muted-text)]">
         By creating an account, you agree to the{" "}

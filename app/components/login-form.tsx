@@ -1,17 +1,19 @@
 "use client";
 
-import { GitBranch, LockKeyhole, Mail } from "lucide-react";
+import { LockKeyhole, Mail } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useActionState } from "react";
 
 import { FieldErrorList } from "@/components/field-error-list";
+import { OAuthProviderButtons } from "@/components/oauth-provider-buttons";
 import { Link } from "@/i18n/navigation";
+import type { OAuthProviderId } from "@/lib/oauth-providers";
 import { authValidationLimits } from "@/lib/validation/auth-profile-limits";
 
 import { initialLoginActionState } from "../auth-action-state";
 import { loginAction } from "../auth-actions";
 
-export function LoginForm() {
+export function LoginForm({ oauthProviders }: { oauthProviders: OAuthProviderId[] }) {
   const locale = useLocale();
   const shared = useTranslations("auth.shared");
   const login = useTranslations("auth.login");
@@ -93,12 +95,11 @@ export function LoginForm() {
         {pending ? login("submitting") : login("submit")}
       </button>
 
-      <div className="grid gap-2">
-        <button type="button" className="btn btn-subtle m-0 w-full">
-          <GitBranch aria-hidden="true" className="size-4" />
-          {login("continueWithGithub")}
-        </button>
-      </div>
+      <OAuthProviderButtons
+        callbackPath={`/${locale}/account`}
+        errorPath={`/${locale}/login`}
+        providers={oauthProviders}
+      />
 
       <div className="inline-links">
         <span className="helper">{login("newHere")}</span>

@@ -1,13 +1,24 @@
 import { Bell, Globe2, KeyRound, LockKeyhole, ShieldCheck, Trash2, UserRound } from "lucide-react";
 import { getFormatter, getTranslations, setRequestLocale } from "next-intl/server";
+import { headers } from "next/headers";
 import { Suspense, type ReactNode } from "react";
 
 import { Badge, PageHeader, PageShell, Surface } from "@/components/gomoku-ui";
 import { LocaleSwitcher } from "@/components/locale-switcher";
 import { LogoutButton } from "@/components/logout-button";
+import {
+  OAuthAccountConnections,
+  type OAuthProviderConnection,
+} from "@/components/oauth-account-connections";
 import { PageLoadingShell } from "@/components/page-loading-shell";
 import { redirect } from "@/i18n/navigation";
-import { getCurrentSession, serializeUserForResponse } from "@/lib/auth";
+import {
+  auth,
+  getConfiguredOAuthProviders,
+  getCurrentSession,
+  serializeUserForResponse,
+} from "@/lib/auth";
+import { oauthProviderIds, type OAuthProviderId } from "@/lib/oauth-providers";
 
 type SessionPayload = {
   user: {
@@ -22,6 +33,7 @@ type SessionPayload = {
     expiresAt: string;
     createdAt: string;
   };
+  oauthProviders: OAuthProviderConnection[];
 };
 
 async function loadSession(): Promise<SessionPayload | null> {
@@ -31,6 +43,27 @@ async function loadSession(): Promise<SessionPayload | null> {
     return null;
   }
 
+  const accounts = await auth.api.listUserAccounts({
+    headers: await headers(),
+  });
+  const configuredProviders = new Set(getConfiguredOAuthProviders());
+  const linkedAccounts = new Map(
+    accounts
+      .filter((account) => oauthProviderIds.includes(account.providerId as OAuthProviderId))
+      .map((account) => [account.providerId as OAuthProviderId, account]),
+  );
+  const oauthProviders = oauthProviderIds.map((provider) => {
+    const linkedAccount = linkedAccounts.get(provider);
+
+    return {
+      accountId: linkedAccount?.accountId ?? null,
+      canUnlink: Boolean(linkedAccount) && accounts.length > 1,
+      configured: configuredProviders.has(provider),
+      id: provider,
+      linked: Boolean(linkedAccount),
+    };
+  });
+
   return {
     user: serializeUserForResponse(context.user),
     session: {
@@ -38,6 +71,7 @@ async function loadSession(): Promise<SessionPayload | null> {
       createdAt: context.session.createdAt.toISOString(),
       expiresAt: context.session.expiresAt.toISOString(),
     },
+    oauthProviders,
   };
 }
 
@@ -64,6 +98,7 @@ async function AccountPageContent({ params }: AccountPageProps) {
   const settingsNavItems = [
     { id: "profile", label: t("settings.sidebar.profile") },
     { id: "security", label: t("settings.sidebar.security") },
+    { id: "connections", label: t("settings.sidebar.connections") },
     { id: "language", label: t("settings.sidebar.language") },
     { id: "privacy", label: t("settings.sidebar.privacy") },
     { id: "notifications", label: t("settings.sidebar.notifications") },
@@ -165,6 +200,16 @@ async function AccountPageContent({ params }: AccountPageProps) {
                   <LogoutButton />
                 </Surface>
               </section>
+            </section>
+
+            <section id="connections" className="scroll-mt-24">
+              <Surface
+                eyebrow={t("settings.sections.connections.eyebrow")}
+                icon={KeyRound}
+                title={t("settings.sections.connections.title")}
+              >
+                <OAuthAccountConnections locale={locale} providers={session.oauthProviders} />
+              </Surface>
             </section>
 
             <section className="grid gap-5 xl:grid-cols-3">

@@ -127,6 +127,10 @@ export const messages = {
       password: "密码",
       passwordHelper: "至少 8 个字符。",
     },
+    oauth: {
+      continueWithProvider: "使用 {provider} 登录",
+      startError: "现在无法开始 {provider} 登录。",
+    },
     login: {
       title: "欢迎回来。",
       lede: "登录后可以创建房间、进行比赛并访问私人页面。",
@@ -136,7 +140,6 @@ export const messages = {
       signupLink: "创建账户",
       rememberThisTable: "记住这张棋桌",
       forgotPassword: "忘记密码了？",
-      continueWithGithub: "使用 GitHub 继续",
       page: {
         hero: {
           title: "回到棋桌。",
@@ -160,7 +163,7 @@ export const messages = {
     },
     signup: {
       title: "创建你的账户。",
-      lede: "使用邮箱和密码即可立即开始游戏，无需配置第三方登录。",
+      lede: "使用邮箱和密码，或通过已连接的提供商继续，即可立即开始游戏。",
       username: "用户名",
       usernameHelper: "至少 3 个字符。",
       displayName: "显示名称",
@@ -231,6 +234,7 @@ export const messages = {
       sidebar: {
         profile: "资料",
         security: "安全",
+        connections: "连接",
         language: "语言",
         privacy: "隐私",
         notifications: "通知",
@@ -248,6 +252,24 @@ export const messages = {
           password: "密码",
           updatedRecently: "最近更新",
           sessionCreated: "会话创建时间",
+        },
+        connections: {
+          eyebrow: "OAuth",
+          title: "已连接提供商",
+          description: "连接 GitHub 或 Google 后，可在保留本地密码登录的同时使用 OAuth 登录。",
+          connected: "已连接",
+          notConnected: "未连接",
+          ready: "OAuth 可用",
+          notConfigured: "该提供商尚未配置 OAuth 凭据。",
+          connect: "连接",
+          connectWithProvider: "连接 {provider}",
+          connectedWithProvider: "{provider} 已连接",
+          connecting: "连接中...",
+          disconnect: "断开",
+          disconnecting: "断开中...",
+          connectError: "现在无法连接 {provider}。",
+          disconnectError: "现在无法断开 {provider}。",
+          lastAccount: "断开前请先添加另一种登录方式。",
         },
         language: {
           eyebrow: "语言",

@@ -1,3 +1,5 @@
+import { randomUUID } from "node:crypto";
+
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { nextCookies } from "better-auth/next-js";
@@ -6,12 +8,122 @@ import { z } from "zod";
 
 import type { User } from "../../generated/prisma/client";
 import type { DuplicateSignupFields } from "./auth-duplicate-fields";
+import { oauthProviderIds, type OAuthProviderId } from "./oauth-providers";
 import { prisma } from "./prisma";
 import { authValidationLimits } from "./validation/auth-profile-limits";
 
 const SESSION_TTL_SECONDS = 7 * 24 * 60 * 60;
 const SESSION_REFRESH_SECONDS = 24 * 60 * 60;
 const usernamePattern = /^[A-Za-z0-9_-]+$/;
+const OAUTH_USERNAME_SUFFIX_LENGTH = 6;
+
+type OAuthCredentials = {
+  clientId: string;
+  clientSecret: string;
+};
+
+type GitHubOAuthProfile = {
+  avatar_url?: string | null;
+  email?: string | null;
+  id: number | string;
+  login?: string | null;
+  name?: string | null;
+};
+
+type GoogleOAuthProfile = {
+  email?: string | null;
+  name?: string | null;
+  picture?: string | null;
+  sub: string;
+};
+
+function getOAuthCredentials(provider: OAuthProviderId): OAuthCredentials | null {
+  const prefix = provider.toUpperCase();
+  const clientId = process.env[`${prefix}_CLIENT_ID`];
+  const clientSecret = process.env[`${prefix}_CLIENT_SECRET`];
+
+  if (!clientId || !clientSecret) {
+    return null;
+  }
+
+  return { clientId, clientSecret };
+}
+
+export function getConfiguredOAuthProviders(): OAuthProviderId[] {
+  return oauthProviderIds.filter((provider) => Boolean(getOAuthCredentials(provider)));
+}
+
+function normalizeUsernameCandidate(candidate: string | null | undefined): string | null {
+  const normalized = candidate
+    ?.normalize("NFKD")
+    .replace(/[^A-Za-z0-9_-]+/g, "_")
+    .replace(/_+/g, "_")
+    .replace(/^[-_]+|[-_]+$/g, "")
+    .slice(0, authValidationLimits.usernameMaxLength);
+
+  if (!normalized || normalized.length < authValidationLimits.usernameMinLength) {
+    return null;
+  }
+
+  return normalized;
+}
+
+function trimUsernameBase(base: string, suffix: string): string {
+  const separatorLength = 1;
+  const maxBaseLength = authValidationLimits.usernameMaxLength - separatorLength - suffix.length;
+
+  return base.slice(0, Math.max(authValidationLimits.usernameMinLength, maxBaseLength));
+}
+
+async function getAvailableOAuthUsername(
+  provider: OAuthProviderId,
+  providerAccountId: string,
+  candidates: (string | null | undefined)[],
+): Promise<string> {
+  const suffix =
+    normalizeUsernameCandidate(providerAccountId)?.slice(0, OAUTH_USERNAME_SUFFIX_LENGTH) ??
+    provider;
+  const fallback = `${provider}_${suffix}`;
+  const bases = [
+    ...candidates.map(normalizeUsernameCandidate),
+    normalizeUsernameCandidate(fallback),
+  ].filter((candidate): candidate is string => Boolean(candidate));
+
+  for (const base of bases) {
+    const dedupedCandidates = [
+      base,
+      `${trimUsernameBase(base, suffix)}_${suffix}`,
+      `${trimUsernameBase(base, `${provider}_${suffix}`)}_${provider}_${suffix}`,
+    ];
+
+    for (const username of dedupedCandidates) {
+      const existingUser = await prisma.user.findUnique({
+        where: { username },
+        select: { id: true },
+      });
+
+      if (!existingUser) {
+        return username;
+      }
+    }
+  }
+
+  return `${provider}_${randomUUID().replaceAll("-", "").slice(0, 12)}`.slice(
+    0,
+    authValidationLimits.usernameMaxLength,
+  );
+}
+
+function getEmailLocalPart(email: string | null | undefined): string | null {
+  return email?.split("@")[0] ?? null;
+}
+
+function getOAuthDisplayName(...candidates: (string | null | undefined)[]): string {
+  return candidates.find((candidate) => candidate?.trim())?.trim() ?? "Gomoku Player";
+}
+
+const githubCredentials = getOAuthCredentials("github");
+const googleCredentials = getOAuthCredentials("google");
 
 export const auth = betterAuth({
   appName: "42 Transcendence Gomoku",
@@ -56,9 +168,46 @@ export const auth = betterAuth({
   },
   account: {
     modelName: "Account",
+    accountLinking: {
+      enabled: true,
+    },
   },
   verification: {
     modelName: "Verification",
+  },
+  socialProviders: {
+    ...(githubCredentials
+      ? {
+          github: {
+            clientId: githubCredentials.clientId,
+            clientSecret: githubCredentials.clientSecret,
+            mapProfileToUser: async (profile: GitHubOAuthProfile) => ({
+              name: getOAuthDisplayName(profile.name, profile.login),
+              username: await getAvailableOAuthUsername("github", String(profile.id), [
+                profile.login,
+                getEmailLocalPart(profile.email),
+                profile.name,
+              ]),
+            }),
+          },
+        }
+      : {}),
+    ...(googleCredentials
+      ? {
+          google: {
+            clientId: googleCredentials.clientId,
+            clientSecret: googleCredentials.clientSecret,
+            prompt: "select_account",
+            mapProfileToUser: async (profile: GoogleOAuthProfile) => ({
+              name: getOAuthDisplayName(profile.name, getEmailLocalPart(profile.email)),
+              username: await getAvailableOAuthUsername("google", profile.sub, [
+                getEmailLocalPart(profile.email),
+                profile.name,
+              ]),
+            }),
+          },
+        }
+      : {}),
   },
   databaseHooks: {
     user: {

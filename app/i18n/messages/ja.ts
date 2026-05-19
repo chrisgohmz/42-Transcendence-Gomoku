@@ -127,6 +127,10 @@ export const messages = {
       password: "パスワード",
       passwordHelper: "8 文字以上。",
     },
+    oauth: {
+      continueWithProvider: "{provider} でログイン",
+      startError: "{provider} ログインを開始できません。",
+    },
     login: {
       title: "おかえりなさい。",
       lede: "ログインするとルーム作成、対局、プライベートページへのアクセスができます。",
@@ -136,7 +140,6 @@ export const messages = {
       signupLink: "アカウントを作成",
       rememberThisTable: "この卓を記憶する",
       forgotPassword: "パスワードを忘れましたか？",
-      continueWithGithub: "GitHub で続行",
       page: {
         hero: {
           title: "卓に戻る。",
@@ -160,7 +163,7 @@ export const messages = {
     },
     signup: {
       title: "アカウントを作成します。",
-      lede: "メールアドレスとパスワードだけで、すぐにプレイを始められます。外部プロバイダー設定は不要です。",
+      lede: "メールとパスワード、または連携プロバイダーを使って、すぐにプレイを始められます。",
       username: "ユーザー名",
       usernameHelper: "3 文字以上。",
       displayName: "表示名",
@@ -231,6 +234,7 @@ export const messages = {
       sidebar: {
         profile: "プロフィール",
         security: "セキュリティ",
+        connections: "連携",
         language: "言語",
         privacy: "プライバシー",
         notifications: "通知",
@@ -248,6 +252,25 @@ export const messages = {
           password: "パスワード",
           updatedRecently: "最近更新済み",
           sessionCreated: "セッション作成日時",
+        },
+        connections: {
+          eyebrow: "OAuth",
+          title: "連携プロバイダー",
+          description:
+            "GitHub または Google を連携すると、ローカルのパスワード認証を残したまま OAuth でログインできます。",
+          connected: "連携済み",
+          notConnected: "未連携",
+          ready: "OAuth 利用可能",
+          notConfigured: "このプロバイダーの OAuth 認証情報が未設定です。",
+          connect: "連携",
+          connectWithProvider: "{provider} を連携",
+          connectedWithProvider: "{provider} 連携済み",
+          connecting: "連携中...",
+          disconnect: "解除",
+          disconnecting: "解除中...",
+          connectError: "{provider} を連携できません。",
+          disconnectError: "{provider} の連携を解除できません。",
+          lastAccount: "解除する前に別のログイン方法を追加してください。",
         },
         language: {
           eyebrow: "言語",

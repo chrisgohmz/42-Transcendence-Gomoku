@@ -149,6 +149,11 @@ bun run lint:fix
 - App route handlers: `/api/auth/signup`, `/api/auth/login`, `/api/auth/logout`, and `/api/auth/session` set or read the `gomoku_session` httpOnly cookie and enforce session expiry.
 - App pages: `/signup`, `/login`, and the protected `/account` page (redirects unauthenticated visitors).
 - The `/signup` and `/login` pages now submit through Next.js form actions instead of client-side `fetch` calls.
+- OAuth login uses Better Auth's built-in GitHub and Google social providers. Add the provider credentials from `.env.example`, then configure these callback URLs in each provider console:
+  - GitHub: `http://localhost:3000/api/auth/callback/github`
+  - Google: `http://localhost:3000/api/auth/callback/google`
+  - Docker/Caddy mode: use the same paths under `https://localhost:8443`
+- Account linking and unlinking for GitHub and Google is available from `/account` after sign-in. Unlinking the final sign-in method is blocked to avoid account lockout.
 - Seeded demo users (Alice, Bob, Carol) all use the password `password123`.
 
 ### Format the repo

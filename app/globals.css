@@ -557,6 +557,17 @@ a.command-panel {
   color: var(--danger);
 }
 
+.oauth-social-button > div {
+  justify-content: center;
+}
+
+.oauth-social-button > div > div:last-child {
+  flex: 0 1 auto;
+  width: auto !important;
+  min-width: 0;
+  text-align: left !important;
+}
+
 .field-errors {
   display: grid;
   gap: 0.2rem;
