@@ -7,8 +7,8 @@
 //
 // browser calls this once when the messages page loads.
 
-import { getCurrentSession } from "@/lib/auth";
 import { getErrorMessage } from "@/lib/api-errors";
+import { getCurrentSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
 // crashwith cacheComponents

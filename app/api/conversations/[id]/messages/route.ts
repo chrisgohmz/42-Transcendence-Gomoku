@@ -5,10 +5,10 @@
 //
 // [id] is a dynamic segment — Next.js passes it in `params`.
 
-import { getCurrentSession } from "@/lib/auth";
 import { getErrorMessage } from "@/lib/api-errors";
-import { prisma } from "@/lib/prisma";
+import { getCurrentSession } from "@/lib/auth";
 import { publishChatMessage } from "@/lib/chat/realtime-publisher";
+import { prisma } from "@/lib/prisma";
 
 // not useable with cacheComponents
 //export const dynamic = "force-dynamic";
@@ -86,10 +86,7 @@ export async function GET(
 
 // ─── POST: send a message ─────────────────────────────────────────────────────
 
-export async function POST(
-  request: Request,
-  { params }: { params: Promise<{ id: string }> },
-) {
+export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const session = await getCurrentSession();
   if (!session) {
     return Response.json({ error: "unauthorized" }, { status: 401 });

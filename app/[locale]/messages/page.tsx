@@ -32,6 +32,6 @@ async function MessagesPageContent({ params }: MessagesPageProps) {
   }
 
   //return <MessagesContent />;
-    // Pass the current user's ID so the chat panel knows which messages are "mine"
+  // Pass the current user's ID so the chat panel knows which messages are "mine"
   return <MessagesContent currentUserId={sessionData!.user.id} />;
 }

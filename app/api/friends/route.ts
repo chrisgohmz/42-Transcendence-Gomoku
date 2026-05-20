@@ -2,8 +2,8 @@
 // Returns the list of accepted friends for the current user.
 // Used by the messages sidebar to show all friends, not just those with existing conversations.
 
-import { getCurrentSession } from "@/lib/auth";
 import { getErrorMessage } from "@/lib/api-errors";
+import { getCurrentSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
 export async function GET() {

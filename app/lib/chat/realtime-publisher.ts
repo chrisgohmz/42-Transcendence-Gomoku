@@ -8,7 +8,10 @@
 //   app/lib/matches/realtime-publisher.ts → /internal/game-update
 //   This file                             → /internal/chat-message
 
-import { internalRealtimeSecretHeader, readRealtimeInternalSecret } from "../../../shared/realtime-internal";
+import {
+  internalRealtimeSecretHeader,
+  readRealtimeInternalSecret,
+} from "../../../shared/realtime-internal";
 
 // The shape of the data we send to the Socket.IO server
 export type ChatMessagePayload = {

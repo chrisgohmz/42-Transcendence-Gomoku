@@ -10,8 +10,8 @@
 // It stores a sorted pair of user IDs: "userA_id:userB_id"
 // Sorting guarantees the key is always the same regardless of who opens the chat first.
 
-import { getCurrentSession } from "@/lib/auth";
 import { getErrorMessage } from "@/lib/api-errors";
+import { getCurrentSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
 export async function POST(request: Request) {

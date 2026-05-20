@@ -72,7 +72,9 @@ export default function MessagesContent({ currentUserId }: Props) {
   // ── Fetch conversations + friends ────────────────────────────────────────
   function loadSidebarData() {
     Promise.all([
-      fetch("/api/conversations").then((r) => r.json()) as Promise<{ conversations: Conversation[] }>,
+      fetch("/api/conversations").then((r) => r.json()) as Promise<{
+        conversations: Conversation[];
+      }>,
       fetch("/api/friends").then((r) => r.json()) as Promise<{ friends: Friend[] }>,
     ])
       .then(([convData, friendData]) => {
@@ -208,7 +210,6 @@ export default function MessagesContent({ currentUserId }: Props) {
       <PageHeader eyebrow={t("eyebrow")} icon={MessageSquare} title={t("title")} lede={t("lede")} />
 
       <section className="grid min-h-[760px] overflow-hidden rounded-md border border-[var(--panel-border-soft)] bg-[var(--panel)] shadow-[0_30px_90px_rgba(0,0,0,0.4)] xl:grid-cols-[350px_minmax(0,1fr)]">
-
         {/* ── Sidebar ── */}
         <aside className="border-b border-[var(--panel-border-soft)] bg-[var(--sidebar)] p-4 xl:border-r xl:border-b-0">
           <label className="mb-4 grid gap-2">
@@ -256,9 +257,7 @@ export default function MessagesContent({ currentUserId }: Props) {
                       {entry.lastMessage ?? "No messages yet"}
                     </span>
                   </span>
-                  {entry.unreadCount > 0 && (
-                    <Badge tone="red">{entry.unreadCount}</Badge>
-                  )}
+                  {entry.unreadCount > 0 && <Badge tone="red">{entry.unreadCount}</Badge>}
                 </button>
               );
             })}
@@ -267,7 +266,6 @@ export default function MessagesContent({ currentUserId }: Props) {
 
         {/* ── Chat panel ── */}
         <div className="grid min-w-0 grid-rows-[auto_1fr_auto]">
-
           {/* Header */}
           <header className="flex items-center justify-between gap-4 border-b border-[var(--panel-border-soft)] bg-[var(--panel-solid)] p-4">
             <div className="flex min-w-0 items-center gap-3">
@@ -277,9 +275,7 @@ export default function MessagesContent({ currentUserId }: Props) {
                   {activeFriend ? activeName : "Select a conversation"}
                 </h2>
                 {activeFriend && (
-                  <p className="m-0 text-sm text-[var(--muted-text)]">
-                    {t("header.status")}
-                  </p>
+                  <p className="m-0 text-sm text-[var(--muted-text)]">{t("header.status")}</p>
                 )}
               </div>
             </div>
@@ -293,7 +289,6 @@ export default function MessagesContent({ currentUserId }: Props) {
 
           {/* Message thread */}
           <div className="grid content-end gap-5 overflow-y-auto p-5 sm:p-8">
-
             {!activeConvId && (
               <p className="text-center text-sm text-[var(--muted-text)]">
                 Choose a friend from the sidebar to start chatting.
@@ -320,9 +315,7 @@ export default function MessagesContent({ currentUserId }: Props) {
                   >
                     {/* Show sender name above their messages */}
                     {!isMe && (
-                      <p className="m-0 mb-1 text-xs font-bold text-[var(--brass)]">
-                        {senderName}
-                      </p>
+                      <p className="m-0 mb-1 text-xs font-bold text-[var(--brass)]">{senderName}</p>
                     )}
                     <p className={`m-0 ${isMe ? "font-bold" : ""}`}>{msg.body}</p>
                   </div>
@@ -364,7 +357,6 @@ export default function MessagesContent({ currentUserId }: Props) {
               </button>
             </div>
           </form>
-
         </div>
       </section>
     </PageShell>

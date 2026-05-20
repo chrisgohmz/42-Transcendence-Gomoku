@@ -13,8 +13,8 @@ import {
   challengeReceivedPath,
   readRealtimeInternalSecret,
 } from "../shared/realtime-internal";
-import { registerMatchSubscription } from "./handlers/match-subscription";
 import { registerChatSubscription, convRoomId } from "./handlers/chat-subscription";
+import { registerMatchSubscription } from "./handlers/match-subscription";
 import { registerMatchmakingQueue } from "./handlers/matchmaking-queue";
 import { resolveFriendshipNotificationTarget } from "./lib/friendship-notifications";
 import { handleInternalChallengeDeclined } from "./lib/internal-challenge-declined";
@@ -201,14 +201,13 @@ Bun.serve({
         return new Response("Forbidden", { status: 403 });
       }
       try {
-        const payload = await request.json() as {
+        const payload = (await request.json()) as {
           conversationId: string;
           message: unknown;
         };
         io.to(convRoomId(payload.conversationId)).emit("chat:message", payload.message);
         return Response.json({ ok: true });
-      }
-      catch {
+      } catch {
         return new Response("Bad Request", { status: 400 });
       }
     }
