@@ -57,12 +57,6 @@ services:
     build:
       context: .
     command: ["bun", "run", "start:realtime"]
-    # The realtime container shares the same image as the app container but starts
-    # independently. It imports app/lib/prisma.ts which requires the Prisma client
-    # to be generated first. Without this, the container crashes on startup with
-    # "Cannot find module '../../generated/prisma/client'".
-    # Running prisma generate here ensures the client exists before server.ts runs.
-    #command: ["sh", "-c", "bunx prisma generate && bun run start:realtime"]
     environment:
       NODE_ENV: production
       DATABASE_URL: postgresql://${POSTGRES_USER:-transcendence}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}@database:5432/${POSTGRES_DB:-transcendence}?schema=public
