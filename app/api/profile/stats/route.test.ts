@@ -67,6 +67,12 @@ beforeEach(() => {
         moveCount: 42,
       },
     ],
+    recentMatchesPagination: {
+      page: 1,
+      limit: 10,
+      totalMatches: 1,
+      totalPages: 1,
+    },
   });
 });
 
@@ -91,7 +97,10 @@ describe("GET /api/profile/stats", () => {
     const payload = await response.json();
 
     expect(response.status).toBe(200);
-    expect(getProfileStatsForUser).toHaveBeenCalledWith("user-ada");
+    expect(getProfileStatsForUser).toHaveBeenCalledWith("user-ada", {
+      recentMatchesLimit: 10,
+      recentMatchesPage: 1,
+    });
     expect(payload).toMatchObject({
       userId: "user-ada",
       stats: {
@@ -102,6 +111,18 @@ describe("GET /api/profile/stats", () => {
         matchesPlayed: 4,
       },
       rank: 5,
+    });
+  });
+
+  test("passes bounded pagination params to profile stats", async () => {
+    const response = await route.GET(
+      new Request("http://localhost/api/profile/stats?page=3&limit=500"),
+    );
+
+    expect(response.status).toBe(200);
+    expect(getProfileStatsForUser).toHaveBeenCalledWith("user-ada", {
+      recentMatchesLimit: 50,
+      recentMatchesPage: 3,
     });
   });
 

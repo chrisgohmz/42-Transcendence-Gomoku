@@ -94,14 +94,24 @@ export default function ProgressionSummary({
     from: t("page.progress.level", { level: levelValue }),
     to: t("page.progress.level", { level: levelValue + 1 }),
   });
+  const rankValue = (
+    <span className="block text-[1.05rem] leading-none whitespace-nowrap sm:text-[1.15rem]">
+      {rankText}
+    </span>
+  );
+  const levelValueNode = (
+    <span className="block text-[1.05rem] leading-none whitespace-nowrap sm:text-[1.15rem]">
+      {levelText}
+    </span>
+  );
 
   return (
     <aside className="grid content-start gap-5">
       <Surface eyebrow={t("page.about.eyebrow")} icon={UserRound} title={t("page.about.title")}>
         <p className="m-0 leading-7 text-[var(--muted-text)]">{t("page.about.body")}</p>
         <div className="grid grid-cols-2 gap-3">
-          <MetricCard label={t("page.about.rankLabel")} tone="brass" value={rankText} />
-          <MetricCard label={t("page.about.levelLabel")} tone="mint" value={levelText} />
+          <MetricCard label={t("page.about.rankLabel")} tone="brass" value={rankValue} />
+          <MetricCard label={t("page.about.levelLabel")} tone="mint" value={levelValueNode} />
         </div>
         <div className="mt-4 grid gap-2 text-sm">
           <div className="flex items-center justify-between text-[var(--muted-text)]">

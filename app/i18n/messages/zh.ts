@@ -337,6 +337,7 @@ export const messages = {
       remove: "移除",
       accept: "接受",
       decline: "拒绝",
+      cancel: "取消",
       cancelRequest: "取消请求",
       add: "添加",
       challengeFriend: "向 {name} 发起对战",
@@ -364,6 +365,11 @@ export const messages = {
     },
     messages: {
       requestSent: "已向 {name} 发送好友请求！",
+    },
+    pagination: {
+      status: "第 {page} 页，共 {totalPages} 页",
+      previous: "上一页",
+      next: "下一页",
     },
     status: {
       online: "在线",
@@ -833,6 +839,9 @@ export const messages = {
         empty: "暂无对局记录。",
         unknownOpponent: "未知对手",
         unknownDate: "日期未知",
+        pagination: "第 {page} 页，共 {totalPages} 页",
+        previous: "上一页",
+        next: "下一页",
       },
       about: {
         eyebrow: "关于我",

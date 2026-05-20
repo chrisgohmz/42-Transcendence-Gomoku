@@ -90,8 +90,10 @@ export default function HumanLobbyClient() {
     joiningMatchId,
     loadMatches,
     tableError,
+    lobbyPage,
+    lobbyTotalPages,
   } = useHumanLobby({
-    onSessionReady: handleSessionReady,
+    onSessionReadyAction: handleSessionReady,
   });
 
   /* MATCHMAKING */
@@ -422,15 +424,45 @@ export default function HumanLobbyClient() {
         {/* TABLE */}
         <div className="px-5 pt-2 pb-5">
           {activeTab === "lobby" && (
-            <GameLobbyTable
-              entries={entries}
-              error={tableError}
-              isLoading={isLoadingMatches}
-              joiningMatchId={joiningMatchId}
-              onJoin={(entry, password) => {
-                void joinMatch(entry, password);
-              }}
-            />
+            <div className="flex flex-col gap-4">
+              <GameLobbyTable
+                entries={entries}
+                error={tableError}
+                isLoading={isLoadingMatches}
+                joiningMatchId={joiningMatchId}
+                onJoin={(entry, password) => {
+                  void joinMatch(entry, password);
+                }}
+              />
+
+              {lobbyTotalPages > 1 && (
+                <div className="flex items-center justify-between border-t border-(--panel-border-soft) px-4 py-3 text-sm">
+                  <span className="font-bold text-(--muted-text)">
+                    Page {lobbyPage} of {lobbyTotalPages}
+                  </span>
+
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => void loadMatches(lobbyPage - 1)}
+                      disabled={lobbyPage <= 1 || isLoadingMatches}
+                      className="rounded-md border border-(--panel-border-soft) bg-white/3.5 px-4 py-1.5 font-bold text-(--muted-strong) transition-colors hover:bg-white/7 disabled:opacity-50"
+                    >
+                      Previous
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => void loadMatches(lobbyPage + 1)}
+                      disabled={lobbyPage >= lobbyTotalPages || isLoadingMatches}
+                      className="rounded-md border border-(--panel-border-soft) bg-white/3.5 px-4 py-1.5 font-bold text-(--muted-strong) transition-colors hover:bg-white/7 disabled:opacity-50"
+                    >
+                      Next
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
           )}
 
           {activeTab === "history" && (

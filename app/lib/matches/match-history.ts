@@ -124,7 +124,39 @@ export function normalizeMatchHistoryLimit(limit: number | null | undefined): nu
   return Math.min(Math.max(limit, 1), MATCH_HISTORY_MAX_LIMIT);
 }
 
-export function buildMatchHistoryQuery(userId: string, limit = MATCH_HISTORY_DEFAULT_LIMIT) {
+export function normalizeMatchHistoryPage(page: number | null | undefined): number {
+  if (page == null) {
+    return 1;
+  }
+
+  if (!Number.isInteger(page)) {
+    return 1;
+  }
+
+  return Math.max(page, 1);
+}
+
+export function buildMatchHistoryWhere(userId: string) {
+  return {
+    participants: {
+      some: {
+        userId,
+      },
+    },
+    status: {
+      in: [...terminalMatchStatuses],
+    },
+  } satisfies Prisma.MatchWhereInput;
+}
+
+export function buildMatchHistoryQuery(
+  userId: string,
+  limit = MATCH_HISTORY_DEFAULT_LIMIT,
+  page = 1,
+) {
+  const normalizedLimit = normalizeMatchHistoryLimit(limit);
+  const normalizedPage = normalizeMatchHistoryPage(page);
+
   return {
     orderBy: [
       {
@@ -135,17 +167,9 @@ export function buildMatchHistoryQuery(userId: string, limit = MATCH_HISTORY_DEF
       },
     ],
     select: matchHistorySelect,
-    take: normalizeMatchHistoryLimit(limit),
-    where: {
-      participants: {
-        some: {
-          userId,
-        },
-      },
-      status: {
-        in: [...terminalMatchStatuses],
-      },
-    },
+    skip: (normalizedPage - 1) * normalizedLimit,
+    take: normalizedLimit,
+    where: buildMatchHistoryWhere(userId),
   } satisfies Prisma.MatchFindManyArgs;
 }
 
@@ -232,4 +256,32 @@ export async function getMatchHistoryForUser(
   const matches = await prisma.match.findMany(buildMatchHistoryQuery(userId, limit));
 
   return matches.map((match) => toMatchHistoryEntry(match, userId));
+}
+
+export async function getMatchHistoryPageForUser(
+  userId: string,
+  page = 1,
+  limit = MATCH_HISTORY_DEFAULT_LIMIT,
+): Promise<{
+  entries: MatchHistoryEntry[];
+  page: number;
+  limit: number;
+  totalMatches: number;
+  totalPages: number;
+}> {
+  const normalizedPage = normalizeMatchHistoryPage(page);
+  const normalizedLimit = normalizeMatchHistoryLimit(limit);
+  const where = buildMatchHistoryWhere(userId);
+  const [totalMatches, matches] = await Promise.all([
+    prisma.match.count({ where }),
+    prisma.match.findMany(buildMatchHistoryQuery(userId, normalizedLimit, normalizedPage)),
+  ]);
+
+  return {
+    entries: matches.map((match) => toMatchHistoryEntry(match, userId)),
+    page: normalizedPage,
+    limit: normalizedLimit,
+    totalMatches,
+    totalPages: Math.max(1, Math.ceil(totalMatches / normalizedLimit)),
+  };
 }
