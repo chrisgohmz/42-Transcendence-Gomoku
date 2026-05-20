@@ -26,7 +26,7 @@ test("friends roster pagination shows one page of friends at a time", async ({
   try {
     await gotoAppRoute(page, "/friends");
 
-    await expect(page.getByText("Page 1 of 2")).toBeVisible();
+    await expect(visibleText(page, "Page 1 of 2")).toBeVisible();
     const firstPageNames = await visibleFriendNames(page, friendNames);
     expect(firstPageNames).toHaveLength(10);
 
@@ -40,7 +40,7 @@ test("friends roster pagination shows one page of friends at a time", async ({
     await expect(previousButton).toBeDisabled();
     await nextButton.click();
 
-    await expect(page.getByText("Page 2 of 2")).toBeVisible();
+    await expect(visibleText(page, "Page 2 of 2")).toBeVisible();
     const secondPageNames = await visibleFriendNames(page, friendNames);
     expect(secondPageNames).toHaveLength(1);
     expect(firstPageNames).not.toContain(secondPageNames[0]);
@@ -48,7 +48,7 @@ test("friends roster pagination shows one page of friends at a time", async ({
 
     await previousButton.click();
 
-    await expect(page.getByText("Page 1 of 2")).toBeVisible();
+    await expect(visibleText(page, "Page 1 of 2")).toBeVisible();
     expect(await visibleFriendNames(page, friendNames)).toEqual(firstPageNames);
   } finally {
     await cleanupUsers([user.username, ...friends.map((friend) => friend.username)]);
@@ -70,16 +70,16 @@ test("public profile match history pagination updates the historyPage query", as
     await expect(
       page.getByRole("heading", { level: 1, name: created.profile.displayName }),
     ).toBeVisible();
-    await expect(page.getByText("Page 1 of 2")).toBeVisible();
-    await expect(page.getByText(newestOpponent.displayName, { exact: true })).toBeVisible();
-    await expect(page.getByText(oldestOpponent.displayName, { exact: true })).toHaveCount(0);
+    await expect(visibleText(page, "Page 1 of 2")).toBeVisible();
+    await expect(visibleText(page, newestOpponent.displayName)).toBeVisible();
+    await expect(visibleText(page, oldestOpponent.displayName)).toHaveCount(0);
 
     await page.getByRole("button", { exact: true, name: "Next" }).filter({ visible: true }).click();
 
     await expect(page).toHaveURL(/historyPage=2/);
-    await expect(page.getByText("Page 2 of 2")).toBeVisible();
-    await expect(page.getByText(oldestOpponent.displayName, { exact: true })).toBeVisible();
-    await expect(page.getByText(newestOpponent.displayName, { exact: true })).toHaveCount(0);
+    await expect(visibleText(page, "Page 2 of 2")).toBeVisible();
+    await expect(visibleText(page, oldestOpponent.displayName)).toBeVisible();
+    await expect(visibleText(page, newestOpponent.displayName)).toHaveCount(0);
 
     await page
       .getByRole("button", { exact: true, name: "Previous" })
@@ -87,7 +87,7 @@ test("public profile match history pagination updates the historyPage query", as
       .click();
 
     await expect(page).not.toHaveURL(/historyPage=/);
-    await expect(page.getByText("Page 1 of 2")).toBeVisible();
+    await expect(visibleText(page, "Page 1 of 2")).toBeVisible();
   } finally {
     await cleanupMatches(created.matchIds);
     await cleanupUsers([
@@ -99,6 +99,10 @@ test("public profile match history pagination updates the historyPage query", as
 
 async function gotoAppRoute(page: Page, route: string) {
   await page.goto(route, { waitUntil: "domcontentloaded" });
+}
+
+function visibleText(page: Page, text: string) {
+  return page.getByText(text, { exact: true }).filter({ visible: true });
 }
 
 type TestUser = {
