@@ -185,14 +185,65 @@ describe("GET /api/matches", () => {
         },
       }),
     );
-    expect(payload.map((match: { matchId: string }) => match.matchId)).toEqual([
+    expect(payload.data.map((match: { matchId: string }) => match.matchId)).toEqual([
       "public-match",
       "private-match",
     ]);
-    expect(payload[1]).toMatchObject({
+    expect(payload).toMatchObject({
+      page: 1,
+      limit: 10,
+      totalMatches: 2,
+      totalPages: 1,
+    });
+    expect(payload.data[1]).toMatchObject({
       matchId: "private-match",
       requiresPassword: true,
     });
+  });
+
+  test("paginates after filtering hidden challenge invites", async () => {
+    findManyMatches.mockResolvedValueOnce([
+      createdMatch({
+        id: "listed-1",
+        visibility: MatchVisibility.PUBLIC,
+      }),
+      createdMatch({
+        id: "hidden-challenge",
+        metadata: {
+          declineTokenHash: "hashed-decline-token",
+          kind: "human-challenge",
+          targetUserId: "user-bob",
+          targetUsername: "bob",
+        },
+        visibility: MatchVisibility.PRIVATE,
+      }),
+      createdMatch({
+        id: "listed-2",
+        visibility: MatchVisibility.PUBLIC,
+      }),
+      createdMatch({
+        id: "listed-3",
+        visibility: MatchVisibility.PUBLIC,
+      }),
+    ]);
+
+    const response = await route.GET(new Request("http://localhost/api/matches?page=1&limit=2"));
+    const payload = await response.json();
+    const findManyArgs = findManyMatches.mock.calls[0]?.[0] as Record<string, unknown>;
+
+    expect(response.status).toBe(200);
+    expect("skip" in findManyArgs).toBe(false);
+    expect("take" in findManyArgs).toBe(false);
+    expect(payload).toMatchObject({
+      page: 1,
+      limit: 2,
+      totalMatches: 3,
+      totalPages: 2,
+    });
+    expect(payload.data.map((match: { matchId: string }) => match.matchId)).toEqual([
+      "listed-1",
+      "listed-2",
+    ]);
   });
 });
 

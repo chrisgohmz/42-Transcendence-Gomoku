@@ -69,6 +69,7 @@ function saveMatchSession(
   };
 
   saveStoredMatchSession(storedSession);
+
   return storedSession;
 }
 
@@ -87,76 +88,113 @@ function mapMatchToEntry(match: Match, defaultPlayerName: string): LobbyEntry {
 }
 
 export function useHumanLobby({
-  onSessionReady,
+  onSessionReadyAction,
 }: {
-  onSessionReady?: (session: StoredMatchSession) => void;
+  onSessionReadyAction?: (session: StoredMatchSession) => void;
 } = {}) {
   const humanT = useTranslations("human");
   const createT = useTranslations("human.createRoom");
   const joinT = useTranslations("human.join");
+
   const defaultPlayerName = humanT("defaults.playerName");
 
   const [matches, setMatches] = useState<Match[]>([]);
+
+  const [lobbyPage, setLobbyPage] = useState(1);
+  const [lobbyTotalPages, setLobbyTotalPages] = useState(1);
+
   const [isLoadingMatches, setIsLoadingMatches] = useState(false);
+
   const [listError, setListError] = useState<string | null>(null);
 
   const [isCreating, setIsCreating] = useState(false);
+
   const [createError, setCreateError] = useState<string | null>(null);
 
   const [joiningMatchId, setJoiningMatchId] = useState<string | null>(null);
+
   const [joinError, setJoinError] = useState<string | null>(null);
 
-  const loadMatches = useCallback(async () => {
-    setIsLoadingMatches(true);
-
-    try {
-      const response = await fetch("/api/matches", {
-        cache: "no-store",
-      });
-
-      if (!response.ok) {
-        const errorPayload = (await response.json().catch(() => null)) as ErrorResponse | null;
-        setListError(
-          getErrorMessage(errorPayload, humanT("requestFailed", { status: response.status })),
-        );
-        setMatches([]);
-        return;
-      }
-
-      const data = (await response.json()) as Match[];
-      setMatches(data);
+  const loadMatches = useCallback(
+    async (pageToLoad = 1) => {
+      setIsLoadingMatches(true);
       setListError(null);
-      setJoinError(null);
-    } catch (error) {
-      console.error("Error loading matches:", error);
-      setListError(error instanceof Error ? error.message : humanT("networkLoadError"));
-      setMatches([]);
-    } finally {
-      setIsLoadingMatches(false);
-    }
-  }, [humanT]);
+
+      try {
+        const response = await fetch(`/api/matches?page=${pageToLoad}&limit=10`, {
+          cache: "no-store",
+        });
+
+        if (!response.ok) {
+          const errorPayload = (await response.json().catch(() => null)) as ErrorResponse | null;
+
+          setListError(
+            getErrorMessage(
+              errorPayload,
+              humanT("requestFailed", {
+                status: response.status,
+              }),
+            ),
+          );
+
+          setMatches([]);
+          return;
+        }
+
+        const result = (await response.json()) as {
+          data: Match[];
+          totalPages: number;
+          page: number;
+        };
+
+        setMatches(result.data || []);
+
+        setLobbyTotalPages(result.totalPages || 1);
+
+        setLobbyPage(result.page || pageToLoad);
+
+        setListError(null);
+        setJoinError(null);
+      } catch (error) {
+        console.error("Error loading matches:", error);
+
+        setListError(error instanceof Error ? error.message : humanT("networkLoadError"));
+
+        setMatches([]);
+      } finally {
+        setIsLoadingMatches(false);
+      }
+    },
+    [humanT],
+  );
 
   useEffect(() => {
-    void loadMatches();
+    void loadMatches(1);
   }, [loadMatches]);
 
   const createRoom = useCallback(
     async (options?: CreateRoomOptions) => {
       setIsCreating(true);
+
       setCreateError(null);
 
       try {
         const visibility = options?.visibility ?? "PUBLIC";
+
         const response = await fetch("/api/matches", {
           method: "POST",
+
           headers: {
             "Content-Type": "application/json",
           },
+
           body: JSON.stringify({
             name: options?.name,
+
             ...(visibility === "PRIVATE" && options?.password
               ? { password: options.password }
               : {}),
+
             visibility,
           }),
         });
@@ -168,9 +206,16 @@ export function useHumanLobby({
           }
 
           const errorPayload = (await response.json().catch(() => null)) as ErrorResponse | null;
+
           setCreateError(
-            getErrorMessage(errorPayload, humanT("requestFailed", { status: response.status })),
+            getErrorMessage(
+              errorPayload,
+              humanT("requestFailed", {
+                status: response.status,
+              }),
+            ),
           );
+
           return;
         }
 
@@ -187,9 +232,11 @@ export function useHumanLobby({
         }
 
         const storedSession = saveMatchSession(result, defaultPlayerName);
+
         if (storedSession) {
-          onSessionReady?.(storedSession);
+          onSessionReadyAction?.(storedSession);
         }
+
         setJoinError(null);
       } catch {
         setCreateError(createT("networkError"));
@@ -197,7 +244,7 @@ export function useHumanLobby({
         setIsCreating(false);
       }
     },
-    [createT, defaultPlayerName, humanT, onSessionReady],
+    [createT, defaultPlayerName, humanT, onSessionReadyAction],
   );
 
   const joinMatch = useCallback(
@@ -207,22 +254,32 @@ export function useHumanLobby({
       }
 
       setJoiningMatchId(entry.matchId);
+
       setJoinError(null);
 
       try {
         const response = await fetch(`/api/matches/${encodeURIComponent(entry.matchId)}/join`, {
           method: "POST",
+
           headers: {
             "Content-Type": "application/json",
           },
+
           body: JSON.stringify({ password }),
         });
 
         if (!response.ok) {
           const errorPayload = (await response.json().catch(() => null)) as ErrorResponse | null;
+
           setJoinError(
-            getErrorMessage(errorPayload, humanT("requestFailed", { status: response.status })),
+            getErrorMessage(
+              errorPayload,
+              humanT("requestFailed", {
+                status: response.status,
+              }),
+            ),
           );
+
           return;
         }
 
@@ -240,9 +297,11 @@ export function useHumanLobby({
           },
           defaultPlayerName,
         );
+
         if (storedSession) {
-          onSessionReady?.(storedSession);
+          onSessionReadyAction?.(storedSession);
         }
+
         setCreateError(null);
       } catch {
         setJoinError(joinT("networkError"));
@@ -250,7 +309,7 @@ export function useHumanLobby({
         setJoiningMatchId(null);
       }
     },
-    [defaultPlayerName, humanT, joinT, onSessionReady],
+    [defaultPlayerName, humanT, joinT, onSessionReadyAction],
   );
 
   return {
@@ -264,5 +323,7 @@ export function useHumanLobby({
     joiningMatchId,
     loadMatches,
     tableError: listError ?? joinError,
+    lobbyPage,
+    lobbyTotalPages,
   };
 }

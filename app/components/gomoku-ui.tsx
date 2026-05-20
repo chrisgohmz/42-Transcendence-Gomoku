@@ -210,7 +210,11 @@ export function AvatarToken({
     >
       {image ? (
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={image} alt={name} className="size-full rounded-full object-cover" />
+        <img
+          src={image}
+          alt={name}
+          className="absolute inset-0 h-full w-full rounded-full object-cover"
+        />
       ) : (
         name.charAt(0)
       )}

@@ -30,7 +30,7 @@ test("human lobby creates a room and stores the returned session", async ({ page
 
       listRequests += 1;
       await route.fulfill({
-        body: JSON.stringify([]),
+        body: JSON.stringify(lobbyMatchesResponse([])),
         contentType: "application/json",
         status: 200,
       });
@@ -136,7 +136,7 @@ test("human lobby creates a private room with its password and visibility", asyn
       }
 
       await route.fulfill({
-        body: JSON.stringify([]),
+        body: JSON.stringify(lobbyMatchesResponse([])),
         contentType: "application/json",
         status: 200,
       });
@@ -180,14 +180,16 @@ test("human lobby joins a waiting room and stores the returned session", async (
     async (route) => {
       listRequests += 1;
       await route.fulfill({
-        body: JSON.stringify([
-          {
-            boardSize: 15,
-            matchId: "match-1",
-            participants: [{ displayName: "Mintan", seat: "BLACK" }],
-            status: "WAITING",
-          },
-        ]),
+        body: JSON.stringify(
+          lobbyMatchesResponse([
+            {
+              boardSize: 15,
+              matchId: "match-1",
+              participants: [{ displayName: "Mintan", seat: "BLACK" }],
+              status: "WAITING",
+            },
+          ]),
+        ),
         contentType: "application/json",
         status: 200,
       });
@@ -255,6 +257,16 @@ async function readStoredSession(page: Page) {
     const raw = sessionStorage.getItem(`match:session:v1:${activeMatchId}`);
     return raw ? JSON.parse(raw) : null;
   }, activeSessionKey);
+}
+
+function lobbyMatchesResponse(data: unknown[]) {
+  return {
+    data,
+    limit: 10,
+    page: 1,
+    totalMatches: data.length,
+    totalPages: Math.max(1, Math.ceil(data.length / 10)),
+  };
 }
 
 function matchStateResponse(

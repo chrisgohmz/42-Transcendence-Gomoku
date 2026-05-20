@@ -1,7 +1,10 @@
 "use client";
 
 import { Bot, Home, MessageSquare, Settings, Swords, Trophy, UserRound, Users } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 
+import { usePresence } from "@/components/presence-provider";
 import { Link, usePathname } from "@/i18n/navigation";
 
 const icons = {
@@ -31,6 +34,22 @@ type SidebarNavProps = {
 
 export function SidebarNav({ groups }: SidebarNavProps) {
   const pathname = usePathname();
+  const router = useRouter();
+  const { socket } = usePresence();
+
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleFriendshipRefresh = () => {
+      router.refresh();
+    };
+
+    socket.on("friendship:refresh", handleFriendshipRefresh);
+
+    return () => {
+      socket.off("friendship:refresh", handleFriendshipRefresh);
+    };
+  }, [router, socket]);
 
   return (
     <nav className="sidebar-nav" aria-label="Primary">

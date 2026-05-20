@@ -338,6 +338,7 @@ export const messages = {
       remove: "削除",
       accept: "承認",
       decline: "拒否",
+      cancel: "キャンセル",
       cancelRequest: "リクエストを取り消す",
       add: "追加",
       challengeFriend: "{name} に対戦を申し込む",
@@ -365,6 +366,11 @@ export const messages = {
     },
     messages: {
       requestSent: "{name} にフレンドリクエストを送信しました！",
+    },
+    pagination: {
+      status: "{page} / {totalPages} ページ",
+      previous: "前へ",
+      next: "次へ",
     },
     status: {
       online: "オンライン",
@@ -433,6 +439,9 @@ export const messages = {
           empty: "過去の対局はまだありません。対局するとここに履歴が表示されます。",
         },
         playersLooking: "対局待ちのプレイヤー",
+        pagination: "{page} / {totalPages} ページ",
+        previous: "前へ",
+        next: "次へ",
         roomListEyebrow: "ロビー",
         roomListTitle: "ルーム一覧",
       },
@@ -837,6 +846,9 @@ export const messages = {
         empty: "対局履歴がまだありません。",
         unknownOpponent: "不明な相手",
         unknownDate: "日時不明",
+        pagination: "{page} / {totalPages} ページ",
+        previous: "前へ",
+        next: "次へ",
       },
       about: {
         eyebrow: "自己紹介",

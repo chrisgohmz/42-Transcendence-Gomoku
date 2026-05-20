@@ -345,6 +345,7 @@ export const messages = {
       remove: "Remove",
       accept: "Accept",
       decline: "Decline",
+      cancel: "Cancel",
       cancelRequest: "Cancel Request",
       add: "Add",
       challengeFriend: "Challenge {name}",
@@ -372,6 +373,11 @@ export const messages = {
     },
     messages: {
       requestSent: "Friend request sent to {name}!",
+    },
+    pagination: {
+      status: "Page {page} of {totalPages}",
+      previous: "Previous",
+      next: "Next",
     },
     status: {
       online: "Online",
@@ -441,6 +447,9 @@ export const messages = {
           empty: "No past matches found. Play a game to see your history here!",
         },
         playersLooking: "Players Looking",
+        pagination: "Page {page} of {totalPages}",
+        previous: "Previous",
+        next: "Next",
         roomListEyebrow: "Lobby",
         roomListTitle: "Room List",
       },
@@ -843,6 +852,9 @@ export const messages = {
         empty: "No matches yet.",
         unknownOpponent: "Unknown opponent",
         unknownDate: "Unknown date",
+        pagination: "Page {page} of {totalPages}",
+        previous: "Previous",
+        next: "Next",
       },
       about: {
         eyebrow: "About Me",

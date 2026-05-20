@@ -13,48 +13,112 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 
+import { MatchResult, MatchStatus, Role } from "@/../generated/prisma/enums";
 import { Badge, MetricCard, PageShell, Surface } from "@/components/gomoku-ui";
 import { PageLoadingShell } from "@/components/page-loading-shell";
 import { getCurrentSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { getProfileStatsForUser } from "@/lib/stats/profile-stats";
 
 import ProfileActions from "./profile-actions";
 import ProfileBackButton from "./profile-back-button";
 import ProfilePresence, { LiveAvatar } from "./profile-presence";
+import PublicMatchHistory from "./public-match-history";
 
 type ProfilePageProps = {
   params: Promise<{
     locale: string;
     username: string;
   }>;
+  searchParams?: Promise<{
+    historyPage?: string | string[];
+  }>;
 };
-
-const recentMatches = [
-  { key: "wonAgainstTenkei", score: "+12" },
-  { key: "lostAgainstHoshi", score: "-8" },
-  { key: "wonAgainstMokuren", score: "+12" },
-] as const;
 
 const achievements = ["sharpOpening", "calmEndgame", "fastRematch"] as const;
 
-export default function ProfilePage({ params }: ProfilePageProps) {
+function getSearchParamNumber(value: string | string[] | undefined) {
+  const rawValue = Array.isArray(value) ? value[0] : value;
+  const parsed = Number.parseInt(rawValue ?? "1", 10);
+
+  return Number.isNaN(parsed) || parsed < 1 ? 1 : parsed;
+}
+
+async function getHeadToHeadStats(currentUserId: string | undefined, targetUserId: string) {
+  if (!currentUserId || currentUserId === targetUserId) {
+    return { wins: 0, losses: 0 };
+  }
+
+  const matches = await prisma.match.findMany({
+    where: {
+      status: {
+        in: [MatchStatus.FINISHED, MatchStatus.CANCELLED],
+      },
+      AND: [
+        {
+          participants: {
+            some: {
+              role: Role.PLAYER,
+              userId: currentUserId,
+            },
+          },
+        },
+        {
+          participants: {
+            some: {
+              role: Role.PLAYER,
+              userId: targetUserId,
+            },
+          },
+        },
+      ],
+    },
+    select: {
+      participants: {
+        select: {
+          result: true,
+          role: true,
+          userId: true,
+        },
+      },
+    },
+  });
+
+  return matches.reduce(
+    (totals, match) => {
+      const currentUserParticipant = match.participants.find(
+        (participant) => participant.role === Role.PLAYER && participant.userId === currentUserId,
+      );
+
+      if (currentUserParticipant?.result === MatchResult.WIN) {
+        totals.wins += 1;
+      } else if (currentUserParticipant?.result === MatchResult.LOSS) {
+        totals.losses += 1;
+      }
+
+      return totals;
+    },
+    { wins: 0, losses: 0 },
+  );
+}
+
+export default function ProfilePage({ params, searchParams }: ProfilePageProps) {
   return (
     <Suspense fallback={<PageLoadingShell />}>
-      <PublicProfilePageContent params={params} />
+      <PublicProfilePageContent params={params} searchParams={searchParams} />
     </Suspense>
   );
 }
 
-async function PublicProfilePageContent({ params }: ProfilePageProps) {
+async function PublicProfilePageContent({ params, searchParams }: ProfilePageProps) {
   const { locale, username } = await params;
+  const { historyPage } = (await searchParams) ?? {};
   setRequestLocale(locale);
   const t = await getTranslations({ locale, namespace: "profile" });
+  const recentMatchesPage = getSearchParamNumber(historyPage);
 
   const userProfile = await prisma.user.findUnique({
     where: { username },
-    include: {
-      gameStats: true,
-    },
   });
 
   if (!userProfile) {
@@ -94,12 +158,18 @@ async function PublicProfilePageContent({ params }: ProfilePageProps) {
     }
   }
 
-  const statsList = userProfile.gameStats || [];
-  const wins = statsList.reduce((total, stat) => total + stat.wins, 0);
-  const losses = statsList.reduce((total, stat) => total + stat.losses, 0);
-  const played = statsList.reduce((total, stat) => total + stat.matchesPlayed, 0);
-  const rating = statsList.length > 0 ? Math.max(...statsList.map((s) => s.rating || 0)) : 0;
-  const winRate = played > 0 ? Math.round((wins / played) * 100) : 0;
+  const [profileStats, headToHead] = await Promise.all([
+    getProfileStatsForUser(userProfile.id, {
+      recentMatchesLimit: 10,
+      recentMatchesPage,
+    }),
+    getHeadToHeadStats(loggedInUserId, userProfile.id),
+  ]);
+
+  const rating = profileStats.stats.rating ?? t("page.stats.unrated");
+  const winRate = profileStats.stats.winRate;
+  const wins = profileStats.stats.wins;
+  const losses = profileStats.stats.losses;
 
   const isRevealed = relationshipState === "FRIENDS" || relationshipState === "SELF";
 
@@ -145,12 +215,7 @@ async function PublicProfilePageContent({ params }: ProfilePageProps) {
         <div className="grid gap-5">
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
             <MetricCard icon={Trophy} label={t("stats.rating")} tone="brass" value={rating} />
-            <MetricCard
-              icon={Activity}
-              label={t("stats.winRate")}
-              tone="mint"
-              value={`${winRate}%`}
-            />
+            <MetricCard icon={Activity} label={t("stats.winRate")} tone="mint" value={winRate} />
             <MetricCard icon={TrendingUp} label={t("stats.wins")} tone="mint" value={wins} />
             <MetricCard icon={TrendingDown} label={t("stats.losses")} tone="red" value={losses} />
           </div>
@@ -174,26 +239,11 @@ async function PublicProfilePageContent({ params }: ProfilePageProps) {
             </div>
           </Surface>
 
-          <Surface
-            eyebrow={t("publicPage.recentMatches.eyebrow")}
-            title={t("publicPage.recentMatches.title")}
-          >
-            <div className="grid gap-2">
-              {recentMatches.map((item) => (
-                <article
-                  key={item.key}
-                  className="grid min-h-14 grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-md border border-[var(--panel-border-soft)] bg-white/[0.035] px-3"
-                >
-                  <span className="truncate font-black">
-                    {t(`publicPage.recentMatches.items.${item.key}`)}
-                  </span>
-                  <Badge tone={item.key === "lostAgainstHoshi" ? "red" : "mint"}>
-                    {item.score}
-                  </Badge>
-                </article>
-              ))}
-            </div>
-          </Surface>
+          <PublicMatchHistory
+            matches={profileStats.recentMatches}
+            page={profileStats.recentMatchesPagination.page}
+            totalPages={profileStats.recentMatchesPagination.totalPages}
+          />
         </div>
 
         <aside className="grid content-start gap-5">
@@ -203,8 +253,16 @@ async function PublicProfilePageContent({ params }: ProfilePageProps) {
             title={t("publicPage.headToHead.title")}
           >
             <div className="grid grid-cols-2 gap-3">
-              <MetricCard label={t("publicPage.headToHead.wins")} tone="mint" value="4" />
-              <MetricCard label={t("publicPage.headToHead.losses")} tone="red" value="2" />
+              <MetricCard
+                label={t("publicPage.headToHead.wins")}
+                tone="mint"
+                value={headToHead.wins}
+              />
+              <MetricCard
+                label={t("publicPage.headToHead.losses")}
+                tone="red"
+                value={headToHead.losses}
+              />
             </div>
           </Surface>
 
