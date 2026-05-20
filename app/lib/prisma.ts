@@ -33,7 +33,6 @@ function getPrisma(): PrismaClient {
     "User",
     "Account",
     "Verification",
-    "OAuthAccount",
     "UserSession",
     "Conversation",
     "ConversationParticipant",

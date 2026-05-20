@@ -15,11 +15,6 @@ enum UserKind {
   BOT
 }
 
-enum OAuthProvider {
-  GOOGLE
-  GITHUB
-}
-
 enum FriendshipStatus {
   PENDING
   ACCEPTED
@@ -81,31 +76,29 @@ enum MatchResult {
 // Models
 
 model User {
-  id              String    @id @default(cuid(2))
-  kind            UserKind  @default(HUMAN)
-  username        String    @unique
-  displayName     String
-  email           String?   @unique
-  emailVerified   Boolean   @default(false)
-  emailVerifiedAt DateTime?
-  avatarUrl       String?
-  bio             String?
-  statusMessage   String?
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
-  lastSeenAt      DateTime?
-  profile         UserProfile?
-  accounts        Account[]
-  oauthAccounts   OAuthAccount[]
-  sessions        UserSession[]
-  conversations   ConversationParticipant[]
-  messages        DirectMessage[]           @relation("MessageSender")
+  id                String                    @id @default(cuid(2))
+  kind              UserKind                  @default(HUMAN)
+  username          String                    @unique
+  displayName       String
+  email             String?                   @unique
+  emailVerified     Boolean                   @default(false)
+  avatarUrl         String?
+  bio               String?
+  statusMessage     String?
+  createdAt         DateTime                  @default(now())
+  updatedAt         DateTime                  @updatedAt
+  lastSeenAt        DateTime?
+  profile           UserProfile?
+  accounts          Account[]
+  sessions          UserSession[]
+  conversations     ConversationParticipant[]
+  messages          DirectMessage[]           @relation("MessageSender")
   matchParticipants MatchParticipant[]
-  createdMatches  Match[]                   @relation("matchCreator")
-  gameStats       UserGameStats[]
-  achievements    UserAchievement[]
-  analyticsEvents AnalyticsEvent[]
-  avatars         AvatarMedia[]             @relation("avatarUploader")
+  createdMatches    Match[]                   @relation("matchCreator")
+  gameStats         UserGameStats[]
+  achievements      UserAchievement[]
+  analyticsEvents   AnalyticsEvent[]
+  avatars           AvatarMedia[]             @relation("avatarUploader")
 
   // friendship relations
   friendshipsLow     Friendship[] @relation("friendLow")
@@ -150,22 +143,6 @@ model AvatarMedia {
   @@index([uploadedById])
 }
 
-model OAuthAccount {
-  id                String        @id @default(cuid(2))
-  userId            String
-  provider          OAuthProvider
-  providerAccountId String
-  accessToken       String?
-  refreshToken      String?
-  expiresAt         DateTime?
-  createdAt         DateTime      @default(now())
-  scopes            String?
-  user              User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([provider, providerAccountId])
-  @@index([userId])
-}
-
 model Account {
   id                    String    @id @default(cuid(2))
   accountId             String
@@ -188,13 +165,12 @@ model Account {
 }
 
 model UserSession {
-  id           String    @id @default(cuid(2))
+  id           String   @id @default(cuid(2))
   userId       String
-  sessionToken String    @unique
+  sessionToken String   @unique
   expiresAt    DateTime
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
-  revokedAt    DateTime?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
   ipAddress    String?
   userAgent    String?
 
@@ -234,14 +210,14 @@ model Friendship {
 }
 
 model Conversation {
-  id            String           @id @default(cuid(2))
-  kind          ConversationKind @default(DIRECT)
-  directKey     String?          @unique
-  matchId       String?          @unique
+  id            String                    @id @default(cuid(2))
+  kind          ConversationKind          @default(DIRECT)
+  directKey     String?                   @unique
+  matchId       String?                   @unique
   topic         String?
-  createdAt     DateTime         @default(now())
+  createdAt     DateTime                  @default(now())
   lastMessageAt DateTime?
-  match         Match?           @relation("MatchConversation", fields: [matchId], references: [id], onDelete: SetNull)
+  match         Match?                    @relation("MatchConversation", fields: [matchId], references: [id], onDelete: SetNull)
   participants  ConversationParticipant[]
   messages      DirectMessage[]
 
@@ -250,10 +226,10 @@ model Conversation {
 }
 
 model ConversationParticipant {
-  id             String    @id @default(cuid(2))
+  id             String       @id @default(cuid(2))
   conversationId String
   userId         String
-  joinedAt       DateTime  @default(now())
+  joinedAt       DateTime     @default(now())
   lastReadAt     DateTime?
   conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
   user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -299,10 +275,10 @@ model Match {
   createdAt       DateTime        @default(now())
   updatedAt       DateTime        @updatedAt
 
-  createdBy       User?                @relation("matchCreator", fields: [createdByUserId], references: [id], onDelete: SetNull)
+  createdBy       User?              @relation("matchCreator", fields: [createdByUserId], references: [id], onDelete: SetNull)
   participants    MatchParticipant[]
   moves           MatchMove[]
-  conversation    Conversation?        @relation("MatchConversation")
+  conversation    Conversation?      @relation("MatchConversation")
   analyticsEvents AnalyticsEvent[]
 
   @@index([status])
@@ -390,11 +366,11 @@ model AchievementDefinition {
 }
 
 model UserAchievement {
-  id            Int       @id @default(autoincrement())
+  id            Int                   @id @default(autoincrement())
   userId        String
   achievementId Int
-  unlockedAt    DateTime  @default(now())
-  progress      Int       @default(0)
+  unlockedAt    DateTime              @default(now())
+  progress      Int                   @default(0)
   completedAt   DateTime?
   user          User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
   achievement   AchievementDefinition @relation(fields: [achievementId], references: [id], onDelete: Cascade)

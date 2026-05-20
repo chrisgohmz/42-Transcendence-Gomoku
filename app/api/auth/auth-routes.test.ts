@@ -37,7 +37,6 @@ const user = {
   displayName: "Max",
   email: "max@example.com",
   emailVerified: true,
-  emailVerifiedAt: null,
 };
 
 await mock.module("../../lib/auth", () =>

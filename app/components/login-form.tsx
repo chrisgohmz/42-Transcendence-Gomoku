@@ -80,7 +80,7 @@ export function LoginForm({ oauthProviders }: { oauthProviders: OAuthProviderId[
           />
           {login("rememberThisTable")}
         </label>
-        <Link href="/privacy" className="text-link">
+        <Link href="/forgot-password" className="text-link">
           {login("forgotPassword")}
         </Link>
       </div>

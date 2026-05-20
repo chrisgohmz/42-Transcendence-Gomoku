@@ -4,7 +4,12 @@ import { isAPIError } from "better-auth/api";
 import { getLocale, getTranslations } from "next-intl/server";
 import { headers } from "next/headers";
 
-import type { LoginActionState, SignupActionState } from "./auth-action-state";
+import type {
+  LoginActionState,
+  PasswordResetConfirmActionState,
+  PasswordResetRequestActionState,
+  SignupActionState,
+} from "./auth-action-state";
 import { defaultLocale, locales, type Locale } from "./i18n/config";
 import { redirect } from "./i18n/navigation";
 import { auth, getDuplicateSignupFields as findDuplicateSignupFields } from "./lib/auth";
@@ -16,7 +21,12 @@ import {
   fieldIssuesToMap,
   type AuthField,
   type AuthValidationIssueCode,
+  type PasswordResetConfirmField,
+  type PasswordResetConfirmValidationIssueCode,
+  type PasswordResetRequestField,
   validateLoginInput,
+  validatePasswordResetConfirmInput,
+  validatePasswordResetRequestInput,
   validateSignupInput,
 } from "./lib/validation/auth-profile";
 
@@ -47,6 +57,51 @@ function translateAuthIssues(
   return fieldIssuesToMap(issues, t);
 }
 
+function translatePasswordResetRequestIssues(
+  issues: { code: AuthValidationIssueCode; field: PasswordResetRequestField }[],
+  t: (key: AuthValidationIssueCode) => string,
+) {
+  return fieldIssuesToMap(issues, t);
+}
+
+function translatePasswordResetConfirmIssues(
+  issues: {
+    code: PasswordResetConfirmValidationIssueCode;
+    field: PasswordResetConfirmField;
+  }[],
+  t: (key: PasswordResetConfirmValidationIssueCode) => string,
+) {
+  return fieldIssuesToMap(issues, t);
+}
+
+function getRequestBaseUrl(headerList: Headers): string {
+  const origin = headerList.get("origin");
+
+  if (origin) {
+    return origin;
+  }
+
+  const configuredBaseUrl = process.env["BETTER_AUTH_URL"];
+
+  if (configuredBaseUrl) {
+    return configuredBaseUrl;
+  }
+
+  const forwardedHost = headerList.get("x-forwarded-host")?.split(",")[0]?.trim();
+  const host = forwardedHost || headerList.get("host");
+
+  if (host) {
+    const forwardedProto = headerList.get("x-forwarded-proto")?.split(",")[0]?.trim() ?? "http";
+    return `${forwardedProto}://${host}`;
+  }
+
+  return "http://localhost:3000";
+}
+
+function getPasswordResetRedirectUrl(locale: Locale, headerList: Headers): string {
+  return new URL(`/${locale}/reset-password`, getRequestBaseUrl(headerList)).toString();
+}
+
 export async function loginAction(
   _previousState: LoginActionState,
   formData: FormData,
@@ -72,6 +127,7 @@ export async function loginAction(
       body: {
         email: validation.data.email,
         password: validation.data.password,
+        rememberMe: getFormString(formData, "remember") === "on",
       },
       headers: await headers(),
     });
@@ -92,6 +148,101 @@ export async function loginAction(
   }
 
   return redirect({ href: "/profile", locale });
+}
+
+export async function requestPasswordResetAction(
+  _previousState: PasswordResetRequestActionState,
+  formData: FormData,
+): Promise<PasswordResetRequestActionState> {
+  const locale = await getActionLocale(formData);
+  const t = await getTranslations({ locale, namespace: "auth.errors" });
+  const email = getFormString(formData, "email");
+  const validation = validatePasswordResetRequestInput({ email });
+
+  if (!validation.ok) {
+    return {
+      email,
+      fields: translatePasswordResetRequestIssues(validation.issues, t),
+      message: t("fixHighlightedFields"),
+      successMessage: null,
+    };
+  }
+
+  try {
+    const headerList = await headers();
+
+    await auth.api.requestPasswordReset({
+      body: {
+        email: validation.data.email,
+        redirectTo: getPasswordResetRedirectUrl(locale, headerList),
+      },
+    });
+  } catch {
+    return {
+      email,
+      fields: {},
+      message: t("passwordResetUnavailable"),
+      successMessage: null,
+    };
+  }
+
+  return {
+    email,
+    fields: {},
+    message: null,
+    successMessage: t("passwordResetEmailSent"),
+  };
+}
+
+export async function resetPasswordAction(
+  _previousState: PasswordResetConfirmActionState,
+  formData: FormData,
+): Promise<PasswordResetConfirmActionState> {
+  const locale = await getActionLocale(formData);
+  const t = await getTranslations({ locale, namespace: "auth.errors" });
+  const token = getFormString(formData, "token");
+
+  if (!token) {
+    return {
+      fields: {},
+      message: t("invalidResetToken"),
+      successMessage: null,
+    };
+  }
+
+  const validation = validatePasswordResetConfirmInput({
+    confirmPassword: getFormString(formData, "confirmPassword"),
+    newPassword: getFormString(formData, "newPassword"),
+  });
+
+  if (!validation.ok) {
+    return {
+      fields: translatePasswordResetConfirmIssues(validation.issues, t),
+      message: t("fixHighlightedFields"),
+      successMessage: null,
+    };
+  }
+
+  try {
+    await auth.api.resetPassword({
+      body: {
+        newPassword: validation.data.newPassword,
+        token,
+      },
+    });
+  } catch (error) {
+    return {
+      fields: {},
+      message: isAPIError(error) ? t("invalidResetToken") : t("passwordResetUnavailable"),
+      successMessage: null,
+    };
+  }
+
+  return {
+    fields: {},
+    message: null,
+    successMessage: t("passwordResetSuccess"),
+  };
 }
 
 export async function signupAction(

@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Link } from "@/i18n/navigation";
+import { authClient } from "@/lib/auth-client";
 
 interface UserProps {
   username?: string;
@@ -41,7 +42,7 @@ export function PlayerLogout({ className, iconOnly }: { className?: string; icon
 
   const handleLogout = async () => {
     try {
-      await fetch("/api/auth/logout", { method: "POST" });
+      await authClient.signOut();
       router.push("/login");
       router.refresh();
     } catch (error) {
