@@ -4,9 +4,10 @@ import { connection } from "next/server";
 import { Suspense } from "react";
 
 import { Badge, MetricCard, PageHeader, PageShell, Surface } from "@/components/gomoku-ui";
-import LeaderboardTable from "@/components/leaderboardtable";
+import LeaderboardClient from "@/components/leaderboard-client";
 import { PageLoadingShell } from "@/components/page-loading-shell";
-import { getLeaderboardEntries, type LeaderboardEntry } from "@/lib/leaderboard";
+import { getCurrentSession } from "@/lib/auth";
+import { getLeaderboardSnapshot, type LeaderboardSnapshot } from "@/lib/leaderboard";
 
 type LeaderBoardProps = {
   params: Promise<{
@@ -28,11 +29,12 @@ async function LeaderBoardContent({ params }: LeaderBoardProps) {
   await connection();
 
   const t = await getTranslations({ locale, namespace: "leaderboard" });
-  let entries: LeaderboardEntry[] = [];
+  let snapshot: LeaderboardSnapshot = { entries: [], currentUser: null };
   let leaderboardUnavailable = false;
 
   try {
-    entries = await getLeaderboardEntries();
+    const session = await getCurrentSession();
+    snapshot = await getLeaderboardSnapshot(session?.user.id ?? null);
   } catch (error) {
     leaderboardUnavailable = true;
     console.error("Failed to load leaderboard entries.", error);
@@ -79,31 +81,7 @@ async function LeaderBoardContent({ params }: LeaderBoardProps) {
             />
           ) : (
             <>
-              <LeaderboardTable entries={entries} />
-              <div className="rounded-md border border-[var(--brass)]/35 bg-[linear-gradient(90deg,rgba(216,172,89,0.16),rgba(255,255,255,0.03))] p-4">
-                <div className="grid gap-4 md:grid-cols-[120px_minmax(0,1fr)_repeat(3,110px)] md:items-center">
-                  <div>
-                    <p className="m-0 text-xs font-black tracking-[0.16em] text-[var(--muted-text)] uppercase">
-                      {t("page.spotlight.rankLabel")}
-                    </p>
-                    <p className="m-0 font-serif text-4xl font-black text-[var(--brass)]">3</p>
-                  </div>
-                  <div className="flex min-w-0 items-center gap-3">
-                    <span className="grid size-14 place-items-center rounded-full border border-[var(--brass)]/45 bg-white/[0.08] font-black">
-                      K
-                    </span>
-                    <div>
-                      <p className="m-0 text-xl font-black">Kuroishi</p>
-                      <p className="m-0 text-sm text-[var(--brass)]">
-                        {t("page.spotlight.rating", { rating: "1,842" })}
-                      </p>
-                    </div>
-                  </div>
-                  <MiniMetric label={t("table.wins")} value="254" />
-                  <MiniMetric label={t("table.losses")} value="81" />
-                  <MiniMetric label={t("table.winRate")} value="75.8%" />
-                </div>
-              </div>
+              <LeaderboardClient initial={snapshot} />
             </>
           )}
         </Surface>
@@ -186,15 +164,6 @@ function LeaderboardUnavailable({ description, title }: { description: string; t
         <h2 className="m-0 font-serif text-3xl leading-none font-black">{title}</h2>
         <p className="mt-3 mb-0 text-sm leading-6 text-[var(--muted-text)]">{description}</p>
       </div>
-    </div>
-  );
-}
-
-function MiniMetric({ label, value }: { label: string; value: string }) {
-  return (
-    <div>
-      <p className="m-0 text-xl font-black tabular-nums">{value}</p>
-      <p className="m-0 text-xs font-bold text-[var(--muted-text)]">{label}</p>
     </div>
   );
 }

@@ -677,8 +677,11 @@ export const messages = {
       },
       spotlight: {
         rankLabel: "你的排名",
+        noPlayer: "未上榜",
         rating: "{rating} 等级分",
       },
+      refresh: "刷新",
+      refreshing: "刷新中...",
       season: {
         eyebrow: "赛季",
         title: "春季天梯",
@@ -714,7 +717,10 @@ export const messages = {
       wins: "胜场",
       losses: "负场",
       winRate: "胜率",
-      empty: "暂无排行榜数据。",
+      empty: {
+        title: "暂无排行榜数据",
+        description: "进行计分对局后即可出现在排行榜中。",
+      },
       preview: "在已完成对局结果到达之前，将显示预览排名。",
       trend: "趋势",
       active: "活跃",

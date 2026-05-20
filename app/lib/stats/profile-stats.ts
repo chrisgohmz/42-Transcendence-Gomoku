@@ -73,6 +73,7 @@ const statsSelect = {
   losses: true,
   draws: true,
   matchesPlayed: true,
+  botMatchesPlayed: true, // ← ローカル改善を維持
   currentStreak: true,
   bestStreak: true,
   lastPlayedAt: true,
@@ -83,8 +84,7 @@ function getOpponent(entry: MatchHistoryEntry, currentUserId: string) {
     (participant) => participant.role === Role.PLAYER && participant.userId !== currentUserId,
   );
 
-  const opponent =
-    opponents.find((participant) => participant.userId !== null) ?? opponents[0] ?? null;
+  const opponent = opponents.find((p) => p.userId !== null) ?? opponents[0] ?? null;
 
   return opponent
     ? {
@@ -112,14 +112,10 @@ function toRecentMatch(entry: MatchHistoryEntry, currentUserId: string): Profile
 }
 
 async function getRankForUser(stats: LeaderboardRankInput | null): Promise<number | null> {
-  if (!stats) {
-    return null;
-  }
+  if (!stats) return null;
 
   const aheadWhere = buildLeaderboardAheadWhere(stats);
-  if (!aheadWhere) {
-    return null;
-  }
+  if (!aheadWhere) return null;
 
   const aheadCount = await prisma.userGameStats.count({
     where: aheadWhere,
@@ -143,11 +139,12 @@ export async function getProfileStatsForUser(
   userId: string,
   options: ProfileStatsOptions = {},
 ): Promise<ProfileStatsSnapshot> {
-  const recentMatchesPage =
+  const page =
     Number.isInteger(options.recentMatchesPage) && options.recentMatchesPage
       ? Math.max(options.recentMatchesPage, 1)
       : 1;
-  const recentMatchesLimit = normalizeRecentMatchesLimit(options.recentMatchesLimit);
+
+  const limit = normalizeRecentMatchesLimit(options.recentMatchesLimit);
 
   const [statsRow, achievementRows, matchHistoryPage] = await Promise.all([
     prisma.userGameStats.findUnique({
@@ -171,7 +168,7 @@ export async function getProfileStatsForUser(
         },
       },
     }),
-    getMatchHistoryPageForUser(userId, recentMatchesPage, recentMatchesLimit),
+    getMatchHistoryPageForUser(userId, page, limit),
   ]);
 
   const stats = {
@@ -180,6 +177,7 @@ export async function getProfileStatsForUser(
     losses: statsRow?.losses ?? 0,
     draws: statsRow?.draws ?? 0,
     matchesPlayed: statsRow?.matchesPlayed ?? 0,
+    botMatchesPlayed: statsRow?.botMatchesPlayed ?? 0, // ← ローカル維持
     winRate: formatWinRate(statsRow?.wins ?? 0, statsRow?.matchesPlayed ?? 0),
     currentStreak: statsRow?.currentStreak ?? 0,
     bestStreak: statsRow?.bestStreak ?? 0,
@@ -190,7 +188,9 @@ export async function getProfileStatsForUser(
     points: row.achievement.points,
     completedAt: row.completedAt,
   }));
+
   const achievementPoints = calculateAchievementPoints(achievementInputs);
+
   const progression = calculateLevelProgress({
     rating: stats.rating,
     wins: stats.wins,
@@ -203,6 +203,7 @@ export async function getProfileStatsForUser(
     wins: stats.wins,
     losses: stats.losses,
     matchesPlayed: stats.matchesPlayed,
+    botMatchesPlayed: stats.botMatchesPlayed, // ← ここ重要
   });
 
   return {
