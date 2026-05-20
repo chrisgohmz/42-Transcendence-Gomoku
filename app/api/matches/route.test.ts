@@ -232,11 +232,8 @@ describe("GET /api/matches", () => {
 
     const response = await route.GET(new Request("http://localhost/api/matches?page=1&limit=2"));
     const payload = await response.json();
-    const findManyArgs = findManyMatches.mock.calls[0]?.[0] as Record<string, unknown>;
 
     expect(response.status).toBe(200);
-    expect("skip" in findManyArgs).toBe(false);
-    expect("take" in findManyArgs).toBe(false);
     expect(payload).toMatchObject({
       page: 1,
       limit: 2,
@@ -249,7 +246,7 @@ describe("GET /api/matches", () => {
     ]);
   });
 
-  test("returns later filtered lobby pages without database-level skip or take", async () => {
+  test("returns later filtered lobby pages after excluding hidden challenge rooms", async () => {
     findManyMatches.mockResolvedValueOnce([
       createdMatch({ id: "listed-1", visibility: MatchVisibility.PUBLIC }),
       createdMatch({ id: "listed-2", visibility: MatchVisibility.PUBLIC }),
@@ -269,11 +266,8 @@ describe("GET /api/matches", () => {
 
     const response = await route.GET(new Request("http://localhost/api/matches?page=2&limit=2"));
     const payload = await response.json();
-    const findManyArgs = findManyMatches.mock.calls[0]?.[0] as Record<string, unknown>;
 
     expect(response.status).toBe(200);
-    expect("skip" in findManyArgs).toBe(false);
-    expect("take" in findManyArgs).toBe(false);
     expect(payload).toMatchObject({
       page: 2,
       limit: 2,

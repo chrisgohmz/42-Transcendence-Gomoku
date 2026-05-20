@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, mock, test } from "bun:test";
+import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
 import { createAuthModuleMock } from "@/test-utils/auth-module-mock";
 
@@ -7,10 +7,15 @@ const getTranslations = mock();
 const revalidatePath = mock();
 const getCurrentSession = mock();
 const findUser = mock();
+const findManyUsers = mock();
 const findFriendship = mock();
 const createFriendship = mock();
+const deleteFriendship = mock();
 const updateFriendship = mock();
-const deleteFriendshipAndNotify = mock();
+const fetchMock = mock(async () => new Response(null, { status: 200 }));
+const originalFetch = globalThis.fetch;
+const originalRealtimeInternalSecret = process.env["REALTIME_INTERNAL_SECRET"];
+const originalRealtimeFriendshipInternalUrl = process.env["REALTIME_FRIENDSHIP_INTERNAL_URL"];
 
 await mock.module("next-intl/server", () => ({
   getLocale,
@@ -31,19 +36,15 @@ await mock.module("@/lib/prisma", () => ({
   prisma: {
     friendship: {
       create: createFriendship,
+      delete: deleteFriendship,
       findUnique: findFriendship,
       update: updateFriendship,
     },
     user: {
+      findMany: findManyUsers,
       findUnique: findUser,
     },
   },
-}));
-
-await mock.module("@/lib/friendships/friendship-mutations", () => ({
-  deleteFriendshipAndNotify,
-  getLowHighIds: (left: string, right: string) =>
-    left < right ? { userLowId: left, userHighId: right } : { userLowId: right, userHighId: left },
 }));
 
 const { removeFriend, respondToRequest, sendFriendRequest } = await import("./actions");
@@ -71,11 +72,17 @@ beforeEach(() => {
   revalidatePath.mockReset();
   getCurrentSession.mockReset();
   findUser.mockReset();
+  findManyUsers.mockReset();
   findFriendship.mockReset();
   createFriendship.mockReset();
+  deleteFriendship.mockReset();
   updateFriendship.mockReset();
-  deleteFriendshipAndNotify.mockReset();
+  fetchMock.mockReset();
 
+  globalThis.fetch = fetchMock as unknown as typeof fetch;
+  process.env["REALTIME_INTERNAL_SECRET"] = "friend-secret";
+  process.env["REALTIME_FRIENDSHIP_INTERNAL_URL"] =
+    "http://localhost:3001/internal/friendship-update";
   getLocale.mockResolvedValue("en");
   getTranslations.mockImplementation(
     async ({ namespace }: { namespace: string }) =>
@@ -84,10 +91,31 @@ beforeEach(() => {
   );
   getCurrentSession.mockResolvedValue(session);
   findUser.mockResolvedValue(targetUser);
+  findManyUsers.mockResolvedValue([
+    { id: "user-ada", username: "ada" },
+    { id: "user-grace", username: "grace" },
+  ]);
   findFriendship.mockResolvedValue(null);
   createFriendship.mockResolvedValue({});
+  deleteFriendship.mockResolvedValue({});
   updateFriendship.mockResolvedValue({});
-  deleteFriendshipAndNotify.mockResolvedValue(undefined);
+  fetchMock.mockResolvedValue(new Response(null, { status: 200 }));
+});
+
+afterEach(() => {
+  globalThis.fetch = originalFetch;
+
+  if (originalRealtimeInternalSecret === undefined) {
+    delete process.env["REALTIME_INTERNAL_SECRET"];
+  } else {
+    process.env["REALTIME_INTERNAL_SECRET"] = originalRealtimeInternalSecret;
+  }
+
+  if (originalRealtimeFriendshipInternalUrl === undefined) {
+    delete process.env["REALTIME_FRIENDSHIP_INTERNAL_URL"];
+  } else {
+    process.env["REALTIME_FRIENDSHIP_INTERNAL_URL"] = originalRealtimeFriendshipInternalUrl;
+  }
 });
 
 describe("sendFriendRequest", () => {
@@ -175,7 +203,7 @@ describe("respondToRequest", () => {
       },
       where: { id: 42 },
     });
-    expect(deleteFriendshipAndNotify).not.toHaveBeenCalled();
+    expect(deleteFriendship).not.toHaveBeenCalled();
     expect(revalidatePath).toHaveBeenCalledWith("/", "layout");
   });
 
@@ -185,7 +213,14 @@ describe("respondToRequest", () => {
     const result = await respondToRequest(42, false);
 
     expect(result).toEqual({ success: true });
-    expect(deleteFriendshipAndNotify).toHaveBeenCalledWith(pendingFriendship);
+    expect(deleteFriendship).toHaveBeenCalledWith({ where: { id: 42 } });
+    expect(fetchMock).toHaveBeenCalledWith(
+      "http://localhost:3001/internal/friendship-update",
+      expect.objectContaining({
+        body: JSON.stringify({ usernames: ["ada", "grace"] }),
+        method: "POST",
+      }),
+    );
     expect(updateFriendship).not.toHaveBeenCalled();
   });
 });
@@ -201,7 +236,7 @@ describe("removeFriend", () => {
     const result = await removeFriend(42);
 
     expect(result).toEqual({ error: "friends:actions.unauthorized" });
-    expect(deleteFriendshipAndNotify).not.toHaveBeenCalled();
+    expect(deleteFriendship).not.toHaveBeenCalled();
   });
 
   test("removes owned friendships through the shared delete-and-notify path", async () => {
@@ -210,7 +245,8 @@ describe("removeFriend", () => {
     const result = await removeFriend(42);
 
     expect(result).toEqual({ success: true });
-    expect(deleteFriendshipAndNotify).toHaveBeenCalledWith(pendingFriendship);
+    expect(deleteFriendship).toHaveBeenCalledWith({ where: { id: 42 } });
+    expect(fetchMock).toHaveBeenCalled();
     expect(revalidatePath).toHaveBeenCalledWith("/", "layout");
   });
 });
