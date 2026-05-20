@@ -438,7 +438,10 @@ export default function HumanLobbyClient() {
               {lobbyTotalPages > 1 && (
                 <div className="flex items-center justify-between border-t border-(--panel-border-soft) px-4 py-3 text-sm">
                   <span className="font-bold text-(--muted-text)">
-                    Page {lobbyPage} of {lobbyTotalPages}
+                    {pageT("lobby.pagination", {
+                      page: lobbyPage,
+                      totalPages: lobbyTotalPages,
+                    })}
                   </span>
 
                   <div className="flex gap-2">
@@ -448,7 +451,7 @@ export default function HumanLobbyClient() {
                       disabled={lobbyPage <= 1 || isLoadingMatches}
                       className="rounded-md border border-(--panel-border-soft) bg-white/3.5 px-4 py-1.5 font-bold text-(--muted-strong) transition-colors hover:bg-white/7 disabled:opacity-50"
                     >
-                      Previous
+                      {pageT("lobby.previous")}
                     </button>
 
                     <button
@@ -457,7 +460,7 @@ export default function HumanLobbyClient() {
                       disabled={lobbyPage >= lobbyTotalPages || isLoadingMatches}
                       className="rounded-md border border-(--panel-border-soft) bg-white/3.5 px-4 py-1.5 font-bold text-(--muted-strong) transition-colors hover:bg-white/7 disabled:opacity-50"
                     >
-                      Next
+                      {pageT("lobby.next")}
                     </button>
                   </div>
                 </div>

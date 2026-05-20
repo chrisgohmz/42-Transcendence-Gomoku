@@ -215,12 +215,7 @@ async function PublicProfilePageContent({ params, searchParams }: ProfilePagePro
         <div className="grid gap-5">
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
             <MetricCard icon={Trophy} label={t("stats.rating")} tone="brass" value={rating} />
-            <MetricCard
-              icon={Activity}
-              label={t("stats.winRate")}
-              tone="mint"
-              value={`${winRate}%`}
-            />
+            <MetricCard icon={Activity} label={t("stats.winRate")} tone="mint" value={winRate} />
             <MetricCard icon={TrendingUp} label={t("stats.wins")} tone="mint" value={wins} />
             <MetricCard icon={TrendingDown} label={t("stats.losses")} tone="red" value={losses} />
           </div>

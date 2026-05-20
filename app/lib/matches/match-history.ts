@@ -272,16 +272,18 @@ export async function getMatchHistoryPageForUser(
   const normalizedPage = normalizeMatchHistoryPage(page);
   const normalizedLimit = normalizeMatchHistoryLimit(limit);
   const where = buildMatchHistoryWhere(userId);
-  const [totalMatches, matches] = await Promise.all([
-    prisma.match.count({ where }),
-    prisma.match.findMany(buildMatchHistoryQuery(userId, normalizedLimit, normalizedPage)),
-  ]);
+  const totalMatches = await prisma.match.count({ where });
+  const totalPages = Math.max(1, Math.ceil(totalMatches / normalizedLimit));
+  const currentPage = Math.min(normalizedPage, totalPages);
+  const matches = await prisma.match.findMany(
+    buildMatchHistoryQuery(userId, normalizedLimit, currentPage),
+  );
 
   return {
     entries: matches.map((match) => toMatchHistoryEntry(match, userId)),
-    page: normalizedPage,
+    page: currentPage,
     limit: normalizedLimit,
     totalMatches,
-    totalPages: Math.max(1, Math.ceil(totalMatches / normalizedLimit)),
+    totalPages,
   };
 }
