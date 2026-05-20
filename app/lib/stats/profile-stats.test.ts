@@ -197,4 +197,22 @@ describe("profile stats", () => {
       },
     });
   });
+
+  test("normalizes recent-match pagination options before querying history", async () => {
+    await getProfileStatsForUser("user-ada", {
+      recentMatchesLimit: 0,
+      recentMatchesPage: -2,
+    });
+
+    expect(getMatchHistoryPageForUser).toHaveBeenCalledWith("user-ada", 1, 1);
+
+    getMatchHistoryPageForUser.mockClear();
+
+    await getProfileStatsForUser("user-ada", {
+      recentMatchesLimit: 999,
+      recentMatchesPage: 4,
+    });
+
+    expect(getMatchHistoryPageForUser).toHaveBeenCalledWith("user-ada", 4, 50);
+  });
 });

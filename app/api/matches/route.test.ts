@@ -1,6 +1,7 @@
 import { afterAll, beforeEach, describe, expect, mock, test } from "bun:test";
 
 import { MatchStatus, MatchVisibility, Role, RuleType, Seat } from "@/../generated/prisma/enums";
+import { createAuthModuleMock } from "@/test-utils/auth-module-mock";
 
 const getCurrentSession = mock();
 const createMatch = mock();
@@ -17,9 +18,11 @@ const originalFetch = globalThis.fetch;
 const originalRealtimeInternalUrl = process.env["REALTIME_INTERNAL_URL"];
 const originalRealtimeSecret = process.env["REALTIME_INTERNAL_SECRET"];
 
-await mock.module("@/lib/auth", () => ({
-  getCurrentSession,
-}));
+await mock.module("@/lib/auth", () =>
+  createAuthModuleMock({
+    getCurrentSession,
+  }),
+);
 
 await mock.module("@/lib/prisma", () => ({
   prisma: {
@@ -244,6 +247,58 @@ describe("GET /api/matches", () => {
       "listed-1",
       "listed-2",
     ]);
+  });
+
+  test("returns later filtered lobby pages without database-level skip or take", async () => {
+    findManyMatches.mockResolvedValueOnce([
+      createdMatch({ id: "listed-1", visibility: MatchVisibility.PUBLIC }),
+      createdMatch({ id: "listed-2", visibility: MatchVisibility.PUBLIC }),
+      createdMatch({
+        id: "hidden-challenge",
+        metadata: {
+          declineTokenHash: "hashed-decline-token",
+          kind: "human-challenge",
+          targetUserId: "user-bob",
+          targetUsername: "bob",
+        },
+        visibility: MatchVisibility.PRIVATE,
+      }),
+      createdMatch({ id: "listed-3", visibility: MatchVisibility.PUBLIC }),
+      createdMatch({ id: "listed-4", visibility: MatchVisibility.PUBLIC }),
+    ]);
+
+    const response = await route.GET(new Request("http://localhost/api/matches?page=2&limit=2"));
+    const payload = await response.json();
+    const findManyArgs = findManyMatches.mock.calls[0]?.[0] as Record<string, unknown>;
+
+    expect(response.status).toBe(200);
+    expect("skip" in findManyArgs).toBe(false);
+    expect("take" in findManyArgs).toBe(false);
+    expect(payload).toMatchObject({
+      page: 2,
+      limit: 2,
+      totalMatches: 4,
+      totalPages: 2,
+    });
+    expect(payload.data.map((match: { matchId: string }) => match.matchId)).toEqual([
+      "listed-3",
+      "listed-4",
+    ]);
+  });
+
+  test("normalizes invalid lobby pagination params", async () => {
+    findManyMatches.mockResolvedValueOnce([createdMatch({ id: "listed-1" })]);
+
+    const response = await route.GET(new Request("http://localhost/api/matches?page=-2&limit=0"));
+    const payload = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(payload).toMatchObject({
+      page: 1,
+      limit: 10,
+      totalMatches: 1,
+      totalPages: 1,
+    });
   });
 });
 

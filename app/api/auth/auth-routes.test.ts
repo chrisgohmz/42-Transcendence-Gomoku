@@ -2,6 +2,8 @@ import { beforeEach, describe, expect, mock, test } from "bun:test";
 
 import { APIError } from "better-auth/api";
 
+import { createAuthModuleMock } from "@/test-utils/auth-module-mock";
+
 await mock.module("server-only", () => ({}));
 await mock.module("next-intl/server", () => ({
   getLocale: async () => "en",
@@ -38,24 +40,19 @@ const user = {
   emailVerifiedAt: null,
 };
 
-await mock.module("../../lib/auth", () => ({
-  auth: {
-    api: {
-      changePassword,
-      signInEmail,
-      signUpEmail,
+await mock.module("../../lib/auth", () =>
+  createAuthModuleMock({
+    auth: {
+      api: {
+        changePassword,
+        signInEmail,
+        signUpEmail,
+      },
     },
-  },
-  getCurrentSession,
-  getDuplicateSignupFields,
-  serializeUserForResponse: (value: typeof user) => ({
-    id: value.id,
-    username: value.username,
-    displayName: value.displayName,
-    email: value.email,
-    emailVerified: value.emailVerified || Boolean(value.emailVerifiedAt),
+    getCurrentSession,
+    getDuplicateSignupFields,
   }),
-}));
+);
 
 await mock.module("../../lib/prisma", () => ({
   prisma: {
@@ -65,24 +62,19 @@ await mock.module("../../lib/prisma", () => ({
     },
   },
 }));
-await mock.module("@/lib/auth", () => ({
-  auth: {
-    api: {
-      changePassword,
-      signInEmail,
-      signUpEmail,
+await mock.module("@/lib/auth", () =>
+  createAuthModuleMock({
+    auth: {
+      api: {
+        changePassword,
+        signInEmail,
+        signUpEmail,
+      },
     },
-  },
-  getCurrentSession,
-  getDuplicateSignupFields,
-  serializeUserForResponse: (value: typeof user) => ({
-    id: value.id,
-    username: value.username,
-    displayName: value.displayName,
-    email: value.email,
-    emailVerified: value.emailVerified || Boolean(value.emailVerifiedAt),
+    getCurrentSession,
+    getDuplicateSignupFields,
   }),
-}));
+);
 await mock.module("@/lib/prisma", () => ({
   prisma: {
     user: {
@@ -110,6 +102,16 @@ function jsonRequest(path: string, body: unknown) {
       "content-type": "application/json",
     },
     body: JSON.stringify(body),
+  });
+}
+
+function malformedJsonRequest(path: string) {
+  return new Request(`http://localhost${path}`, {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+    },
+    body: "{",
   });
 }
 
@@ -154,6 +156,40 @@ beforeEach(() => {
 });
 
 describe("auth API routes", () => {
+  test("login rejects malformed request bodies before credential lookup", async () => {
+    const response = await loginRoute.POST(malformedJsonRequest("/api/auth/login"));
+    const payload = await response.json();
+
+    expect(response.status).toBe(400);
+    expect(payload).toMatchObject({
+      error: "invalid_request",
+      message: "invalidRequestBody",
+    });
+    expect(signInEmail).not.toHaveBeenCalled();
+    expect(findUnique).not.toHaveBeenCalled();
+  });
+
+  test("login returns field errors for invalid credentials shape", async () => {
+    const response = await loginRoute.POST(
+      jsonRequest("/api/auth/login", {
+        email: "not-an-email",
+        password: "",
+      }),
+    );
+    const payload = await response.json();
+
+    expect(response.status).toBe(400);
+    expect(payload).toMatchObject({
+      error: "validation_failed",
+      message: "fixHighlightedFields",
+      fields: {
+        email: ["invalidEmail"],
+        password: ["shortPassword"],
+      },
+    });
+    expect(signInEmail).not.toHaveBeenCalled();
+  });
+
   test("login signs in with normalized credentials and returns session headers", async () => {
     const response = await loginRoute.POST(
       jsonRequest("/api/auth/login", {
@@ -196,6 +232,81 @@ describe("auth API routes", () => {
       message: "invalidCredentials",
     });
     expect(findUnique).not.toHaveBeenCalled();
+  });
+
+  test("login fails closed when Better Auth returns a user id that no longer exists", async () => {
+    findUnique.mockResolvedValueOnce(null);
+
+    const response = await loginRoute.POST(
+      jsonRequest("/api/auth/login", {
+        email: "max@example.com",
+        password: "password123",
+      }),
+    );
+    const payload = await response.json();
+
+    expect(response.status).toBe(500);
+    expect(payload).toMatchObject({
+      error: "login_failed",
+      message: "loginUnavailable",
+    });
+  });
+
+  test("login maps unexpected failures to the public unavailable shape with detail", async () => {
+    signInEmail.mockRejectedValueOnce(new Error("network split"));
+
+    const response = await loginRoute.POST(
+      jsonRequest("/api/auth/login", {
+        email: "max@example.com",
+        password: "password123",
+      }),
+    );
+    const payload = await response.json();
+
+    expect(response.status).toBe(500);
+    expect(payload).toMatchObject({
+      detail: "network split",
+      error: "login_failed",
+      message: "loginUnavailable",
+    });
+  });
+
+  test("signup rejects malformed request bodies before duplicate lookup", async () => {
+    const response = await signupRoute.POST(malformedJsonRequest("/api/auth/signup"));
+    const payload = await response.json();
+
+    expect(response.status).toBe(400);
+    expect(payload).toMatchObject({
+      error: "invalid_request",
+      message: "invalidRequestBody",
+    });
+    expect(getDuplicateSignupFields).not.toHaveBeenCalled();
+    expect(signUpEmail).not.toHaveBeenCalled();
+  });
+
+  test("signup returns field errors for invalid profile input", async () => {
+    const response = await signupRoute.POST(
+      jsonRequest("/api/auth/signup", {
+        displayName: "",
+        email: "not-an-email",
+        password: "short",
+        username: "no spaces",
+      }),
+    );
+    const payload = await response.json();
+
+    expect(response.status).toBe(400);
+    expect(payload).toMatchObject({
+      error: "validation_failed",
+      message: "fixHighlightedFields",
+    });
+    expect(payload.fields).toMatchObject({
+      email: ["invalidEmail"],
+      password: ["shortPassword"],
+      username: ["invalidUsername"],
+    });
+    expect(getDuplicateSignupFields).not.toHaveBeenCalled();
+    expect(signUpEmail).not.toHaveBeenCalled();
   });
 
   test("signup maps duplicate email and username errors before calling Better Auth", async () => {
@@ -248,6 +359,95 @@ describe("auth API routes", () => {
         id: user.id,
         username: user.username,
       },
+    });
+  });
+
+  test("signup fails closed when Better Auth returns a user id that no longer exists", async () => {
+    findUnique.mockResolvedValueOnce(null);
+
+    const response = await signupRoute.POST(
+      jsonRequest("/api/auth/signup", {
+        displayName: "Max",
+        email: "max@example.com",
+        password: "password123",
+        username: "max_player",
+      }),
+    );
+    const payload = await response.json();
+
+    expect(response.status).toBe(500);
+    expect(payload).toMatchObject({
+      error: "signup_failed",
+      message: "signupUnavailable",
+    });
+  });
+
+  test("signup maps Better Auth API duplicate failures through a fresh duplicate check", async () => {
+    signUpEmail.mockRejectedValueOnce(new APIError("BAD_REQUEST", { message: "duplicate" }));
+    getDuplicateSignupFields.mockResolvedValueOnce({}).mockResolvedValueOnce({ email: true });
+
+    const response = await signupRoute.POST(
+      jsonRequest("/api/auth/signup", {
+        displayName: "Max",
+        email: "max@example.com",
+        password: "password123",
+        username: "max_player",
+      }),
+    );
+    const payload = await response.json();
+
+    expect(response.status).toBe(409);
+    expect(payload).toMatchObject({
+      error: "duplicate_account",
+      fields: {
+        email: ["duplicateEmail"],
+      },
+      message: "duplicateAccount",
+    });
+  });
+
+  test("signup maps database unique constraint failures to duplicate-account errors", async () => {
+    signUpEmail.mockRejectedValueOnce(new Error("Unique constraint failed on the fields"));
+    getDuplicateSignupFields.mockResolvedValueOnce({}).mockResolvedValueOnce({ username: true });
+
+    const response = await signupRoute.POST(
+      jsonRequest("/api/auth/signup", {
+        displayName: "Max",
+        email: "max@example.com",
+        password: "password123",
+        username: "max_player",
+      }),
+    );
+    const payload = await response.json();
+
+    expect(response.status).toBe(409);
+    expect(payload).toMatchObject({
+      error: "duplicate_account",
+      fields: {
+        username: ["duplicateUsername"],
+      },
+      message: "duplicateAccount",
+    });
+  });
+
+  test("signup maps unexpected failures to the public unavailable shape with detail", async () => {
+    signUpEmail.mockRejectedValueOnce(new Error("mail service down"));
+
+    const response = await signupRoute.POST(
+      jsonRequest("/api/auth/signup", {
+        displayName: "Max",
+        email: "max@example.com",
+        password: "password123",
+        username: "max_player",
+      }),
+    );
+    const payload = await response.json();
+
+    expect(response.status).toBe(500);
+    expect(payload).toMatchObject({
+      detail: "mail service down",
+      error: "signup_failed",
+      message: "signupUnavailable",
     });
   });
 
@@ -311,6 +511,59 @@ describe("auth API routes", () => {
     });
   });
 
+  test("saveDisplayName requires a signed-in user", async () => {
+    getCurrentSession.mockResolvedValueOnce(null);
+
+    const state = await profileActions.saveDisplayName(
+      previousState,
+      formData({
+        displayName: "Max J",
+      }),
+    );
+
+    expect(updateUser).not.toHaveBeenCalled();
+    expect(state).toMatchObject({
+      fields: {},
+      message: "loginRequired",
+      successMessage: null,
+    });
+  });
+
+  test("saveDisplayName validates display name before updating", async () => {
+    const state = await profileActions.saveDisplayName(
+      previousState,
+      formData({
+        displayName: "",
+      }),
+    );
+
+    expect(updateUser).not.toHaveBeenCalled();
+    expect(state).toMatchObject({
+      fields: {
+        displayName: ["displayNameRequired"],
+      },
+      message: "fixHighlightedFields",
+      successMessage: null,
+    });
+  });
+
+  test("saveDisplayName returns a profile-save error when persistence fails", async () => {
+    updateUser.mockRejectedValueOnce(new Error("write failed"));
+
+    const state = await profileActions.saveDisplayName(
+      previousState,
+      formData({
+        displayName: "Max J",
+      }),
+    );
+
+    expect(state).toMatchObject({
+      fields: {},
+      message: "profileSaveFailed",
+      successMessage: null,
+    });
+  });
+
   test("changeAccountPassword validates password fields before calling Better Auth", async () => {
     const state = await profileActions.changeAccountPassword(
       previousState,
@@ -329,6 +582,26 @@ describe("auth API routes", () => {
     });
     expect(changePassword).not.toHaveBeenCalled();
     expect(updateUser).not.toHaveBeenCalled();
+  });
+
+  test("changeAccountPassword requires a signed-in user", async () => {
+    getCurrentSession.mockResolvedValueOnce(null);
+
+    const state = await profileActions.changeAccountPassword(
+      previousState,
+      formData({
+        currentPassword: "password123",
+        newPassword: "password999",
+        confirmPassword: "password999",
+      }),
+    );
+
+    expect(changePassword).not.toHaveBeenCalled();
+    expect(state).toMatchObject({
+      fields: {},
+      message: "loginRequired",
+      successMessage: null,
+    });
   });
 
   test("changeAccountPassword maps Better Auth password failures to the current-password field", async () => {
@@ -376,6 +649,25 @@ describe("auth API routes", () => {
       fields: {},
       message: null,
       successMessage: "saveSuccess",
+    });
+  });
+
+  test("changeAccountPassword returns a profile-save error for unexpected auth failures", async () => {
+    changePassword.mockRejectedValueOnce(new Error("auth store unavailable"));
+
+    const state = await profileActions.changeAccountPassword(
+      previousState,
+      formData({
+        currentPassword: "password123",
+        newPassword: "password999",
+        confirmPassword: "password999",
+      }),
+    );
+
+    expect(state).toMatchObject({
+      fields: {},
+      message: "profileSaveFailed",
+      successMessage: null,
     });
   });
 });

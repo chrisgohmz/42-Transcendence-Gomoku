@@ -1,13 +1,17 @@
 import { afterAll, beforeEach, describe, expect, mock, test } from "bun:test";
 
+import { createAuthModuleMock } from "@/test-utils/auth-module-mock";
+
 const getCurrentSession = mock();
 const getProfileStatsForUser = mock();
 const consoleError = mock(() => {});
 const originalConsoleError = console.error;
 
-await mock.module("@/lib/auth", () => ({
-  getCurrentSession,
-}));
+await mock.module("@/lib/auth", () =>
+  createAuthModuleMock({
+    getCurrentSession,
+  }),
+);
 
 await mock.module("@/lib/stats/profile-stats", () => ({
   getProfileStatsForUser,
@@ -123,6 +127,18 @@ describe("GET /api/profile/stats", () => {
     expect(getProfileStatsForUser).toHaveBeenCalledWith("user-ada", {
       recentMatchesLimit: 50,
       recentMatchesPage: 3,
+    });
+  });
+
+  test("falls back for invalid pagination params", async () => {
+    const response = await route.GET(
+      new Request("http://localhost/api/profile/stats?page=-2&limit=0"),
+    );
+
+    expect(response.status).toBe(200);
+    expect(getProfileStatsForUser).toHaveBeenCalledWith("user-ada", {
+      recentMatchesLimit: 10,
+      recentMatchesPage: 1,
     });
   });
 

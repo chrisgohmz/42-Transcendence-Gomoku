@@ -3,19 +3,25 @@ import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 import type { GameUpdatePayload } from "../../../shared/match-events";
 import { internalRealtimeSecretHeader } from "../../../shared/realtime-internal";
 import {
+  publishChallengeDeclined,
   publishChallengeReceived,
   publishGameUpdate,
+  publishQueueMatched,
+  resolveChallengeDeclinedUrl,
   resolveChallengeReceivedUrl,
   resolveGameUpdateUrl,
+  resolveQueueMatchedUrl,
 } from "./realtime-publisher";
 
 const fetchMock = mock(async () => new Response(null, { status: 200 }));
 const originalFetch = globalThis.fetch;
 const envKeys = [
   "BETTER_AUTH_SECRET",
+  "REALTIME_CHALLENGE_DECLINED_URL",
   "REALTIME_CHALLENGE_RECEIVED_URL",
   "REALTIME_INTERNAL_SECRET",
   "REALTIME_INTERNAL_URL",
+  "REALTIME_QUEUE_MATCHED_URL",
   "REALTIME_PUBLISH_TIMEOUT_MS",
 ] as const;
 const originalEnv = Object.fromEntries(envKeys.map((key) => [key, process.env[key]])) as Record<
@@ -101,6 +107,25 @@ describe("resolveChallengeReceivedUrl", () => {
       "http://localhost:3001/custom/challenge-received";
 
     expect(resolveChallengeReceivedUrl()).toBe("http://localhost:3001/custom/challenge-received");
+  });
+});
+
+describe("queue and challenge endpoint resolution", () => {
+  test("uses explicit queue and challenge-declined endpoints when configured", () => {
+    process.env["REALTIME_QUEUE_MATCHED_URL"] = "http://realtime/internal/custom-queue";
+    process.env["REALTIME_CHALLENGE_DECLINED_URL"] =
+      "http://realtime/internal/custom-challenge-declined";
+
+    expect(resolveQueueMatchedUrl()).toBe("http://realtime/internal/custom-queue");
+    expect(resolveChallengeDeclinedUrl()).toBe(
+      "http://realtime/internal/custom-challenge-declined",
+    );
+  });
+
+  test("derives the challenge-declined endpoint from the game endpoint", () => {
+    process.env["REALTIME_INTERNAL_URL"] = "http://localhost:3001/internal/game-update";
+
+    expect(resolveChallengeDeclinedUrl()).toBe("http://localhost:3001/internal/challenge-declined");
   });
 });
 
@@ -197,5 +222,105 @@ describe("publishChallengeReceived", () => {
       "Content-Type": "application/json",
       [internalRealtimeSecretHeader]: "game-secret",
     });
+  });
+});
+
+describe("publishQueueMatched", () => {
+  test("posts the matched session to a localhost-derived queue endpoint", async () => {
+    process.env["REALTIME_INTERNAL_URL"] = "http://localhost:3001/internal/game-update";
+    process.env["REALTIME_QUEUE_MATCHED_URL"] = "http://realtime:3001/internal/queue-matched";
+    process.env["REALTIME_INTERNAL_SECRET"] = "queue-secret";
+
+    await publishQueueMatched(
+      "black",
+      {
+        matchId: "match-1",
+        participantId: "black-player",
+      },
+      5000,
+    );
+
+    const call = fetchMock.mock.calls[0] as [string, RequestInit] | undefined;
+
+    expect(call?.[0]).toBe("http://localhost:3001/internal/queue-matched");
+    expect(call?.[1]).toMatchObject({
+      body: JSON.stringify({
+        username: "black",
+        session: {
+          matchId: "match-1",
+          participantId: "black-player",
+        },
+      }),
+      cache: "no-store",
+      method: "POST",
+    });
+    expect(call?.[1].headers).toEqual({
+      "Content-Type": "application/json",
+      [internalRealtimeSecretHeader]: "queue-secret",
+    });
+  });
+
+  test("throws on missing secrets and failed queue responses", async () => {
+    await expectRejectsWithMessage(
+      () => publishQueueMatched("black", { matchId: "match-1" }),
+      "Missing REALTIME_INTERNAL_SECRET",
+    );
+    expect(fetchMock).not.toHaveBeenCalled();
+
+    process.env["REALTIME_INTERNAL_SECRET"] = "queue-secret";
+    fetchMock.mockResolvedValueOnce(new Response(null, { status: 502 }));
+
+    await expectRejectsWithMessage(
+      () => publishQueueMatched("black", { matchId: "match-1" }),
+      "Failed to publish queue:matched (502)",
+    );
+  });
+});
+
+describe("publishChallengeDeclined", () => {
+  test("posts a decline notification with the username envelope", async () => {
+    process.env["REALTIME_CHALLENGE_DECLINED_URL"] =
+      "http://localhost:3001/internal/challenge-declined";
+    process.env["REALTIME_INTERNAL_SECRET"] = "decline-secret";
+
+    await publishChallengeDeclined(
+      "black",
+      {
+        matchId: "match-1",
+        senderUsername: "white",
+      },
+      5000,
+    );
+
+    const call = fetchMock.mock.calls[0] as [string, RequestInit] | undefined;
+
+    expect(call?.[0]).toBe("http://localhost:3001/internal/challenge-declined");
+    expect(call?.[1]).toMatchObject({
+      body: JSON.stringify({
+        matchId: "match-1",
+        senderUsername: "white",
+        username: "black",
+      }),
+      cache: "no-store",
+      method: "POST",
+    });
+    expect(call?.[1].headers).toEqual({
+      "Content-Type": "application/json",
+      [internalRealtimeSecretHeader]: "decline-secret",
+    });
+  });
+
+  test("throws on failed challenge-declined responses", async () => {
+    process.env["REALTIME_INTERNAL_SECRET"] = "decline-secret";
+    fetchMock.mockResolvedValueOnce(new Response(null, { status: 503 }));
+
+    await expectRejectsWithMessage(
+      () =>
+        publishChallengeDeclined("black", {
+          matchId: "match-1",
+          senderUsername: "white",
+        }),
+      "Failed to publish challenge:declined (503)",
+    );
   });
 });

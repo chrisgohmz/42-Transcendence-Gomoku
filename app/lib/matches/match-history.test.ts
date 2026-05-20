@@ -28,6 +28,7 @@ const {
   buildMatchHistoryQuery,
   getMatchHistoryPageForUser,
   normalizeMatchHistoryLimit,
+  normalizeMatchHistoryPage,
   toMatchHistoryEntry,
 } = await import("./match-history");
 
@@ -194,6 +195,25 @@ describe("match history read model", () => {
     expect(normalizeMatchHistoryLimit(2.5)).toBe(MATCH_HISTORY_DEFAULT_LIMIT);
   });
 
+  test("normalizes history pages for callers", () => {
+    expect(normalizeMatchHistoryPage(null)).toBe(1);
+    expect(normalizeMatchHistoryPage(0)).toBe(1);
+    expect(normalizeMatchHistoryPage(-3)).toBe(1);
+    expect(normalizeMatchHistoryPage(2.5)).toBe(1);
+    expect(normalizeMatchHistoryPage(4)).toBe(4);
+  });
+
+  test("builds paged history queries with the normalized skip offset", () => {
+    expect(buildMatchHistoryQuery("user-ada", 10, 3)).toMatchObject({
+      skip: 20,
+      take: 10,
+    });
+    expect(buildMatchHistoryQuery("user-ada", 10, -1)).toMatchObject({
+      skip: 0,
+      take: 10,
+    });
+  });
+
   test("clamps paged history reads to the last available page", async () => {
     countMatches.mockResolvedValueOnce(12);
     findManyMatches.mockResolvedValueOnce([]);
@@ -211,6 +231,27 @@ describe("match history read model", () => {
       expect.objectContaining({
         skip: 10,
         take: 5,
+      }),
+    );
+  });
+
+  test("keeps empty history pages on page one with default pagination metadata", async () => {
+    countMatches.mockResolvedValueOnce(0);
+    findManyMatches.mockResolvedValueOnce([]);
+
+    const page = await getMatchHistoryPageForUser("user-ada", 3, 10);
+
+    expect(page).toMatchObject({
+      entries: [],
+      page: 1,
+      limit: 10,
+      totalMatches: 0,
+      totalPages: 1,
+    });
+    expect(findManyMatches).toHaveBeenCalledWith(
+      expect.objectContaining({
+        skip: 0,
+        take: 10,
       }),
     );
   });

@@ -1,11 +1,15 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
+import { createAuthModuleMock } from "@/test-utils/auth-module-mock";
+
 const getCurrentSession = mock();
 const getMatchHistoryForUser = mock();
 
-await mock.module("@/lib/auth", () => ({
-  getCurrentSession,
-}));
+await mock.module("@/lib/auth", () =>
+  createAuthModuleMock({
+    getCurrentSession,
+  }),
+);
 
 await mock.module("@/lib/matches/match-history", () => ({
   MATCH_HISTORY_MAX_LIMIT: 100,

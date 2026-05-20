@@ -1,5 +1,6 @@
 import { afterAll, beforeEach, describe, expect, mock, test } from "bun:test";
 
+import { Prisma } from "@/../generated/prisma/client";
 import {
   MatchResult,
   MatchStatus,
@@ -10,6 +11,7 @@ import {
 } from "@/../generated/prisma/enums";
 import { soloAiDisplayName } from "@/lib/matches/ai-solo";
 import { endReasonFiveInARow } from "@/lib/matches/move-rules";
+import { createAuthModuleMock } from "@/test-utils/auth-module-mock";
 
 const getCurrentSession = mock();
 const previewFindMatch = mock();
@@ -37,9 +39,11 @@ const tx = {
   },
 };
 
-await mock.module("@/lib/auth", () => ({
-  getCurrentSession,
-}));
+await mock.module("@/lib/auth", () =>
+  createAuthModuleMock({
+    getCurrentSession,
+  }),
+);
 
 await mock.module("@/lib/prisma", () => ({
   prisma: {
@@ -205,6 +209,55 @@ afterAll(() => {
 });
 
 describe("POST /api/matches/:id/ai-turn", () => {
+  test("requires authentication and a participant id before previewing the match", async () => {
+    getCurrentSession.mockResolvedValueOnce(null);
+
+    const unauthorizedResponse = await route.POST(
+      request({
+        participantId: "human-player",
+      }),
+      context(),
+    );
+
+    expect(unauthorizedResponse.status).toBe(401);
+    expect(await unauthorizedResponse.json()).toEqual({ error: "unauthorized" });
+
+    const missingParticipantResponse = await route.POST(request({}), context());
+
+    expect(missingParticipantResponse.status).toBe(400);
+    expect(await missingParticipantResponse.json()).toEqual({ error: "missing_participant_id" });
+    expect(previewFindMatch).not.toHaveBeenCalled();
+    expect(transaction).not.toHaveBeenCalled();
+  });
+
+  test("rejects missing preview matches and non-participants before waiting on the AI", async () => {
+    previewFindMatch.mockResolvedValueOnce(null);
+
+    const missingResponse = await route.POST(
+      request({
+        participantId: "human-player",
+      }),
+      context(),
+    );
+
+    expect(missingResponse.status).toBe(404);
+    expect(await missingResponse.json()).toEqual({ error: "match_not_found" });
+
+    previewFindMatch.mockResolvedValueOnce(matchRecord());
+
+    const forbiddenResponse = await route.POST(
+      request({
+        participantId: "ai-player",
+      }),
+      context(),
+    );
+
+    expect(forbiddenResponse.status).toBe(403);
+    expect(await forbiddenResponse.json()).toEqual({ error: "participant_not_found" });
+    expect(transaction).not.toHaveBeenCalled();
+    expect(chooseAiMove).not.toHaveBeenCalled();
+  });
+
   test("plays a structured-metadata AI turn and records finished results", async () => {
     const storedMatch = matchRecord();
     const createdMove = move("ai-player", 10, 5, 7, 10);
@@ -286,6 +339,95 @@ describe("POST /api/matches/:id/ai-turn", () => {
     expect(updateMatchMany).not.toHaveBeenCalled();
     expect(createMove).not.toHaveBeenCalled();
     expect(publishGameUpdate).not.toHaveBeenCalled();
+  });
+
+  test("rejects AI turns when the match is not in progress or not on the AI seat", async () => {
+    const finishedMatch = matchRecord({ status: MatchStatus.FINISHED });
+    previewFindMatch.mockResolvedValueOnce(finishedMatch);
+    findMatch.mockResolvedValueOnce(finishedMatch);
+
+    const finishedResponse = await route.POST(
+      request({
+        baseVersion: 9,
+        participantId: "human-player",
+      }),
+      context(),
+    );
+
+    expect(finishedResponse.status).toBe(409);
+    expect(await finishedResponse.json()).toEqual({ error: "game_not_in_progress" });
+
+    const humanTurnMatch = matchRecord({ nextTurnSeat: Seat.BLACK });
+    previewFindMatch.mockResolvedValueOnce(humanTurnMatch);
+    findMatch.mockResolvedValueOnce(humanTurnMatch);
+
+    const notAiTurnResponse = await route.POST(
+      request({
+        baseVersion: 9,
+        participantId: "human-player",
+      }),
+      context(),
+    );
+
+    expect(notAiTurnResponse.status).toBe(409);
+    expect(await notAiTurnResponse.json()).toEqual({ error: "not_ai_turn" });
+    expect(chooseAiMove).not.toHaveBeenCalled();
+    expect(createMove).not.toHaveBeenCalled();
+  });
+
+  test("keeps an accepted AI move successful when realtime publishing fails", async () => {
+    const storedMatch = matchRecord({
+      moves: [],
+      nextTurnSeat: Seat.WHITE,
+      stateVersion: 0,
+    });
+    const createdMove = move("ai-player", 1, 5, 7, 1);
+
+    previewFindMatch.mockResolvedValueOnce(storedMatch);
+    findMatch.mockResolvedValueOnce(storedMatch);
+    updateMatchMany.mockResolvedValueOnce({ count: 1 });
+    createMove.mockResolvedValueOnce(createdMove);
+    publishGameUpdate.mockRejectedValueOnce(new Error("realtime down"));
+
+    const response = await route.POST(
+      request({
+        baseVersion: 0,
+        participantId: "human-player",
+      }),
+      context(),
+    );
+    const payload = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(payload).toMatchObject({
+      accepted: true,
+      ok: true,
+      stateVersion: 1,
+    });
+  });
+
+  test("maps Prisma move conflicts to a public AI-turn conflict response", async () => {
+    previewFindMatch.mockResolvedValueOnce(matchRecord());
+    transaction.mockRejectedValueOnce(
+      new Prisma.PrismaClientKnownRequestError("Prisma conflict", {
+        clientVersion: "test",
+        code: "P2002",
+        meta: { target: ["requestId"] },
+      }),
+    );
+
+    const response = await route.POST(
+      request({
+        baseVersion: 9,
+        participantId: "human-player",
+      }),
+      context(),
+    );
+
+    expect(response.status).toBe(409);
+    expect(await response.json()).toMatchObject({
+      error: "move_conflict",
+    });
   });
 
   test("requires solo match metadata instead of inferring from display names", async () => {

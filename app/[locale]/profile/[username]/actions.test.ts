@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
+import { createAuthModuleMock } from "@/test-utils/auth-module-mock";
+
 const getCurrentSession = mock();
 const findFriendship = mock();
 const createFriendship = mock();
@@ -11,9 +13,11 @@ await mock.module("next/cache", () => ({
   revalidatePath,
 }));
 
-await mock.module("@/lib/auth", () => ({
-  getCurrentSession,
-}));
+await mock.module("@/lib/auth", () =>
+  createAuthModuleMock({
+    getCurrentSession,
+  }),
+);
 
 await mock.module("@/lib/prisma", () => ({
   prisma: {
