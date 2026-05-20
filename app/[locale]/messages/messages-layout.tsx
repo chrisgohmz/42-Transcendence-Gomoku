@@ -5,21 +5,28 @@ import { useTranslations } from "next-intl";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import type { FormEvent } from "react";
+import { useChat } from "@/hooks/useChat";
+//import type { ChatMessage } from "@/hooks/useChat";
 
 import GomokuBoard from "@/components/gomoku-board";
 import { AvatarToken, Badge, PageHeader, PageShell } from "@/components/gomoku-ui";
 
-const chats = [
-  { id: "MJ", rank: "5-dan", status: "online", unread: 2 },
-  { id: "Alex", rank: "3-dan", status: "studying", unread: 0 },
-  { id: "Hoshi", rank: "6-dan", status: "online", unread: 1 },
-  { id: "Tenkei", rank: "2-dan", status: "away", unread: 0 },
-] as const;
+//const chats = [] as const;
 
 export default function MessagesContent() {
   const searchParams = useSearchParams();
-  const initialUser = searchParams.get("user") || "MJ";
-  const [activeChat, setActiveChat] = useState(initialUser);
+  //const initialUser = searchParams.get("user") || "MJ";
+  //const [activeChat, setActiveChat] = useState(initialUser);
+  const [activeChat, setActiveChat] = useState<string | null>(null);
+  const [activeConvId, setActiveConvId] = useState<string | null>(null);
+  const [conversations, setConversations] = useState<{
+    id: string;
+    otherUser: { id: string; username: string; displayName: string; avatarUrl: string | null } | null;
+    lastMessage: string | null;
+    unreadCount: number;
+  }[]>([]);
+  const { messages, sendMessage } = useChat(activeConvId);
+  //end edit
   const [messageText, setMessageText] = useState("");
   const [query, setQuery] = useState("");
   const t = useTranslations("messagesPage");
@@ -29,13 +36,32 @@ export default function MessagesContent() {
     if (userParam) setActiveChat(userParam);
   }, [searchParams]);
 
+  useEffect(() => {
+  fetch("/api/conversations")
+    .then((res) => res.json())
+    .then((data) => setConversations(data.conversations ?? []));
+  }, []);
+
+  // const visibleChats = useMemo(
+  //   () => chats.filter((chat) => chat.id.toLowerCase().includes(query.toLowerCase())),
+  //   [query],
+  // );
   const visibleChats = useMemo(
-    () => chats.filter((chat) => chat.id.toLowerCase().includes(query.toLowerCase())),
-    [query],
+  () => conversations.filter((c) =>
+    (c.otherUser?.displayName ?? c.otherUser?.username ?? "")
+      .toLowerCase()
+      .includes(query.toLowerCase())
+  ), [query, conversations],
   );
 
-  const handleSend = (event: FormEvent<HTMLFormElement>) => {
+  // const handleSend = (event: FormEvent<HTMLFormElement>) => {
+  //   event.preventDefault();
+  //   setMessageText("");
+  // };
+  const handleSend = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (!messageText.trim()) return;
+    await sendMessage(messageText);
     setMessageText("");
   };
 
@@ -62,7 +88,7 @@ export default function MessagesContent() {
           </label>
 
           <div className="grid gap-2">
-            {visibleChats.map((chat) => (
+            {/* {visibleChats.map((chat) => (
               <button
                 key={chat.id}
                 type="button"
@@ -85,14 +111,43 @@ export default function MessagesContent() {
                   {chat.unread > 0 ? <Badge tone="red">{chat.unread}</Badge> : null}
                 </span>
               </button>
-            ))}
+            ))} */
+            visibleChats.map((conv) => {
+            const name = conv.otherUser?.displayName ?? conv.otherUser?.username ?? "Unknown";
+            return (
+              <button
+                key={conv.id}
+                type="button"
+                onClick={async () => {
+                  setActiveChat(name);
+                  setActiveConvId(conv.id);
+                }}
+                className={`grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 rounded-md border p-3 text-left transition-[background-color,border-color] focus-visible:ring-3 focus-visible:ring-[var(--mint)]/25 focus-visible:outline-none ${
+                  activeConvId === conv.id
+                    ? "border-[var(--mint)]/35 bg-[var(--mint-soft)]"
+                    : "border-transparent bg-white/[0.035] hover:border-[var(--panel-border-soft)] hover:bg-white/[0.06]"
+                }`}
+              >
+                <AvatarToken name={name} online={false} />
+                <span className="min-w-0">
+                  <span className="block truncate font-black">{name}</span>
+                  <span className="block truncate text-sm text-[var(--muted-text)]">
+                    {conv.lastMessage ?? ""}
+                  </span>
+                </span>
+                <span className="grid justify-items-end gap-1">
+                  {conv.unreadCount > 0 ? <Badge tone="red">{conv.unreadCount}</Badge> : null}
+                </span>
+              </button>
+            );
+          })}
           </div>
         </aside>
 
         <div className="grid min-w-0 grid-rows-[auto_1fr_auto]">
           <header className="flex items-center justify-between gap-4 border-b border-[var(--panel-border-soft)] bg-[var(--panel-solid)] p-4">
             <div className="flex min-w-0 items-center gap-3">
-              <AvatarToken name={activeChat} online />
+              <AvatarToken name={activeChat ?? ""} online />
               <div className="min-w-0">
                 <h2 className="m-0 truncate font-serif text-3xl font-bold">{activeChat}</h2>
                 <p className="m-0 text-sm text-[var(--muted-text)]">{t("header.status")}</p>
@@ -104,7 +159,25 @@ export default function MessagesContent() {
             </Badge>
           </header>
 
-          <div className="grid content-end gap-5 overflow-y-auto p-5 sm:p-8">
+            <div className="grid content-end gap-5 overflow-y-auto p-5 sm:p-8">
+            {messages.map((msg) => {
+              const isOwn = msg.sender?.id !== activeConvId;
+              return isOwn ? (
+                <div key={msg.id} className="flex max-w-[82%] flex-row-reverse gap-3 justify-self-end">
+                  <div className="rounded-md rounded-br-sm bg-[var(--mint)] p-4 text-[var(--primary-foreground)]">
+                    <p className="m-0 font-bold">{msg.body}</p>
+                  </div>
+                </div>
+              ) : (
+                <div key={msg.id} className="flex max-w-[82%] gap-3">
+                  <AvatarToken name={msg.sender?.displayName ?? "?"} size="sm" />
+                  <div className="rounded-md rounded-bl-sm border border-[var(--panel-border-soft)] bg-white/[0.06] p-4 text-[var(--muted-strong)]">
+                    <p className="m-0">{msg.body}</p>
+                  </div>
+                </div>
+              );
+            })}
+          {/* <div className="grid content-end gap-5 overflow-y-auto p-5 sm:p-8">
             <div className="flex max-w-[82%] gap-3">
               <AvatarToken name={activeChat} size="sm" />
               <div className="rounded-md rounded-bl-sm border border-[var(--panel-border-soft)] bg-white/[0.06] p-4 text-[var(--muted-strong)]">
@@ -116,7 +189,7 @@ export default function MessagesContent() {
               <div className="rounded-md rounded-br-sm bg-[var(--mint)] p-4 text-[var(--primary-foreground)]">
                 <p className="m-0 font-bold">{t("thread.outgoing")}</p>
               </div>
-            </div>
+            </div> */}
 
             <article className="max-w-xl rounded-md border border-[var(--brass)]/35 bg-[linear-gradient(135deg,rgba(216,172,89,0.16),rgba(255,255,255,0.04))] p-4">
               <div className="grid gap-4 sm:grid-cols-[120px_minmax(0,1fr)]">
@@ -154,10 +227,10 @@ export default function MessagesContent() {
                 type="text"
                 name="message"
                 autoComplete="off"
-                aria-label={t("composerPlaceholder", { name: activeChat })}
+                aria-label={t("composerPlaceholder", { name: activeChat ?? "" })}
                 value={messageText}
                 onChange={(event) => setMessageText(event.target.value)}
-                placeholder={t("composerPlaceholder", { name: activeChat })}
+                placeholder={t("composerPlaceholder", { name: activeChat ?? "" })}
                 className="text-input"
               />
               <button

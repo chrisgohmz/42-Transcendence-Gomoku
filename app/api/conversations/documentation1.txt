@@ -1,0 +1,147 @@
+
+---
+
+**BUILT so far**
+
+The backend for DM chat. 3 API routes + 1 helper file.
+
+pure backend files: they receive HTTP requests, talk to the database via Prisma, and return JSON. No UI yet.
+
+```
+app/api/conversations/route.ts
+app/api/conversations/direct/route.ts
+app/api/conversations/[id]/messages/route.ts
+app/lib/chat/realtime-publisher.ts
+```
+
+---
+
+**HOW NEXT.JS ROUTING WORKS**
+
+In Next.js, the folder path IS the URL. 
+A file named `route.ts` means it's an API endpoint (returns JSON, not a page). 
+The function name matches the HTTP method:
+
+```
+app/api/conversations/route.ts          → GET /api/conversations
+app/api/conversations/direct/route.ts   → POST /api/conversations/direct
+app/api/conversations/[id]/messages/    → GET and POST /api/conversations/[id]/messages
+```
+
+---
+
+**WHAT EACH FILE DOES**
+
+`GET /api/conversations`
+Loads all DM conversations for the logged-in user. Returns the other person's name, the last message preview, and the unread count. Called once when the messages page loads.
+
+`POST /api/conversations/direct`
+Finds or creates a DM conversation between two users. Uses a `directKey` field in the DB (a sorted pair of user IDs e.g. `userA:userB`) to guarantee no duplicates — safe to call multiple times.
+
+`GET /api/conversations/[id]/messages`
+Loads the full message history for one conversation, oldest first. Also marks the conversation as read for the current user.
+
+`POST /api/conversations/[id]/messages`
+Saves a new message to the DB. Then calls `realtime-publisher.ts` to notify the Socket.IO server.
+
+`app/lib/chat/realtime-publisher.ts`
+A helper function (not a route). Next.js and Socket.IO run as separate processes — they can't share memory. So after saving a message, Next.js sends an internal HTTP POST to the Socket.IO server at `http://realtime:3001/internal/chat-message`. The Socket.IO server then broadcasts to connected browsers. This is the same pattern already used for game moves.
+
+---
+
+**CHANGES to files**
+
+The realtime container was crashing on startup:
+```
+Cannot find module '../../generated/prisma/client'
+```
+The realtime container shares the same image as the app but was starting before `prisma generate` ran. Fixed by updating `docker-compose.yml`:
+```yaml
+  realtime:
+    # prisma generate must run before server.ts or it crashes on import
+    command: ["sh", "-c", "bunx prisma generate && bun run start:realtime"]
+```
+
+---
+
+**HOW TO TEST**
+
+Make sure the stack is running:
+```bash
+docker compose up --build
+```
+
+Seed the database (creates Alice, Bob, Cindy with password `password123`):
+```bash
+docker compose exec app bun run prisma:seed
+```
+
+Get user IDs:
+```bash
+docker compose exec database psql -U transcendence -d transcendence -c 'SELECT id, username FROM "User";'
+```
+
+Log in as Alice at `https://localhost:8443/login` then get the session cookie:
+DevTools → Application → Cookies → `https://localhost:8443` → copy `__Secure-better-auth.session_token` value
+
+Set your cookie and Bob's ID as variables for convenience:
+```bash
+COOKIE="__Secure-better-auth.session_token=PASTE_VALUE_HERE"
+BOB_ID="PASTE_BOB_ID_HERE"
+```
+
+**Test 1 — list conversations (should be empty):**
+```bash
+curl -k https://localhost:8443/api/conversations -H "Cookie: $COOKIE"
+```
+Expected: `{"conversations":[]}`
+
+**Test 2 — create a DM with Bob:**
+```bash
+curl -k -X POST https://localhost:8443/api/conversations/direct \
+  -H "Content-Type: application/json" \
+  -H "Cookie: $COOKIE" \
+  -d "{\"friendId\": \"$BOB_ID\"}"
+```
+Expected: `{"conversationId":"some-uuid"}`
+Save that ID: `CONV_ID="paste-uuid-here"`
+
+Run it twice — should return the same `conversationId` both times (no duplicates).
+
+**Test 3 — load messages (should be empty):**
+```bash
+curl -k https://localhost:8443/api/conversations/$CONV_ID/messages -H "Cookie: $COOKIE"
+```
+Expected: `{"messages":[]}`
+
+**Test 4 — send a message:**
+```bash
+curl -k -X POST https://localhost:8443/api/conversations/$CONV_ID/messages \
+  -H "Content-Type: application/json" \
+  -H "Cookie: $COOKIE" \
+  -d '{"body": "hello"}'
+```
+Expected: `{"message":{"id":"...","body":"hello","sender":{"username":"alice",...}}}`
+
+**Test 5 — verify message saved:**
+```bash
+curl -k https://localhost:8443/api/conversations/$CONV_ID/messages -H "Cookie: $COOKIE"
+```
+Expected: messages array now contains the "hello" message.
+
+**Test 6 — verify conversation list updated:**
+```bash
+curl -k https://localhost:8443/api/conversations -H "Cookie: $COOKIE"
+```
+Expected: `{"conversations":[{"lastMessage":"hello","otherUser":{"username":"bob"},...}]}`
+
+---
+
+**WHAT'S NEXT**
+
+Adding files 5, 6, 7 — the realtime layer:
+- `realtime/handlers/chat-subscription.ts` — Socket.IO server receives the ping from Next.js
+- `realtime/server.ts` (edit) — broadcasts the message to both browsers
+- `app/hooks/useChat.ts` — frontend hook that listens for live messages
+
+Once done: send a message as Alice, it appears in Bob's browser instantly without refresh.

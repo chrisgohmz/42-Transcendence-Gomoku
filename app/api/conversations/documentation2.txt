@@ -1,0 +1,72 @@
+**Changes to `realtime/server.ts`**
+
+Three additions only. Nothing removed.
+
+**1. New import (after `registerMatchSubscription` import)**
+```typescript
+import { registerChatSubscription, convRoomId } from "./handlers/chat-subscription";
+```
+Imports the chat handler and the room name helper from the new file.
+
+**2. Register chat handler (after `registerMatchSubscription(socket)`)**
+```typescript
+registerChatSubscription(socket);
+```
+Tells Socket.IO to listen for `chat:subscribe` and `chat:unsubscribe` events on every new connection.
+
+**3. New internal HTTP route (after `challengeReceivedPath` block)**
+```typescript
+if (url.pathname === "/internal/chat-message" && request.method === "POST") {
+  const secret = request.headers.get("x-realtime-internal-secret");
+  if (!secret || secret !== realtimeInternalSecret) {
+    return new Response("Forbidden", { status: 403 });
+  }
+  try {
+    const payload = await request.json() as {
+      conversationId: string;
+      message: unknown;
+    };
+    io.to(convRoomId(payload.conversationId)).emit("chat:message", payload.message);
+    return Response.json({ ok: true });
+  } catch {
+    return new Response("Bad Request", { status: 400 });
+  }
+}
+```
+Next.js calls this endpoint after saving a message to the DB. The realtime server verifies the secret, then broadcasts the message to everyone in the `conv:ID` Socket.IO room.
+
+Also changed `fetch(request, server)` to `async fetch(request, server)` because the new route uses `await request.json()`.
+
+---
+
+**New file: `realtime/handlers/chat-subscription.ts`**
+
+Handles two Socket.IO events from the browser:
+
+`chat:subscribe` — browser sends this when user opens a conversation. The server:
+1. Validates the payload has a `conversationId`
+2. Checks the user is authenticated (set during socket handshake)
+3. Queries the DB to confirm the user is a participant of that conversation
+4. Joins the socket to room `conv:CONVERSATION_ID`
+5. Emits `chat:subscribed` back to confirm
+
+`chat:unsubscribe` — browser sends this when user navigates away. The server leaves the room.
+
+Also exports `convRoomId(conversationId)` — a helper that returns the room name string `conv:ID`. Used by both this file and `server.ts` to keep the naming consistent.
+
+---
+
+**How it all connects**
+
+```
+Browser opens conversation
+  → emits chat:subscribe
+    → server joins socket to room conv:ID
+
+Browser sends message
+  → POST /api/conversations/[id]/messages  (Next.js)
+    → saves to DB
+    → POST /internal/chat-message  (realtime server)
+      → broadcasts chat:message to room conv:ID
+        → all browsers in that room receive it instantly
+```

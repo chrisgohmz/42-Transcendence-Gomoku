@@ -14,6 +14,7 @@ import {
   readRealtimeInternalSecret,
 } from "../shared/realtime-internal";
 import { registerMatchSubscription } from "./handlers/match-subscription";
+import { registerChatSubscription, convRoomId } from "./handlers/chat-subscription";
 import { registerMatchmakingQueue } from "./handlers/matchmaking-queue";
 import { resolveFriendshipNotificationTarget } from "./lib/friendship-notifications";
 import { handleInternalChallengeDeclined } from "./lib/internal-challenge-declined";
@@ -119,6 +120,7 @@ io.on("connection", (socket) => {
   subscribeToPresence(socket, io, connectedUsers);
   registerMatchmakingQueue(socket, io);
   registerMatchSubscription(socket);
+  registerChatSubscription(socket);
 
   socket.on("presence:subscribe", () => {
     subscribeToPresence(socket, io, connectedUsers);
@@ -160,7 +162,7 @@ Bun.serve({
   hostname,
   port,
 
-  fetch(request, server) {
+  async fetch(request, server) {
     const url = new URL(request.url);
 
     if (url.pathname === "/health") {
@@ -189,6 +191,26 @@ Bun.serve({
 
     if (url.pathname === challengeReceivedPath && request.method === "POST") {
       return handleInternalChallengeReceived(request, io, realtimeInternalSecret);
+    }
+
+    // Internal route: Next.js calls this after saving a chat message.
+    // We broadcast to everyone subscribed to that conversation's room.
+    if (url.pathname === "/internal/chat-message" && request.method === "POST") {
+      const secret = request.headers.get("x-realtime-internal-secret");
+      if (!secret || secret !== realtimeInternalSecret) {
+        return new Response("Forbidden", { status: 403 });
+      }
+      try {
+        const payload = await request.json() as {
+          conversationId: string;
+          message: unknown;
+        };
+        io.to(convRoomId(payload.conversationId)).emit("chat:message", payload.message);
+        return Response.json({ ok: true });
+      }
+      catch {
+        return new Response("Bad Request", { status: 400 });
+      }
     }
 
     if (url.pathname === socketPath) {
