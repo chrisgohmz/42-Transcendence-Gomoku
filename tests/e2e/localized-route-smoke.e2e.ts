@@ -174,7 +174,7 @@ async function mockEmptyHumanLobby(page: Page) {
     (url) => url.pathname === "/api/matches",
     async (route) => {
       await route.fulfill({
-        body: JSON.stringify([]),
+        body: JSON.stringify(lobbyMatchesResponse([])),
         contentType: "application/json",
         status: 200,
       });
@@ -218,6 +218,16 @@ async function seedStoredHumanMatchSession(page: Page, locale: Locale) {
       participantId: activeParticipantId,
     },
   );
+}
+
+function lobbyMatchesResponse(data: unknown[]) {
+  return {
+    data,
+    limit: 10,
+    page: 1,
+    totalMatches: data.length,
+    totalPages: Math.max(1, Math.ceil(data.length / 10)),
+  };
 }
 
 function matchStateResponse() {
