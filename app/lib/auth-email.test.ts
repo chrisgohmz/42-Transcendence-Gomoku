@@ -106,10 +106,18 @@ describe("sendPasswordResetEmail", () => {
     process.env["RESEND_FROM_EMAIL"] = "42 Transcendence Gomoku <passwords@example.com>";
     process.env["RESEND_REPLY_TO_EMAIL"] = "support@example.com";
 
-    await sendPasswordResetEmail({
-      email: "player@example.com",
-      resetUrl: "https://app.test/en/reset-password?token=abc123",
-    });
+    const originalConsoleInfo = console.info;
+    const consoleInfo = mock((_message: string, _details: unknown) => undefined);
+    console.info = consoleInfo as typeof console.info;
+
+    try {
+      await sendPasswordResetEmail({
+        email: "player@example.com",
+        resetUrl: "https://app.test/en/reset-password?token=abc123",
+      });
+    } finally {
+      console.info = originalConsoleInfo;
+    }
 
     expect(createTransport).toHaveBeenCalledWith({
       auth: {
@@ -130,6 +138,14 @@ describe("sendPasswordResetEmail", () => {
     expect(message?.text).toContain("https://app.test/en/reset-password?token=abc123");
     expect(message?.text).toContain("This link expires in 1 hour.");
     expect(message?.html).toContain("Reset your password");
+    expect(consoleInfo).toHaveBeenCalledWith(
+      "[auth-email] Resend SMTP accepted password reset email",
+      {
+        accepted: undefined,
+        messageId: "message-1",
+        rejected: undefined,
+      },
+    );
   });
 
   test("requires Resend credentials before sending through SMTP", async () => {

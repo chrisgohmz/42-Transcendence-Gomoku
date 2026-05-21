@@ -128,13 +128,19 @@ async function sendResendSmtpEmail(message: AuthEmailMessage): Promise<void> {
   const config = getResendSmtpConfig();
   const transport = getResendTransport(config);
 
-  await transport.sendMail({
+  const result = await transport.sendMail({
     from: config.from,
     html: message.html,
     replyTo: config.replyTo,
     subject: message.subject,
     text: message.text,
     to: message.to,
+  });
+
+  console.info("[auth-email] Resend SMTP accepted password reset email", {
+    accepted: Array.isArray(result.accepted) ? result.accepted.length : undefined,
+    messageId: result.messageId,
+    rejected: Array.isArray(result.rejected) ? result.rejected.length : undefined,
   });
 }
 

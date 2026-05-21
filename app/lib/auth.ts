@@ -7,6 +7,7 @@ import { headers } from "next/headers";
 import { z } from "zod";
 
 import type { User } from "../../generated/prisma/client";
+import { defaultLocale } from "../i18n/config";
 import type { DuplicateSignupFields } from "./auth-duplicate-fields";
 import { oauthProviderIds, type OAuthProviderId } from "./oauth-providers";
 import { prisma } from "./prisma";
@@ -122,6 +123,22 @@ function getOAuthDisplayName(...candidates: (string | null | undefined)[]): stri
   return candidates.find((candidate) => candidate?.trim())?.trim() ?? "Gomoku Player";
 }
 
+function getPasswordResetUrl(url: string, token: string): string {
+  const fallbackBaseUrl = process.env["BETTER_AUTH_URL"] ?? "http://localhost:3000";
+  const fallbackUrl = new URL(`/${defaultLocale}/reset-password`, fallbackBaseUrl);
+
+  try {
+    const authUrl = new URL(url);
+    const callbackUrl = authUrl.searchParams.get("callbackURL");
+    const resetUrl = callbackUrl ? new URL(callbackUrl) : fallbackUrl;
+    resetUrl.searchParams.set("token", token);
+    return resetUrl.toString();
+  } catch {
+    fallbackUrl.searchParams.set("token", token);
+    return fallbackUrl.toString();
+  }
+}
+
 const githubCredentials = getOAuthCredentials("github");
 const googleCredentials = getOAuthCredentials("google");
 
@@ -137,17 +154,17 @@ export const auth = betterAuth({
     minPasswordLength: authValidationLimits.passwordMinLength,
     maxPasswordLength: authValidationLimits.passwordMaxLength,
     revokeSessionsOnPasswordReset: true,
-    sendResetPassword: async ({ user, url }) => {
-      void import("./auth-email")
-        .then(({ sendPasswordResetEmail }) =>
-          sendPasswordResetEmail({
-            email: user.email,
-            resetUrl: url,
-          }),
-        )
-        .catch((error) => {
-          console.error("Failed to send password reset email", error);
+    sendResetPassword: async ({ user, url, token }) => {
+      try {
+        const { sendPasswordResetEmail } = await import("./auth-email");
+        await sendPasswordResetEmail({
+          email: user.email,
+          resetUrl: getPasswordResetUrl(url, token),
         });
+      } catch (error) {
+        console.error("Failed to send password reset email", error);
+        throw error;
+      }
     },
   },
   user: {
