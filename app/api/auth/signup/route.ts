@@ -11,6 +11,7 @@ import {
   getDuplicateSignupFieldErrors,
   hasDuplicateSignupFields,
 } from "../../../lib/auth-duplicate-fields";
+import { getLocalizedAuthAppUrl } from "../../../lib/auth-urls";
 import { resolveApiLocale } from "../../../lib/i18n/api";
 import { prisma } from "../../../lib/prisma";
 import { fieldIssuesToMap, validateSignupInput } from "../../../lib/validation/auth-profile";
@@ -24,7 +25,10 @@ type SignupBody = {
 
 function getLocalizedProfileUrl(request: Request): string {
   const locale = resolveApiLocale(request);
-  return new URL(`/${locale}/profile`, request.url).toString();
+  return getLocalizedAuthAppUrl(locale, "/profile", {
+    headers: request.headers,
+    requestUrl: request.url,
+  });
 }
 
 export async function POST(request: Request) {

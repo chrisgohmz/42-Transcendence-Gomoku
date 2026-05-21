@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, mock, test } from "bun:test";
+import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
 import { APIError } from "better-auth/api";
 
@@ -18,6 +18,7 @@ const getCurrentSession = mock();
 const getDuplicateSignupFields = mock();
 const findUnique = mock();
 const updateUser = mock();
+const originalBetterAuthUrl = process.env["BETTER_AUTH_URL"];
 
 await mock.module("next/cache", () => ({
   revalidatePath,
@@ -104,6 +105,19 @@ function jsonRequest(path: string, body: unknown) {
   });
 }
 
+function hostileJsonRequest(path: string, body: unknown) {
+  return new Request(`https://evil.test${path}`, {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      origin: "https://evil.test",
+      "x-forwarded-host": "evil.test",
+      "x-forwarded-proto": "https",
+    },
+    body: JSON.stringify(body),
+  });
+}
+
 function malformedJsonRequest(path: string) {
   return new Request(`http://localhost${path}`, {
     method: "POST",
@@ -125,6 +139,8 @@ function formData(values: Record<string, string>) {
 }
 
 beforeEach(() => {
+  delete process.env["BETTER_AUTH_URL"];
+
   changePassword.mockReset();
   signInEmail.mockReset();
   signUpEmail.mockReset();
@@ -152,6 +168,14 @@ beforeEach(() => {
     id: user.id,
     displayName: "Max J",
   });
+});
+
+afterEach(() => {
+  if (originalBetterAuthUrl === undefined) {
+    delete process.env["BETTER_AUTH_URL"];
+  } else {
+    process.env["BETTER_AUTH_URL"] = originalBetterAuthUrl;
+  }
 });
 
 describe("auth API routes", () => {
@@ -212,6 +236,24 @@ describe("auth API routes", () => {
         id: user.id,
         email: user.email,
       },
+    });
+  });
+
+  test("login uses the configured app origin for callbacks instead of the request origin", async () => {
+    process.env["BETTER_AUTH_URL"] = "https://canonical.test";
+
+    await loginRoute.POST(
+      hostileJsonRequest("/api/auth/login", {
+        email: "MAX@example.COM",
+        password: "password123",
+      }),
+    );
+    const call = signInEmail.mock.calls[0]?.[0] as AuthApiCall;
+
+    expect(call.body).toMatchObject({
+      callbackURL: "https://canonical.test/en/profile",
+      email: "max@example.com",
+      password: "password123",
     });
   });
 
@@ -387,6 +429,29 @@ describe("auth API routes", () => {
         username: user.username,
       },
       verificationRequired: true,
+    });
+  });
+
+  test("signup uses the configured app origin for callbacks instead of the request origin", async () => {
+    process.env["BETTER_AUTH_URL"] = "https://canonical.test";
+    findUnique.mockResolvedValueOnce({ ...user, emailVerified: false });
+
+    await signupRoute.POST(
+      hostileJsonRequest("/api/auth/signup", {
+        displayName: "Max",
+        email: "MAX@example.COM",
+        password: "password123",
+        username: "max_player",
+      }),
+    );
+    const call = signUpEmail.mock.calls[0]?.[0] as AuthApiCall;
+
+    expect(call.body).toMatchObject({
+      callbackURL: "https://canonical.test/en/profile",
+      email: "max@example.com",
+      name: "Max",
+      password: "password123",
+      username: "max_player",
     });
   });
 

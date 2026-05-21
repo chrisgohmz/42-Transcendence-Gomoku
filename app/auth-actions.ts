@@ -17,6 +17,7 @@ import {
   getDuplicateSignupFieldErrors,
   hasDuplicateSignupFields,
 } from "./lib/auth-duplicate-fields";
+import { getLocalizedAuthAppUrl } from "./lib/auth-urls";
 import {
   fieldIssuesToMap,
   type AuthField,
@@ -74,36 +75,8 @@ function translatePasswordResetConfirmIssues(
   return fieldIssuesToMap(issues, t);
 }
 
-function getRequestBaseUrl(headerList: Headers): string {
-  const configuredBaseUrl = process.env["BETTER_AUTH_URL"]?.trim();
-
-  if (configuredBaseUrl) {
-    return configuredBaseUrl;
-  }
-
-  const origin = headerList.get("origin");
-
-  if (origin) {
-    return origin;
-  }
-
-  const forwardedHost = headerList.get("x-forwarded-host")?.split(",")[0]?.trim();
-  const host = forwardedHost || headerList.get("host");
-
-  if (host) {
-    const forwardedProto = headerList.get("x-forwarded-proto")?.split(",")[0]?.trim() ?? "http";
-    return `${forwardedProto}://${host}`;
-  }
-
-  return "http://localhost:3000";
-}
-
 function getPasswordResetRedirectUrl(locale: Locale, headerList: Headers): string {
-  return getLocalizedAppUrl(locale, "/reset-password", headerList);
-}
-
-function getLocalizedAppUrl(locale: Locale, path: string, headerList: Headers): string {
-  return new URL(`/${locale}${path}`, getRequestBaseUrl(headerList)).toString();
+  return getLocalizedAuthAppUrl(locale, "/reset-password", { headers: headerList });
 }
 
 function isEmailNotVerifiedError(error: unknown): boolean {
@@ -139,7 +112,7 @@ export async function loginAction(
 
     await auth.api.signInEmail({
       body: {
-        callbackURL: getLocalizedAppUrl(locale, "/profile", headerList),
+        callbackURL: getLocalizedAuthAppUrl(locale, "/profile", { headers: headerList }),
         email: validation.data.email,
         password: validation.data.password,
         rememberMe: getFormString(formData, "remember") === "on",
@@ -316,7 +289,7 @@ export async function signupAction(
 
     await auth.api.signUpEmail({
       body: {
-        callbackURL: getLocalizedAppUrl(locale, "/profile", headerList),
+        callbackURL: getLocalizedAuthAppUrl(locale, "/profile", { headers: headerList }),
         email: validation.data.email,
         name: validation.data.displayName,
         password: validation.data.password,

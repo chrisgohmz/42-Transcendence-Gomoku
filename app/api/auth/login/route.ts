@@ -3,6 +3,7 @@ import { getTranslations } from "next-intl/server";
 
 import { apiErrorResponse, getErrorMessage } from "../../../lib/api-errors";
 import { auth, serializeUserForResponse } from "../../../lib/auth";
+import { getLocalizedAuthAppUrl } from "../../../lib/auth-urls";
 import { resolveApiLocale } from "../../../lib/i18n/api";
 import { prisma } from "../../../lib/prisma";
 import { fieldIssuesToMap, validateLoginInput } from "../../../lib/validation/auth-profile";
@@ -14,7 +15,10 @@ type LoginBody = {
 
 function getLocalizedProfileUrl(request: Request): string {
   const locale = resolveApiLocale(request);
-  return new URL(`/${locale}/profile`, request.url).toString();
+  return getLocalizedAuthAppUrl(locale, "/profile", {
+    headers: request.headers,
+    requestUrl: request.url,
+  });
 }
 
 function isEmailNotVerifiedError(error: unknown): boolean {
