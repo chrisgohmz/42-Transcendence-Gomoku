@@ -131,12 +131,39 @@ export function toLeaderboardEntries(stats: LeaderboardStat[]): LeaderboardEntry
 }
 
 export async function getLeaderboardEntries(): Promise<LeaderboardEntry[]> {
-  //  "use cache";
-  //  cacheLife("minutes");
+  // Fetch in batches and collect eligible (human) rows until we have
+  // `LEADERBOARD_LIMIT` entries or the dataset is exhausted. This moves
+  // the eligibility filter into the data/query boundary and avoids
+  // returning fewer than `LEADERBOARD_LIMIT` entries on bot-heavy data.
+  const results: LeaderboardEntry[] = [];
+  let skip = 0;
 
-  const stats = await prisma.userGameStats.findMany(leaderboardQueryArgs);
+  while (results.length < LEADERBOARD_LIMIT) {
+    const args = {
+      ...leaderboardQueryArgs,
+      skip,
+      take: LEADERBOARD_FETCH_LIMIT,
+    } as Prisma.UserGameStatsFindManyArgs;
 
-  return toLeaderboardEntries(stats).slice(0, LEADERBOARD_LIMIT);
+    const stats = await prisma.userGameStats.findMany(args);
+
+    if (stats.length === 0) break;
+
+    for (const stat of stats) {
+      if (!isLeaderboardEligible(stat)) continue;
+
+      const rank = results.length + 1;
+      results.push(toLeaderboardEntry(stat, rank));
+
+      if (results.length >= LEADERBOARD_LIMIT) break;
+    }
+
+    if (stats.length < LEADERBOARD_FETCH_LIMIT) break;
+
+    skip += LEADERBOARD_FETCH_LIMIT;
+  }
+
+  return results.slice(0, LEADERBOARD_LIMIT);
 }
 
 export async function getLeaderboardRank(input: LeaderboardRankInput): Promise<number | null> {
