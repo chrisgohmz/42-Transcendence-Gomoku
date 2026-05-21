@@ -150,8 +150,7 @@ test("authenticated redesigned pages render at desktop and mobile widths", async
 
     await gotoAppRoute(page, "/messages");
     await expect(page.getByRole("heading", { level: 1, name: "Messages" })).toBeVisible();
-    //await expect(page.getByRole("textbox", { name: "Message MJ..." })).toBeVisible();
-    await expect(page.locator('input[name="message"]')).toBeVisible();
+    await expect(page.locator('input[name="message"]').first()).toBeVisible();
     await expectNoDocumentOverflow(page, "/messages");
   } finally {
     await cleanupTestUsers([user.username, friend.username]);
