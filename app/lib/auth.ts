@@ -200,6 +200,8 @@ export const auth = betterAuth({
     modelName: "Account",
     accountLinking: {
       enabled: true,
+      requireLocalEmailVerified: false,
+      trustedProviders: ["google"],
     },
   },
   verification: {

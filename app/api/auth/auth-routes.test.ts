@@ -625,7 +625,7 @@ describe("auth API routes", () => {
     expect(updateUser).not.toHaveBeenCalled();
   });
 
-  test("changeAccountPassword changes only the Better Auth password", async () => {
+  test("changeAccountPassword revokes other sessions after changing the Better Auth password", async () => {
     const state = await profileActions.changeAccountPassword(
       previousState,
       formData({
@@ -639,7 +639,7 @@ describe("auth API routes", () => {
       body: {
         currentPassword: "password123",
         newPassword: "password999",
-        revokeOtherSessions: false,
+        revokeOtherSessions: true,
       },
       headers: expect.any(Headers),
     });
