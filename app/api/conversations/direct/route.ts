@@ -55,6 +55,20 @@ export async function POST(request: Request) {
     return Response.json({ error: "user_not_found" }, { status: 404 });
   }
 
+  // 5b. Only accepted friends can DM each other.
+  // The Friendship table stores pairs with the lower ID first (userLowId < userHighId),
+  // so we sort before querying to match that unique constraint.
+  const sortedIds = [session.user.id, friendId].sort();
+  const lowId = sortedIds[0]!;
+  const highId = sortedIds[1]!;
+  const friendship = await prisma.friendship.findUnique({
+    where: { userLowId_userHighId: { userLowId: lowId, userHighId: highId } },
+    select: { status: true },
+  });
+  if (!friendship || friendship.status !== "ACCEPTED") {
+    return Response.json({ error: "not_friends" }, { status: 403 });
+  }
+
   try {
     // 6. Build the directKey — sort the two IDs so the key is always identical
     //    no matter which user initiates the conversation
