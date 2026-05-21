@@ -1,13 +1,11 @@
 import "./load-env";
 import { createId } from "@paralleldrive/cuid2";
 import { PrismaPg } from "@prisma/adapter-pg";
-import { Pool } from "pg";
 
 import { Prisma, PrismaClient } from "../../generated/prisma/client";
 
 declare global {
   var prisma: PrismaClient | undefined;
-  var prismaPool: Pool | undefined;
 }
 
 function getPrisma(): PrismaClient {
@@ -21,14 +19,10 @@ function getPrisma(): PrismaClient {
     throw new Error("DATABASE_URL is not defined.");
   }
 
-  const pool =
-    globalThis.prismaPool ??
-    new Pool({
-      connectionString: databaseUrl,
-      connectionTimeoutMillis: 5000,
-    });
-
-  const adapter = new PrismaPg(pool);
+  const adapter = new PrismaPg({
+    connectionString: databaseUrl,
+    connectionTimeoutMillis: 5000,
+  });
   const cuidModels = new Set([
     "User",
     "Account",
@@ -74,7 +68,6 @@ function getPrisma(): PrismaClient {
     }),
   ) as unknown as PrismaClient;
 
-  globalThis.prismaPool = pool;
   globalThis.prisma = prisma;
 
   return prisma;

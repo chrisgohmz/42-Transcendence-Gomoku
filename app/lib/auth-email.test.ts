@@ -58,8 +58,14 @@ function restoreEnv() {
   }
 }
 
+function clearEnv() {
+  for (const key of envKeys) {
+    delete process.env[key];
+  }
+}
+
 beforeEach(() => {
-  restoreEnv();
+  clearEnv();
   createTransport.mockClear();
   sendMail.mockClear();
 });
