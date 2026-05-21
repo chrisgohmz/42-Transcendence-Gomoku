@@ -1,10 +1,12 @@
 "use client";
 
 import { ArrowLeft } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 
 export default function ProfileBackButton() {
   const router = useRouter();
+  const t = useTranslations("profile.publicPage");
 
   return (
     <button
@@ -13,7 +15,7 @@ export default function ProfileBackButton() {
       className="mb-4 inline-flex items-center gap-2 text-sm font-black text-[var(--brass)] no-underline hover:opacity-80"
     >
       <ArrowLeft aria-hidden="true" className="size-4" />
-      Go Back
+      {t("goBack")}
     </button>
   );
 }

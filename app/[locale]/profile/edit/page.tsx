@@ -79,7 +79,7 @@ async function EditProfilePageContent({ params }: EditProfilePageProps) {
           className="inline-flex items-center gap-2 text-sm font-black text-(--brass) no-underline hover:opacity-80"
         >
           <ArrowLeft aria-hidden="true" className="size-4" />
-          Return to Profile
+          {t("returnToProfile")}
         </Link>
       </div>
 

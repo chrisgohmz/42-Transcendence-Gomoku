@@ -758,6 +758,7 @@ export const messages = {
       backToLeaderboard: "返回排行榜",
       badge: "公开资料",
       challenge: "发起对战",
+      goBack: "返回",
       progress: {
         eyebrow: "等级分变化",
         title: "赛季曲线",
