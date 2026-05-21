@@ -1,63 +1,113 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
-import { MatchResult, Role, RuleType } from "../../../generated/prisma/enums";
-import type { MatchHistoryEntry } from "../matches/match-history";
+import {
+  MatchResult,
+  MatchStatus,
+  MatchVisibility,
+  Role,
+  RuleType,
+  Seat,
+} from "../../../generated/prisma/enums";
+import type { MatchHistoryRecord } from "../matches/match-history";
 
 const findUnique = mock();
+const findManyStats = mock();
 const findManyAchievements = mock();
-const getMatchHistoryPageForUser = mock();
-const getLeaderboardRank = mock();
-
-await mock.module("@/lib/leaderboard", () => ({
-  LEADERBOARD_BOARD_SIZE: 15,
-  LEADERBOARD_RULE_TYPE: RuleType.GOMOKU,
-  formatWinRate: (wins: number, matchesPlayed: number) =>
-    matchesPlayed === 0 ? "0.00%" : `${((wins / matchesPlayed) * 100).toFixed(2)}%`,
-  getLeaderboardRank,
-}));
+const countMatches = mock();
+const findManyMatches = mock();
 
 await mock.module("@/lib/prisma", () => ({
   prisma: {
     userGameStats: {
       findUnique,
+      findMany: findManyStats,
     },
     userAchievement: {
       findMany: findManyAchievements,
     },
+    match: {
+      count: countMatches,
+      findMany: findManyMatches,
+    },
   },
 }));
 
-await mock.module("@/lib/matches/match-history", () => ({
-  getMatchHistoryPageForUser,
-}));
+const {
+  getProfileStatsForUser,
+  PROFILE_RECENT_MATCHES_MAX_LIMIT,
+  PROFILE_RECENT_MATCHES_PAGE_SIZE,
+} = await import("./profile-stats");
 
-const { getProfileStatsForUser, PROFILE_RECENT_MATCHES_PAGE_SIZE } =
-  await import("./profile-stats");
+const createdAt = new Date("2026-05-14T09:00:00.000Z");
+const startedAt = new Date("2026-05-14T09:01:00.000Z");
+const finishedAt = new Date("2026-05-14T09:12:00.000Z");
+
+function matchHistoryRecord(): MatchHistoryRecord {
+  return {
+    boardSize: 15,
+    createdAt,
+    endReason: "five_in_a_row",
+    finishedAt,
+    id: "match-1",
+    moves: [],
+    participants: [
+      {
+        displayNameSnapshot: "Ada",
+        id: "participant-ada",
+        joinedAt: startedAt,
+        leftAt: finishedAt,
+        result: MatchResult.WIN,
+        role: Role.PLAYER,
+        seat: Seat.BLACK,
+        user: {
+          displayName: "Ada",
+          id: "user-ada",
+          username: "ada",
+        },
+        userId: "user-ada",
+      },
+      {
+        displayNameSnapshot: "Grace",
+        id: "participant-grace",
+        joinedAt: startedAt,
+        leftAt: finishedAt,
+        result: MatchResult.LOSS,
+        role: Role.PLAYER,
+        seat: Seat.WHITE,
+        user: {
+          displayName: "Grace",
+          id: "user-grace",
+          username: "grace",
+        },
+        userId: "user-grace",
+      },
+    ],
+    ruleType: RuleType.GOMOKU,
+    startedAt,
+    stateVersion: 0,
+    status: MatchStatus.FINISHED,
+    updatedAt: finishedAt,
+    visibility: MatchVisibility.PUBLIC,
+    winningSeat: Seat.BLACK,
+  };
+}
 
 beforeEach(() => {
   findUnique.mockReset();
+  findManyStats.mockReset();
   findManyAchievements.mockReset();
-  getMatchHistoryPageForUser.mockReset();
-  getLeaderboardRank.mockReset();
+  countMatches.mockReset();
+  findManyMatches.mockReset();
 
   findUnique.mockResolvedValue(null);
+  findManyStats.mockResolvedValue([]);
   findManyAchievements.mockResolvedValue([]);
-
-  getMatchHistoryPageForUser.mockResolvedValue({
-    entries: [],
-    page: 1,
-    limit: PROFILE_RECENT_MATCHES_PAGE_SIZE,
-    totalMatches: 0,
-    totalPages: 1,
-  });
-
-  getLeaderboardRank.mockResolvedValue(1);
+  countMatches.mockResolvedValue(0);
+  findManyMatches.mockResolvedValue([]);
 });
 
 describe("profile stats", () => {
   test("returns defaults for a new user", async () => {
-    getLeaderboardRank.mockResolvedValueOnce(null);
-
     const snapshot = await getProfileStatsForUser("user-ada");
 
     expect(snapshot).toMatchObject({
@@ -84,20 +134,23 @@ describe("profile stats", () => {
       achievementPoints: 0,
     });
 
-    expect(getMatchHistoryPageForUser).toHaveBeenCalledWith(
-      "user-ada",
-      1,
-      PROFILE_RECENT_MATCHES_PAGE_SIZE,
-    );
-
-    // 共有 rank 関数に委譲される
-    expect(getLeaderboardRank).toHaveBeenCalledWith({
-      rating: null,
-      wins: 0,
-      losses: 0,
-      matchesPlayed: 0,
-      botMatchesPlayed: 0,
+    expect(countMatches).toHaveBeenCalledWith({
+      where: {
+        participants: {
+          some: {
+            userId: "user-ada",
+          },
+        },
+        status: {
+          in: [MatchStatus.FINISHED, MatchStatus.CANCELLED],
+        },
+      },
     });
+    expect(findManyMatches.mock.calls[0]?.[0]).toMatchObject({
+      skip: 0,
+      take: PROFILE_RECENT_MATCHES_PAGE_SIZE,
+    });
+    expect(findManyStats).not.toHaveBeenCalled();
   });
 
   test("includes rank, achievements, progression, and recent matches", async () => {
@@ -126,27 +179,8 @@ describe("profile stats", () => {
       },
     ]);
 
-    const matchHistory: MatchHistoryEntry[] = [
-      {
-        matchId: "match-1",
-        result: MatchResult.WIN,
-        endReason: "five_in_a_row",
-        finishedAt: "2026-05-14T09:12:00.000Z",
-        moveCount: 42,
-        participants: [
-          { role: Role.PLAYER, userId: "user-ada", displayName: "Ada" },
-          { role: Role.PLAYER, userId: "user-grace", displayName: "Grace" },
-        ],
-      } as unknown as MatchHistoryEntry,
-    ];
-
-    getMatchHistoryPageForUser.mockResolvedValueOnce({
-      entries: matchHistory,
-      page: 2,
-      limit: 5,
-      totalMatches: 6,
-      totalPages: 2,
-    });
+    countMatches.mockResolvedValueOnce(6);
+    findManyMatches.mockResolvedValueOnce([matchHistoryRecord()]);
 
     const snapshot = await getProfileStatsForUser("user-ada", {
       recentMatchesLimit: 5,
@@ -155,12 +189,27 @@ describe("profile stats", () => {
 
     expect(snapshot.rank).toBe(1);
 
-    expect(getLeaderboardRank).toHaveBeenCalledWith({
-      rating: 1200,
-      wins: 3,
-      losses: 1,
-      matchesPlayed: 4,
-      botMatchesPlayed: 1,
+    expect(findManyStats).toHaveBeenCalledWith({
+      select: {
+        botMatchesPlayed: true,
+        matchesPlayed: true,
+      },
+      where: {
+        boardSize: 15,
+        OR: [
+          { rating: { gt: 1200 } },
+          {
+            rating: 1200,
+            OR: [{ wins: { gt: 3 } }, { wins: 3, losses: { lt: 1 } }],
+          },
+        ],
+        ruleType: RuleType.GOMOKU,
+        matchesPlayed: { gt: 0 },
+      },
+    });
+    expect(findManyMatches.mock.calls[0]?.[0]).toMatchObject({
+      skip: 5,
+      take: 5,
     });
 
     expect(snapshot.stats.winRate).toBe("75.00%");
@@ -195,7 +244,7 @@ describe("profile stats", () => {
         finishedAt: "2026-05-14T09:12:00.000Z",
         result: MatchResult.WIN,
         endReason: "five_in_a_row",
-        moveCount: 42,
+        moveCount: 0,
       },
     ]);
 
@@ -208,24 +257,18 @@ describe("profile stats", () => {
   });
 
   test("normalizes recentMatchesLimit bounds", async () => {
-    // non-integer -> page size
     await getProfileStatsForUser("user-ada", { recentMatchesLimit: 2.5, recentMatchesPage: 1 });
 
-    expect(getMatchHistoryPageForUser).toHaveBeenCalledWith(
-      "user-ada",
-      1,
-      PROFILE_RECENT_MATCHES_PAGE_SIZE,
-    );
-
-    // too large -> clamped to max
-    const { PROFILE_RECENT_MATCHES_MAX_LIMIT } = await import("./profile-stats");
+    expect(findManyMatches.mock.calls[0]?.[0]).toMatchObject({
+      skip: 0,
+      take: PROFILE_RECENT_MATCHES_PAGE_SIZE,
+    });
 
     await getProfileStatsForUser("user-ada", { recentMatchesLimit: 9999, recentMatchesPage: 1 });
 
-    expect(getMatchHistoryPageForUser).toHaveBeenCalledWith(
-      "user-ada",
-      1,
-      PROFILE_RECENT_MATCHES_MAX_LIMIT,
-    );
+    expect(findManyMatches.mock.calls[1]?.[0]).toMatchObject({
+      skip: 0,
+      take: PROFILE_RECENT_MATCHES_MAX_LIMIT,
+    });
   });
 });
