@@ -712,8 +712,11 @@ export const messages = {
       },
       spotlight: {
         rankLabel: "Your Rank",
+        noPlayer: "Unranked",
         rating: "{rating} rating",
       },
+      refresh: "Refresh",
+      refreshing: "Refreshing...",
       season: {
         eyebrow: "Season",
         title: "Spring Ladder",
@@ -750,7 +753,10 @@ export const messages = {
       wins: "Wins",
       losses: "Losses",
       winRate: "Win Rate",
-      empty: "No leaderboard data yet.",
+      empty: {
+        title: "No leaderboard data yet",
+        description: "Play rated matches to appear on the leaderboard.",
+      },
       preview: "Preview standings are shown until completed matches report results.",
       trend: "Trend",
       active: "Active",

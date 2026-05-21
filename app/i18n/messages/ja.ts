@@ -707,8 +707,11 @@ export const messages = {
       },
       spotlight: {
         rankLabel: "あなたの順位",
+        noPlayer: "未ランク",
         rating: "{rating} レーティング",
       },
+      refresh: "更新",
+      refreshing: "更新中...",
       season: {
         eyebrow: "シーズン",
         title: "春のラダー",
@@ -745,7 +748,10 @@ export const messages = {
       wins: "勝利",
       losses: "敗北",
       winRate: "勝率",
-      empty: "ランキングデータはまだありません。",
+      empty: {
+        title: "ランキングデータはまだありません",
+        description: "レート戦をプレイするとランキングに表示されます。",
+      },
       preview: "完了した対局の結果が届くまで、プレビュー順位を表示しています。",
       trend: "推移",
       active: "活動中",
