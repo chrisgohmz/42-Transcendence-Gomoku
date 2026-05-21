@@ -153,7 +153,7 @@ async function sendAuthEmail(message: AuthEmailMessage): Promise<void> {
     return;
   }
 
-  if (mode === "resend-smtp" || mode === "resend" || mode === "smtp") {
+  if (mode === "resend-smtp") {
     await sendResendSmtpEmail(message);
     return;
   }
