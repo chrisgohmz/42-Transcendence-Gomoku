@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, mock, test } from "bun:test";
 
 import { MatchStatus, MatchVisibility, Role, RuleType, Seat } from "@/../generated/prisma/enums";
 import { soloAiDisplayName } from "@/lib/matches/ai-solo";
+import { createAuthModuleMock } from "@/test-utils/auth-module-mock";
 
 const getCurrentSession = mock();
 const transaction = mock();
@@ -24,9 +25,11 @@ const tx = {
   },
 };
 
-await mock.module("@/lib/auth", () => ({
-  getCurrentSession,
-}));
+await mock.module("@/lib/auth", () =>
+  createAuthModuleMock({
+    getCurrentSession,
+  }),
+);
 
 await mock.module("@/lib/prisma", () => ({
   prisma: {

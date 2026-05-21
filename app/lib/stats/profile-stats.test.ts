@@ -6,7 +6,7 @@ import type { MatchHistoryEntry } from "../matches/match-history";
 const findUnique = mock();
 const findManyAchievements = mock();
 const count = mock();
-const getMatchHistoryForUser = mock();
+const getMatchHistoryPageForUser = mock();
 
 await mock.module("@/lib/prisma", () => ({
   prisma: {
@@ -21,20 +21,27 @@ await mock.module("@/lib/prisma", () => ({
 }));
 
 await mock.module("@/lib/matches/match-history", () => ({
-  getMatchHistoryForUser,
+  getMatchHistoryPageForUser,
 }));
 
-const { getProfileStatsForUser, PROFILE_RECENT_MATCHES_LIMIT } = await import("./profile-stats");
+const { getProfileStatsForUser, PROFILE_RECENT_MATCHES_PAGE_SIZE } =
+  await import("./profile-stats");
 
 beforeEach(() => {
   findUnique.mockReset();
   findManyAchievements.mockReset();
   count.mockReset();
-  getMatchHistoryForUser.mockReset();
+  getMatchHistoryPageForUser.mockReset();
 
   findUnique.mockResolvedValue(null);
   findManyAchievements.mockResolvedValue([]);
-  getMatchHistoryForUser.mockResolvedValue([]);
+  getMatchHistoryPageForUser.mockResolvedValue({
+    entries: [],
+    page: 1,
+    limit: PROFILE_RECENT_MATCHES_PAGE_SIZE,
+    totalMatches: 0,
+    totalPages: 1,
+  });
   count.mockResolvedValue(0);
 });
 
@@ -64,7 +71,11 @@ describe("profile stats", () => {
       totalXp: 0,
       achievementPoints: 0,
     });
-    expect(getMatchHistoryForUser).toHaveBeenCalledWith("user-ada", PROFILE_RECENT_MATCHES_LIMIT);
+    expect(getMatchHistoryPageForUser).toHaveBeenCalledWith(
+      "user-ada",
+      1,
+      PROFILE_RECENT_MATCHES_PAGE_SIZE,
+    );
     expect(count).not.toHaveBeenCalled();
   });
 
@@ -121,10 +132,19 @@ describe("profile stats", () => {
       } as unknown as MatchHistoryEntry,
     ];
 
-    getMatchHistoryForUser.mockResolvedValueOnce(matchHistory);
+    getMatchHistoryPageForUser.mockResolvedValueOnce({
+      entries: matchHistory,
+      page: 2,
+      limit: 5,
+      totalMatches: 6,
+      totalPages: 2,
+    });
     count.mockResolvedValueOnce(2);
 
-    const snapshot = await getProfileStatsForUser("user-ada");
+    const snapshot = await getProfileStatsForUser("user-ada", {
+      recentMatchesLimit: 5,
+      recentMatchesPage: 2,
+    });
 
     expect(snapshot.rank).toBe(3);
     expect(snapshot.stats.winRate).toBe("75.00%");
@@ -156,6 +176,12 @@ describe("profile stats", () => {
       endReason: "five_in_a_row",
       moveCount: 42,
     });
+    expect(snapshot.recentMatchesPagination).toEqual({
+      page: 2,
+      limit: 5,
+      totalMatches: 6,
+      totalPages: 2,
+    });
     expect(count).toHaveBeenCalledWith({
       where: {
         boardSize: 15,
@@ -170,5 +196,23 @@ describe("profile stats", () => {
         ],
       },
     });
+  });
+
+  test("normalizes recent-match pagination options before querying history", async () => {
+    await getProfileStatsForUser("user-ada", {
+      recentMatchesLimit: 0,
+      recentMatchesPage: -2,
+    });
+
+    expect(getMatchHistoryPageForUser).toHaveBeenCalledWith("user-ada", 1, 1);
+
+    getMatchHistoryPageForUser.mockClear();
+
+    await getProfileStatsForUser("user-ada", {
+      recentMatchesLimit: 999,
+      recentMatchesPage: 4,
+    });
+
+    expect(getMatchHistoryPageForUser).toHaveBeenCalledWith("user-ada", 4, 50);
   });
 });

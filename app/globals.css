@@ -417,10 +417,12 @@ a.command-panel {
 }
 
 .kpi-value {
-  font-size: 2.1rem;
+  max-width: 100%;
+  font-size: clamp(1.45rem, 2.7vw, 2.1rem);
   font-weight: 950;
   font-variant-numeric: tabular-nums;
   line-height: 1;
+  overflow-wrap: anywhere;
 }
 
 .split-line {

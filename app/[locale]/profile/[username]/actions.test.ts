@@ -1,34 +1,41 @@
-import { beforeEach, describe, expect, mock, test } from "bun:test";
+import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
+
+import { createAuthModuleMock } from "@/test-utils/auth-module-mock";
 
 const getCurrentSession = mock();
+const findManyUsers = mock();
 const findFriendship = mock();
 const createFriendship = mock();
+const deleteFriendship = mock();
 const updateFriendship = mock();
-const deleteFriendshipAndNotify = mock();
 const revalidatePath = mock();
+const fetchMock = mock(async () => new Response(null, { status: 200 }));
+const originalFetch = globalThis.fetch;
+const originalRealtimeInternalSecret = process.env["REALTIME_INTERNAL_SECRET"];
+const originalRealtimeFriendshipInternalUrl = process.env["REALTIME_FRIENDSHIP_INTERNAL_URL"];
 
 await mock.module("next/cache", () => ({
   revalidatePath,
 }));
 
-await mock.module("@/lib/auth", () => ({
-  getCurrentSession,
-}));
+await mock.module("@/lib/auth", () =>
+  createAuthModuleMock({
+    getCurrentSession,
+  }),
+);
 
 await mock.module("@/lib/prisma", () => ({
   prisma: {
     friendship: {
       create: createFriendship,
+      delete: deleteFriendship,
       findUnique: findFriendship,
       update: updateFriendship,
     },
+    user: {
+      findMany: findManyUsers,
+    },
   },
-}));
-
-await mock.module("@/lib/friendships/friendship-mutations", () => ({
-  deleteFriendshipAndNotify,
-  getLowHighIds: (id1: string, id2: string) =>
-    id1 < id2 ? { userLowId: id1, userHighId: id2 } : { userLowId: id2, userHighId: id1 },
 }));
 
 const { processFriendAction } = await import("./actions");
@@ -43,17 +50,44 @@ const friendship = {
 
 beforeEach(() => {
   getCurrentSession.mockReset();
+  findManyUsers.mockReset();
   findFriendship.mockReset();
   createFriendship.mockReset();
+  deleteFriendship.mockReset();
   updateFriendship.mockReset();
-  deleteFriendshipAndNotify.mockReset();
   revalidatePath.mockReset();
+  fetchMock.mockReset();
 
+  globalThis.fetch = fetchMock as unknown as typeof fetch;
+  process.env["REALTIME_INTERNAL_SECRET"] = "friend-secret";
+  process.env["REALTIME_FRIENDSHIP_INTERNAL_URL"] =
+    "http://localhost:3001/internal/friendship-update";
   getCurrentSession.mockResolvedValue({
     user: { id: "user-a" },
   });
+  findManyUsers.mockResolvedValue([
+    { id: "user-a", username: "ada" },
+    { id: "user-b", username: "bob" },
+  ]);
   findFriendship.mockResolvedValue(friendship);
-  deleteFriendshipAndNotify.mockResolvedValue(undefined);
+  deleteFriendship.mockResolvedValue({});
+  fetchMock.mockResolvedValue(new Response(null, { status: 200 }));
+});
+
+afterEach(() => {
+  globalThis.fetch = originalFetch;
+
+  if (originalRealtimeInternalSecret === undefined) {
+    delete process.env["REALTIME_INTERNAL_SECRET"];
+  } else {
+    process.env["REALTIME_INTERNAL_SECRET"] = originalRealtimeInternalSecret;
+  }
+
+  if (originalRealtimeFriendshipInternalUrl === undefined) {
+    delete process.env["REALTIME_FRIENDSHIP_INTERNAL_URL"];
+  } else {
+    process.env["REALTIME_FRIENDSHIP_INTERNAL_URL"] = originalRealtimeFriendshipInternalUrl;
+  }
 });
 
 describe("processFriendAction", () => {
@@ -61,7 +95,14 @@ describe("processFriendAction", () => {
     const result = await processFriendAction("user-b", "REMOVE");
 
     expect(result).toEqual({ success: true });
-    expect(deleteFriendshipAndNotify).toHaveBeenCalledWith(friendship);
+    expect(deleteFriendship).toHaveBeenCalledWith({ where: { id: 42 } });
+    expect(fetchMock).toHaveBeenCalledWith(
+      "http://localhost:3001/internal/friendship-update",
+      expect.objectContaining({
+        body: JSON.stringify({ usernames: ["ada", "bob"] }),
+        method: "POST",
+      }),
+    );
     expect(revalidatePath).toHaveBeenCalledWith("/", "layout");
   });
 
@@ -77,6 +118,6 @@ describe("processFriendAction", () => {
     const result = await processFriendAction("user-b", "DECLINE");
 
     expect(result).toEqual({ success: true });
-    expect(deleteFriendshipAndNotify).toHaveBeenCalledWith(pendingFriendship);
+    expect(deleteFriendship).toHaveBeenCalledWith({ where: { id: 42 } });
   });
 });

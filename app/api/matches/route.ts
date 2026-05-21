@@ -41,16 +41,21 @@ export async function POST(request: Request) {
 
   try {
     const bodyValue = await request.json().catch(() => ({}));
+
     const body =
       typeof bodyValue === "object" && bodyValue !== null && !Array.isArray(bodyValue)
         ? bodyValue
         : {};
+
     const name = getOptionalTrimmedString(body.name);
+
     const rawPassword = getOptionalTrimmedString(body.password);
+
     const visibility =
       body.visibility === MatchVisibility.PRIVATE
         ? MatchVisibility.PRIVATE
         : MatchVisibility.PUBLIC;
+
     const password =
       visibility === MatchVisibility.PRIVATE && rawPassword
         ? await hashPassword(rawPassword)
@@ -86,6 +91,7 @@ export async function POST(request: Request) {
         participants: true,
       },
     });
+
     const creator = match.participants[0];
 
     if (!creator) {
@@ -93,13 +99,17 @@ export async function POST(request: Request) {
     }
 
     const gameUpdate = buildGameUpdatePayload({
-      match,
+      match: {
+        ...match,
+        metadata: match.metadata ?? null,
+      },
       participants: match.participants,
       moves: [],
     });
 
     try {
       const timeoutMs = Number(process.env["REALTIME_PUBLISH_TIMEOUT_MS"] ?? 2000);
+
       await publishGameUpdate(gameUpdate, timeoutMs);
     } catch (publishError) {
       console.error(
@@ -129,22 +139,39 @@ export async function POST(request: Request) {
   }
 }
 
-export async function GET() {
+export async function GET(request: Request = new Request("http://localhost/api/matches")) {
   const { cleanupStaleMatchSessions } = await import("@/lib/matches/matchmaking");
 
   await cleanupStaleMatchSessions();
 
-  const matches = await prisma.match.findMany({
+  const { searchParams } = new URL(request.url);
+
+  const rawPage = parseInt(searchParams.get("page") ?? "1", 10);
+  const rawLimit = parseInt(searchParams.get("limit") ?? "10", 10);
+
+  const page = Number.isNaN(rawPage) || rawPage < 1 ? 1 : rawPage;
+
+  const limit = Number.isNaN(rawLimit) || rawLimit < 1 ? 10 : Math.min(rawLimit, 50);
+
+  const allWaitingMatches = await prisma.match.findMany({
     where: {
       status: MatchStatus.WAITING,
     },
-    orderBy: { createdAt: "desc" },
+    orderBy: {
+      createdAt: "desc",
+    },
     include: {
       participants: true,
     },
   });
 
-  const body = matches.filter(isLobbyListedMatch).map((r) => ({
+  const listedMatches = allWaitingMatches.filter(isLobbyListedMatch);
+  const totalMatches = listedMatches.length;
+  const totalPages = Math.max(1, Math.ceil(totalMatches / limit));
+  const offset = (page - 1) * limit;
+  const matches = listedMatches.slice(offset, offset + limit);
+
+  const body = matches.map((r) => ({
     matchId: r.id,
     name: r.name,
     requiresPassword: r.password !== null,
@@ -158,5 +185,11 @@ export async function GET() {
     })),
   }));
 
-  return Response.json(body);
+  return Response.json({
+    data: body,
+    page,
+    limit,
+    totalMatches,
+    totalPages,
+  });
 }

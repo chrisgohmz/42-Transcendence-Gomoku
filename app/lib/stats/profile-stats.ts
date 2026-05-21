@@ -7,11 +7,18 @@ import {
   formatWinRate,
   type LeaderboardRankInput,
 } from "../leaderboard";
-import { getMatchHistoryForUser, type MatchHistoryEntry } from "../matches/match-history";
+import { getMatchHistoryPageForUser, type MatchHistoryEntry } from "../matches/match-history";
 import { prisma } from "../prisma";
 import { calculateAchievementPoints, calculateLevelProgress } from "./progression";
 
 export const PROFILE_RECENT_MATCHES_LIMIT = 20;
+export const PROFILE_RECENT_MATCHES_PAGE_SIZE = 10;
+export const PROFILE_RECENT_MATCHES_MAX_LIMIT = 50;
+
+export type ProfileStatsOptions = {
+  recentMatchesPage?: number;
+  recentMatchesLimit?: number;
+};
 
 export type ProfileRecentMatch = {
   matchId: string;
@@ -52,6 +59,12 @@ export type ProfileStatsSnapshot = {
     completedAt: string | null;
   }>;
   recentMatches: ProfileRecentMatch[];
+  recentMatchesPagination: {
+    page: number;
+    limit: number;
+    totalMatches: number;
+    totalPages: number;
+  };
 };
 
 const statsSelect = {
@@ -115,8 +128,28 @@ async function getRankForUser(stats: LeaderboardRankInput | null): Promise<numbe
   return aheadCount + 1;
 }
 
-export async function getProfileStatsForUser(userId: string): Promise<ProfileStatsSnapshot> {
-  const [statsRow, achievementRows, matchHistory] = await Promise.all([
+function normalizeRecentMatchesLimit(limit: number | undefined): number {
+  if (!Number.isInteger(limit)) {
+    return PROFILE_RECENT_MATCHES_PAGE_SIZE;
+  }
+
+  return Math.min(
+    Math.max(limit ?? PROFILE_RECENT_MATCHES_PAGE_SIZE, 1),
+    PROFILE_RECENT_MATCHES_MAX_LIMIT,
+  );
+}
+
+export async function getProfileStatsForUser(
+  userId: string,
+  options: ProfileStatsOptions = {},
+): Promise<ProfileStatsSnapshot> {
+  const recentMatchesPage =
+    Number.isInteger(options.recentMatchesPage) && options.recentMatchesPage
+      ? Math.max(options.recentMatchesPage, 1)
+      : 1;
+  const recentMatchesLimit = normalizeRecentMatchesLimit(options.recentMatchesLimit);
+
+  const [statsRow, achievementRows, matchHistoryPage] = await Promise.all([
     prisma.userGameStats.findUnique({
       where: {
         userId_ruleType_boardSize: {
@@ -138,7 +171,7 @@ export async function getProfileStatsForUser(userId: string): Promise<ProfileSta
         },
       },
     }),
-    getMatchHistoryForUser(userId, PROFILE_RECENT_MATCHES_LIMIT),
+    getMatchHistoryPageForUser(userId, recentMatchesPage, recentMatchesLimit),
   ]);
 
   const stats = {
@@ -186,6 +219,12 @@ export async function getProfileStatsForUser(userId: string): Promise<ProfileSta
       progress: row.progress,
       completedAt: row.completedAt ? row.completedAt.toISOString() : null,
     })),
-    recentMatches: matchHistory.map((entry) => toRecentMatch(entry, userId)),
+    recentMatches: matchHistoryPage.entries.map((entry) => toRecentMatch(entry, userId)),
+    recentMatchesPagination: {
+      page: matchHistoryPage.page,
+      limit: matchHistoryPage.limit,
+      totalMatches: matchHistoryPage.totalMatches,
+      totalPages: matchHistoryPage.totalPages,
+    },
   };
 }

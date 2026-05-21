@@ -1,6 +1,7 @@
 import { afterAll, beforeEach, describe, expect, mock, test } from "bun:test";
 
 import { MatchStatus, MatchVisibility, Role, RuleType, Seat } from "@/../generated/prisma/enums";
+import { createAuthModuleMock } from "@/test-utils/auth-module-mock";
 
 const getCurrentSession = mock();
 const createMatch = mock();
@@ -17,9 +18,11 @@ const originalFetch = globalThis.fetch;
 const originalRealtimeInternalUrl = process.env["REALTIME_INTERNAL_URL"];
 const originalRealtimeSecret = process.env["REALTIME_INTERNAL_SECRET"];
 
-await mock.module("@/lib/auth", () => ({
-  getCurrentSession,
-}));
+await mock.module("@/lib/auth", () =>
+  createAuthModuleMock({
+    getCurrentSession,
+  }),
+);
 
 await mock.module("@/lib/prisma", () => ({
   prisma: {
@@ -185,13 +188,110 @@ describe("GET /api/matches", () => {
         },
       }),
     );
-    expect(payload.map((match: { matchId: string }) => match.matchId)).toEqual([
+    expect(payload.data.map((match: { matchId: string }) => match.matchId)).toEqual([
       "public-match",
       "private-match",
     ]);
-    expect(payload[1]).toMatchObject({
+    expect(payload).toMatchObject({
+      page: 1,
+      limit: 10,
+      totalMatches: 2,
+      totalPages: 1,
+    });
+    expect(payload.data[1]).toMatchObject({
       matchId: "private-match",
       requiresPassword: true,
+    });
+  });
+
+  test("paginates after filtering hidden challenge invites", async () => {
+    findManyMatches.mockResolvedValueOnce([
+      createdMatch({
+        id: "listed-1",
+        visibility: MatchVisibility.PUBLIC,
+      }),
+      createdMatch({
+        id: "hidden-challenge",
+        metadata: {
+          declineTokenHash: "hashed-decline-token",
+          kind: "human-challenge",
+          targetUserId: "user-bob",
+          targetUsername: "bob",
+        },
+        visibility: MatchVisibility.PRIVATE,
+      }),
+      createdMatch({
+        id: "listed-2",
+        visibility: MatchVisibility.PUBLIC,
+      }),
+      createdMatch({
+        id: "listed-3",
+        visibility: MatchVisibility.PUBLIC,
+      }),
+    ]);
+
+    const response = await route.GET(new Request("http://localhost/api/matches?page=1&limit=2"));
+    const payload = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(payload).toMatchObject({
+      page: 1,
+      limit: 2,
+      totalMatches: 3,
+      totalPages: 2,
+    });
+    expect(payload.data.map((match: { matchId: string }) => match.matchId)).toEqual([
+      "listed-1",
+      "listed-2",
+    ]);
+  });
+
+  test("returns later filtered lobby pages after excluding hidden challenge rooms", async () => {
+    findManyMatches.mockResolvedValueOnce([
+      createdMatch({ id: "listed-1", visibility: MatchVisibility.PUBLIC }),
+      createdMatch({ id: "listed-2", visibility: MatchVisibility.PUBLIC }),
+      createdMatch({
+        id: "hidden-challenge",
+        metadata: {
+          declineTokenHash: "hashed-decline-token",
+          kind: "human-challenge",
+          targetUserId: "user-bob",
+          targetUsername: "bob",
+        },
+        visibility: MatchVisibility.PRIVATE,
+      }),
+      createdMatch({ id: "listed-3", visibility: MatchVisibility.PUBLIC }),
+      createdMatch({ id: "listed-4", visibility: MatchVisibility.PUBLIC }),
+    ]);
+
+    const response = await route.GET(new Request("http://localhost/api/matches?page=2&limit=2"));
+    const payload = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(payload).toMatchObject({
+      page: 2,
+      limit: 2,
+      totalMatches: 4,
+      totalPages: 2,
+    });
+    expect(payload.data.map((match: { matchId: string }) => match.matchId)).toEqual([
+      "listed-3",
+      "listed-4",
+    ]);
+  });
+
+  test("normalizes invalid lobby pagination params", async () => {
+    findManyMatches.mockResolvedValueOnce([createdMatch({ id: "listed-1" })]);
+
+    const response = await route.GET(new Request("http://localhost/api/matches?page=-2&limit=0"));
+    const payload = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(payload).toMatchObject({
+      page: 1,
+      limit: 10,
+      totalMatches: 1,
+      totalPages: 1,
     });
   });
 });
