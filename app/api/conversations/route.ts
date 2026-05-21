@@ -47,7 +47,7 @@ export async function GET() {
             // Fetch the most recent message for the preview
             messages: {
               orderBy: { createdAt: "desc" },
-              take: 1, // only the latest
+              take: 1,
             },
           },
         },
@@ -59,27 +59,34 @@ export async function GET() {
     });
 
     // 3. Shape the data into something clean for the frontend
-    const conversations = participations.map((participation) => {
-      const conv = participation.conversation;
+    const conversations = await Promise.all(
+      participations.map(async (participation) => {
+        const conv = participation.conversation;
 
-      // Find the other participant (not the current user)
-      const otherParticipant = conv.participants.find((p) => p.userId !== session.user.id);
+        // Find the other participant (not the current user)
+        const otherParticipant = conv.participants.find((p) => p.userId !== session.user.id);
 
-      // Count unread messages:
-      // messages created AFTER the last time the current user read this conversation
-      const lastReadAt = participation.lastReadAt;
-      const unreadCount = lastReadAt
-        ? conv.messages.filter((m) => m.createdAt > lastReadAt).length
-        : conv.messages.length;
+        // Count unread messages:
+        // messages created AFTER the last time the current user read this conversation
 
-      return {
-        id: conv.id,
-        otherUser: otherParticipant?.user ?? null,
-        lastMessage: conv.messages[0]?.body ?? null,
-        lastMessageAt: conv.lastMessageAt,
-        unreadCount,
-      };
-    });
+        const unreadCount = await prisma.directMessage.count({
+          where: {
+            conversationId: conv.id,
+            deletedAt: null,
+            senderUserId: { not: session.user.id }, // don't count own messages
+            createdAt: participation.lastReadAt ? { gt: participation.lastReadAt } : undefined,
+          },
+        });
+
+        return {
+          id: conv.id,
+          otherUser: otherParticipant?.user ?? null,
+          lastMessage: conv.messages[0]?.body ?? null,
+          lastMessageAt: conv.lastMessageAt,
+          unreadCount,
+        };
+      }), //closes map
+    ); //closes Promise.all
 
     return Response.json({ conversations });
   } catch (error) {
