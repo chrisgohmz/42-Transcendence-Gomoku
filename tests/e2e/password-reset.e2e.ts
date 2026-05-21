@@ -22,10 +22,11 @@ test("password reset pages expose usable validation and token wiring", async ({ 
 
   await gotoAppRoute(page, `/reset-password?token=${resetToken}`);
 
+  const appMain = page.locator("#app-main");
   await expect(page.getByRole("heading", { level: 1, name: "Set a fresh key." })).toBeVisible();
   const newPasswordInput = page.getByLabel("New password", { exact: true });
   const confirmPasswordInput = page.getByLabel("Confirm new password");
-  const tokenInput = page.locator('input[type="hidden"][name="token"]');
+  const tokenInput = appMain.locator('input[type="hidden"][name="token"]');
 
   await expect(newPasswordInput).toBeVisible();
   await expect(confirmPasswordInput).toBeVisible();
@@ -48,12 +49,15 @@ test("password reset pages expose usable validation and token wiring", async ({ 
   await gotoAppRoute(page, "/reset-password");
 
   await expect(
-    page.getByRole("heading", { level: 2, name: "Reset link unavailable." }),
+    appMain.getByRole("heading", { level: 2, name: "Reset link unavailable." }),
   ).toBeVisible();
   await expect(
-    page.getByText("This password reset link is missing, invalid, or expired."),
+    appMain
+      .getByText("This password reset link is missing, invalid, or expired.", { exact: true })
+      .filter({ visible: true })
+      .first(),
   ).toBeVisible();
-  await expect(page.getByRole("link", { name: "Request a new link" })).toHaveAttribute(
+  await expect(appMain.getByRole("link", { name: "Request a new link" })).toHaveAttribute(
     "href",
     "/en/forgot-password",
   );
