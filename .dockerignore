@@ -1,6 +1,41 @@
+# Dependencies and generated build output
 node_modules
 .next
 generated
+next-env.d.ts
+tsconfig.tsbuildinfo
+bun.lockb
+
+# Runtime/local uploads and local service data
 public/uploads
+.docker-data
+
+# Secrets and local environment files
+.env
+.env.*
+!.env.example
+caddy-local-root.crt
+
+# VCS, editor, and agent/tooling state
+.git
+.github
+.vscode
+.idea
+.agents
+
+# Test/browser artifacts
+.playwright-browsers
+playwright-report
+test-results
+output/playwright
+coverage
+
+# Caches and logs
+.stylelintcache
+.DS_Store
+*.log
 bun-debug.log*
 npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
