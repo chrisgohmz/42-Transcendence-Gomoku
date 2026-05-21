@@ -9,6 +9,7 @@ import { z } from "zod";
 import type { User } from "../../generated/prisma/client";
 import { defaultLocale } from "../i18n/config";
 import type { DuplicateSignupFields } from "./auth-duplicate-fields";
+import { authCredentialPolicy } from "./auth-policy";
 import { oauthProviderIds, type OAuthProviderId } from "./oauth-providers";
 import { prisma } from "./prisma";
 import { authValidationLimits } from "./validation/auth-profile-limits";
@@ -151,10 +152,11 @@ export const auth = betterAuth({
   }),
   emailAndPassword: {
     enabled: true,
-    requireEmailVerification: true,
+    requireEmailVerification: authCredentialPolicy.emailAndPassword.requireEmailVerification,
     minPasswordLength: authValidationLimits.passwordMinLength,
     maxPasswordLength: authValidationLimits.passwordMaxLength,
-    revokeSessionsOnPasswordReset: true,
+    revokeSessionsOnPasswordReset:
+      authCredentialPolicy.emailAndPassword.revokeSessionsOnPasswordReset,
     sendResetPassword: async ({ user, url, token }) => {
       try {
         const { sendPasswordResetEmail } = await import("./auth-email");
@@ -169,9 +171,9 @@ export const auth = betterAuth({
     },
   },
   emailVerification: {
-    sendOnSignUp: true,
-    sendOnSignIn: true,
-    autoSignInAfterVerification: true,
+    sendOnSignUp: authCredentialPolicy.emailVerification.sendOnSignUp,
+    sendOnSignIn: authCredentialPolicy.emailVerification.sendOnSignIn,
+    autoSignInAfterVerification: authCredentialPolicy.emailVerification.autoSignInAfterVerification,
     sendVerificationEmail: async ({ user, url }) => {
       try {
         const { sendEmailVerificationEmail } = await import("./auth-email");
@@ -216,9 +218,7 @@ export const auth = betterAuth({
   },
   account: {
     modelName: "Account",
-    accountLinking: {
-      enabled: true,
-    },
+    accountLinking: authCredentialPolicy.accountLinking,
   },
   verification: {
     modelName: "Verification",
