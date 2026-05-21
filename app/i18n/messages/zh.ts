@@ -337,6 +337,7 @@ export const messages = {
       remove: "移除",
       accept: "接受",
       decline: "拒绝",
+      cancel: "取消",
       cancelRequest: "取消请求",
       add: "添加",
       challengeFriend: "向 {name} 发起对战",
@@ -364,6 +365,11 @@ export const messages = {
     },
     messages: {
       requestSent: "已向 {name} 发送好友请求！",
+    },
+    pagination: {
+      status: "第 {page} 页，共 {totalPages} 页",
+      previous: "上一页",
+      next: "下一页",
     },
     status: {
       online: "在线",
@@ -432,6 +438,9 @@ export const messages = {
           empty: "暂无历史比赛。完成一局后会显示在这里！",
         },
         playersLooking: "等待中的玩家",
+        pagination: "第 {page} 页，共 {totalPages} 页",
+        previous: "上一页",
+        next: "下一页",
         roomListEyebrow: "大厅",
         roomListTitle: "房间列表",
       },
@@ -668,8 +677,11 @@ export const messages = {
       },
       spotlight: {
         rankLabel: "你的排名",
+        noPlayer: "未上榜",
         rating: "{rating} 等级分",
       },
+      refresh: "刷新",
+      refreshing: "刷新中...",
       season: {
         eyebrow: "赛季",
         title: "春季天梯",
@@ -705,7 +717,10 @@ export const messages = {
       wins: "胜场",
       losses: "负场",
       winRate: "胜率",
-      empty: "暂无排行榜数据。",
+      empty: {
+        title: "暂无排行榜数据",
+        description: "进行计分对局后即可出现在排行榜中。",
+      },
       preview: "在已完成对局结果到达之前，将显示预览排名。",
       trend: "趋势",
       active: "活跃",
@@ -833,6 +848,9 @@ export const messages = {
         empty: "暂无对局记录。",
         unknownOpponent: "未知对手",
         unknownDate: "日期未知",
+        pagination: "第 {page} 页，共 {totalPages} 页",
+        previous: "上一页",
+        next: "下一页",
       },
       about: {
         eyebrow: "关于我",

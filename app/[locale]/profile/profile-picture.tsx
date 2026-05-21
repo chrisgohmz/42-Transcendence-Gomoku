@@ -63,7 +63,7 @@ export default function ProfilePicture({ initialImage }: { initialImage?: string
 
       <button
         type="button"
-        className="group relative mb-6 h-[240px] w-[240px] cursor-pointer rounded-full border border-[var(--brass)]/35 shadow-lg shadow-[#000000]/50 focus-visible:ring-3 focus-visible:ring-[var(--mint)]/25 focus-visible:outline-none sm:h-[300px] sm:w-[300px]"
+        className="group relative mb-6 aspect-square w-full max-w-[240px] cursor-pointer overflow-hidden rounded-full border border-[var(--brass)]/35 shadow-lg shadow-[#000000]/50 focus-visible:ring-3 focus-visible:ring-[var(--mint)]/25 focus-visible:outline-none sm:max-w-[300px]"
         onMouseEnter={() => setIsHovering(true)}
         onMouseLeave={() => setIsHovering(false)}
         onClick={handleContainerClick}

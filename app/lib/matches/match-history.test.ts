@@ -1,4 +1,4 @@
-import { describe, expect, test } from "bun:test";
+import { beforeEach, describe, expect, mock, test } from "bun:test";
 
 import {
   MatchResult,
@@ -8,14 +8,29 @@ import {
   RuleType,
   Seat,
 } from "../../../generated/prisma/enums";
-import {
+import type { MatchHistoryRecord } from "./match-history";
+
+const countMatches = mock();
+const findManyMatches = mock();
+
+await mock.module("../prisma", () => ({
+  prisma: {
+    match: {
+      count: countMatches,
+      findMany: findManyMatches,
+    },
+  },
+}));
+
+const {
   MATCH_HISTORY_DEFAULT_LIMIT,
   MATCH_HISTORY_MAX_LIMIT,
   buildMatchHistoryQuery,
+  getMatchHistoryPageForUser,
   normalizeMatchHistoryLimit,
+  normalizeMatchHistoryPage,
   toMatchHistoryEntry,
-  type MatchHistoryRecord,
-} from "./match-history";
+} = await import("./match-history");
 
 const createdAt = new Date("2026-05-14T09:00:00.000Z");
 const startedAt = new Date("2026-05-14T09:01:00.000Z");
@@ -91,6 +106,11 @@ function historyRecord(): MatchHistoryRecord {
     winningSeat: Seat.BLACK,
   };
 }
+
+beforeEach(() => {
+  countMatches.mockReset();
+  findManyMatches.mockReset();
+});
 
 describe("match history read model", () => {
   test("serializes opponent ids, timestamps, result state, moves, and board", () => {
@@ -173,5 +193,66 @@ describe("match history read model", () => {
     expect(normalizeMatchHistoryLimit(0)).toBe(1);
     expect(normalizeMatchHistoryLimit(500)).toBe(MATCH_HISTORY_MAX_LIMIT);
     expect(normalizeMatchHistoryLimit(2.5)).toBe(MATCH_HISTORY_DEFAULT_LIMIT);
+  });
+
+  test("normalizes history pages for callers", () => {
+    expect(normalizeMatchHistoryPage(null)).toBe(1);
+    expect(normalizeMatchHistoryPage(0)).toBe(1);
+    expect(normalizeMatchHistoryPage(-3)).toBe(1);
+    expect(normalizeMatchHistoryPage(2.5)).toBe(1);
+    expect(normalizeMatchHistoryPage(4)).toBe(4);
+  });
+
+  test("builds paged history queries with the normalized skip offset", () => {
+    expect(buildMatchHistoryQuery("user-ada", 10, 3)).toMatchObject({
+      skip: 20,
+      take: 10,
+    });
+    expect(buildMatchHistoryQuery("user-ada", 10, -1)).toMatchObject({
+      skip: 0,
+      take: 10,
+    });
+  });
+
+  test("clamps paged history reads to the last available page", async () => {
+    countMatches.mockResolvedValueOnce(12);
+    findManyMatches.mockResolvedValueOnce([]);
+
+    const page = await getMatchHistoryPageForUser("user-ada", 999, 5);
+
+    expect(page).toMatchObject({
+      entries: [],
+      page: 3,
+      limit: 5,
+      totalMatches: 12,
+      totalPages: 3,
+    });
+    expect(findManyMatches).toHaveBeenCalledWith(
+      expect.objectContaining({
+        skip: 10,
+        take: 5,
+      }),
+    );
+  });
+
+  test("keeps empty history pages on page one with default pagination metadata", async () => {
+    countMatches.mockResolvedValueOnce(0);
+    findManyMatches.mockResolvedValueOnce([]);
+
+    const page = await getMatchHistoryPageForUser("user-ada", 3, 10);
+
+    expect(page).toMatchObject({
+      entries: [],
+      page: 1,
+      limit: 10,
+      totalMatches: 0,
+      totalPages: 1,
+    });
+    expect(findManyMatches).toHaveBeenCalledWith(
+      expect.objectContaining({
+        skip: 0,
+        take: 10,
+      }),
+    );
   });
 });

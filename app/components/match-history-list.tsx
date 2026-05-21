@@ -1,5 +1,6 @@
 "use client";
 
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 
 import { Badge, Surface } from "@/components/gomoku-ui";
@@ -9,6 +10,9 @@ type MatchHistoryListProps = {
   matches: ProfileRecentMatch[];
   isLoading: boolean;
   error: string | null;
+  page: number;
+  totalPages: number;
+  onPageChange: (page: number) => void;
 };
 
 type Translate = (key: string, values?: Record<string, string | number | Date>) => string;
@@ -49,9 +53,17 @@ function formatEndReason(reason: string | null, t: Translate) {
   }
 }
 
-export default function MatchHistoryList({ matches, isLoading, error }: MatchHistoryListProps) {
+export default function MatchHistoryList({
+  matches,
+  isLoading,
+  error,
+  page,
+  totalPages,
+  onPageChange,
+}: MatchHistoryListProps) {
   const t = useTranslations("profile");
   const locale = useLocale();
+  const shouldShowPagination = totalPages > 1;
 
   return (
     <Surface eyebrow={t("page.recentMatches.eyebrow")} title={t("page.recentMatches.title")}>
@@ -117,6 +129,35 @@ export default function MatchHistoryList({ matches, isLoading, error }: MatchHis
           )}
         </div>
       </div>
+
+      {shouldShowPagination ? (
+        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[var(--panel-border-soft)] pt-4 text-sm">
+          <span className="font-bold text-[var(--muted-text)]">
+            {t("page.recentMatches.pagination", { page, totalPages })}
+          </span>
+
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => onPageChange(page - 1)}
+              disabled={page <= 1 || isLoading}
+              className="btn btn-subtle m-0 h-9 px-3 text-xs disabled:opacity-50"
+            >
+              <ChevronLeft aria-hidden="true" className="size-4" />
+              {t("page.recentMatches.previous")}
+            </button>
+            <button
+              type="button"
+              onClick={() => onPageChange(page + 1)}
+              disabled={page >= totalPages || isLoading}
+              className="btn btn-subtle m-0 h-9 px-3 text-xs disabled:opacity-50"
+            >
+              {t("page.recentMatches.next")}
+              <ChevronRight aria-hidden="true" className="size-4" />
+            </button>
+          </div>
+        </div>
+      ) : null}
     </Surface>
   );
 }

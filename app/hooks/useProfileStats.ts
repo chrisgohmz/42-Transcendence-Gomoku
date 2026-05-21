@@ -19,38 +19,43 @@ export function useProfileStats() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const load = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
+  const load = useCallback(
+    async (pageToLoad = 1) => {
+      setIsLoading(true);
+      setError(null);
 
-    try {
-      const response = await fetch("/api/profile/stats", { cache: "no-store" });
+      try {
+        const response = await fetch(`/api/profile/stats?page=${pageToLoad}&limit=10`, {
+          cache: "no-store",
+        });
 
-      if (!response.ok) {
-        if (response.status === 401) {
+        if (!response.ok) {
+          if (response.status === 401) {
+            setData(null);
+            setError(t("page.errors.unauthorized"));
+            return;
+          }
+
+          const payload = (await response.json().catch(() => null)) as ErrorResponse | null;
+          const fallback = t("page.errors.requestFailed", { status: response.status });
           setData(null);
-          setError(t("page.errors.unauthorized"));
+          setError(getErrorMessage(payload) ?? fallback);
           return;
         }
 
-        const payload = (await response.json().catch(() => null)) as ErrorResponse | null;
-        const fallback = t("page.errors.requestFailed", { status: response.status });
+        const payload = (await response.json()) as ProfileStatsSnapshot;
+        setData(payload);
+        setError(null);
+      } catch (caught) {
+        console.error("Error loading profile stats:", caught);
         setData(null);
-        setError(getErrorMessage(payload) ?? fallback);
-        return;
+        setError(t("page.errors.network"));
+      } finally {
+        setIsLoading(false);
       }
-
-      const payload = (await response.json()) as ProfileStatsSnapshot;
-      setData(payload);
-      setError(null);
-    } catch (caught) {
-      console.error("Error loading profile stats:", caught);
-      setData(null);
-      setError(t("page.errors.network"));
-    } finally {
-      setIsLoading(false);
-    }
-  }, [t]);
+    },
+    [t],
+  );
 
   useEffect(() => {
     void load();

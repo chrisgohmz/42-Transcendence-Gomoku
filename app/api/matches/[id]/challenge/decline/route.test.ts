@@ -8,6 +8,7 @@ import {
   RuleType,
   Seat,
 } from "@/../generated/prisma/enums";
+import { createAuthModuleMock } from "@/test-utils/auth-module-mock";
 
 const getCurrentSession = mock();
 const findMatch = mock();
@@ -35,9 +36,11 @@ const tx = {
   },
 };
 
-await mock.module("@/lib/auth", () => ({
-  getCurrentSession,
-}));
+await mock.module("@/lib/auth", () =>
+  createAuthModuleMock({
+    getCurrentSession,
+  }),
+);
 
 await mock.module("@/lib/prisma", () => ({
   prisma: {

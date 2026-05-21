@@ -2,6 +2,8 @@
 
 import {
   Check,
+  ChevronLeft,
+  ChevronRight,
   Loader2,
   MessageSquare,
   Search,
@@ -56,6 +58,8 @@ type FriendsContentProps = {
 
 type TabKey = "friends" | "pending" | "sent";
 
+const FRIENDS_PAGE_SIZE = 10;
+
 export default function FriendsContent({
   friends,
   pendingRequests,
@@ -70,11 +74,14 @@ export default function FriendsContent({
   const { challengePlayer, challengingUsername } = useChallengePlayer();
 
   const [activeTab, setActiveTab] = useState<TabKey>("friends");
+  const [rosterPage, setRosterPage] = useState(1);
 
   const [statusMessage, setStatusMessage] = useState<{
     text: string;
     isError: boolean;
   } | null>(null);
+  const [friendToRemove, setFriendToRemove] = useState<FriendData | null>(null);
+  const [isRemovingFriend, setIsRemovingFriend] = useState(false);
 
   const [searchValue, setSearchValue] = useState(searchQuery);
 
@@ -170,14 +177,18 @@ export default function FriendsContent({
     router.refresh();
   };
 
-  const handleRemove = async (friendshipId: number) => {
-    if (!window.confirm(t("actions.confirmRemoveFriend"))) {
-      return;
+  const handleRemove = async () => {
+    if (!friendToRemove) return;
+
+    setIsRemovingFriend(true);
+
+    try {
+      await removeFriend(friendToRemove.id);
+      setFriendToRemove(null);
+      router.refresh();
+    } finally {
+      setIsRemovingFriend(false);
     }
-
-    await removeFriend(friendshipId);
-
-    router.refresh();
   };
 
   const handleChallenge = async (username: string) => {
@@ -195,6 +206,16 @@ export default function FriendsContent({
 
   const activeRows =
     activeTab === "friends" ? friends : activeTab === "pending" ? pendingRequests : sentRequests;
+  const rosterTotalPages = Math.max(1, Math.ceil(activeRows.length / FRIENDS_PAGE_SIZE));
+  const currentRosterPage = Math.min(rosterPage, rosterTotalPages);
+  const paginatedRows = activeRows.slice(
+    (currentRosterPage - 1) * FRIENDS_PAGE_SIZE,
+    currentRosterPage * FRIENDS_PAGE_SIZE,
+  );
+
+  useEffect(() => {
+    setRosterPage((currentPage) => Math.min(currentPage, rosterTotalPages));
+  }, [rosterTotalPages]);
 
   return (
     <PageShell>
@@ -243,7 +264,10 @@ export default function FriendsContent({
                 <button
                   key={tab.key}
                   type="button"
-                  onClick={() => setActiveTab(tab.key as TabKey)}
+                  onClick={() => {
+                    setActiveTab(tab.key as TabKey);
+                    setRosterPage(1);
+                  }}
                   className={`min-h-10 rounded-sm px-4 text-sm font-black ${
                     activeTab === tab.key ? "bg-(--mint-soft) text-(--mint)" : "text-(--muted-text)"
                   }`}
@@ -318,18 +342,106 @@ export default function FriendsContent({
               }
             />
           ) : (
-            <FriendsTable
-              activeTab={activeTab}
-              friends={activeRows}
-              challengingUsername={challengingUsername}
-              onlineUsers={onlineUsers}
-              onChallenge={handleChallenge}
-              onRemove={handleRemove}
-              onRespond={handleRespond}
-            />
+            <div className="grid gap-4">
+              <FriendsTable
+                activeTab={activeTab}
+                friends={paginatedRows}
+                challengingUsername={challengingUsername}
+                onlineUsers={onlineUsers}
+                onChallenge={handleChallenge}
+                onRemove={setFriendToRemove}
+                onRespond={handleRespond}
+              />
+
+              {rosterTotalPages > 1 ? (
+                <div className="flex flex-wrap items-center justify-between gap-3 border-t border-(--panel-border-soft) pt-4 text-sm">
+                  <span className="font-bold text-(--muted-text)">
+                    {t("pagination.status", {
+                      page: currentRosterPage,
+                      totalPages: rosterTotalPages,
+                    })}
+                  </span>
+
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setRosterPage((page) => Math.max(1, page - 1))}
+                      disabled={currentRosterPage <= 1}
+                      className="btn btn-subtle m-0 h-9 px-3 text-xs disabled:opacity-50"
+                    >
+                      <ChevronLeft aria-hidden="true" className="size-4" />
+                      {t("pagination.previous")}
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setRosterPage((page) => Math.min(rosterTotalPages, page + 1))}
+                      disabled={currentRosterPage >= rosterTotalPages}
+                      className="btn btn-subtle m-0 h-9 px-3 text-xs disabled:opacity-50"
+                    >
+                      {t("pagination.next")}
+                      <ChevronRight aria-hidden="true" className="size-4" />
+                    </button>
+                  </div>
+                </div>
+              ) : null}
+            </div>
           )}
         </Surface>
       </section>
+
+      {friendToRemove ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4 backdrop-blur-sm">
+          <div
+            className="w-full max-w-sm overflow-hidden rounded-xl border border-(--panel-border-soft) bg-[#0e0e11] shadow-2xl"
+            role="dialog"
+            aria-modal="true"
+          >
+            <div className="flex items-center justify-between border-b border-(--panel-border-soft) bg-white/2 px-5 py-4">
+              <h3 className="flex items-center gap-2 font-black text-white">
+                <UserMinus aria-hidden="true" className="size-4 text-(--danger)" />
+                {t("actions.removeFriend", { name: friendToRemove.displayName })}
+              </h3>
+              <button
+                type="button"
+                onClick={() => setFriendToRemove(null)}
+                className="rounded-md text-(--muted-text) transition-colors hover:text-white"
+                aria-label={t("actions.cancel")}
+                disabled={isRemovingFriend}
+              >
+                <X aria-hidden="true" className="size-5" />
+              </button>
+            </div>
+
+            <div className="p-5">
+              <p className="mb-6 text-sm leading-relaxed text-(--muted-text)">
+                {t("actions.confirmRemoveFriend")}
+              </p>
+
+              <div className="flex justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => setFriendToRemove(null)}
+                  className="rounded-md px-4 py-2 text-sm font-bold text-(--muted-text) transition-colors hover:bg-white/5 hover:text-white"
+                  disabled={isRemovingFriend}
+                >
+                  {t("actions.cancel")}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    void handleRemove();
+                  }}
+                  disabled={isRemovingFriend}
+                  className="min-h-10 rounded-md border border-(--danger)/35 bg-(--danger)/10 px-5 text-sm font-black text-(--danger) transition-colors hover:bg-(--danger)/20 disabled:opacity-50"
+                >
+                  {t("actions.remove")}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </PageShell>
   );
 }
@@ -348,7 +460,7 @@ function FriendsTable({
   friends: FriendData[];
   onlineUsers: string[];
   onChallenge: (username: string) => void;
-  onRemove: (id: number) => void;
+  onRemove: (friend: FriendData) => void;
   onRespond: (id: number, accept: boolean) => void;
 }) {
   const t = useTranslations("friends");
@@ -435,7 +547,7 @@ function FriendsTable({
 
                     <button
                       type="button"
-                      onClick={() => onRemove(friend.id)}
+                      onClick={() => onRemove(friend)}
                       className="icon-button"
                       aria-label={t("actions.removeFriend", { name: friend.displayName })}
                     >

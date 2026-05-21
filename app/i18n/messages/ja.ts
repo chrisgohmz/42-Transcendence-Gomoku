@@ -338,6 +338,7 @@ export const messages = {
       remove: "削除",
       accept: "承認",
       decline: "拒否",
+      cancel: "キャンセル",
       cancelRequest: "リクエストを取り消す",
       add: "追加",
       challengeFriend: "{name} に対戦を申し込む",
@@ -365,6 +366,11 @@ export const messages = {
     },
     messages: {
       requestSent: "{name} にフレンドリクエストを送信しました！",
+    },
+    pagination: {
+      status: "{page} / {totalPages} ページ",
+      previous: "前へ",
+      next: "次へ",
     },
     status: {
       online: "オンライン",
@@ -433,6 +439,9 @@ export const messages = {
           empty: "過去の対局はまだありません。対局するとここに履歴が表示されます。",
         },
         playersLooking: "対局待ちのプレイヤー",
+        pagination: "{page} / {totalPages} ページ",
+        previous: "前へ",
+        next: "次へ",
         roomListEyebrow: "ロビー",
         roomListTitle: "ルーム一覧",
       },
@@ -670,8 +679,11 @@ export const messages = {
       },
       spotlight: {
         rankLabel: "あなたの順位",
+        noPlayer: "未ランク",
         rating: "{rating} レーティング",
       },
+      refresh: "更新",
+      refreshing: "更新中...",
       season: {
         eyebrow: "シーズン",
         title: "春のラダー",
@@ -708,7 +720,10 @@ export const messages = {
       wins: "勝利",
       losses: "敗北",
       winRate: "勝率",
-      empty: "ランキングデータはまだありません。",
+      empty: {
+        title: "ランキングデータはまだありません",
+        description: "レート戦をプレイするとランキングに表示されます。",
+      },
       preview: "完了した対局の結果が届くまで、プレビュー順位を表示しています。",
       trend: "推移",
       active: "活動中",
@@ -837,6 +852,9 @@ export const messages = {
         empty: "対局履歴がまだありません。",
         unknownOpponent: "不明な相手",
         unknownDate: "日時不明",
+        pagination: "{page} / {totalPages} ページ",
+        previous: "前へ",
+        next: "次へ",
       },
       about: {
         eyebrow: "自己紹介",

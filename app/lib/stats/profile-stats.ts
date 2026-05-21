@@ -3,15 +3,21 @@ import { MatchResult, Role } from "../../../generated/prisma/enums";
 import {
   LEADERBOARD_BOARD_SIZE,
   LEADERBOARD_RULE_TYPE,
-  buildLeaderboardAheadWhere,
+  getLeaderboardRank,
   formatWinRate,
-  type LeaderboardRankInput,
 } from "../leaderboard";
-import { getMatchHistoryForUser, type MatchHistoryEntry } from "../matches/match-history";
+import { getMatchHistoryPageForUser, type MatchHistoryEntry } from "../matches/match-history";
 import { prisma } from "../prisma";
 import { calculateAchievementPoints, calculateLevelProgress } from "./progression";
 
 export const PROFILE_RECENT_MATCHES_LIMIT = 20;
+export const PROFILE_RECENT_MATCHES_PAGE_SIZE = 10;
+export const PROFILE_RECENT_MATCHES_MAX_LIMIT = 50;
+
+export type ProfileStatsOptions = {
+  recentMatchesPage?: number;
+  recentMatchesLimit?: number;
+};
 
 export type ProfileRecentMatch = {
   matchId: string;
@@ -52,6 +58,12 @@ export type ProfileStatsSnapshot = {
     completedAt: string | null;
   }>;
   recentMatches: ProfileRecentMatch[];
+  recentMatchesPagination: {
+    page: number;
+    limit: number;
+    totalMatches: number;
+    totalPages: number;
+  };
 };
 
 const statsSelect = {
@@ -60,6 +72,7 @@ const statsSelect = {
   losses: true,
   draws: true,
   matchesPlayed: true,
+  botMatchesPlayed: true, // ← ローカル改善を維持
   currentStreak: true,
   bestStreak: true,
   lastPlayedAt: true,
@@ -70,8 +83,7 @@ function getOpponent(entry: MatchHistoryEntry, currentUserId: string) {
     (participant) => participant.role === Role.PLAYER && participant.userId !== currentUserId,
   );
 
-  const opponent =
-    opponents.find((participant) => participant.userId !== null) ?? opponents[0] ?? null;
+  const opponent = opponents.find((p) => p.userId !== null) ?? opponents[0] ?? null;
 
   return opponent
     ? {
@@ -98,25 +110,29 @@ function toRecentMatch(entry: MatchHistoryEntry, currentUserId: string): Profile
   };
 }
 
-async function getRankForUser(stats: LeaderboardRankInput | null): Promise<number | null> {
-  if (!stats) {
-    return null;
+function normalizeRecentMatchesLimit(limit: number | undefined): number {
+  if (!Number.isInteger(limit)) {
+    return PROFILE_RECENT_MATCHES_PAGE_SIZE;
   }
 
-  const aheadWhere = buildLeaderboardAheadWhere(stats);
-  if (!aheadWhere) {
-    return null;
-  }
-
-  const aheadCount = await prisma.userGameStats.count({
-    where: aheadWhere,
-  });
-
-  return aheadCount + 1;
+  return Math.min(
+    Math.max(limit ?? PROFILE_RECENT_MATCHES_PAGE_SIZE, 1),
+    PROFILE_RECENT_MATCHES_MAX_LIMIT,
+  );
 }
 
-export async function getProfileStatsForUser(userId: string): Promise<ProfileStatsSnapshot> {
-  const [statsRow, achievementRows, matchHistory] = await Promise.all([
+export async function getProfileStatsForUser(
+  userId: string,
+  options: ProfileStatsOptions = {},
+): Promise<ProfileStatsSnapshot> {
+  const page =
+    Number.isInteger(options.recentMatchesPage) && options.recentMatchesPage
+      ? Math.max(options.recentMatchesPage, 1)
+      : 1;
+
+  const limit = normalizeRecentMatchesLimit(options.recentMatchesLimit);
+
+  const [statsRow, achievementRows, matchHistoryPage] = await Promise.all([
     prisma.userGameStats.findUnique({
       where: {
         userId_ruleType_boardSize: {
@@ -138,7 +154,7 @@ export async function getProfileStatsForUser(userId: string): Promise<ProfileSta
         },
       },
     }),
-    getMatchHistoryForUser(userId, PROFILE_RECENT_MATCHES_LIMIT),
+    getMatchHistoryPageForUser(userId, page, limit),
   ]);
 
   const stats = {
@@ -147,6 +163,7 @@ export async function getProfileStatsForUser(userId: string): Promise<ProfileSta
     losses: statsRow?.losses ?? 0,
     draws: statsRow?.draws ?? 0,
     matchesPlayed: statsRow?.matchesPlayed ?? 0,
+    botMatchesPlayed: statsRow?.botMatchesPlayed ?? 0, // ← ローカル維持
     winRate: formatWinRate(statsRow?.wins ?? 0, statsRow?.matchesPlayed ?? 0),
     currentStreak: statsRow?.currentStreak ?? 0,
     bestStreak: statsRow?.bestStreak ?? 0,
@@ -157,7 +174,9 @@ export async function getProfileStatsForUser(userId: string): Promise<ProfileSta
     points: row.achievement.points,
     completedAt: row.completedAt,
   }));
+
   const achievementPoints = calculateAchievementPoints(achievementInputs);
+
   const progression = calculateLevelProgress({
     rating: stats.rating,
     wins: stats.wins,
@@ -165,11 +184,12 @@ export async function getProfileStatsForUser(userId: string): Promise<ProfileSta
     achievementPoints,
   });
 
-  const rank = await getRankForUser({
+  const rank = await getLeaderboardRank({
     rating: stats.rating,
     wins: stats.wins,
     losses: stats.losses,
     matchesPlayed: stats.matchesPlayed,
+    botMatchesPlayed: stats.botMatchesPlayed,
   });
 
   return {
@@ -186,6 +206,12 @@ export async function getProfileStatsForUser(userId: string): Promise<ProfileSta
       progress: row.progress,
       completedAt: row.completedAt ? row.completedAt.toISOString() : null,
     })),
-    recentMatches: matchHistory.map((entry) => toRecentMatch(entry, userId)),
+    recentMatches: matchHistoryPage.entries.map((entry) => toRecentMatch(entry, userId)),
+    recentMatchesPagination: {
+      page: matchHistoryPage.page,
+      limit: matchHistoryPage.limit,
+      totalMatches: matchHistoryPage.totalMatches,
+      totalPages: matchHistoryPage.totalPages,
+    },
   };
 }

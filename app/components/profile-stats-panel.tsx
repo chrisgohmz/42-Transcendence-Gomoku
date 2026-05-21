@@ -29,6 +29,10 @@ export default function ProfileStatsPanel() {
   const winRateValue = formatValue(stats?.winRate, t("page.stats.unavailable"), isLoading);
   const winsValue = formatValue(stats?.wins, t("page.stats.unavailable"), isLoading);
   const lossesValue = formatValue(stats?.losses, t("page.stats.unavailable"), isLoading);
+  const recentMatchesPagination = data?.recentMatchesPagination ?? {
+    page: 1,
+    totalPages: 1,
+  };
 
   return (
     <section className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_360px]">
@@ -64,7 +68,16 @@ export default function ProfileStatsPanel() {
           />
         </div>
 
-        <MatchHistoryList matches={data?.recentMatches ?? []} isLoading={isLoading} error={error} />
+        <MatchHistoryList
+          matches={data?.recentMatches ?? []}
+          isLoading={isLoading}
+          error={error}
+          page={recentMatchesPagination.page}
+          totalPages={recentMatchesPagination.totalPages}
+          onPageChange={(page) => {
+            void refresh(page);
+          }}
+        />
       </div>
 
       <ProgressionSummary

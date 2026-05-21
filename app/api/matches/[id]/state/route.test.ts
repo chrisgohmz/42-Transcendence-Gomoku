@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
+import { createAuthModuleMock } from "@/test-utils/auth-module-mock";
+
 const findUnique = mock();
 const buildBoard = mock();
 const getCurrentSession = mock();
@@ -16,9 +18,11 @@ await mock.module("@/lib/game/state-builder", () => ({
   buildBoard,
 }));
 
-await mock.module("@/lib/auth", () => ({
-  getCurrentSession,
-}));
+await mock.module("@/lib/auth", () =>
+  createAuthModuleMock({
+    getCurrentSession,
+  }),
+);
 
 const route = await import("./route");
 

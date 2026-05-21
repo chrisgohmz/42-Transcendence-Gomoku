@@ -1,6 +1,8 @@
 import { afterAll, beforeEach, describe, expect, mock, test } from "bun:test";
 
+import { Prisma } from "@/../generated/prisma/client";
 import { MatchStatus, MatchVisibility, Role, RuleType, Seat } from "@/../generated/prisma/enums";
+import { createAuthModuleMock } from "@/test-utils/auth-module-mock";
 
 const getCurrentSession = mock();
 const findMatch = mock();
@@ -30,9 +32,11 @@ const tx = {
   },
 };
 
-await mock.module("@/lib/auth", () => ({
-  getCurrentSession,
-}));
+await mock.module("@/lib/auth", () =>
+  createAuthModuleMock({
+    getCurrentSession,
+  }),
+);
 
 await mock.module("@/lib/prisma", () => ({
   prisma: {
@@ -292,6 +296,67 @@ describe("POST /api/matches/:id/join", () => {
     expect(verifyPassword).not.toHaveBeenCalled();
   });
 
+  test("rejects invalid payloads and unavailable matches before the transition", async () => {
+    const invalidResponse = await route.POST(request({ displayName: "x".repeat(81) }), context());
+
+    expect(invalidResponse.status).toBe(400);
+    expect(await invalidResponse.json()).toEqual({ error: "invalid_payload" });
+    expect(findMatch).not.toHaveBeenCalled();
+
+    findMatch.mockResolvedValueOnce(null);
+
+    const missingResponse = await route.POST(request(), context());
+
+    expect(missingResponse.status).toBe(404);
+    expect(await missingResponse.json()).toEqual({ error: "match_not_found" });
+
+    findMatch.mockResolvedValueOnce({
+      ...waitingMatch(),
+      status: MatchStatus.IN_PROGRESS,
+    });
+
+    const unavailableResponse = await route.POST(request(), context());
+
+    expect(unavailableResponse.status).toBe(409);
+    expect(await unavailableResponse.json()).toEqual({ error: "match_not_available" });
+    expect(transaction).not.toHaveBeenCalled();
+  });
+
+  test("rejects users who are already in the match or when white is already occupied", async () => {
+    findMatch.mockResolvedValueOnce({
+      ...waitingMatch(),
+      participants: [
+        hostParticipant(),
+        {
+          ...joinerParticipant(),
+          userId: "user-white",
+        },
+      ],
+    });
+
+    const alreadyJoinedResponse = await route.POST(request(), context());
+
+    expect(alreadyJoinedResponse.status).toBe(409);
+    expect(await alreadyJoinedResponse.json()).toEqual({ error: "already_in_match" });
+
+    findMatch.mockResolvedValueOnce({
+      ...waitingMatch(),
+      participants: [
+        hostParticipant(),
+        {
+          ...joinerParticipant(),
+          userId: "user-red",
+        },
+      ],
+    });
+
+    const fullResponse = await route.POST(request(), context());
+
+    expect(fullResponse.status).toBe(409);
+    expect(await fullResponse.json()).toEqual({ error: "match_full" });
+    expect(transaction).not.toHaveBeenCalled();
+  });
+
   test("rejects the join when cancellation wins the waiting-room transition race", async () => {
     findMatch.mockResolvedValueOnce(waitingMatch());
     updateMatchMany.mockResolvedValueOnce({ count: 0 });
@@ -375,5 +440,37 @@ describe("POST /api/matches/:id/join", () => {
     expect(verifyPassword).not.toHaveBeenCalled();
     expect(transaction).not.toHaveBeenCalled();
     expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  test("keeps a joined match successful when realtime publication fails", async () => {
+    findMatch.mockResolvedValueOnce(waitingMatch());
+    publishGameUpdate.mockRejectedValueOnce(new Error("realtime down"));
+
+    const response = await route.POST(request(), context());
+    const payload = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(payload).toMatchObject({
+      matchId: "match-1",
+      participantId: "white-player",
+      seat: Seat.WHITE,
+    });
+    expect(publishQueueMatched).not.toHaveBeenCalled();
+  });
+
+  test("maps participant uniqueness races to match_full", async () => {
+    findMatch.mockResolvedValueOnce(waitingMatch());
+    transaction.mockRejectedValueOnce(
+      new Prisma.PrismaClientKnownRequestError("Prisma conflict", {
+        clientVersion: "test",
+        code: "P2002",
+        meta: { target: ["matchId", "seat"] },
+      }),
+    );
+
+    const response = await route.POST(request(), context());
+
+    expect(response.status).toBe(409);
+    expect(await response.json()).toMatchObject({ error: "match_full" });
   });
 });
