@@ -124,6 +124,16 @@ export function SignupForm({ oauthProviders }: { oauthProviders: OAuthProviderId
         </p>
       ) : null}
 
+      {state.successMessage ? (
+        <p
+          className="m-0 rounded-md border border-[var(--mint)]/35 bg-[var(--mint-soft)] p-3 text-sm font-bold text-[var(--mint)]"
+          role="status"
+          aria-live="polite"
+        >
+          {state.successMessage}
+        </p>
+      ) : null}
+
       <button className="btn m-0 w-full" type="submit" disabled={pending}>
         {pending ? signup("submitting") : signup("submit")}
       </button>

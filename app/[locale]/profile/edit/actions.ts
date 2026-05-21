@@ -94,7 +94,7 @@ export async function changeAccountPassword(
       body: {
         currentPassword: validation.data.currentPassword,
         newPassword: validation.data.newPassword,
-        revokeOtherSessions: false,
+        revokeOtherSessions: true,
       },
       headers: await headers(),
     });

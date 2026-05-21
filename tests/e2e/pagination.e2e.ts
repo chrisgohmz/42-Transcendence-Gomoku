@@ -138,7 +138,6 @@ async function createAndSignInTestUser(page: Page, testInfo: TestInfo): Promise<
       displayName,
       email,
       emailVerified: true,
-      emailVerifiedAt: new Date(),
       id: userId,
       username,
     },

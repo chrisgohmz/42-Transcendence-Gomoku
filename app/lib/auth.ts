@@ -7,7 +7,9 @@ import { headers } from "next/headers";
 import { z } from "zod";
 
 import type { User } from "../../generated/prisma/client";
+import { defaultLocale } from "../i18n/config";
 import type { DuplicateSignupFields } from "./auth-duplicate-fields";
+import { authCredentialPolicy } from "./auth-policy";
 import { oauthProviderIds, type OAuthProviderId } from "./oauth-providers";
 import { prisma } from "./prisma";
 import { authValidationLimits } from "./validation/auth-profile-limits";
@@ -122,6 +124,22 @@ function getOAuthDisplayName(...candidates: (string | null | undefined)[]): stri
   return candidates.find((candidate) => candidate?.trim())?.trim() ?? "Gomoku Player";
 }
 
+function getPasswordResetUrl(url: string, token: string): string {
+  const fallbackBaseUrl = process.env["BETTER_AUTH_URL"] ?? "http://localhost:3000";
+  const fallbackUrl = new URL(`/${defaultLocale}/reset-password`, fallbackBaseUrl);
+
+  try {
+    const authUrl = new URL(url);
+    const callbackUrl = authUrl.searchParams.get("callbackURL");
+    const resetUrl = callbackUrl ? new URL(callbackUrl) : fallbackUrl;
+    resetUrl.searchParams.set("token", token);
+    return resetUrl.toString();
+  } catch {
+    fallbackUrl.searchParams.set("token", token);
+    return fallbackUrl.toString();
+  }
+}
+
 const githubCredentials = getOAuthCredentials("github");
 const googleCredentials = getOAuthCredentials("google");
 
@@ -134,8 +152,40 @@ export const auth = betterAuth({
   }),
   emailAndPassword: {
     enabled: true,
+    requireEmailVerification: authCredentialPolicy.emailAndPassword.requireEmailVerification,
     minPasswordLength: authValidationLimits.passwordMinLength,
     maxPasswordLength: authValidationLimits.passwordMaxLength,
+    revokeSessionsOnPasswordReset:
+      authCredentialPolicy.emailAndPassword.revokeSessionsOnPasswordReset,
+    sendResetPassword: async ({ user, url, token }) => {
+      try {
+        const { sendPasswordResetEmail } = await import("./auth-email");
+        await sendPasswordResetEmail({
+          email: user.email,
+          resetUrl: getPasswordResetUrl(url, token),
+        });
+      } catch (error) {
+        console.error("Failed to send password reset email", error);
+        throw error;
+      }
+    },
+  },
+  emailVerification: {
+    sendOnSignUp: authCredentialPolicy.emailVerification.sendOnSignUp,
+    sendOnSignIn: authCredentialPolicy.emailVerification.sendOnSignIn,
+    autoSignInAfterVerification: authCredentialPolicy.emailVerification.autoSignInAfterVerification,
+    sendVerificationEmail: async ({ user, url }) => {
+      try {
+        const { sendEmailVerificationEmail } = await import("./auth-email");
+        await sendEmailVerificationEmail({
+          email: user.email,
+          verificationUrl: url,
+        });
+      } catch (error) {
+        console.error("Failed to send verification email", error);
+        throw error;
+      }
+    },
   },
   user: {
     modelName: "User",
@@ -168,9 +218,7 @@ export const auth = betterAuth({
   },
   account: {
     modelName: "Account",
-    accountLinking: {
-      enabled: true,
-    },
+    accountLinking: authCredentialPolicy.accountLinking,
   },
   verification: {
     modelName: "Verification",
@@ -227,6 +275,11 @@ export const auth = betterAuth({
 
 type BetterAuthSessionData = NonNullable<Awaited<ReturnType<typeof auth.api.getSession>>>;
 
+type UserEmailVerification = {
+  emailVerified?: boolean | null;
+  emailVerifiedAt?: Date | null;
+};
+
 export type AuthContext = {
   session: BetterAuthSessionData["session"];
   user: User;
@@ -282,11 +335,13 @@ export async function getDuplicateSignupFields(
 }
 
 export function serializeUserForResponse(user: User) {
+  const emailVerification = user as User & UserEmailVerification;
+
   return {
     id: user.id,
     username: user.username,
     displayName: user.displayName,
     email: user.email,
-    emailVerified: user.emailVerified || Boolean(user.emailVerifiedAt),
+    emailVerified: emailVerification.emailVerified ?? Boolean(emailVerification.emailVerifiedAt),
   };
 }

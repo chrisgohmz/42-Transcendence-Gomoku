@@ -2,6 +2,10 @@
   "better-auth": {
     "url": "https://mcp.better-auth.com/mcp"
   },
+  "resend": {
+    "command": "bunx",
+    "args": ["--bun", "resend-mcp"]
+  },
   "playwright": {
     "command": "npx",
     "args": ["@playwright/mcp@latest", "--caps=testing,storage,devtools"]
@@ -9,5 +13,9 @@
   "playwright-test": {
     "command": "npx",
     "args": ["playwright", "run-test-mcp-server"]
+  },
+  "context7": {
+    "command": "npx",
+    "args": ["-y", "@upstash/context7-mcp@latest"]
   }
 }

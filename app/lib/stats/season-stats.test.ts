@@ -1,6 +1,6 @@
 import { describe, expect, mock, test } from "bun:test";
 
-const matchCount = mock(async () => 7);
+const matchCount = mock(async (_args: unknown) => 7);
 
 await mock.module("../prisma", () => ({
   prisma: {

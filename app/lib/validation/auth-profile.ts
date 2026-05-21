@@ -10,6 +10,8 @@ export type ProfileSettingsField =
   | "currentPassword"
   | "displayName"
   | "newPassword";
+export type PasswordResetRequestField = "email";
+export type PasswordResetConfirmField = "confirmPassword" | "newPassword";
 
 export type AuthValidationIssueCode =
   | "displayNameTooLong"
@@ -27,6 +29,12 @@ export type ProfileSettingsValidationIssueCode =
   | "currentPasswordRequired"
   | "displayNameRequired"
   | "displayNameTooLong"
+  | "newPasswordRequired"
+  | "passwordMismatch"
+  | "passwordTooLong"
+  | "shortPassword";
+export type PasswordResetConfirmValidationIssueCode =
+  | "confirmPasswordRequired"
   | "newPasswordRequired"
   | "passwordMismatch"
   | "passwordTooLong"
@@ -61,6 +69,15 @@ export type ProfilePasswordInput = {
   newPassword?: unknown;
 };
 
+export type PasswordResetRequestInput = {
+  email?: unknown;
+};
+
+export type PasswordResetConfirmInput = {
+  confirmPassword?: unknown;
+  newPassword?: unknown;
+};
+
 const authFields: readonly AuthField[] = ["displayName", "email", "password", "username"];
 const loginFields: readonly Extract<AuthField, "email" | "password">[] = ["email", "password"];
 const authIssueCodes: readonly AuthValidationIssueCode[] = [
@@ -79,6 +96,13 @@ const profileSettingsIssueCodes: readonly ProfileSettingsValidationIssueCode[] =
   "currentPasswordRequired",
   "displayNameRequired",
   "displayNameTooLong",
+  "newPasswordRequired",
+  "passwordMismatch",
+  "passwordTooLong",
+  "shortPassword",
+];
+const passwordResetConfirmIssueCodes: readonly PasswordResetConfirmValidationIssueCode[] = [
+  "confirmPasswordRequired",
   "newPasswordRequired",
   "passwordMismatch",
   "passwordTooLong",
@@ -194,6 +218,10 @@ const loginInputSchema = objectFromUnknown({
   password: loginPasswordSchema,
 });
 
+const passwordResetRequestInputSchema = objectFromUnknown({
+  email: emailSchema,
+});
+
 const signupInputSchema = objectFromUnknown({
   email: emailSchema,
   username: usernameSchema,
@@ -234,10 +262,31 @@ const profilePasswordInputSchema = objectFromUnknown({
   }
 });
 
+const passwordResetConfirmInputSchema = objectFromUnknown({
+  newPassword: profilePasswordSchema,
+  confirmPassword: profilePasswordSchema,
+}).superRefine((input, ctx) => {
+  if (!input.newPassword) {
+    addZodIssue(ctx, "newPassword", "newPasswordRequired");
+  } else if (input.newPassword.length < authValidationLimits.passwordMinLength) {
+    addZodIssue(ctx, "newPassword", "shortPassword");
+  } else if (input.newPassword.length > authValidationLimits.passwordMaxLength) {
+    addZodIssue(ctx, "newPassword", "passwordTooLong");
+  }
+
+  if (!input.confirmPassword) {
+    addZodIssue(ctx, "confirmPassword", "confirmPasswordRequired");
+  } else if (input.newPassword && input.newPassword !== input.confirmPassword) {
+    addZodIssue(ctx, "confirmPassword", "passwordMismatch");
+  }
+});
+
 export type ValidLoginInput = z.infer<typeof loginInputSchema>;
 export type ValidSignupInput = z.infer<typeof signupInputSchema>;
 export type ValidProfileDisplayNameInput = z.infer<typeof profileDisplayNameInputSchema>;
 export type ValidProfilePasswordInput = z.infer<typeof profilePasswordInputSchema>;
+export type ValidPasswordResetRequestInput = z.infer<typeof passwordResetRequestInputSchema>;
+export type ValidPasswordResetConfirmInput = z.infer<typeof passwordResetConfirmInputSchema>;
 
 export function fieldIssuesToMap<Field extends string, Code extends string, Value>(
   issues: ValidationIssue<Field, Code>[],
@@ -275,6 +324,34 @@ export function validateSignupInput(
     signupInputSchema.safeParse(input),
     authFields,
     authIssueCodes,
+  );
+}
+
+export function validatePasswordResetRequestInput(
+  input: PasswordResetRequestInput,
+): ValidationResult<
+  ValidPasswordResetRequestInput,
+  PasswordResetRequestField,
+  AuthValidationIssueCode
+> {
+  return zodResultToValidationResult(
+    passwordResetRequestInputSchema.safeParse(input),
+    ["email"],
+    authIssueCodes,
+  );
+}
+
+export function validatePasswordResetConfirmInput(
+  input: PasswordResetConfirmInput,
+): ValidationResult<
+  ValidPasswordResetConfirmInput,
+  PasswordResetConfirmField,
+  PasswordResetConfirmValidationIssueCode
+> {
+  return zodResultToValidationResult(
+    passwordResetConfirmInputSchema.safeParse(input),
+    ["confirmPassword", "newPassword"],
+    passwordResetConfirmIssueCodes,
   );
 }
 

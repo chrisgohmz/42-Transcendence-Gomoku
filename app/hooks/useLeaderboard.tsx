@@ -53,7 +53,7 @@ export function useLeaderboard(initial?: LeaderboardSnapshot | null, debounceMs 
     timerRef.current = window.setTimeout(() => {
       abortRef.current?.abort();
       abortRef.current = new AbortController();
-      fetchSnapshot(abortRef.current.signal);
+      void fetchSnapshot(abortRef.current.signal);
       timerRef.current = null;
     }, debounceMs);
   }, [fetchSnapshot, debounceMs]);
@@ -62,7 +62,7 @@ export function useLeaderboard(initial?: LeaderboardSnapshot | null, debounceMs 
     // initial fetch if no initial snapshot provided
     if (!initial) {
       abortRef.current = new AbortController();
-      fetchSnapshot(abortRef.current.signal);
+      void fetchSnapshot(abortRef.current.signal);
     }
 
     return () => {
@@ -91,7 +91,7 @@ export function useLeaderboard(initial?: LeaderboardSnapshot | null, debounceMs 
       }
       abortRef.current?.abort();
       abortRef.current = new AbortController();
-      fetchSnapshot(abortRef.current.signal);
+      void fetchSnapshot(abortRef.current.signal);
     },
   } as const;
 }
