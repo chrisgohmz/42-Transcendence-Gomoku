@@ -9,7 +9,28 @@
       "type": "stdio",
       "command": "npx",
       "args": ["playwright", "run-test-mcp-server"]
+    },
+    "resend": {
+      "type": "stdio",
+      "command": "bunx",
+      "args": ["--bun", "resend-mcp"],
+      "env": {
+        "RESEND_API_KEY": "${input:resendApiKey}",
+        "SENDER_EMAIL_ADDRESS": "${input:resendSenderEmail}"
+      }
     }
   },
-  "inputs": []
+  "inputs": [
+    {
+      "id": "resendApiKey",
+      "type": "promptString",
+      "description": "Resend API key",
+      "password": true
+    },
+    {
+      "id": "resendSenderEmail",
+      "type": "promptString",
+      "description": "Default Resend sender email from a verified domain"
+    }
+  ]
 }
