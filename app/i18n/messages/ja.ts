@@ -215,6 +215,7 @@ export const messages = {
       invalidRequestBody: "リクエスト本文が無効です。",
       unauthorized: "先にログインしてください。",
       invalidCredentials: "メールアドレスまたはパスワードが正しくありません。",
+      emailNotVerified: "ログイン前にメールを確認してください。新しい確認リンクを送信しました。",
       loginUnavailable: "現在ログインできません。",
       requiredSignupFields: "メール、ユーザー名、パスワードは必須です。",
       emailRequired: "メールアドレスは必須です。",
@@ -237,6 +238,8 @@ export const messages = {
       duplicateEmail: "そのメールアドレスはすでに使用されています。",
       duplicateUsername: "そのユーザー名はすでに使用されています。",
       duplicateAccount: "そのメールアドレスまたはユーザー名のアカウントはすでに存在します。",
+      signupVerificationEmailSent:
+        "ログインする前に、メール内のリンクからアカウントを確認してください。",
       signupUnavailable: "現在アカウントを作成できません。",
     },
   },

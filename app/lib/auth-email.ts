@@ -13,6 +13,11 @@ type PasswordResetEmail = {
   resetUrl: string;
 };
 
+type EmailVerificationEmail = {
+  email: string;
+  verificationUrl: string;
+};
+
 type ResendSmtpConfig = {
   apiKey: string;
   from: string;
@@ -137,7 +142,7 @@ async function sendResendSmtpEmail(message: AuthEmailMessage): Promise<void> {
     to: message.to,
   });
 
-  console.info("[auth-email] Resend SMTP accepted password reset email", {
+  console.info("[auth-email] Resend SMTP accepted auth email", {
     accepted: Array.isArray(result.accepted) ? result.accepted.length : undefined,
     messageId: result.messageId,
     rejected: Array.isArray(result.rejected) ? result.rejected.length : undefined,
@@ -207,6 +212,33 @@ export async function sendPasswordResetEmail({
       "This link expires in 1 hour.",
       "",
       "If you did not request this, you can ignore this message.",
+    ].join("\n"),
+  });
+}
+
+export async function sendEmailVerificationEmail({
+  email,
+  verificationUrl,
+}: EmailVerificationEmail): Promise<void> {
+  const escapedVerificationUrl = escapeHtml(verificationUrl);
+
+  await sendAuthEmail({
+    html: [
+      "<p>Welcome to 42 Transcendence Gomoku.</p>",
+      `<p><a href="${escapedVerificationUrl}">Verify your email address</a></p>`,
+      "<p>This link expires in 1 hour.</p>",
+      "<p>If you did not create this account, you can ignore this email.</p>",
+    ].join("\n"),
+    to: email,
+    subject: "Verify your 42 Transcendence Gomoku email",
+    text: [
+      "Welcome to 42 Transcendence Gomoku.",
+      "",
+      `Verify your email address here: ${verificationUrl}`,
+      "",
+      "This link expires in 1 hour.",
+      "",
+      "If you did not create this account, you can ignore this message.",
     ].join("\n"),
   });
 }

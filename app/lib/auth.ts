@@ -151,6 +151,7 @@ export const auth = betterAuth({
   }),
   emailAndPassword: {
     enabled: true,
+    requireEmailVerification: true,
     minPasswordLength: authValidationLimits.passwordMinLength,
     maxPasswordLength: authValidationLimits.passwordMaxLength,
     revokeSessionsOnPasswordReset: true,
@@ -163,6 +164,23 @@ export const auth = betterAuth({
         });
       } catch (error) {
         console.error("Failed to send password reset email", error);
+        throw error;
+      }
+    },
+  },
+  emailVerification: {
+    sendOnSignUp: true,
+    sendOnSignIn: true,
+    autoSignInAfterVerification: true,
+    sendVerificationEmail: async ({ user, url }) => {
+      try {
+        const { sendEmailVerificationEmail } = await import("./auth-email");
+        await sendEmailVerificationEmail({
+          email: user.email,
+          verificationUrl: url,
+        });
+      } catch (error) {
+        console.error("Failed to send verification email", error);
         throw error;
       }
     },
@@ -200,8 +218,6 @@ export const auth = betterAuth({
     modelName: "Account",
     accountLinking: {
       enabled: true,
-      requireLocalEmailVerified: false,
-      trustedProviders: ["google"],
     },
   },
   verification: {
@@ -259,6 +275,11 @@ export const auth = betterAuth({
 
 type BetterAuthSessionData = NonNullable<Awaited<ReturnType<typeof auth.api.getSession>>>;
 
+type UserEmailVerification = {
+  emailVerified?: boolean | null;
+  emailVerifiedAt?: Date | null;
+};
+
 export type AuthContext = {
   session: BetterAuthSessionData["session"];
   user: User;
@@ -314,11 +335,13 @@ export async function getDuplicateSignupFields(
 }
 
 export function serializeUserForResponse(user: User) {
+  const emailVerification = user as User & UserEmailVerification;
+
   return {
     id: user.id,
     username: user.username,
     displayName: user.displayName,
     email: user.email,
-    emailVerified: user.emailVerified,
+    emailVerified: emailVerification.emailVerified ?? Boolean(emailVerification.emailVerifiedAt),
   };
 }

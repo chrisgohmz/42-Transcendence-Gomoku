@@ -12,6 +12,19 @@ type LoginBody = {
   password?: unknown;
 };
 
+function getLocalizedProfileUrl(request: Request): string {
+  const locale = resolveApiLocale(request);
+  return new URL(`/${locale}/profile`, request.url).toString();
+}
+
+function isEmailNotVerifiedError(error: unknown): boolean {
+  return (
+    isAPIError(error) &&
+    error.statusCode === 403 &&
+    (error.body as { code?: string } | undefined)?.code === "EMAIL_NOT_VERIFIED"
+  );
+}
+
 export async function POST(request: Request) {
   const body = (await request.json().catch(() => null)) as LoginBody | null;
   const t = await getTranslations({ locale: resolveApiLocale(request), namespace: "auth.errors" });
@@ -36,6 +49,7 @@ export async function POST(request: Request) {
   try {
     const { headers, response } = await auth.api.signInEmail({
       body: {
+        callbackURL: getLocalizedProfileUrl(request),
         email: validation.data.email,
         password: validation.data.password,
       },
@@ -60,6 +74,16 @@ export async function POST(request: Request) {
 
     return Response.json({ user: serializeUserForResponse(user) }, { headers });
   } catch (error) {
+    if (isEmailNotVerifiedError(error)) {
+      return apiErrorResponse(
+        {
+          error: "email_not_verified",
+          message: t("emailNotVerified"),
+        },
+        403,
+      );
+    }
+
     if (isAPIError(error)) {
       return apiErrorResponse(
         {

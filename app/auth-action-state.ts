@@ -19,6 +19,7 @@ export type SignupActionState = {
   email: string;
   fields: AuthFieldErrors;
   message: string | null;
+  successMessage: string | null;
   username: string;
 };
 
@@ -46,6 +47,7 @@ export const initialSignupActionState: SignupActionState = {
   email: "",
   fields: {},
   message: null,
+  successMessage: null,
   username: "",
 };
 

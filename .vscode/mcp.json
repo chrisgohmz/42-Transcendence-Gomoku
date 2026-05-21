@@ -10,6 +10,11 @@
       "command": "npx",
       "args": ["playwright", "run-test-mcp-server"]
     },
+    "context7": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "@upstash/context7-mcp@latest"]
+    },
     "resend": {
       "type": "stdio",
       "command": "bunx",

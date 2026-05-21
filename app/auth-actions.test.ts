@@ -124,6 +124,7 @@ describe("loginAction", () => {
 
     expect(signInEmail).toHaveBeenCalledWith({
       body: {
+        callbackURL: "https://app.test/en/profile",
         email: "max@example.com",
         password: "password123",
         rememberMe: false,
@@ -135,6 +136,30 @@ describe("loginAction", () => {
       fields: {},
       message: "en:auth.errors:invalidCredentials",
     });
+  });
+
+  test("maps unverified email sign-in to a verification message", async () => {
+    signInEmail.mockRejectedValueOnce(
+      new APIError("FORBIDDEN", {
+        code: "EMAIL_NOT_VERIFIED",
+        message: "Email not verified",
+      }),
+    );
+
+    const state = await loginAction(
+      initialLoginActionState,
+      formData({
+        email: "max@example.com",
+        password: "password123",
+      }),
+    );
+
+    expect(state).toEqual({
+      email: "max@example.com",
+      fields: {},
+      message: "en:auth.errors:emailNotVerified",
+    });
+    expect(redirect).not.toHaveBeenCalled();
   });
 
   test("redirects to the localized profile route after a successful sign-in", async () => {
@@ -374,7 +399,7 @@ describe("signupAction", () => {
     });
   });
 
-  test("redirects to the localized profile route after successful signup", async () => {
+  test("asks Better Auth to send verification email after successful signup", async () => {
     const state = await signupAction(
       initialSignupActionState,
       formData({
@@ -388,6 +413,7 @@ describe("signupAction", () => {
 
     expect(signUpEmail).toHaveBeenCalledWith({
       body: {
+        callbackURL: "https://app.test/ja/profile",
         email: "max@example.com",
         name: "Max",
         password: "password123",
@@ -395,11 +421,14 @@ describe("signupAction", () => {
       },
       headers: expect.any(Headers),
     });
-    expect(state as unknown).toEqual({
-      redirected: {
-        href: "/profile",
-        locale: "ja",
-      },
+    expect(state).toEqual({
+      displayName: "Max",
+      email: "max@example.com",
+      fields: {},
+      message: null,
+      successMessage: "ja:auth.errors:signupVerificationEmailSent",
+      username: "max_player",
     });
+    expect(redirect).not.toHaveBeenCalled();
   });
 });

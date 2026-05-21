@@ -31,7 +31,7 @@ await mock.module("nodemailer", () => ({
   },
 }));
 
-const { sendPasswordResetEmail } = await import("./auth-email");
+const { sendEmailVerificationEmail, sendPasswordResetEmail } = await import("./auth-email");
 
 const envKeys = [
   "AUTH_EMAIL_MODE",
@@ -138,14 +138,11 @@ describe("sendPasswordResetEmail", () => {
     expect(message?.text).toContain("https://app.test/en/reset-password?token=abc123");
     expect(message?.text).toContain("This link expires in 1 hour.");
     expect(message?.html).toContain("Reset your password");
-    expect(consoleInfo).toHaveBeenCalledWith(
-      "[auth-email] Resend SMTP accepted password reset email",
-      {
-        accepted: undefined,
-        messageId: "message-1",
-        rejected: undefined,
-      },
-    );
+    expect(consoleInfo).toHaveBeenCalledWith("[auth-email] Resend SMTP accepted auth email", {
+      accepted: undefined,
+      messageId: "message-1",
+      rejected: undefined,
+    });
   });
 
   test("requires Resend credentials before sending through SMTP", async () => {
@@ -167,5 +164,48 @@ describe("sendPasswordResetEmail", () => {
     expect((error as Error).message).toContain("RESEND_API_KEY");
     expect(createTransport).not.toHaveBeenCalled();
     expect(sendMail).not.toHaveBeenCalled();
+  });
+});
+
+describe("sendEmailVerificationEmail", () => {
+  test("sends verification emails through the shared auth email transport", async () => {
+    process.env["AUTH_EMAIL_MODE"] = "resend-smtp";
+    process.env["RESEND_API_KEY"] = "re_verify_key";
+    process.env["RESEND_FROM_EMAIL"] = "42 Transcendence Gomoku <passwords@example.com>";
+
+    const originalConsoleInfo = console.info;
+    const consoleInfo = mock((_message: string, _details: unknown) => undefined);
+    console.info = consoleInfo as typeof console.info;
+
+    try {
+      await sendEmailVerificationEmail({
+        email: "player@example.com",
+        verificationUrl: "https://app.test/api/auth/verify-email?token=verify123",
+      });
+    } finally {
+      console.info = originalConsoleInfo;
+    }
+
+    const message = sendMail.mock.calls[0]?.[0];
+
+    expect(createTransport).toHaveBeenCalledWith({
+      auth: {
+        pass: "re_verify_key",
+        user: "resend",
+      },
+      host: "smtp.resend.com",
+      port: 465,
+      secure: true,
+    });
+    expect(message?.from).toBe("42 Transcendence Gomoku <passwords@example.com>");
+    expect(message?.to).toBe("player@example.com");
+    expect(message?.subject).toBe("Verify your 42 Transcendence Gomoku email");
+    expect(message?.text).toContain("https://app.test/api/auth/verify-email?token=verify123");
+    expect(message?.html).toContain("Verify your email address");
+    expect(consoleInfo).toHaveBeenCalledWith("[auth-email] Resend SMTP accepted auth email", {
+      accepted: undefined,
+      messageId: "message-1",
+      rejected: undefined,
+    });
   });
 });

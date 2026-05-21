@@ -140,7 +140,7 @@ beforeEach(() => {
     response: { user: { id: user.id } },
   });
   signUpEmail.mockResolvedValue({
-    headers: new Headers({ "set-cookie": "session=signup" }),
+    headers: new Headers(),
     response: { user: { id: user.id } },
   });
   getDuplicateSignupFields.mockResolvedValue({});
@@ -202,6 +202,7 @@ describe("auth API routes", () => {
     expect(response.status).toBe(200);
     expect(response.headers.get("set-cookie")).toBe("session=login");
     expect(call.body).toMatchObject({
+      callbackURL: "http://localhost/en/profile",
       email: "max@example.com",
       password: "password123",
     });
@@ -229,6 +230,30 @@ describe("auth API routes", () => {
     expect(payload).toMatchObject({
       error: "invalid_credentials",
       message: "invalidCredentials",
+    });
+    expect(findUnique).not.toHaveBeenCalled();
+  });
+
+  test("login maps unverified emails to a verification-required response", async () => {
+    signInEmail.mockRejectedValueOnce(
+      new APIError("FORBIDDEN", {
+        code: "EMAIL_NOT_VERIFIED",
+        message: "Email not verified",
+      }),
+    );
+
+    const response = await loginRoute.POST(
+      jsonRequest("/api/auth/login", {
+        email: "max@example.com",
+        password: "password123",
+      }),
+    );
+    const payload = await response.json();
+
+    expect(response.status).toBe(403);
+    expect(payload).toMatchObject({
+      error: "email_not_verified",
+      message: "emailNotVerified",
     });
     expect(findUnique).not.toHaveBeenCalled();
   });
@@ -333,7 +358,9 @@ describe("auth API routes", () => {
     expect(signUpEmail).not.toHaveBeenCalled();
   });
 
-  test("signup creates an account and returns Better Auth session headers", async () => {
+  test("signup creates an account and returns a verification-required response", async () => {
+    findUnique.mockResolvedValueOnce({ ...user, emailVerified: false });
+
     const response = await signupRoute.POST(
       jsonRequest("/api/auth/signup", {
         displayName: "Max",
@@ -346,8 +373,9 @@ describe("auth API routes", () => {
     const call = signUpEmail.mock.calls[0]?.[0] as AuthApiCall;
 
     expect(response.status).toBe(201);
-    expect(response.headers.get("set-cookie")).toBe("session=signup");
+    expect(response.headers.get("set-cookie")).toBeNull();
     expect(call.body).toMatchObject({
+      callbackURL: "http://localhost/en/profile",
       email: "max@example.com",
       name: "Max",
       password: "password123",
@@ -358,6 +386,7 @@ describe("auth API routes", () => {
         id: user.id,
         username: user.username,
       },
+      verificationRequired: true,
     });
   });
 

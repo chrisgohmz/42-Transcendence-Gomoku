@@ -13,5 +13,9 @@
   "playwright-test": {
     "command": "npx",
     "args": ["playwright", "run-test-mcp-server"]
+  },
+  "context7": {
+    "command": "npx",
+    "args": ["-y", "@upstash/context7-mcp@latest"]
   }
 }

@@ -99,7 +99,19 @@ function getRequestBaseUrl(headerList: Headers): string {
 }
 
 function getPasswordResetRedirectUrl(locale: Locale, headerList: Headers): string {
-  return new URL(`/${locale}/reset-password`, getRequestBaseUrl(headerList)).toString();
+  return getLocalizedAppUrl(locale, "/reset-password", headerList);
+}
+
+function getLocalizedAppUrl(locale: Locale, path: string, headerList: Headers): string {
+  return new URL(`/${locale}${path}`, getRequestBaseUrl(headerList)).toString();
+}
+
+function isEmailNotVerifiedError(error: unknown): boolean {
+  return (
+    isAPIError(error) &&
+    error.statusCode === 403 &&
+    (error.body as { code?: string } | undefined)?.code === "EMAIL_NOT_VERIFIED"
+  );
 }
 
 export async function loginAction(
@@ -123,15 +135,26 @@ export async function loginAction(
   }
 
   try {
+    const headerList = await headers();
+
     await auth.api.signInEmail({
       body: {
+        callbackURL: getLocalizedAppUrl(locale, "/profile", headerList),
         email: validation.data.email,
         password: validation.data.password,
         rememberMe: getFormString(formData, "remember") === "on",
       },
-      headers: await headers(),
+      headers: headerList,
     });
   } catch (error) {
+    if (isEmailNotVerifiedError(error)) {
+      return {
+        email: rawEmail,
+        fields: {},
+        message: t("emailNotVerified"),
+      };
+    }
+
     if (isAPIError(error)) {
       return {
         email: rawEmail,
@@ -267,6 +290,7 @@ export async function signupAction(
       email,
       fields: translateAuthIssues(validation.issues, t),
       message: t("fixHighlightedFields"),
+      successMessage: null,
       username,
     };
   }
@@ -283,18 +307,22 @@ export async function signupAction(
         email,
         fields: getDuplicateSignupFieldErrors(duplicateFields, t),
         message: t("duplicateAccount"),
+        successMessage: null,
         username,
       };
     }
 
+    const headerList = await headers();
+
     await auth.api.signUpEmail({
       body: {
+        callbackURL: getLocalizedAppUrl(locale, "/profile", headerList),
         email: validation.data.email,
         name: validation.data.displayName,
         password: validation.data.password,
         username: validation.data.username,
       },
-      headers: await headers(),
+      headers: headerList,
     });
   } catch (error) {
     if (isAPIError(error)) {
@@ -309,6 +337,7 @@ export async function signupAction(
           email,
           fields: getDuplicateSignupFieldErrors(duplicateFields, t),
           message: t("duplicateAccount"),
+          successMessage: null,
           username,
         };
       }
@@ -325,6 +354,7 @@ export async function signupAction(
         email,
         fields: getDuplicateSignupFieldErrors(duplicateFields, t),
         message: t("duplicateAccount"),
+        successMessage: null,
         username,
       };
     }
@@ -334,9 +364,17 @@ export async function signupAction(
       email,
       fields: {},
       message: t("signupUnavailable"),
+      successMessage: null,
       username,
     };
   }
 
-  return redirect({ href: "/profile", locale });
+  return {
+    displayName,
+    email,
+    fields: {},
+    message: null,
+    successMessage: t("signupVerificationEmailSent"),
+    username,
+  };
 }

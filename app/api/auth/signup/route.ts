@@ -22,6 +22,11 @@ type SignupBody = {
   username?: unknown;
 };
 
+function getLocalizedProfileUrl(request: Request): string {
+  const locale = resolveApiLocale(request);
+  return new URL(`/${locale}/profile`, request.url).toString();
+}
+
 export async function POST(request: Request) {
   const body = (await request.json().catch(() => null)) as SignupBody | null;
   const t = await getTranslations({ locale: resolveApiLocale(request), namespace: "auth.errors" });
@@ -62,6 +67,7 @@ export async function POST(request: Request) {
 
     const { headers, response } = await auth.api.signUpEmail({
       body: {
+        callbackURL: getLocalizedProfileUrl(request),
         email: validation.data.email,
         name: validation.data.displayName,
         password: validation.data.password,
@@ -86,7 +92,15 @@ export async function POST(request: Request) {
       );
     }
 
-    return Response.json({ user: serializeUserForResponse(user) }, { headers, status: 201 });
+    const serializedUser = serializeUserForResponse(user);
+
+    return Response.json(
+      {
+        user: serializedUser,
+        verificationRequired: !serializedUser.emailVerified,
+      },
+      { headers, status: 201 },
+    );
   } catch (error) {
     if (isAPIError(error)) {
       const duplicateFields = await findDuplicateSignupFields(
