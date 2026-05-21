@@ -1,15 +1,15 @@
 import { describe, expect, test } from "bun:test";
 
-const authSource = await Bun.file(new URL("./auth.ts", import.meta.url)).text();
+import { authCredentialPolicy } from "./auth-policy";
 
 describe("auth configuration", () => {
   test("requires local email verification before credential sign-in or implicit OAuth linking", () => {
-    expect(authSource).toContain("requireEmailVerification: true");
-    expect(authSource).toContain("sendOnSignUp: true");
-    expect(authSource).toContain("sendOnSignIn: true");
-    expect(authSource).toContain("autoSignInAfterVerification: true");
-    expect(authSource).toContain("sendEmailVerificationEmail");
-    expect(authSource).not.toContain("requireLocalEmailVerified: false");
-    expect(authSource).not.toContain('trustedProviders: ["google"]');
+    expect(authCredentialPolicy.emailAndPassword.requireEmailVerification).toBe(true);
+    expect(authCredentialPolicy.emailVerification.sendOnSignUp).toBe(true);
+    expect(authCredentialPolicy.emailVerification.sendOnSignIn).toBe(true);
+    expect(authCredentialPolicy.emailVerification.autoSignInAfterVerification).toBe(true);
+    expect(authCredentialPolicy.accountLinking.enabled).toBe(true);
+    expect(authCredentialPolicy.accountLinking.requireLocalEmailVerified).toBe(true);
+    expect("trustedProviders" in authCredentialPolicy.accountLinking).toBe(false);
   });
 });

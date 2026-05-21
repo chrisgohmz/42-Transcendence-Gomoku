@@ -75,16 +75,16 @@ function translatePasswordResetConfirmIssues(
 }
 
 function getRequestBaseUrl(headerList: Headers): string {
+  const configuredBaseUrl = process.env["BETTER_AUTH_URL"]?.trim();
+
+  if (configuredBaseUrl) {
+    return configuredBaseUrl;
+  }
+
   const origin = headerList.get("origin");
 
   if (origin) {
     return origin;
-  }
-
-  const configuredBaseUrl = process.env["BETTER_AUTH_URL"];
-
-  if (configuredBaseUrl) {
-    return configuredBaseUrl;
   }
 
   const forwardedHost = headerList.get("x-forwarded-host")?.split(",")[0]?.trim();

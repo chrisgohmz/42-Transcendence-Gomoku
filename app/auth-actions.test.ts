@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, mock, test } from "bun:test";
+import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
 import { APIError } from "better-auth/api";
 
@@ -13,6 +13,7 @@ const signUpEmail = mock();
 const requestPasswordReset = mock();
 const resetPassword = mock();
 const getDuplicateSignupFields = mock();
+const originalBetterAuthUrl = process.env["BETTER_AUTH_URL"];
 
 await mock.module("server-only", () => ({}));
 
@@ -63,6 +64,8 @@ function formData(values: Record<string, string>) {
 }
 
 beforeEach(() => {
+  process.env["BETTER_AUTH_URL"] = "https://app.test";
+
   getLocale.mockReset();
   getTranslations.mockReset();
   headers.mockReset();
@@ -86,6 +89,14 @@ beforeEach(() => {
   requestPasswordReset.mockResolvedValue({});
   resetPassword.mockResolvedValue({});
   getDuplicateSignupFields.mockResolvedValue({});
+});
+
+afterEach(() => {
+  if (originalBetterAuthUrl === undefined) {
+    delete process.env["BETTER_AUTH_URL"];
+  } else {
+    process.env["BETTER_AUTH_URL"] = originalBetterAuthUrl;
+  }
 });
 
 describe("loginAction", () => {
@@ -222,6 +233,28 @@ describe("requestPasswordResetAction", () => {
       fields: {},
       message: null,
       successMessage: "en:auth.errors:passwordResetEmailSent",
+    });
+  });
+
+  test("uses the configured app origin for reset links instead of the request origin", async () => {
+    process.env["BETTER_AUTH_URL"] = "https://canonical.test";
+    headers.mockResolvedValueOnce(
+      new Headers({ cookie: "session=1", origin: "https://evil.test" }),
+    );
+
+    await requestPasswordResetAction(
+      initialPasswordResetRequestActionState,
+      formData({
+        email: "max@example.com",
+        locale: "en",
+      }),
+    );
+
+    expect(requestPasswordReset).toHaveBeenCalledWith({
+      body: {
+        email: "max@example.com",
+        redirectTo: "https://canonical.test/en/reset-password",
+      },
     });
   });
 
