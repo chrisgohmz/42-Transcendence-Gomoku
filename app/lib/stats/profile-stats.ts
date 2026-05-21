@@ -3,9 +3,8 @@ import { MatchResult, Role } from "../../../generated/prisma/enums";
 import {
   LEADERBOARD_BOARD_SIZE,
   LEADERBOARD_RULE_TYPE,
-  buildLeaderboardAheadWhere,
+  getLeaderboardRank,
   formatWinRate,
-  type LeaderboardRankInput,
 } from "../leaderboard";
 import { getMatchHistoryPageForUser, type MatchHistoryEntry } from "../matches/match-history";
 import { prisma } from "../prisma";
@@ -111,19 +110,6 @@ function toRecentMatch(entry: MatchHistoryEntry, currentUserId: string): Profile
   };
 }
 
-async function getRankForUser(stats: LeaderboardRankInput | null): Promise<number | null> {
-  if (!stats) return null;
-
-  const aheadWhere = buildLeaderboardAheadWhere(stats);
-  if (!aheadWhere) return null;
-
-  const aheadCount = await prisma.userGameStats.count({
-    where: aheadWhere,
-  });
-
-  return aheadCount + 1;
-}
-
 function normalizeRecentMatchesLimit(limit: number | undefined): number {
   if (!Number.isInteger(limit)) {
     return PROFILE_RECENT_MATCHES_PAGE_SIZE;
@@ -198,12 +184,12 @@ export async function getProfileStatsForUser(
     achievementPoints,
   });
 
-  const rank = await getRankForUser({
+  const rank = await getLeaderboardRank({
     rating: stats.rating,
     wins: stats.wins,
     losses: stats.losses,
     matchesPlayed: stats.matchesPlayed,
-    botMatchesPlayed: stats.botMatchesPlayed, // ← ここ重要
+    botMatchesPlayed: stats.botMatchesPlayed,
   });
 
   return {

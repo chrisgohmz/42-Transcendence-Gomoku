@@ -5,25 +5,21 @@ import type { MatchHistoryEntry } from "../matches/match-history";
 
 const findUnique = mock();
 const findManyAchievements = mock();
-const count = mock();
 const getMatchHistoryPageForUser = mock();
-
-// ✅ rank分岐を壊さないため「必ず truthy を返す」
-const buildLeaderboardAheadWhere = mock(() => ({ OR: [] }));
+const getLeaderboardRank = mock();
 
 await mock.module("@/lib/leaderboard", () => ({
   LEADERBOARD_BOARD_SIZE: 15,
   LEADERBOARD_RULE_TYPE: RuleType.GOMOKU,
   formatWinRate: (wins: number, matchesPlayed: number) =>
     matchesPlayed === 0 ? "0.00%" : `${((wins / matchesPlayed) * 100).toFixed(2)}%`,
-  buildLeaderboardAheadWhere,
+  getLeaderboardRank,
 }));
 
 await mock.module("@/lib/prisma", () => ({
   prisma: {
     userGameStats: {
       findUnique,
-      count,
     },
     userAchievement: {
       findMany: findManyAchievements,
@@ -41,9 +37,8 @@ const { getProfileStatsForUser, PROFILE_RECENT_MATCHES_PAGE_SIZE } =
 beforeEach(() => {
   findUnique.mockReset();
   findManyAchievements.mockReset();
-  count.mockReset();
   getMatchHistoryPageForUser.mockReset();
-  buildLeaderboardAheadWhere.mockClear();
+  getLeaderboardRank.mockReset();
 
   findUnique.mockResolvedValue(null);
   findManyAchievements.mockResolvedValue([]);
@@ -56,16 +51,12 @@ beforeEach(() => {
     totalPages: 1,
   });
 
-  count.mockResolvedValue(0);
-
-  // 🔑 デフォルトで「eligible扱い」にする
-  buildLeaderboardAheadWhere.mockReturnValue({ OR: [] });
+  getLeaderboardRank.mockResolvedValue(1);
 });
 
 describe("profile stats", () => {
   test("returns defaults for a new user", async () => {
-    // 🔑 非 eligible ケース（rank計算しない）
-    buildLeaderboardAheadWhere.mockReturnValueOnce(null);
+    getLeaderboardRank.mockResolvedValueOnce(null);
 
     const snapshot = await getProfileStatsForUser("user-ada");
 
@@ -99,8 +90,14 @@ describe("profile stats", () => {
       PROFILE_RECENT_MATCHES_PAGE_SIZE,
     );
 
-    // rank計算されないので count は呼ばれない
-    expect(count).not.toHaveBeenCalled();
+    // 共有 rank 関数に委譲される
+    expect(getLeaderboardRank).toHaveBeenCalledWith({
+      rating: null,
+      wins: 0,
+      losses: 0,
+      matchesPlayed: 0,
+      botMatchesPlayed: 0,
+    });
   });
 
   test("includes rank, achievements, progression, and recent matches", async () => {
@@ -157,6 +154,14 @@ describe("profile stats", () => {
     });
 
     expect(snapshot.rank).toBe(1);
+
+    expect(getLeaderboardRank).toHaveBeenCalledWith({
+      rating: 1200,
+      wins: 3,
+      losses: 1,
+      matchesPlayed: 4,
+      botMatchesPlayed: 1,
+    });
 
     expect(snapshot.stats.winRate).toBe("75.00%");
 
