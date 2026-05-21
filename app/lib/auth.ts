@@ -8,7 +8,6 @@ import { z } from "zod";
 
 import type { User } from "../../generated/prisma/client";
 import type { DuplicateSignupFields } from "./auth-duplicate-fields";
-import { sendPasswordResetEmail } from "./auth-email";
 import { oauthProviderIds, type OAuthProviderId } from "./oauth-providers";
 import { prisma } from "./prisma";
 import { authValidationLimits } from "./validation/auth-profile-limits";
@@ -139,12 +138,16 @@ export const auth = betterAuth({
     maxPasswordLength: authValidationLimits.passwordMaxLength,
     revokeSessionsOnPasswordReset: true,
     sendResetPassword: async ({ user, url }) => {
-      void sendPasswordResetEmail({
-        email: user.email,
-        resetUrl: url,
-      }).catch((error) => {
-        console.error("Failed to send password reset email", error);
-      });
+      void import("./auth-email")
+        .then(({ sendPasswordResetEmail }) =>
+          sendPasswordResetEmail({
+            email: user.email,
+            resetUrl: url,
+          }),
+        )
+        .catch((error) => {
+          console.error("Failed to send password reset email", error);
+        });
     },
   },
   user: {
