@@ -168,6 +168,31 @@ describe("sendPasswordResetEmail", () => {
 });
 
 describe("sendEmailVerificationEmail", () => {
+  test("prints verification emails in console mode without creating an SMTP transport", async () => {
+    process.env["AUTH_EMAIL_MODE"] = "console";
+
+    const originalConsoleInfo = console.info;
+    const consoleInfo = mock((_message: string) => undefined);
+    console.info = consoleInfo as typeof console.info;
+
+    try {
+      await sendEmailVerificationEmail({
+        email: "player@example.com",
+        verificationUrl: "https://app.test/api/auth/verify-email?token=verify123",
+      });
+    } finally {
+      console.info = originalConsoleInfo;
+    }
+
+    expect(createTransport).not.toHaveBeenCalled();
+    expect(sendMail).not.toHaveBeenCalled();
+    expect(consoleInfo).toHaveBeenCalledTimes(1);
+    expect(consoleInfo.mock.calls[0]?.[0]).toContain("player@example.com");
+    expect(consoleInfo.mock.calls[0]?.[0]).toContain(
+      "https://app.test/api/auth/verify-email?token=verify123",
+    );
+  });
+
   test("sends verification emails through the shared auth email transport", async () => {
     process.env["AUTH_EMAIL_MODE"] = "resend-smtp";
     process.env["RESEND_API_KEY"] = "re_verify_key";
