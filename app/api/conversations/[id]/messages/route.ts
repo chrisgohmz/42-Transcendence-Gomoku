@@ -13,7 +13,7 @@ import { prisma } from "@/lib/prisma";
 // not useable with cacheComponents
 //export const dynamic = "force-dynamic";
 
-// ─── Helper ──────────────────────────────────────────────────────────────────
+// ─── Helpers ─────────────────────────────────────────────────────────────────
 
 // Before doing anything with a conversation, verify the logged-in user
 // is actually a participant. This prevents users from reading other people's chats.
@@ -24,6 +24,44 @@ async function getParticipation(conversationId: string, userId: string) {
       conversationId_userId: { conversationId, userId },
     },
   });
+}
+
+// For DIRECT conversations, the two users must still be ACCEPTED friends.
+// For non-DIRECT conversations (e.g. match chat) we skip this check.
+// Returns true if access should be allowed.
+async function isDirectConversationWithActiveFriend(
+  conversationId: string,
+  userId: string,
+): Promise<boolean> {
+  const conv = await prisma.conversation.findUnique({
+    where: { id: conversationId },
+    select: {
+      kind: true,
+      participants: {
+        where: { userId: { not: userId } },
+        select: { userId: true },
+      },
+    },
+  });
+
+  // Not a direct conversation — no friendship check needed
+  if (!conv || conv.kind !== "DIRECT") return true;
+
+  const otherId = conv.participants[0]?.userId;
+  if (!otherId) return false;
+
+  const sortedIds = [userId, otherId].sort();
+  const friendship = await prisma.friendship.findUnique({
+    where: {
+      userLowId_userHighId: {
+        userLowId: sortedIds[0]!,
+        userHighId: sortedIds[1]!,
+      },
+    },
+    select: { status: true },
+  });
+
+  return friendship?.status === "ACCEPTED";
 }
 
 // ─── GET: load message history ────────────────────────────────────────────────
@@ -44,6 +82,11 @@ export async function GET(
   const participation = await getParticipation(conversationId, session.user.id);
   if (!participation) {
     return Response.json({ error: "conversation_not_found" }, { status: 404 });
+  }
+
+  // Friendship check: blocks message access after unfriending
+  if (!(await isDirectConversationWithActiveFriend(conversationId, session.user.id))) {
+    return Response.json({ error: "not_friends" }, { status: 403 });
   }
 
   try {
@@ -98,6 +141,11 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   const participation = await getParticipation(conversationId, session.user.id);
   if (!participation) {
     return Response.json({ error: "conversation_not_found" }, { status: 404 });
+  }
+
+  // Friendship check: blocks sending after unfriending
+  if (!(await isDirectConversationWithActiveFriend(conversationId, session.user.id))) {
+    return Response.json({ error: "not_friends" }, { status: 403 });
   }
 
   // Parse and validate the request body
