@@ -54,7 +54,7 @@ export default function MessagesContent({ currentUserId }: Props) {
 
   // The currently open conversation
   const [activeConvId, setActiveConvId] = useState<string | null>(null);
-  const [activeFriend, setActiveFriend] = useState<Friend | null>(null);
+  //const [activeFriend, setActiveFriend] = useState<Friend | null>(null);
 
   // Composer
   const [messageText, setMessageText] = useState("");
@@ -146,6 +146,12 @@ export default function MessagesContent({ currentUserId }: Props) {
     });
   }, [friends, conversations]);
 
+  // calcate the active friend value based on the active conversation ID
+  const activeFriend = useMemo(
+    () => sidebarEntries.find((e) => e.conversationId === activeConvId)?.friend ?? null,
+    [sidebarEntries, activeConvId],
+  );
+
   // Filter by search query
   const visibleEntries = useMemo(
     () =>
@@ -158,8 +164,6 @@ export default function MessagesContent({ currentUserId }: Props) {
 
   // ── Click a sidebar entry ────────────────────────────────────────────────
   async function handleEntryClick(entry: SidebarEntry) {
-    setActiveFriend(entry.friend);
-
     if (entry.conversationId) {
       // Conversation already exists — open it directly
       setActiveConvId(entry.conversationId);
