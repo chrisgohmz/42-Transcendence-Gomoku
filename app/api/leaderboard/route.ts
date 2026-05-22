@@ -9,11 +9,16 @@ function getErrorMessage(error: unknown): string {
   return error instanceof Error ? error.message : "Unknown error";
 }
 
-export async function GET(request: Request) {
+export async function GET(request?: Request) {
   try {
     const context = await getCurrentSession();
-    const scope = resolveScope(new URL(request.url).searchParams);
-    const snapshot = await getLeaderboardSnapshot(context?.user.id ?? null, { scope });
+    const scope = resolveScope(
+      new URL(request?.url ?? "http://localhost/api/leaderboard").searchParams,
+    );
+    const snapshot =
+      scope === "friends"
+        ? await getLeaderboardSnapshot(context?.user.id ?? null, { scope })
+        : await getLeaderboardSnapshot(context?.user.id ?? null);
 
     return Response.json(snapshot);
   } catch (error) {
