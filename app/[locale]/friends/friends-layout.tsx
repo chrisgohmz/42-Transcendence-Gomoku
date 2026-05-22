@@ -521,7 +521,7 @@ function FriendsTable({
                 {activeTab === "friends" ? (
                   <>
                     <Link
-                      href={`/messages?friendId=${friend.id}`}
+                      href={`/messages?friendId=${friend.userId}`}
                       className="icon-button"
                       aria-label={t("actions.messageFriend", { name: friend.displayName })}
                     >
