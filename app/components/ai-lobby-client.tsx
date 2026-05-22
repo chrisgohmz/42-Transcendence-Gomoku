@@ -117,6 +117,28 @@ function getDifficultyStatLabel(t: ReturnType<typeof useTranslations>, label: st
 
 function getDifficultyTraitValue(t: ReturnType<typeof useTranslations>, value: string) {
   switch (value) {
+    case "Centered":
+      return t("difficulty.traitValues.centered");
+    case "Local":
+      return t("difficulty.traitValues.local");
+    case "Uneven":
+      return t("difficulty.traitValues.uneven");
+    case "Open twos":
+      return t("difficulty.traitValues.openTwos");
+    case "Open threes":
+      return t("difficulty.traitValues.openThrees");
+    case "Balanced":
+      return t("difficulty.traitValues.balanced");
+    case "Careful":
+      return t("difficulty.traitValues.careful");
+    case "Pressure":
+      return t("difficulty.traitValues.pressure");
+    case "Forcing":
+      return t("difficulty.traitValues.forcing");
+    case "Clinical":
+      return t("difficulty.traitValues.clinical");
+    case "Fork threats":
+      return t("difficulty.traitValues.forkThreats");
     case "Flexible":
       return t("difficulty.traitValues.flexible");
     case "Tactical":
