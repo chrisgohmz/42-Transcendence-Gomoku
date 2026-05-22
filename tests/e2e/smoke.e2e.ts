@@ -148,9 +148,24 @@ test("authenticated redesigned pages render at desktop and mobile widths", async
     await expect(page.getByTestId("friends-table").filter({ visible: true })).toBeVisible();
     await expectNoDocumentOverflow(page, "/friends");
 
-    await gotoAppRoute(page, "/messages");
+    //navigates via the friends page and checks that the composer is friend (need the deep-link to be working)
+    // Go to friends page and click Message for the test friend
+    await gotoAppRoute(page, "/friends");
+    await expect(page.getByRole("heading", { level: 1, name: "Friends" })).toBeVisible();
+
+    // Click the Message button for the friend
+    const messageBtn = page
+      .getByRole("link", { name: /message/i })
+      .filter({ visible: true })
+      .first();
+    await messageBtn.click();
+
+    // Should land on messages page with the friend pre-selected
     await expect(page.getByRole("heading", { level: 1, name: "Messages" })).toBeVisible();
-    await expect(page.locator('input[name="message"]').first()).toBeVisible();
+    // Composer should be labelled with the friend's name — not generic
+    await expect(
+      page.getByRole("textbox", { name: new RegExp(`Message ${friend.displayName}`, "i") }),
+    ).toBeVisible();
     await expectNoDocumentOverflow(page, "/messages");
   } finally {
     await cleanupTestUsers([user.username, friend.username]);
