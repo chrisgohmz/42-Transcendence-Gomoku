@@ -2,22 +2,13 @@
 
 import { useEffect, useRef, useState, useCallback } from "react";
 
-type LeaderboardEntry = {
-  playerId: string;
-  rank: number;
-  player: string;
-  rating: number;
-  wins: number;
-  losses: number;
-  winRate: string;
-};
+import type { LeaderboardEntry, LeaderboardScope, LeaderboardSnapshot } from "@/lib/leaderboard";
 
-type LeaderboardSnapshot = {
-  entries: LeaderboardEntry[];
-  currentUser: LeaderboardEntry | null;
-};
-
-export function useLeaderboard(initial?: LeaderboardSnapshot | null, debounceMs = 800) {
+export function useLeaderboard(
+  initial?: LeaderboardSnapshot | null,
+  scope: LeaderboardScope = "all",
+  debounceMs = 800,
+) {
   const [entries, setEntries] = useState<LeaderboardEntry[]>(initial?.entries ?? []);
   const [currentUser, setCurrentUser] = useState<LeaderboardEntry | null>(
     initial?.currentUser ?? null,
@@ -28,22 +19,40 @@ export function useLeaderboard(initial?: LeaderboardSnapshot | null, debounceMs 
   const timerRef = useRef<number | null>(null);
   const abortRef = useRef<AbortController | null>(null);
 
-  const fetchSnapshot = useCallback(async (signal?: AbortSignal) => {
-    setLoading(true);
+  useEffect(() => {
+    setEntries(initial?.entries ?? []);
+    setCurrentUser(initial?.currentUser ?? null);
+    setLoading(!initial);
     setError(null);
-    try {
-      const res = await fetch("/api/leaderboard", { signal });
-      if (!res.ok) throw new Error(`status ${res.status}`);
-      const body: LeaderboardSnapshot = await res.json();
-      setEntries(body.entries ?? []);
-      setCurrentUser(body.currentUser ?? null);
-    } catch (err: unknown) {
-      if ((err as any)?.name === "AbortError") return;
-      setError((err as Error)?.message ?? "unknown");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  }, [initial, scope]);
+
+  const fetchSnapshot = useCallback(
+    async (signal?: AbortSignal) => {
+      setLoading(true);
+      setError(null);
+      try {
+        const searchParams = new URLSearchParams();
+        if (scope === "friends") {
+          searchParams.set("scope", scope);
+        }
+
+        const res = await fetch(
+          `/api/leaderboard${searchParams.size > 0 ? `?${searchParams.toString()}` : ""}`,
+          { signal },
+        );
+        if (!res.ok) throw new Error(`status ${res.status}`);
+        const body: LeaderboardSnapshot = await res.json();
+        setEntries(body.entries ?? []);
+        setCurrentUser(body.currentUser ?? null);
+      } catch (err: unknown) {
+        if (err instanceof DOMException && err.name === "AbortError") return;
+        setError((err as Error)?.message ?? "unknown");
+      } finally {
+        setLoading(false);
+      }
+    },
+    [scope],
+  );
 
   const refreshDebounced = useCallback(() => {
     if (timerRef.current) {
@@ -75,8 +84,7 @@ export function useLeaderboard(initial?: LeaderboardSnapshot | null, debounceMs 
         abortRef.current = null;
       }
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [fetchSnapshot, initial]);
 
   return {
     entries,

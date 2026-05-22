@@ -1,7 +1,7 @@
 //import { cacheLife } from "next/cache";
 
 import type { Prisma } from "../../generated/prisma/client";
-import { RuleType } from "../../generated/prisma/enums";
+import { FriendshipStatus, RuleType } from "../../generated/prisma/enums";
 import { prisma } from "./prisma";
 
 export const LEADERBOARD_BOARD_SIZE = 15;
@@ -42,6 +42,13 @@ export type LeaderboardSnapshot = {
   currentUser: LeaderboardEntry | null;
 };
 
+export type LeaderboardScope = "all" | "friends";
+
+export type LeaderboardSnapshotOptions = {
+  scope?: LeaderboardScope;
+  userId: string | null;
+};
+
 export type LeaderboardRankInput = {
   rating: number | null;
   wins: number;
@@ -72,6 +79,41 @@ export const leaderboardQueryArgs = {
   take: LEADERBOARD_FETCH_LIMIT,
   where: leaderboardRankedWhere,
 } satisfies Prisma.UserGameStatsFindManyArgs;
+
+function buildLeaderboardWhere(friendUserIds: string[] | null): Prisma.UserGameStatsWhereInput {
+  if (!friendUserIds) {
+    return leaderboardRankedWhere;
+  }
+
+  return {
+    ...leaderboardRankedWhere,
+    userId: {
+      in: friendUserIds,
+    },
+  };
+}
+
+async function getAcceptedFriendUserIds(userId: string): Promise<string[]> {
+  const friendships = await prisma.friendship.findMany({
+    where: {
+      status: FriendshipStatus.ACCEPTED,
+      OR: [{ userLowId: userId }, { userHighId: userId }],
+    },
+    select: {
+      userLowId: true,
+      userHighId: true,
+    },
+  });
+
+  return friendships.map((friendship) =>
+    friendship.userLowId === userId ? friendship.userHighId : friendship.userLowId,
+  );
+}
+
+async function getFriendsScopeUserIds(userId: string): Promise<string[]> {
+  const friendUserIds = await getAcceptedFriendUserIds(userId);
+  return [userId, ...friendUserIds.filter((friendUserId) => friendUserId !== userId)];
+}
 
 export function formatWinRate(wins: number, matchesPlayed: number): string {
   if (matchesPlayed === 0) {
@@ -130,19 +172,27 @@ export function toLeaderboardEntries(stats: LeaderboardStat[]): LeaderboardEntry
     .map((stat, index) => toLeaderboardEntry(stat, index + 1));
 }
 
-export async function getLeaderboardEntries(): Promise<LeaderboardEntry[]> {
+async function getLeaderboardEntries(
+  friendUserIds: string[] | null = null,
+): Promise<LeaderboardEntry[]> {
   // Fetch in batches and collect eligible (human) rows until we have
   // `LEADERBOARD_LIMIT` entries or the dataset is exhausted. This moves
   // the eligibility filter into the data/query boundary and avoids
   // returning fewer than `LEADERBOARD_LIMIT` entries on bot-heavy data.
   const results: LeaderboardEntry[] = [];
   let skip = 0;
+  const where = buildLeaderboardWhere(friendUserIds);
+
+  if (friendUserIds && friendUserIds.length === 0) {
+    return results;
+  }
 
   while (results.length < LEADERBOARD_LIMIT) {
     const args = {
       ...leaderboardQueryArgs,
       skip,
       take: LEADERBOARD_FETCH_LIMIT,
+      where,
     } as Prisma.UserGameStatsFindManyArgs;
 
     const stats = (await prisma.userGameStats.findMany(args)) as unknown as LeaderboardStat[];
@@ -213,7 +263,24 @@ export async function getLeaderboardSpotlight(userId: string): Promise<Leaderboa
   return rank === null ? null : toLeaderboardEntry(stats, rank);
 }
 
-export async function getLeaderboardSnapshot(userId: string | null): Promise<LeaderboardSnapshot> {
+export async function getLeaderboardSnapshot(
+  userId: string | null,
+  options: Pick<LeaderboardSnapshotOptions, "scope"> = {},
+): Promise<LeaderboardSnapshot> {
+  const scope = options.scope ?? "all";
+
+  if (scope === "friends") {
+    if (!userId) {
+      return { entries: [], currentUser: null };
+    }
+
+    const friendScopeUserIds = await getFriendsScopeUserIds(userId);
+    const entries = await getLeaderboardEntries(friendScopeUserIds);
+    const currentUser = entries.find((entry) => entry.playerId === userId) ?? null;
+
+    return { entries, currentUser };
+  }
+
   const [entries, currentUser] = await Promise.all([
     getLeaderboardEntries(),
     userId ? getLeaderboardSpotlight(userId) : Promise.resolve(null),
