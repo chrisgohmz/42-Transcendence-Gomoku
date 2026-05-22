@@ -153,7 +153,7 @@ test("authenticated redesigned pages render at desktop and mobile widths", async
     await expect(page.getByRole("heading", { level: 1, name: "Friends" })).toBeVisible();
 
     const messageBtn = page
-      .getByRole("link", { name: /message/i })
+      .getByRole("link", { name: new RegExp(`Message ${friend.displayName}`, "i") })
       .filter({ visible: true })
       .first();
     await messageBtn.click();
