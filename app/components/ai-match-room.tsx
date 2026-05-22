@@ -13,6 +13,7 @@ import {
   Trophy,
   UserRound,
 } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { Badge, PageHeader, PageShell, Surface } from "@/components/gomoku-ui";
@@ -36,11 +37,13 @@ import { cn } from "@/lib/utils";
 
 import type { Cell, GameUpdatePayload, ParticipantSummary, Seat } from "../../shared/match-events";
 
+type Translator = (key: string, values?: Record<string, string | number>) => string;
+
 type AiMatchRoomProps = {
   initialState: MatchStateResponse | null;
   isRestoring?: boolean;
-  onBackToLobby: () => void;
-  onSessionLost: () => void;
+  onBackToLobbyAction: () => void;
+  onSessionLostAction: () => void;
   restoreError?: string | null;
   session: StoredMatchSession;
 };
@@ -110,11 +113,12 @@ function statusTone(status: GameUpdatePayload["status"] | undefined): "brass" | 
 export default function AiMatchRoom({
   initialState,
   isRestoring = false,
-  onBackToLobby,
-  onSessionLost,
+  onBackToLobbyAction,
+  onSessionLostAction,
   restoreError,
   session,
 }: AiMatchRoomProps) {
+  const t = useTranslations("aiLobby.matchRoom");
   const [state, setState] = useState<MatchStateResponse | null>(
     initialState?.matchId === session.matchId ? initialState : null,
   );
@@ -151,10 +155,15 @@ export default function AiMatchRoom({
         const errorPayload = await response.json().catch(() => null);
         if (response.status === 403 || response.status === 404) {
           clearStoredMatchSession(session.matchId);
-          onSessionLost();
+          onSessionLostAction();
         }
 
-        setLoadError(getErrorMessage(errorPayload, `State request failed (${response.status})`));
+        setLoadError(
+          getErrorMessage(
+            errorPayload,
+            t("errors.stateRequestFailed", { status: response.status }),
+          ),
+        );
         return null;
       }
 
@@ -163,12 +172,12 @@ export default function AiMatchRoom({
       setLoadError(null);
       return nextState;
     } catch {
-      setLoadError("Network error while loading match state");
+      setLoadError(t("errors.networkLoadState"));
       return null;
     } finally {
       setIsLoadingState(false);
     }
-  }, [onSessionLost, session.matchId, session.participantId]);
+  }, [onSessionLostAction, session.matchId, session.participantId]);
 
   useEffect(() => {
     void loadState();
@@ -248,7 +257,9 @@ export default function AiMatchRoom({
             return;
           }
 
-          setMoveError(getErrorMessage(errorPayload, `AI turn failed (${response.status})`));
+          setMoveError(
+            getErrorMessage(errorPayload, t("errors.aiTurnFailed", { status: response.status })),
+          );
           setFailedAiTurnVersion(baseVersion);
           return;
         }
@@ -258,7 +269,7 @@ export default function AiMatchRoom({
         setFailedAiTurnVersion(null);
         await loadState();
       } catch {
-        setMoveError("Network error while the AI was thinking");
+        setMoveError(t("errors.networkAiTurn"));
         setFailedAiTurnVersion(baseVersion);
       } finally {
         setIsAiThinking(false);
@@ -316,7 +327,7 @@ export default function AiMatchRoom({
       });
       await loadState();
     } catch (error) {
-      setMoveError(error instanceof Error ? error.message : "Network error while submitting move");
+      setMoveError(error instanceof Error ? error.message : t("errors.networkSubmitMove"));
       if (error instanceof MoveSubmissionError && error.code === "stale_state") {
         await loadState();
       }
@@ -348,7 +359,12 @@ export default function AiMatchRoom({
       if (!response.ok) {
         const errorPayload = await response.json().catch(() => null);
         const errorCode = getErrorCode(errorPayload);
-        setMoveError(getErrorMessage(errorPayload, `Resign request failed (${response.status})`));
+        setMoveError(
+          getErrorMessage(
+            errorPayload,
+            t("errors.resignRequestFailed", { status: response.status }),
+          ),
+        );
         if (errorCode === "stale_state") {
           await loadState();
         }
@@ -357,7 +373,7 @@ export default function AiMatchRoom({
 
       await loadState();
     } catch {
-      setMoveError("Network error while resigning");
+      setMoveError(t("errors.networkResign"));
     } finally {
       setIsResigning(false);
     }
@@ -366,19 +382,19 @@ export default function AiMatchRoom({
   return (
     <PageShell className="ai-match-room">
       <PageHeader
-        eyebrow="vs AI Match"
+        eyebrow={t("page.eyebrow")}
         icon={Swords}
-        title={matchStatus === "FINISHED" ? "Solo match complete." : "Active game vs AI"}
+        title={matchStatus === "FINISHED" ? t("page.title.finished") : t("page.title.live")}
         lede={
           matchStatus === "FINISHED"
-            ? "The final position is locked."
-            : `${aiName} is running ${difficulty.name} search on the server.`
+            ? t("page.lede.finished")
+            : t("page.lede.live", { aiName, difficulty: difficulty.name })
         }
         actions={
           <>
             <Badge tone={statusTone(matchStatus)}>
               <CircleDot aria-hidden="true" className="size-3.5" />
-              {matchStatus ?? "Loading"}
+              {matchStatus ? matchStatusLabel(matchStatus, t) : t("status.badge.loading")}
             </Badge>
             <button
               type="button"
@@ -390,15 +406,15 @@ export default function AiMatchRoom({
               aria-busy={isLoadingState}
             >
               <RefreshCcw aria-hidden="true" className="size-4" />
-              Refresh
+              {t("actions.refresh")}
             </button>
             <button
               type="button"
               className="btn btn-subtle m-0 min-h-11 px-4"
-              onClick={onBackToLobby}
+              onClick={onBackToLobbyAction}
             >
               <ArrowLeft aria-hidden="true" className="size-4" />
-              Setup
+              {t("actions.setup")}
             </button>
           </>
         }
@@ -415,6 +431,7 @@ export default function AiMatchRoom({
             isTurn={effectiveUpdate?.nextTurnSeat === "BLACK"}
             isYou={mySeat === "BLACK"}
             seat="BLACK"
+            t={t}
           />
           <SeatPanel
             participant={participantBySeat.WHITE}
@@ -422,15 +439,19 @@ export default function AiMatchRoom({
             isTurn={effectiveUpdate?.nextTurnSeat === "WHITE"}
             isYou={mySeat === "WHITE"}
             seat="WHITE"
+            t={t}
           />
-          <Surface eyebrow="Connection" icon={Radio} title="Realtime">
+          <Surface eyebrow={t("connection.eyebrow")} icon={Radio} title={t("connection.title")}>
             <div className="grid gap-3 text-sm">
-              <DetailRow label="Socket" value={socketStatus} />
+              <DetailRow label={t("connection.socket")} value={socketStatus} />
               <DetailRow
-                label="Version"
+                label={t("connection.version")}
                 value={effectiveUpdate?.stateVersion ?? state?.stateVersion ?? 0}
               />
-              <DetailRow label="You" value={mySeat ?? "Spectator"} />
+              <DetailRow
+                label={t("connection.you")}
+                value={mySeat ? seatLabel(mySeat, t) : t("connection.spectator")}
+              />
             </div>
           </Surface>
         </aside>
@@ -439,7 +460,7 @@ export default function AiMatchRoom({
           <MatchBoard
             board={board}
             disabled={isBusy || isSubmittingMove || isAiThinking || matchStatus !== "IN_PROGRESS"}
-            label="AI Gomoku board"
+            label={t("board.ariaLabel")}
             lastMove={effectiveUpdate?.lastMove?.position ?? null}
             nextTurnSeat={effectiveUpdate?.nextTurnSeat ?? null}
             onCellSelect={(x, y) => {
@@ -452,11 +473,11 @@ export default function AiMatchRoom({
           <div className="mt-4 grid gap-3 md:grid-cols-[minmax(0,1fr)_auto] md:items-center">
             <div className="min-w-0">
               <p className="m-0 text-sm font-black text-[var(--muted-strong)]">
-                {statusLine(effectiveUpdate, mySeat, aiSeat, isAiThinking, aiName)}
+                {statusLine(effectiveUpdate, mySeat, aiSeat, isAiThinking, aiName, t)}
               </p>
               {aiLastReason ? (
                 <p className="m-0 mt-2 text-sm font-bold text-[var(--muted-text)]">
-                  Last AI move: {aiLastReason}
+                  {t("match.lastAiMove", { reason: aiLastReason })}
                 </p>
               ) : null}
               {loadError || moveError ? (
@@ -473,7 +494,7 @@ export default function AiMatchRoom({
                   onClick={handleRetryAiTurn}
                 >
                   <RefreshCcw aria-hidden="true" className="size-4" />
-                  Retry AI
+                  {t("actions.retryAi")}
                 </button>
               ) : null}
               <button
@@ -490,35 +511,49 @@ export default function AiMatchRoom({
                 ) : (
                   <Flag aria-hidden="true" className="size-4" />
                 )}
-                Resign
+                {t("actions.resign")}
               </button>
             </div>
           </div>
         </section>
 
         <aside className="grid content-start gap-5">
-          <Surface eyebrow="AI model" icon={BrainCircuit} title={difficulty.name}>
+          <Surface eyebrow={t("model.eyebrow")} icon={BrainCircuit} title={difficulty.name}>
             <div className="grid gap-3 text-sm">
-              <DetailRow label="Depth" value={`${difficulty.engine.searchDepth} plies`} />
-              <DetailRow label="Candidates" value={difficulty.engine.candidateLimit} />
               <DetailRow
-                label="Randomness"
+                label={t("model.depth")}
+                value={`${difficulty.engine.searchDepth} plies`}
+              />
+              <DetailRow label={t("model.candidates")} value={difficulty.engine.candidateLimit} />
+              <DetailRow
+                label={t("model.randomness")}
                 value={`${Math.round(difficulty.engine.mistakeChance * 100)}%`}
               />
             </div>
           </Surface>
 
-          <Surface eyebrow="Match" icon={Trophy} title="State">
+          <Surface eyebrow={t("match.eyebrow")} icon={Trophy} title={t("match.title")}>
             <div className="grid gap-3 text-sm">
-              <DetailRow label="Match" value={session.matchId.slice(0, 8)} />
-              <DetailRow label="Board" value={`${board.length} x ${board.length}`} />
-              <DetailRow label="Next" value={effectiveUpdate?.nextTurnSeat ?? "None"} />
-              <DetailRow label="Result" value={resultLabel(effectiveUpdate)} />
+              <DetailRow label={t("match.match")} value={session.matchId.slice(0, 8)} />
+              <DetailRow label={t("match.board")} value={`${board.length} x ${board.length}`} />
+              <DetailRow
+                label={t("match.next")}
+                value={
+                  effectiveUpdate?.nextTurnSeat
+                    ? seatLabel(effectiveUpdate.nextTurnSeat, t)
+                    : t("match.none")
+                }
+              />
+              <DetailRow label={t("match.result")} value={resultLabel(effectiveUpdate, t)} />
             </div>
           </Surface>
 
-          <Surface eyebrow="Moves" title="Notation">
-            <MoveHistory moves={moveHistory} participants={participants} />
+          <Surface eyebrow={t("moves.eyebrow")} title={t("moves.title")}>
+            <MoveHistory
+              moves={moveHistory}
+              participants={participants}
+              emptyLabel={t("moves.empty")}
+            />
           </Surface>
         </aside>
       </section>
@@ -532,22 +567,26 @@ function SeatPanel({
   isYou,
   participant,
   seat,
+  t,
 }: {
   isAi: boolean;
   isTurn: boolean;
   isYou: boolean;
   participant: ParticipantSummary | null;
   seat: Seat;
+  t: Translator;
 }) {
   return (
     <Surface
-      eyebrow={seat}
+      eyebrow={seatLabel(seat, t)}
       icon={isAi ? Bot : UserRound}
-      title={participant?.displayName ?? "Open seat"}
+      title={participant?.displayName ?? t("seat.openSeat")}
     >
       <div className="flex flex-wrap gap-2">
-        <Badge tone={seatTone(seat)}>{isYou ? "You" : isAi ? "AI" : "Opponent"}</Badge>
-        {isTurn ? <Badge tone="mint">Turn</Badge> : null}
+        <Badge tone={seatTone(seat)}>
+          {isYou ? t("seat.you") : isAi ? t("seat.ai") : t("seat.opponent")}
+        </Badge>
+        {isTurn ? <Badge tone="mint">{t("seat.turn")}</Badge> : null}
       </div>
     </Surface>
   );
@@ -565,9 +604,11 @@ function DetailRow({ label, value }: { label: string; value: string | number }) 
 function MoveHistory({
   moves,
   participants,
+  emptyLabel,
 }: {
   moves: MatchMove[];
   participants: ParticipantSummary[];
+  emptyLabel: string;
 }) {
   const seatByParticipant = new Map(
     participants.map((participant) => [participant.participantId, participant.seat]),
@@ -577,7 +618,7 @@ function MoveHistory({
   if (recentMoves.length === 0) {
     return (
       <div className="rounded-md border border-dashed border-[var(--panel-border)] bg-white/[0.035] p-4 text-sm font-bold text-[var(--muted-text)]">
-        No moves yet.
+        {emptyLabel}
       </div>
     );
   }
@@ -613,34 +654,62 @@ function statusLine(
   aiSeat: Seat | null,
   isAiThinking: boolean,
   aiName: string,
+  t: Translator,
 ) {
   if (!update) {
-    return "Loading match state.";
+    return t("status.loading");
   }
 
   if (update.status === "FINISHED") {
     if (update.winningSeat) {
-      return `${update.winningSeat} wins by ${update.endReason ?? "result"}.`;
+      return t("status.winner", {
+        seat: seatLabel(update.winningSeat, t),
+        reason: update.endReason ?? t("status.resultFallback"),
+      });
     }
 
-    return `Draw by ${update.endReason ?? "result"}.`;
+    return t("status.draw", { reason: update.endReason ?? t("status.resultFallback") });
   }
 
   if (isAiThinking || (aiSeat && update.nextTurnSeat === aiSeat)) {
-    return `${aiName} is thinking.`;
+    return t("status.aiThinking", { aiName });
   }
 
   if (mySeat && update.nextTurnSeat === mySeat) {
-    return "Your move.";
+    return t("status.yourMove");
   }
 
-  return `${update.nextTurnSeat ?? "Opponent"} to move.`;
+  return t("status.toMove", {
+    seat: update.nextTurnSeat ? seatLabel(update.nextTurnSeat, t) : t("seat.opponent"),
+  });
 }
 
-function resultLabel(update: GameUpdatePayload | null) {
+function resultLabel(update: GameUpdatePayload | null, t: Translator) {
   if (!update || update.status !== "FINISHED") {
-    return "Pending";
+    return t("result.pending");
   }
 
-  return update.winningSeat ? `${update.winningSeat} won` : "Draw";
+  return update.winningSeat
+    ? t("result.won", { seat: seatLabel(update.winningSeat, t) })
+    : t("result.draw");
+}
+
+function matchStatusLabel(status: GameUpdatePayload["status"], t: Translator) {
+  if (status === "WAITING") {
+    return t("status.badge.waiting");
+  }
+
+  if (status === "IN_PROGRESS") {
+    return t("status.badge.inProgress");
+  }
+
+  if (status === "FINISHED") {
+    return t("status.badge.finished");
+  }
+
+  return t("status.badge.cancelled");
+}
+
+function seatLabel(seat: Seat, t: Translator) {
+  return seat === "BLACK" ? t("seat.black") : t("seat.white");
 }
