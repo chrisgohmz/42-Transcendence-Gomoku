@@ -157,7 +157,8 @@ test("authenticated redesigned pages render at desktop and mobile widths", async
       .filter({ visible: true })
       .first();
     await messageBtn.click();
-
+    // Wait for client-side navigation to complete, then for API calls to settle
+    await page.waitForURL(/\/messages/);
     // Wait for the page navigation and sidebar API calls to finish
     await page.waitForLoadState("networkidle");
 
