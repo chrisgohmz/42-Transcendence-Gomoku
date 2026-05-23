@@ -4,7 +4,7 @@ import { useTranslations } from "next-intl";
 import { useState } from "react";
 
 import { useRouter } from "@/i18n/navigation";
-import { authClient } from "@/lib/auth-client";
+import { signOutCurrentSession } from "@/lib/auth-client";
 
 export const LogoutButton = () => {
   const router = useRouter();
@@ -17,13 +17,7 @@ export const LogoutButton = () => {
     setError(null);
 
     try {
-      const { error: signOutError } = await authClient.signOut();
-
-      if (signOutError) {
-        setError(signOutError.message ?? t("unavailable"));
-        return;
-      }
-
+      await signOutCurrentSession();
       router.push("/login");
       router.refresh();
     } catch (unknownError) {

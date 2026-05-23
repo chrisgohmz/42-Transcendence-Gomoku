@@ -2,12 +2,7 @@ import { beforeEach, describe, expect, mock, test } from "bun:test";
 
 import { createAuthModuleMock } from "@/test-utils/auth-module-mock";
 
-const headers = mock();
 const signOut = mock();
-
-await mock.module("next/headers", () => ({
-  headers,
-}));
 
 await mock.module("../../../lib/auth", () =>
   createAuthModuleMock({
@@ -22,35 +17,47 @@ await mock.module("../../../lib/auth", () =>
 const route = await import("./route");
 
 beforeEach(() => {
-  headers.mockReset();
   signOut.mockReset();
 
-  headers.mockResolvedValue(new Headers({ cookie: "session=1" }));
   signOut.mockResolvedValue({
     headers: new Headers({ "set-cookie": "session=; Max-Age=0" }),
   });
 });
 
+function logoutRequest(cookie = "better-auth.session_token=abc") {
+  return new Request("https://lan-host.test:8443/api/auth/logout", {
+    method: "POST",
+    headers: { cookie },
+  });
+}
+
 describe("POST /api/auth/logout", () => {
   test("returns success and forwards Better Auth response headers", async () => {
-    const response = await route.POST();
+    const request = logoutRequest();
+    const response = await route.POST(request);
 
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({ success: true });
     expect(response.headers.get("set-cookie")).toBe("session=; Max-Age=0");
     expect(signOut).toHaveBeenCalledWith({
-      headers: expect.any(Headers),
+      headers: request.headers,
+      request,
       returnHeaders: true,
     });
   });
 
-  test("still returns success when Better Auth sign-out fails", async () => {
+  test("still expires auth cookies when Better Auth sign-out fails", async () => {
     signOut.mockRejectedValueOnce(new Error("session store down"));
 
-    const response = await route.POST();
+    const response = await route.POST(
+      logoutRequest("better-auth.session_token=abc; better-auth.session_data.0=chunk"),
+    );
+    const setCookieHeader = response.headers.get("set-cookie");
 
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({ success: true });
-    expect(response.headers.get("set-cookie")).toBeNull();
+    expect(setCookieHeader).toContain("better-auth.session_token=");
+    expect(setCookieHeader).toContain("better-auth.session_data.0=");
+    expect(setCookieHeader).toContain("Max-Age=0");
   });
 });

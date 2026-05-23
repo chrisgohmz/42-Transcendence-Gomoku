@@ -19,6 +19,8 @@ const getDuplicateSignupFields = mock();
 const findUnique = mock();
 const updateUser = mock();
 const originalBetterAuthUrl = process.env["BETTER_AUTH_URL"];
+const originalBetterAuthTrustedOrigins = process.env["BETTER_AUTH_TRUSTED_ORIGINS"];
+const originalCaddySiteAddress = process.env["CADDY_SITE_ADDRESS"];
 
 await mock.module("next/cache", () => ({
   revalidatePath,
@@ -118,6 +120,21 @@ function hostileJsonRequest(path: string, body: unknown) {
   });
 }
 
+function trustedOriginJsonRequest(origin: string, path: string, body: unknown) {
+  const host = new URL(origin).host;
+
+  return new Request(`${origin}${path}`, {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      origin,
+      "x-forwarded-host": host,
+      "x-forwarded-proto": "https",
+    },
+    body: JSON.stringify(body),
+  });
+}
+
 function malformedJsonRequest(path: string) {
   return new Request(`http://localhost${path}`, {
     method: "POST",
@@ -140,6 +157,8 @@ function formData(values: Record<string, string>) {
 
 beforeEach(() => {
   delete process.env["BETTER_AUTH_URL"];
+  delete process.env["BETTER_AUTH_TRUSTED_ORIGINS"];
+  delete process.env["CADDY_SITE_ADDRESS"];
 
   changePassword.mockReset();
   signInEmail.mockReset();
@@ -175,6 +194,18 @@ afterEach(() => {
     delete process.env["BETTER_AUTH_URL"];
   } else {
     process.env["BETTER_AUTH_URL"] = originalBetterAuthUrl;
+  }
+
+  if (originalBetterAuthTrustedOrigins === undefined) {
+    delete process.env["BETTER_AUTH_TRUSTED_ORIGINS"];
+  } else {
+    process.env["BETTER_AUTH_TRUSTED_ORIGINS"] = originalBetterAuthTrustedOrigins;
+  }
+
+  if (originalCaddySiteAddress === undefined) {
+    delete process.env["CADDY_SITE_ADDRESS"];
+  } else {
+    process.env["CADDY_SITE_ADDRESS"] = originalCaddySiteAddress;
   }
 });
 
@@ -252,6 +283,26 @@ describe("auth API routes", () => {
 
     expect(call.body).toMatchObject({
       callbackURL: "https://canonical.test/en/profile",
+      email: "max@example.com",
+      password: "password123",
+    });
+  });
+
+  test("login keeps callbacks on the current request origin when it is trusted", async () => {
+    process.env["BETTER_AUTH_URL"] = "https://lan-host.test:8443";
+    process.env["BETTER_AUTH_TRUSTED_ORIGINS"] =
+      "https://localhost:8443,https://lan-host.test:8443";
+
+    await loginRoute.POST(
+      trustedOriginJsonRequest("https://localhost:8443", "/api/auth/login", {
+        email: "MAX@example.COM",
+        password: "password123",
+      }),
+    );
+    const call = signInEmail.mock.calls[0]?.[0] as AuthApiCall;
+
+    expect(call.body).toMatchObject({
+      callbackURL: "https://localhost:8443/en/profile",
       email: "max@example.com",
       password: "password123",
     });

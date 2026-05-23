@@ -36,14 +36,21 @@ export async function notifyFriendshipUpdateForUserIds(userLowId: string, userHi
   await publishFriendshipUpdate([userLowUsername, userHighUsername]);
 }
 
+export async function notifyFriendshipUpdateForUserIdsSafely(
+  userLowId: string,
+  userHighId: string,
+) {
+  try {
+    await notifyFriendshipUpdateForUserIds(userLowId, userHighId);
+  } catch (error) {
+    console.error("Failed to notify realtime server", error);
+  }
+}
+
 export async function deleteFriendshipAndNotify(friendship: FriendshipSnapshot) {
   await prisma.friendship.delete({
     where: { id: friendship.id },
   });
 
-  try {
-    await notifyFriendshipUpdateForUserIds(friendship.userLowId, friendship.userHighId);
-  } catch (error) {
-    console.error("Failed to notify realtime server", error);
-  }
+  await notifyFriendshipUpdateForUserIdsSafely(friendship.userLowId, friendship.userHighId);
 }
