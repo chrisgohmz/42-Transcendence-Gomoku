@@ -4,21 +4,25 @@
 // This handler joins them to a Socket.IO room named "conv:CONVERSATION_ID".
 // Any message broadcast to that room will arrive in their browser instantly.
 //
-// Compare to match-subscription.ts — same pattern, simpler auth check.
+// Compare to match-subscription.ts — same pattern, plus an active-friendship
+// check via the shared `canAccessDirectConversation` helper so users can't
+// keep reading/sending after unfriending.
 
 import type { Socket } from "socket.io";
 
+import { canAccessDirectConversation, type DirectMessageAccessStore } from "@/lib/chat/access";
 import { prisma } from "@/lib/prisma";
 
-// The name of the Socket.IO room for a given conversation
 export function convRoomId(conversationId: string): string {
   return `conv:${conversationId}`;
 }
 
-export function registerChatSubscription(socket: Socket) {
+export function registerChatSubscription(
+  socket: Socket,
+  db: DirectMessageAccessStore = prisma,
+) {
   // Event: browser → server, "I want to receive messages for this conversation"
   socket.on("chat:subscribe", async (payload: unknown) => {
-    // Validate the payload — it must be an object with a conversationId string
     if (
       typeof payload !== "object" ||
       payload === null ||
@@ -30,33 +34,24 @@ export function registerChatSubscription(socket: Socket) {
 
     const conversationId = (payload as Record<string, unknown>)["conversationId"] as string;
 
-    // Get the authenticated user from the socket (set during the handshake by socket-auth.ts)
     const userId = socket.data.user?.id;
-    if (!userId) {
+    if (typeof userId !== "string" || userId.length === 0) {
       socket.emit("chat:error", { error: "unauthorized" });
       return;
     }
 
     try {
-      // Security check: confirm this user is actually a participant of this conversation
-      const participation = await prisma.conversationParticipant.findUnique({
-        where: {
-          conversationId_userId: { conversationId, userId },
-        },
-      });
-
-      if (!participation) {
-        socket.emit("chat:error", { error: "conversation_not_found" });
+      const access = await canAccessDirectConversation(userId, conversationId, db);
+      if (!access.allowed) {
+        const errorCode = access.reason === "not_found" ? "conversation_not_found" : "not_friends";
+        socket.emit("chat:error", { error: errorCode });
         return;
       }
 
-      // Join the room — from now on, broadcasts to this room reach this socket
       const room = convRoomId(conversationId);
       await socket.join(room);
 
       console.log(`[chat] ${socket.id} joined room ${room}`);
-
-      // Confirm subscription to the browser
       socket.emit("chat:subscribed", { conversationId });
     } catch (error) {
       console.error("[chat] Failed to subscribe", error);

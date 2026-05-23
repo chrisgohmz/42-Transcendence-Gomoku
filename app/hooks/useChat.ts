@@ -76,12 +76,7 @@ export function useChat(conversationId: string | null) {
 
     // When a new message arrives from the server, append it to the list
     socket.on("chat:message", (msg: ChatMessage) => {
-      setMessages((prev) => {
-        // Avoid duplicates: if we already have this message (e.g. from the
-        // REST response), don't add it again
-        if (prev.some((m) => m.id === msg.id)) return prev;
-        return [...prev, msg];
-      });
+      setMessages((prev) => appendDedup(prev, msg));
     });
 
     // ── Cleanup ────────────────────────────────────────────────────────────
@@ -100,7 +95,6 @@ export function useChat(conversationId: string | null) {
   async function sendMessage(text: string): Promise<void> {
     if (!conversationId || text.trim().length === 0) return;
 
-    // POST to our Next.js API route
     const response = await fetch(`/api/conversations/${conversationId}/messages`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -110,11 +104,19 @@ export function useChat(conversationId: string | null) {
     if (!response.ok) {
       throw new Error("Failed to send message");
     }
-    // Note: we do NOT append the message here.
-    // The Socket.IO server will broadcast it back to us,
-    // and the "chat:message" listener above will add it to the list.
-    // This keeps one source of truth.
+
+    // Use the POST response as the local source of truth so the sender sees
+    // their message immediately, even if the realtime publish is slow or
+    // fails. The socket echo will arrive later and be deduped by id.
+    const data = (await response.json()) as { message: ChatMessage };
+    setMessages((prev) => appendDedup(prev, data.message));
   }
 
   return { messages, status, sendMessage };
+}
+
+// Append a message to the list, skipping if we already have it by id.
+function appendDedup(prev: ChatMessage[], msg: ChatMessage): ChatMessage[] {
+  if (prev.some((m) => m.id === msg.id)) return prev;
+  return [...prev, msg];
 }

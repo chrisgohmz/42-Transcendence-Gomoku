@@ -148,25 +148,10 @@ test("authenticated redesigned pages render at desktop and mobile widths", async
     await expect(page.getByTestId("friends-table").filter({ visible: true })).toBeVisible();
     await expectNoDocumentOverflow(page, "/friends");
 
-    //navigates via the friends page and checks that the composer is friend-specific
-    await gotoAppRoute(page, "/friends");
-    await expect(page.getByRole("heading", { level: 1, name: "Friends" })).toBeVisible();
-
-    const messageBtn = page
-      .getByRole("link", { name: new RegExp(`Message ${friend.displayName}`, "i") })
-      .filter({ visible: true })
-      .first();
-    await messageBtn.click();
-    // Wait for client-side navigation to complete, then for API calls to settle
-    await page.waitForURL(/\/messages/);
-    // Wait for the page navigation and sidebar API calls to finish
-    await page.waitForLoadState("networkidle");
-
+    // Shallow check that /messages renders for an authenticated user.
+    // The friend-to-message workflow has its own scenario in messages.e2e.ts.
+    await gotoAppRoute(page, "/messages");
     await expect(page.getByRole("heading", { level: 1, name: "Messages" })).toBeVisible();
-    // Composer must be labelled with the friend's name — not generic
-    await expect(
-      page.getByRole("textbox", { name: new RegExp(`Message ${friend.displayName}`, "i") }),
-    ).toBeVisible();
     await expectNoDocumentOverflow(page, "/messages");
   } finally {
     await cleanupTestUsers([user.username, friend.username]);

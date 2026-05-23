@@ -7,61 +7,19 @@
 
 import { getErrorMessage } from "@/lib/api-errors";
 import { getCurrentSession } from "@/lib/auth";
+import { canAccessDirectConversation } from "@/lib/chat/access";
 import { publishChatMessage } from "@/lib/chat/realtime-publisher";
 import { prisma } from "@/lib/prisma";
 
 // not useable with cacheComponents
 //export const dynamic = "force-dynamic";
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
-
-// Before doing anything with a conversation, verify the logged-in user
-// is actually a participant. This prevents users from reading other people's chats.
-async function getParticipation(conversationId: string, userId: string) {
-  return prisma.conversationParticipant.findUnique({
-    where: {
-      // This is the unique constraint defined in the schema: [conversationId, userId]
-      conversationId_userId: { conversationId, userId },
-    },
-  });
-}
-
-// For DIRECT conversations, the two users must still be ACCEPTED friends.
-// For non-DIRECT conversations (e.g. match chat) we skip this check.
-// Returns true if access should be allowed.
-async function isDirectConversationWithActiveFriend(
-  conversationId: string,
-  userId: string,
-): Promise<boolean> {
-  const conv = await prisma.conversation.findUnique({
-    where: { id: conversationId },
-    select: {
-      kind: true,
-      participants: {
-        where: { userId: { not: userId } },
-        select: { userId: true },
-      },
-    },
-  });
-
-  // Not a direct conversation — no friendship check needed
-  if (!conv || conv.kind !== "DIRECT") return true;
-
-  const otherId = conv.participants[0]?.userId;
-  if (!otherId) return false;
-
-  const sortedIds = [userId, otherId].sort();
-  const friendship = await prisma.friendship.findUnique({
-    where: {
-      userLowId_userHighId: {
-        userLowId: sortedIds[0]!,
-        userHighId: sortedIds[1]!,
-      },
-    },
-    select: { status: true },
-  });
-
-  return friendship?.status === "ACCEPTED";
+// Map the shared access result to an HTTP response.
+function deniedResponse(reason: "not_found" | "not_friends" | "not_direct") {
+  if (reason === "not_found") {
+    return Response.json({ error: "conversation_not_found" }, { status: 404 });
+  }
+  return Response.json({ error: "not_friends" }, { status: 403 });
 }
 
 // ─── GET: load message history ────────────────────────────────────────────────
@@ -78,15 +36,9 @@ export async function GET(
 
   const { id: conversationId } = await params;
 
-  // Security check: user must be a participant of this conversation
-  const participation = await getParticipation(conversationId, session.user.id);
-  if (!participation) {
-    return Response.json({ error: "conversation_not_found" }, { status: 404 });
-  }
-
-  // Friendship check: blocks message access after unfriending
-  if (!(await isDirectConversationWithActiveFriend(conversationId, session.user.id))) {
-    return Response.json({ error: "not_friends" }, { status: 403 });
+  const access = await canAccessDirectConversation(session.user.id, conversationId);
+  if (!access.allowed) {
+    return deniedResponse(access.reason);
   }
 
   try {
@@ -137,15 +89,9 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
 
   const { id: conversationId } = await params;
 
-  // Security check: user must be a participant
-  const participation = await getParticipation(conversationId, session.user.id);
-  if (!participation) {
-    return Response.json({ error: "conversation_not_found" }, { status: 404 });
-  }
-
-  // Friendship check: blocks sending after unfriending
-  if (!(await isDirectConversationWithActiveFriend(conversationId, session.user.id))) {
-    return Response.json({ error: "not_friends" }, { status: 403 });
+  const access = await canAccessDirectConversation(session.user.id, conversationId);
+  if (!access.allowed) {
+    return deniedResponse(access.reason);
   }
 
   // Parse and validate the request body
@@ -166,48 +112,50 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     return Response.json({ error: "message too long (max 2000 chars)" }, { status: 400 });
   }
 
+  let message;
   try {
-    // Save the message to the database
-    const message = await prisma.directMessage.create({
-      data: {
-        conversationId,
-        senderUserId: session.user.id,
-        kind: "USER",
-        body: text,
-      },
-      include: {
-        sender: {
-          select: {
-            id: true,
-            username: true,
-            displayName: true,
-            avatarUrl: true,
+    // Persist the message and bump lastMessageAt atomically so the sidebar
+    // never sees a committed message without an updated preview ordering.
+    message = await prisma.$transaction(async (tx) => {
+      const created = await tx.directMessage.create({
+        data: {
+          conversationId,
+          senderUserId: session.user.id,
+          kind: "USER",
+          body: text,
+        },
+        include: {
+          sender: {
+            select: {
+              id: true,
+              username: true,
+              displayName: true,
+              avatarUrl: true,
+            },
           },
         },
-      },
+      });
+      await tx.conversation.update({
+        where: { id: conversationId },
+        data: { lastMessageAt: created.createdAt },
+      });
+      return created;
     });
-
-    // Update the conversation's lastMessageAt so it appears at the top of lists
-    await prisma.conversation.update({
-      where: { id: conversationId },
-      data: { lastMessageAt: message.createdAt },
-    });
-
-    // Notify the Socket.IO server so it can push the message to everyone
-    // who currently has this conversation open.
-    // We wrap this in try/catch so a realtime failure doesn't break message sending —
-    // the message is already saved in the DB, which is the source of truth.
-    try {
-      await publishChatMessage({ conversationId, message });
-    } catch (realtimeError) {
-      console.error("[chat] Failed to publish realtime message", realtimeError);
-    }
-
-    return Response.json({ message }, { status: 201 });
   } catch (error) {
     return Response.json(
       { error: "failed_to_send_message", detail: getErrorMessage(error) },
       { status: 500 },
     );
   }
+
+  // Realtime publish runs only after the DB transaction has committed.
+  // A failure here doesn't roll back the message — the sender already
+  // gets it in the response body and other clients will fetch on reload.
+  try {
+    await publishChatMessage({ conversationId, message });
+  } catch (realtimeError) {
+    console.error("[chat] Failed to publish realtime message", realtimeError);
+  }
+
+  return Response.json({ message }, { status: 201 });
 }

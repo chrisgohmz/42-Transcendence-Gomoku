@@ -12,6 +12,7 @@
 
 import { getErrorMessage } from "@/lib/api-errors";
 import { getCurrentSession } from "@/lib/auth";
+import { isAcceptedFriend } from "@/lib/chat/access";
 import { prisma } from "@/lib/prisma";
 
 export async function POST(request: Request) {
@@ -56,16 +57,7 @@ export async function POST(request: Request) {
   }
 
   // 5b. Only accepted friends can DM each other.
-  // The Friendship table stores pairs with the lower ID first (userLowId < userHighId),
-  // so we sort before querying to match that unique constraint.
-  const sortedIds = [session.user.id, friendId].sort();
-  const lowId = sortedIds[0]!;
-  const highId = sortedIds[1]!;
-  const friendship = await prisma.friendship.findUnique({
-    where: { userLowId_userHighId: { userLowId: lowId, userHighId: highId } },
-    select: { status: true },
-  });
-  if (!friendship || friendship.status !== "ACCEPTED") {
+  if (!(await isAcceptedFriend(session.user.id, friendId))) {
     return Response.json({ error: "not_friends" }, { status: 403 });
   }
 

@@ -9,6 +9,7 @@
 
 import { getErrorMessage } from "@/lib/api-errors";
 import { getCurrentSession } from "@/lib/auth";
+import { sortFriendshipKey } from "@/lib/chat/access";
 import { prisma } from "@/lib/prisma";
 
 // crashwith cacheComponents
@@ -21,17 +22,20 @@ export async function GET() {
     return Response.json({ error: "unauthorized" }, { status: 401 });
   }
 
+  const currentUserId = session.user.id;
+
   try {
-    // 2. Find all conversations where this user is a participant
-    //    We use `include` to also fetch related data in the same query
+    // 2. Find DIRECT conversations where this user is a participant.
+    //    Non-DIRECT (e.g. match chat) is intentionally excluded — the
+    //    messages page only renders friend DMs.
     const participations = await prisma.conversationParticipant.findMany({
       where: {
-        userId: session.user.id,
+        userId: currentUserId,
+        conversation: { kind: "DIRECT" },
       },
       include: {
         conversation: {
           include: {
-            // Fetch ALL participants of each conversation so we can find the "other" user
             participants: {
               include: {
                 user: {
@@ -44,7 +48,6 @@ export async function GET() {
                 },
               },
             },
-            // Fetch the most recent message for the preview
             messages: {
               orderBy: { createdAt: "desc" },
               take: 1,
@@ -53,27 +56,58 @@ export async function GET() {
         },
       },
       orderBy: {
-        // Show conversations with the most recent activity first
         conversation: { lastMessageAt: "desc" },
       },
     });
 
-    // 3. Shape the data into something clean for the frontend
+    type Participation = (typeof participations)[number];
+    type ParticipantOfConversation = Participation["conversation"]["participants"][number];
+
+    function otherParticipantOf(p: Participation): ParticipantOfConversation | undefined {
+      return p.conversation.participants.find(
+        (cp: ParticipantOfConversation) => cp.userId !== currentUserId,
+      );
+    }
+
+    // 3. Filter out conversations whose other user is no longer an accepted friend.
+    const otherUserIds = participations
+      .map((p: Participation) => otherParticipantOf(p)?.userId)
+      .filter((id: string | undefined): id is string => typeof id === "string");
+
+    const friendshipKeys = otherUserIds.map((otherId: string) =>
+      sortFriendshipKey(currentUserId, otherId),
+    );
+    const friendships = friendshipKeys.length
+      ? await prisma.friendship.findMany({
+          where: {
+            OR: friendshipKeys,
+            status: "ACCEPTED",
+          },
+          select: { userLowId: true, userHighId: true },
+        })
+      : [];
+    const acceptedFriendIds = new Set<string>();
+    for (const f of friendships) {
+      const other = f.userLowId === currentUserId ? f.userHighId : f.userLowId;
+      acceptedFriendIds.add(other);
+    }
+
+    // 4. Shape the data into something clean for the frontend
+    const allowedParticipations = participations.filter((p: Participation) => {
+      const other = otherParticipantOf(p);
+      return other ? acceptedFriendIds.has(other.userId) : false;
+    });
+
     const conversations = await Promise.all(
-      participations.map(async (participation) => {
+      allowedParticipations.map(async (participation: Participation) => {
         const conv = participation.conversation;
-
-        // Find the other participant (not the current user)
-        const otherParticipant = conv.participants.find((p) => p.userId !== session.user.id);
-
-        // Count unread messages:
-        // messages created AFTER the last time the current user read this conversation
+        const otherParticipant = otherParticipantOf(participation);
 
         const unreadCount = await prisma.directMessage.count({
           where: {
             conversationId: conv.id,
             deletedAt: null,
-            senderUserId: { not: session.user.id }, // don't count own messages
+            senderUserId: { not: currentUserId },
             createdAt: participation.lastReadAt ? { gt: participation.lastReadAt } : undefined,
           },
         });
@@ -85,8 +119,8 @@ export async function GET() {
           lastMessageAt: conv.lastMessageAt,
           unreadCount,
         };
-      }), //closes map
-    ); //closes Promise.all
+      }),
+    );
 
     return Response.json({ conversations });
   } catch (error) {
