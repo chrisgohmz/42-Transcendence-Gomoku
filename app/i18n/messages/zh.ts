@@ -1058,6 +1058,8 @@ export const messages = {
     title: "个人资料",
     lede: "管理你的资料并查看五子棋比赛统计。",
     editProfile: "编辑资料",
+    linkedEmail: "关联邮箱",
+    emailMissing: "尚未关联邮箱",
     statsTitle: "总战绩",
     friendStatsTitle: "总体统计",
     publicPage: {
@@ -1225,6 +1227,8 @@ export const messages = {
       security: "安全",
       profileDetails: "个人资料详情",
       usernameReadonly: "用户名 (不可编辑)",
+      linkedEmailReadonly: "关联邮箱 (不可编辑)",
+      emailMissing: "尚未关联邮箱",
       displayName: "显示名称",
       changePassword: "修改密码",
       setPassword: "设置密码",

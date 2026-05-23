@@ -1065,6 +1065,8 @@ export const messages = {
     title: "プロフィール",
     lede: "詳細情報を管理し、五目並べの戦績を確認できます。",
     editProfile: "プロフィール編集",
+    linkedEmail: "連携メール",
+    emailMissing: "メール未連携",
     statsTitle: "総合戦績",
     friendStatsTitle: "全体の統計",
     publicPage: {
@@ -1232,6 +1234,8 @@ export const messages = {
       security: "セキュリティ",
       profileDetails: "プロフィールの詳細",
       usernameReadonly: "ユーザー名 (編集不可)",
+      linkedEmailReadonly: "連携メール (編集不可)",
+      emailMissing: "メール未連携",
       displayName: "表示名",
       changePassword: "パスワードの変更",
       setPassword: "パスワードを設定",

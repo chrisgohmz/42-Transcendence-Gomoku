@@ -1068,6 +1068,8 @@ export const messages = {
     title: "Profile",
     lede: "Manage your details and view your Gomoku game statistics.",
     editProfile: "Edit Profile",
+    linkedEmail: "Linked email",
+    emailMissing: "No email linked",
     statsTitle: "Your Overall Statistics",
     friendStatsTitle: "Overall Statistics",
     publicPage: {
@@ -1235,6 +1237,8 @@ export const messages = {
       security: "Security",
       profileDetails: "Profile Details",
       usernameReadonly: "Username (Not editable)",
+      linkedEmailReadonly: "Linked Email (Not editable)",
+      emailMissing: "No email linked",
       displayName: "Display Name",
       changePassword: "Change Password",
       setPassword: "Set Password",

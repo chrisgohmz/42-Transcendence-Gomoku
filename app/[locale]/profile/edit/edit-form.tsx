@@ -14,11 +14,13 @@ import { changeAccountPassword, saveDisplayName, setAccountPassword } from "./ac
 
 export default function EditProfileForm({
   currentDisplayName,
+  currentEmail,
   currentUsername,
   hasPassword,
 }: {
   currentUsername: string;
   currentDisplayName: string;
+  currentEmail: string | null;
   hasPassword: boolean;
 }) {
   const [displayNameState, displayNameAction, displayNamePending] = useActionState(
@@ -41,6 +43,7 @@ export default function EditProfileForm({
   const t = useTranslations("profile.edit");
 
   const hasCredentialPassword = hasPassword || Boolean(setPasswordState.successMessage);
+  const accountEmail = currentEmail ?? t("emailMissing");
   const activePasswordState = hasCredentialPassword ? passwordState : setPasswordState;
   const activePasswordAction = hasCredentialPassword ? passwordAction : setPasswordAction;
   const activePasswordPending = hasCredentialPassword ? passwordPending : setPasswordPending;
@@ -80,6 +83,14 @@ export default function EditProfileForm({
               </div>
             </div>
             <div className="flex items-center justify-between rounded-md border border-[var(--panel-border-soft)] bg-white/[0.035] p-4">
+              <div className="grid min-w-0 gap-1">
+                <span className="text-sm font-bold text-[var(--muted-text)]">
+                  {t("linkedEmailReadonly")}
+                </span>
+                <span className="truncate font-medium">{accountEmail}</span>
+              </div>
+            </div>
+            <div className="flex items-center justify-between rounded-md border border-[var(--panel-border-soft)] bg-white/[0.035] p-4">
               <div className="grid gap-1">
                 <span className="text-sm font-bold text-[var(--muted-text)]">
                   {t("displayName")}
@@ -116,6 +127,21 @@ export default function EditProfileForm({
                   type="text"
                   defaultValue={currentUsername}
                   autoComplete="username"
+                  className="text-input cursor-not-allowed opacity-70"
+                  readOnly
+                />
+              </div>
+
+              <div className="field">
+                <label htmlFor="email" className="field-label">
+                  {t("linkedEmailReadonly")}
+                </label>
+                <input
+                  id="email"
+                  name="email"
+                  type="text"
+                  defaultValue={accountEmail}
+                  autoComplete="email"
                   className="text-input cursor-not-allowed opacity-70"
                   readOnly
                 />

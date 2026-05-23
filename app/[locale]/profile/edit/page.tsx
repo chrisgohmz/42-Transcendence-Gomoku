@@ -81,6 +81,7 @@ async function EditProfilePageContent({ params }: EditProfilePageProps) {
         <EditProfileForm
           currentUsername={sessionData.user.username}
           currentDisplayName={sessionData.user.displayName}
+          currentEmail={sessionData.user.email}
           hasPassword={hasPassword}
         />
       </section>
