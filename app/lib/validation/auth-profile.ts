@@ -267,7 +267,7 @@ const profilePasswordInputSchema = objectFromUnknown({
   }
 });
 
-const profileSetPasswordInputSchema = objectFromUnknown({
+const newPasswordPairInputSchema = objectFromUnknown({
   newPassword: profilePasswordSchema,
   confirmPassword: profilePasswordSchema,
 }).superRefine((input, ctx) => {
@@ -286,24 +286,8 @@ const profileSetPasswordInputSchema = objectFromUnknown({
   }
 });
 
-const passwordResetConfirmInputSchema = objectFromUnknown({
-  newPassword: profilePasswordSchema,
-  confirmPassword: profilePasswordSchema,
-}).superRefine((input, ctx) => {
-  if (!input.newPassword) {
-    addZodIssue(ctx, "newPassword", "newPasswordRequired");
-  } else if (input.newPassword.length < authValidationLimits.passwordMinLength) {
-    addZodIssue(ctx, "newPassword", "shortPassword");
-  } else if (input.newPassword.length > authValidationLimits.passwordMaxLength) {
-    addZodIssue(ctx, "newPassword", "passwordTooLong");
-  }
-
-  if (!input.confirmPassword) {
-    addZodIssue(ctx, "confirmPassword", "confirmPasswordRequired");
-  } else if (input.newPassword && input.newPassword !== input.confirmPassword) {
-    addZodIssue(ctx, "confirmPassword", "passwordMismatch");
-  }
-});
+const profileSetPasswordInputSchema = newPasswordPairInputSchema;
+const passwordResetConfirmInputSchema = newPasswordPairInputSchema;
 
 export type ValidLoginInput = z.infer<typeof loginInputSchema>;
 export type ValidSignupInput = z.infer<typeof signupInputSchema>;

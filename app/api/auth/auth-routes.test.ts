@@ -161,6 +161,18 @@ function formData(values: Record<string, string>) {
   return data;
 }
 
+function givenSignedOutUser() {
+  getCurrentSession.mockResolvedValueOnce(null);
+}
+
+function givenSignedInCredentialUser() {
+  hasCredentialPassword.mockResolvedValueOnce(true);
+}
+
+function givenSignedInOAuthOnlyUser() {
+  hasCredentialPassword.mockResolvedValueOnce(false);
+}
+
 beforeEach(() => {
   delete process.env["BETTER_AUTH_URL"];
   delete process.env["BETTER_AUTH_TRUSTED_ORIGINS"];
@@ -188,7 +200,6 @@ beforeEach(() => {
     response: { user: { id: user.id } },
   });
   getDuplicateSignupFields.mockResolvedValue({});
-  hasCredentialPassword.mockResolvedValue(true);
   findUnique.mockResolvedValue(user);
   getCurrentSession.mockResolvedValue({
     user: { id: user.id },
@@ -845,7 +856,7 @@ describe("auth API routes", () => {
   });
 
   test("setAccountPassword requires a signed-in user", async () => {
-    getCurrentSession.mockResolvedValueOnce(null);
+    givenSignedOutUser();
 
     const state = await profileActions.setAccountPassword(
       previousState,
@@ -865,6 +876,8 @@ describe("auth API routes", () => {
   });
 
   test("setAccountPassword refuses accounts that already have a credential password", async () => {
+    givenSignedInCredentialUser();
+
     const state = await profileActions.setAccountPassword(
       previousState,
       formData({
@@ -883,7 +896,7 @@ describe("auth API routes", () => {
   });
 
   test("setAccountPassword creates a credential password for OAuth-only accounts", async () => {
-    hasCredentialPassword.mockResolvedValueOnce(false);
+    givenSignedInOAuthOnlyUser();
 
     const state = await profileActions.setAccountPassword(
       previousState,
@@ -904,6 +917,36 @@ describe("auth API routes", () => {
       fields: {},
       message: null,
       successMessage: "saveSuccess",
+    });
+  });
+
+  test("setAccountPassword maps late Better Auth already-set failures to the already-set message", async () => {
+    givenSignedInOAuthOnlyUser();
+    setPassword.mockRejectedValueOnce(
+      new APIError("BAD_REQUEST", {
+        code: "PASSWORD_ALREADY_SET",
+        message: "password already set",
+      }),
+    );
+
+    const state = await profileActions.setAccountPassword(
+      previousState,
+      formData({
+        newPassword: "password999",
+        confirmPassword: "password999",
+      }),
+    );
+
+    expect(setPassword).toHaveBeenCalledWith({
+      body: {
+        newPassword: "password999",
+      },
+      headers: expect.any(Headers),
+    });
+    expect(state).toMatchObject({
+      fields: {},
+      message: "passwordAlreadySet",
+      successMessage: null,
     });
   });
 });
