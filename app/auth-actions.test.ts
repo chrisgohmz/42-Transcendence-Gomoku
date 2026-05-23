@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, mock, test } from "bun:test";
+import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
 import { APIError } from "better-auth/api";
 
@@ -10,7 +10,10 @@ const headers = mock();
 const redirect = mock();
 const signInEmail = mock();
 const signUpEmail = mock();
+const requestPasswordReset = mock();
+const resetPassword = mock();
 const getDuplicateSignupFields = mock();
+const originalBetterAuthUrl = process.env["BETTER_AUTH_URL"];
 
 await mock.module("server-only", () => ({}));
 
@@ -31,6 +34,8 @@ await mock.module("./lib/auth", () =>
   createAuthModuleMock({
     auth: {
       api: {
+        requestPasswordReset,
+        resetPassword,
         signInEmail,
         signUpEmail,
       },
@@ -39,8 +44,14 @@ await mock.module("./lib/auth", () =>
   }),
 );
 
-const { loginAction, signupAction } = await import("./auth-actions");
-const { initialLoginActionState, initialSignupActionState } = await import("./auth-action-state");
+const { loginAction, requestPasswordResetAction, resetPasswordAction, signupAction } =
+  await import("./auth-actions");
+const {
+  initialLoginActionState,
+  initialPasswordResetConfirmActionState,
+  initialPasswordResetRequestActionState,
+  initialSignupActionState,
+} = await import("./auth-action-state");
 
 function formData(values: Record<string, string>) {
   const data = new FormData();
@@ -53,12 +64,16 @@ function formData(values: Record<string, string>) {
 }
 
 beforeEach(() => {
+  process.env["BETTER_AUTH_URL"] = "https://app.test";
+
   getLocale.mockReset();
   getTranslations.mockReset();
   headers.mockReset();
   redirect.mockReset();
   signInEmail.mockReset();
   signUpEmail.mockReset();
+  requestPasswordReset.mockReset();
+  resetPassword.mockReset();
   getDuplicateSignupFields.mockReset();
 
   getLocale.mockResolvedValue("en");
@@ -67,11 +82,21 @@ beforeEach(() => {
       (key: string) =>
         `${locale}:${namespace}:${key}`,
   );
-  headers.mockResolvedValue(new Headers({ cookie: "session=1" }));
+  headers.mockResolvedValue(new Headers({ cookie: "session=1", origin: "https://app.test" }));
   redirect.mockImplementation((args: unknown) => ({ redirected: args }));
   signInEmail.mockResolvedValue({});
   signUpEmail.mockResolvedValue({});
+  requestPasswordReset.mockResolvedValue({});
+  resetPassword.mockResolvedValue({});
   getDuplicateSignupFields.mockResolvedValue({});
+});
+
+afterEach(() => {
+  if (originalBetterAuthUrl === undefined) {
+    delete process.env["BETTER_AUTH_URL"];
+  } else {
+    process.env["BETTER_AUTH_URL"] = originalBetterAuthUrl;
+  }
 });
 
 describe("loginAction", () => {
@@ -110,8 +135,10 @@ describe("loginAction", () => {
 
     expect(signInEmail).toHaveBeenCalledWith({
       body: {
+        callbackURL: "https://app.test/en/profile",
         email: "max@example.com",
         password: "password123",
+        rememberMe: false,
       },
       headers: expect.any(Headers),
     });
@@ -120,6 +147,30 @@ describe("loginAction", () => {
       fields: {},
       message: "en:auth.errors:invalidCredentials",
     });
+  });
+
+  test("maps unverified email sign-in to a verification message", async () => {
+    signInEmail.mockRejectedValueOnce(
+      new APIError("FORBIDDEN", {
+        code: "EMAIL_NOT_VERIFIED",
+        message: "Email not verified",
+      }),
+    );
+
+    const state = await loginAction(
+      initialLoginActionState,
+      formData({
+        email: "max@example.com",
+        password: "password123",
+      }),
+    );
+
+    expect(state).toEqual({
+      email: "max@example.com",
+      fields: {},
+      message: "en:auth.errors:emailNotVerified",
+    });
+    expect(redirect).not.toHaveBeenCalled();
   });
 
   test("redirects to the localized profile route after a successful sign-in", async () => {
@@ -132,11 +183,178 @@ describe("loginAction", () => {
       }),
     );
 
-    expect(state).toEqual({
+    expect(state as unknown).toEqual({
       redirected: {
         href: "/profile",
         locale: "zh",
       },
+    });
+  });
+});
+
+describe("requestPasswordResetAction", () => {
+  test("validates the submitted email before calling Better Auth", async () => {
+    const state = await requestPasswordResetAction(
+      initialPasswordResetRequestActionState,
+      formData({
+        email: "not-an-email",
+        locale: "ja",
+      }),
+    );
+
+    expect(state).toEqual({
+      email: "not-an-email",
+      fields: {
+        email: ["ja:auth.errors:invalidEmail"],
+      },
+      message: "ja:auth.errors:fixHighlightedFields",
+      successMessage: null,
+    });
+    expect(requestPasswordReset).not.toHaveBeenCalled();
+  });
+
+  test("asks Better Auth to send a reset link without revealing account existence", async () => {
+    const state = await requestPasswordResetAction(
+      initialPasswordResetRequestActionState,
+      formData({
+        email: "MAX@example.COM",
+        locale: "en",
+      }),
+    );
+
+    expect(requestPasswordReset).toHaveBeenCalledWith({
+      body: {
+        email: "max@example.com",
+        redirectTo: "https://app.test/en/reset-password",
+      },
+    });
+    expect(state).toEqual({
+      email: "MAX@example.COM",
+      fields: {},
+      message: null,
+      successMessage: "en:auth.errors:passwordResetEmailSent",
+    });
+  });
+
+  test("uses the configured app origin for reset links instead of the request origin", async () => {
+    process.env["BETTER_AUTH_URL"] = "https://canonical.test";
+    headers.mockResolvedValueOnce(
+      new Headers({ cookie: "session=1", origin: "https://evil.test" }),
+    );
+
+    await requestPasswordResetAction(
+      initialPasswordResetRequestActionState,
+      formData({
+        email: "max@example.com",
+        locale: "en",
+      }),
+    );
+
+    expect(requestPasswordReset).toHaveBeenCalledWith({
+      body: {
+        email: "max@example.com",
+        redirectTo: "https://canonical.test/en/reset-password",
+      },
+    });
+  });
+
+  test("maps reset request failures to a public unavailable message", async () => {
+    requestPasswordReset.mockRejectedValueOnce(new Error("mail down"));
+
+    const state = await requestPasswordResetAction(
+      initialPasswordResetRequestActionState,
+      formData({
+        email: "max@example.com",
+      }),
+    );
+
+    expect(state).toEqual({
+      email: "max@example.com",
+      fields: {},
+      message: "en:auth.errors:passwordResetUnavailable",
+      successMessage: null,
+    });
+  });
+});
+
+describe("resetPasswordAction", () => {
+  test("requires a reset token before calling Better Auth", async () => {
+    const state = await resetPasswordAction(
+      initialPasswordResetConfirmActionState,
+      formData({
+        confirmPassword: "password999",
+        newPassword: "password999",
+      }),
+    );
+
+    expect(state).toEqual({
+      fields: {},
+      message: "en:auth.errors:invalidResetToken",
+      successMessage: null,
+    });
+    expect(resetPassword).not.toHaveBeenCalled();
+  });
+
+  test("validates matching reset password fields", async () => {
+    const state = await resetPasswordAction(
+      initialPasswordResetConfirmActionState,
+      formData({
+        confirmPassword: "password000",
+        newPassword: "short",
+        token: "reset-token",
+      }),
+    );
+
+    expect(state).toEqual({
+      fields: {
+        confirmPassword: ["en:auth.errors:passwordMismatch"],
+        newPassword: ["en:auth.errors:shortPassword"],
+      },
+      message: "en:auth.errors:fixHighlightedFields",
+      successMessage: null,
+    });
+    expect(resetPassword).not.toHaveBeenCalled();
+  });
+
+  test("resets the password through Better Auth", async () => {
+    const state = await resetPasswordAction(
+      initialPasswordResetConfirmActionState,
+      formData({
+        confirmPassword: "password999",
+        newPassword: "password999",
+        token: "reset-token",
+      }),
+    );
+
+    expect(resetPassword).toHaveBeenCalledWith({
+      body: {
+        newPassword: "password999",
+        token: "reset-token",
+      },
+    });
+    expect(state).toEqual({
+      fields: {},
+      message: null,
+      successMessage: "en:auth.errors:passwordResetSuccess",
+    });
+  });
+
+  test("maps Better Auth token failures to the reset-token message", async () => {
+    resetPassword.mockRejectedValueOnce(new APIError("BAD_REQUEST", { message: "bad token" }));
+
+    const state = await resetPasswordAction(
+      initialPasswordResetConfirmActionState,
+      formData({
+        confirmPassword: "password999",
+        newPassword: "password999",
+        token: "reset-token",
+      }),
+    );
+
+    expect(state).toEqual({
+      fields: {},
+      message: "en:auth.errors:invalidResetToken",
+      successMessage: null,
     });
   });
 });
@@ -214,7 +432,7 @@ describe("signupAction", () => {
     });
   });
 
-  test("redirects to the localized profile route after successful signup", async () => {
+  test("asks Better Auth to send verification email after successful signup", async () => {
     const state = await signupAction(
       initialSignupActionState,
       formData({
@@ -228,6 +446,7 @@ describe("signupAction", () => {
 
     expect(signUpEmail).toHaveBeenCalledWith({
       body: {
+        callbackURL: "https://app.test/ja/profile",
         email: "max@example.com",
         name: "Max",
         password: "password123",
@@ -236,10 +455,13 @@ describe("signupAction", () => {
       headers: expect.any(Headers),
     });
     expect(state).toEqual({
-      redirected: {
-        href: "/profile",
-        locale: "ja",
-      },
+      displayName: "Max",
+      email: "max@example.com",
+      fields: {},
+      message: null,
+      successMessage: "ja:auth.errors:signupVerificationEmailSent",
+      username: "max_player",
     });
+    expect(redirect).not.toHaveBeenCalled();
   });
 });

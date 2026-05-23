@@ -11,6 +11,7 @@ import {
   getDuplicateSignupFieldErrors,
   hasDuplicateSignupFields,
 } from "../../../lib/auth-duplicate-fields";
+import { getLocalizedAuthAppUrl } from "../../../lib/auth-urls";
 import { resolveApiLocale } from "../../../lib/i18n/api";
 import { prisma } from "../../../lib/prisma";
 import { fieldIssuesToMap, validateSignupInput } from "../../../lib/validation/auth-profile";
@@ -21,6 +22,14 @@ type SignupBody = {
   password?: unknown;
   username?: unknown;
 };
+
+function getLocalizedProfileUrl(request: Request): string {
+  const locale = resolveApiLocale(request);
+  return getLocalizedAuthAppUrl(locale, "/profile", {
+    headers: request.headers,
+    requestUrl: request.url,
+  });
+}
 
 export async function POST(request: Request) {
   const body = (await request.json().catch(() => null)) as SignupBody | null;
@@ -62,6 +71,7 @@ export async function POST(request: Request) {
 
     const { headers, response } = await auth.api.signUpEmail({
       body: {
+        callbackURL: getLocalizedProfileUrl(request),
         email: validation.data.email,
         name: validation.data.displayName,
         password: validation.data.password,
@@ -86,7 +96,15 @@ export async function POST(request: Request) {
       );
     }
 
-    return Response.json({ user: serializeUserForResponse(user) }, { headers, status: 201 });
+    const serializedUser = serializeUserForResponse(user);
+
+    return Response.json(
+      {
+        user: serializedUser,
+        verificationRequired: !serializedUser.emailVerified,
+      },
+      { headers, status: 201 },
+    );
   } catch (error) {
     if (isAPIError(error)) {
       const duplicateFields = await findDuplicateSignupFields(

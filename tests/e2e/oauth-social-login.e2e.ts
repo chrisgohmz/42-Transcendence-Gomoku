@@ -143,7 +143,6 @@ async function createAndSignInTestUser(page: Page, testInfo: TestInfo): Promise<
       displayName: `OAuth Test ${token.slice(-4)}`,
       email,
       emailVerified: true,
-      emailVerifiedAt: new Date(),
       id: userId,
       username,
     },

@@ -7,7 +7,6 @@ type UserForResponse = {
   displayName: string;
   email: string;
   emailVerified?: boolean | null;
-  emailVerifiedAt?: Date | string | null;
   id: string;
   username: string;
 };
@@ -39,7 +38,7 @@ export function createAuthModuleMock(overrides: Partial<AuthModuleMock> = {}): A
     serializeUserForResponse: (user) => ({
       displayName: user.displayName,
       email: user.email,
-      emailVerified: Boolean(user.emailVerified || user.emailVerifiedAt),
+      emailVerified: Boolean(user.emailVerified),
       id: user.id,
       username: user.username,
     }),

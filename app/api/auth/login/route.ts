@@ -3,6 +3,7 @@ import { getTranslations } from "next-intl/server";
 
 import { apiErrorResponse, getErrorMessage } from "../../../lib/api-errors";
 import { auth, serializeUserForResponse } from "../../../lib/auth";
+import { getLocalizedAuthAppUrl } from "../../../lib/auth-urls";
 import { resolveApiLocale } from "../../../lib/i18n/api";
 import { prisma } from "../../../lib/prisma";
 import { fieldIssuesToMap, validateLoginInput } from "../../../lib/validation/auth-profile";
@@ -11,6 +12,22 @@ type LoginBody = {
   email?: unknown;
   password?: unknown;
 };
+
+function getLocalizedProfileUrl(request: Request): string {
+  const locale = resolveApiLocale(request);
+  return getLocalizedAuthAppUrl(locale, "/profile", {
+    headers: request.headers,
+    requestUrl: request.url,
+  });
+}
+
+function isEmailNotVerifiedError(error: unknown): boolean {
+  return (
+    isAPIError(error) &&
+    error.statusCode === 403 &&
+    (error.body as { code?: string } | undefined)?.code === "EMAIL_NOT_VERIFIED"
+  );
+}
 
 export async function POST(request: Request) {
   const body = (await request.json().catch(() => null)) as LoginBody | null;
@@ -36,6 +53,7 @@ export async function POST(request: Request) {
   try {
     const { headers, response } = await auth.api.signInEmail({
       body: {
+        callbackURL: getLocalizedProfileUrl(request),
         email: validation.data.email,
         password: validation.data.password,
       },
@@ -60,6 +78,16 @@ export async function POST(request: Request) {
 
     return Response.json({ user: serializeUserForResponse(user) }, { headers });
   } catch (error) {
+    if (isEmailNotVerifiedError(error)) {
+      return apiErrorResponse(
+        {
+          error: "email_not_verified",
+          message: t("emailNotVerified"),
+        },
+        403,
+      );
+    }
+
     if (isAPIError(error)) {
       return apiErrorResponse(
         {

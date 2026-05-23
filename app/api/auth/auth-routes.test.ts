@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, mock, test } from "bun:test";
+import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
 import { APIError } from "better-auth/api";
 
@@ -18,6 +18,7 @@ const getCurrentSession = mock();
 const getDuplicateSignupFields = mock();
 const findUnique = mock();
 const updateUser = mock();
+const originalBetterAuthUrl = process.env["BETTER_AUTH_URL"];
 
 await mock.module("next/cache", () => ({
   revalidatePath,
@@ -37,7 +38,6 @@ const user = {
   displayName: "Max",
   email: "max@example.com",
   emailVerified: true,
-  emailVerifiedAt: null,
 };
 
 await mock.module("../../lib/auth", () =>
@@ -105,6 +105,19 @@ function jsonRequest(path: string, body: unknown) {
   });
 }
 
+function hostileJsonRequest(path: string, body: unknown) {
+  return new Request(`https://evil.test${path}`, {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      origin: "https://evil.test",
+      "x-forwarded-host": "evil.test",
+      "x-forwarded-proto": "https",
+    },
+    body: JSON.stringify(body),
+  });
+}
+
 function malformedJsonRequest(path: string) {
   return new Request(`http://localhost${path}`, {
     method: "POST",
@@ -126,6 +139,8 @@ function formData(values: Record<string, string>) {
 }
 
 beforeEach(() => {
+  delete process.env["BETTER_AUTH_URL"];
+
   changePassword.mockReset();
   signInEmail.mockReset();
   signUpEmail.mockReset();
@@ -141,7 +156,7 @@ beforeEach(() => {
     response: { user: { id: user.id } },
   });
   signUpEmail.mockResolvedValue({
-    headers: new Headers({ "set-cookie": "session=signup" }),
+    headers: new Headers(),
     response: { user: { id: user.id } },
   });
   getDuplicateSignupFields.mockResolvedValue({});
@@ -153,6 +168,14 @@ beforeEach(() => {
     id: user.id,
     displayName: "Max J",
   });
+});
+
+afterEach(() => {
+  if (originalBetterAuthUrl === undefined) {
+    delete process.env["BETTER_AUTH_URL"];
+  } else {
+    process.env["BETTER_AUTH_URL"] = originalBetterAuthUrl;
+  }
 });
 
 describe("auth API routes", () => {
@@ -203,6 +226,7 @@ describe("auth API routes", () => {
     expect(response.status).toBe(200);
     expect(response.headers.get("set-cookie")).toBe("session=login");
     expect(call.body).toMatchObject({
+      callbackURL: "http://localhost/en/profile",
       email: "max@example.com",
       password: "password123",
     });
@@ -212,6 +236,24 @@ describe("auth API routes", () => {
         id: user.id,
         email: user.email,
       },
+    });
+  });
+
+  test("login uses the configured app origin for callbacks instead of the request origin", async () => {
+    process.env["BETTER_AUTH_URL"] = "https://canonical.test";
+
+    await loginRoute.POST(
+      hostileJsonRequest("/api/auth/login", {
+        email: "MAX@example.COM",
+        password: "password123",
+      }),
+    );
+    const call = signInEmail.mock.calls[0]?.[0] as AuthApiCall;
+
+    expect(call.body).toMatchObject({
+      callbackURL: "https://canonical.test/en/profile",
+      email: "max@example.com",
+      password: "password123",
     });
   });
 
@@ -230,6 +272,30 @@ describe("auth API routes", () => {
     expect(payload).toMatchObject({
       error: "invalid_credentials",
       message: "invalidCredentials",
+    });
+    expect(findUnique).not.toHaveBeenCalled();
+  });
+
+  test("login maps unverified emails to a verification-required response", async () => {
+    signInEmail.mockRejectedValueOnce(
+      new APIError("FORBIDDEN", {
+        code: "EMAIL_NOT_VERIFIED",
+        message: "Email not verified",
+      }),
+    );
+
+    const response = await loginRoute.POST(
+      jsonRequest("/api/auth/login", {
+        email: "max@example.com",
+        password: "password123",
+      }),
+    );
+    const payload = await response.json();
+
+    expect(response.status).toBe(403);
+    expect(payload).toMatchObject({
+      error: "email_not_verified",
+      message: "emailNotVerified",
     });
     expect(findUnique).not.toHaveBeenCalled();
   });
@@ -334,7 +400,9 @@ describe("auth API routes", () => {
     expect(signUpEmail).not.toHaveBeenCalled();
   });
 
-  test("signup creates an account and returns Better Auth session headers", async () => {
+  test("signup creates an account and returns a verification-required response", async () => {
+    findUnique.mockResolvedValueOnce({ ...user, emailVerified: false });
+
     const response = await signupRoute.POST(
       jsonRequest("/api/auth/signup", {
         displayName: "Max",
@@ -347,8 +415,9 @@ describe("auth API routes", () => {
     const call = signUpEmail.mock.calls[0]?.[0] as AuthApiCall;
 
     expect(response.status).toBe(201);
-    expect(response.headers.get("set-cookie")).toBe("session=signup");
+    expect(response.headers.get("set-cookie")).toBeNull();
     expect(call.body).toMatchObject({
+      callbackURL: "http://localhost/en/profile",
       email: "max@example.com",
       name: "Max",
       password: "password123",
@@ -359,6 +428,30 @@ describe("auth API routes", () => {
         id: user.id,
         username: user.username,
       },
+      verificationRequired: true,
+    });
+  });
+
+  test("signup uses the configured app origin for callbacks instead of the request origin", async () => {
+    process.env["BETTER_AUTH_URL"] = "https://canonical.test";
+    findUnique.mockResolvedValueOnce({ ...user, emailVerified: false });
+
+    await signupRoute.POST(
+      hostileJsonRequest("/api/auth/signup", {
+        displayName: "Max",
+        email: "MAX@example.COM",
+        password: "password123",
+        username: "max_player",
+      }),
+    );
+    const call = signUpEmail.mock.calls[0]?.[0] as AuthApiCall;
+
+    expect(call.body).toMatchObject({
+      callbackURL: "https://canonical.test/en/profile",
+      email: "max@example.com",
+      name: "Max",
+      password: "password123",
+      username: "max_player",
     });
   });
 
@@ -626,7 +719,7 @@ describe("auth API routes", () => {
     expect(updateUser).not.toHaveBeenCalled();
   });
 
-  test("changeAccountPassword changes only the Better Auth password", async () => {
+  test("changeAccountPassword revokes other sessions after changing the Better Auth password", async () => {
     const state = await profileActions.changeAccountPassword(
       previousState,
       formData({
@@ -640,7 +733,7 @@ describe("auth API routes", () => {
       body: {
         currentPassword: "password123",
         newPassword: "password999",
-        revokeOtherSessions: false,
+        revokeOtherSessions: true,
       },
       headers: expect.any(Headers),
     });

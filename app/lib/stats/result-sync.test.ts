@@ -10,6 +10,11 @@ import {
   type ResultSyncOptions,
 } from "./result-sync";
 
+type UserGameStatsUpsertArgs = {
+  create: { rating: number };
+  update: { rating: number };
+};
+
 function summary(overrides: Partial<ResultSyncMatchSummary>): ResultSyncMatchSummary {
   return {
     matchId: "match-1",
@@ -71,7 +76,7 @@ function createResultSyncClient(options: {
       },
       userGameStats: {
         findMany: mock(async () => []),
-        upsert: mock(async () => ({})),
+        upsert: mock(async (_args: UserGameStatsUpsertArgs) => ({})),
       },
     },
     userAchievementUpsert,
@@ -271,7 +276,10 @@ describe("result sync", () => {
         ]),
       },
       userAchievement: { findMany: mock(async () => []), upsert: mock(async () => ({})) },
-      userGameStats: { findMany: mock(async () => []), upsert: mock(async () => ({})) },
+      userGameStats: {
+        findMany: mock(async () => []),
+        upsert: mock(async (_args: UserGameStatsUpsertArgs) => ({})),
+      },
     };
 
     await syncUserGameStatsForUser("user-1", { tx: client as any });
@@ -279,8 +287,8 @@ describe("result sync", () => {
     expect(client.userGameStats.upsert).toHaveBeenCalled();
     const upsertArg = client.userGameStats.upsert.mock.calls[0]?.[0];
     // win then loss on human opponents: rating should return to 1500
-    expect(upsertArg.create.rating).toBe(1500);
-    expect(upsertArg.update.rating).toBe(1500);
+    expect(upsertArg?.create.rating).toBe(1500);
+    expect(upsertArg?.update.rating).toBe(1500);
   });
 
   test("does not change rating for bot matches", async () => {
@@ -309,15 +317,18 @@ describe("result sync", () => {
         ]),
       },
       userAchievement: { findMany: mock(async () => []), upsert: mock(async () => ({})) },
-      userGameStats: { findMany: mock(async () => []), upsert: mock(async () => ({})) },
+      userGameStats: {
+        findMany: mock(async () => []),
+        upsert: mock(async (_args: UserGameStatsUpsertArgs) => ({})),
+      },
     };
 
     await syncUserGameStatsForUser("user-1", { tx: client as any });
 
     expect(client.userGameStats.upsert).toHaveBeenCalled();
     const upsertArg = client.userGameStats.upsert.mock.calls[0]?.[0];
-    expect(upsertArg.create.rating).toBe(1500);
-    expect(upsertArg.update.rating).toBe(1500);
+    expect(upsertArg?.create.rating).toBe(1500);
+    expect(upsertArg?.update.rating).toBe(1500);
   });
 
   test("empty snapshots use default rating and upsert payload contains it", async () => {
@@ -336,7 +347,7 @@ describe("result sync", () => {
             totalPlayTimeSeconds: 0,
           },
         ]),
-        upsert: mock(async () => ({})),
+        upsert: mock(async (_args: UserGameStatsUpsertArgs) => ({})),
       },
     };
 
@@ -344,7 +355,7 @@ describe("result sync", () => {
 
     expect(client.userGameStats.upsert).toHaveBeenCalled();
     const upsertArg = client.userGameStats.upsert.mock.calls[0]?.[0];
-    expect(upsertArg.create.rating).toBe(1500);
-    expect(upsertArg.update.rating).toBe(1500);
+    expect(upsertArg?.create.rating).toBe(1500);
+    expect(upsertArg?.update.rating).toBe(1500);
   });
 });
