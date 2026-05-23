@@ -1029,6 +1029,13 @@ export const messages = {
     lede: "ライバル、再戦、ライブのルーム招待をまとめた、対局優先の受信箱です。",
     searchPlaceholder: "ユーザー名で検索...",
     search: "検索",
+    empty: {
+      noFriends: "チャットを始めるにはフレンドを追加してください。",
+      noMessages: "まだメッセージはありません",
+      title: "会話を選択",
+      description: "サイドバーからフレンドを選んでチャットを始めましょう。",
+      composerPlaceholder: "先に会話を選択してください",
+    },
     header: {
       status: "再戦の招待を受け付けています",
       badge: "信頼できる相手",
@@ -1042,6 +1049,7 @@ export const messages = {
       outgoing: "もちろん！先にプロフィールページの設定だけ終わらせます。",
     },
     composerPlaceholder: "{name} へメッセージ...",
+    conversationLabel: "{name} との会話",
     send: "送信",
     invite: {
       eyebrow: "対局招待",
