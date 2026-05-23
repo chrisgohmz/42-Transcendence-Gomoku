@@ -669,7 +669,7 @@ export const messages = {
       showHintsEnabled: "AI 提示已开启",
       showHintsDisabled: "AI 提示已关闭",
       startButton: "开始练习",
-      startingButton: "正在开始...",
+      startingButton: "正在开始…",
       tip: "提示：AI 对局为私密且不计分。",
     },
     seat: {
@@ -680,6 +680,7 @@ export const messages = {
       eyebrow: "对手预览",
       title: "Kata Reader",
       strengthsLabel: "特点",
+      difficultyBadge: "{difficulty} AI",
       openingPreview: "仅显示开局预览。对局尚未开始。",
     },
     difficultyGuide: {
@@ -693,10 +694,10 @@ export const messages = {
         master: "大师",
       },
       ranges: {
-        beginner: "Level 1 - 800",
-        apprentice: "Level 2 - 1100",
-        expert: "Level 5 - 1700",
-        master: "Level 8 - 2300",
+        beginner: "等级 1 - 800",
+        apprentice: "等级 2 - 1100",
+        expert: "等级 5 - 1700",
+        master: "等级 8 - 2300",
       },
       summaries: {
         beginner: "稳健的开局",

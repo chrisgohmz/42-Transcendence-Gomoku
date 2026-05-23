@@ -674,7 +674,7 @@ export const messages = {
       showHintsEnabled: "AI ヒント表示中",
       showHintsDisabled: "AI ヒントを非表示",
       startButton: "練習開始",
-      startingButton: "開始中...",
+      startingButton: "開始中…",
       tip: "ヒント: AI 対局は非公開で、レートは変動しません。",
     },
     seat: {
@@ -685,6 +685,7 @@ export const messages = {
       eyebrow: "対戦相手のプレビュー",
       title: "Kata Reader",
       strengthsLabel: "特徴",
+      difficultyBadge: "{difficulty} AI",
       openingPreview: "開局プレビューのみです。まだ対局は始まっていません。",
     },
     training: {
@@ -726,10 +727,10 @@ export const messages = {
         master: "マスター",
       },
       ranges: {
-        beginner: "Level 1 - 800",
-        apprentice: "Level 2 - 1100",
-        expert: "Level 5 - 1700",
-        master: "Level 8 - 2300",
+        beginner: "レベル 1 - 800",
+        apprentice: "レベル 2 - 1100",
+        expert: "レベル 5 - 1700",
+        master: "レベル 8 - 2300",
       },
       summaries: {
         beginner: "穏やかな序盤",

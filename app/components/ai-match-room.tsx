@@ -119,6 +119,7 @@ export default function AiMatchRoom({
   session,
 }: AiMatchRoomProps) {
   const t = useTranslations("aiLobby.matchRoom");
+  const tAiLobby = useTranslations("aiLobby");
   const [state, setState] = useState<MatchStateResponse | null>(
     initialState?.matchId === session.matchId ? initialState : null,
   );
@@ -211,7 +212,7 @@ export default function AiMatchRoom({
   const difficulty = getAiDifficulty(
     session.aiDifficulty ?? effectiveUpdate?.aiDifficulty ?? state?.aiDifficulty,
   );
-  const difficultyName = t(`difficulty.names.${difficulty.id}`);
+  const difficultyName = tAiLobby(`difficulty.names.${difficulty.id}`);
   const moveHistory = useMemo(
     () => effectiveUpdate?.moves ?? state?.moves ?? [],
     [effectiveUpdate?.moves, state?.moves],

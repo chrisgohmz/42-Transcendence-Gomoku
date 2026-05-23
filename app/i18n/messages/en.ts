@@ -678,7 +678,7 @@ export const messages = {
       showHintsEnabled: "Show AI hints enabled",
       showHintsDisabled: "Show AI hints disabled",
       startButton: "Start Training",
-      startingButton: "Starting...",
+      startingButton: "Starting…",
       tip: "Tip: AI matches are private and unrated.",
     },
     seat: {
@@ -689,6 +689,7 @@ export const messages = {
       eyebrow: "Opponent preview",
       title: "Kata Reader",
       strengthsLabel: "Strengths",
+      difficultyBadge: "{difficulty} AI",
       openingPreview: "Opening preview only. No match has started.",
     },
     difficultyGuide: {

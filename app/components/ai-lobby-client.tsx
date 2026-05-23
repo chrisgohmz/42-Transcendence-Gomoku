@@ -487,7 +487,7 @@ export default function AiLobbyClient() {
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
                       <h2 className="m-0 truncate text-2xl font-black">
-                        {t("preview.title").toString()}
+                        <span translate="no">{t("preview.title")}</span>
                       </h2>
                       <span
                         className="size-2.5 rounded-full bg-[var(--mint)] shadow-[0_0_12px_var(--mint)]"
@@ -499,7 +499,9 @@ export default function AiLobbyClient() {
                     </p>
                     <Badge tone="brass">
                       <Gauge aria-hidden="true" className="size-3.5" />
-                      {translatedSelectedDifficulty.name} AI
+                      {t("preview.difficultyBadge", {
+                        difficulty: translatedSelectedDifficulty.name,
+                      })}
                     </Badge>
                   </div>
                 </div>
@@ -549,11 +551,11 @@ export default function AiLobbyClient() {
                 </div>
 
                 <blockquote className="m-0 rounded-md border border-[var(--panel-border-soft)] bg-white/[0.035] p-2.5 text-sm leading-6 font-bold text-[var(--muted-strong)]">
-                  "{translatedSelectedDifficulty.description}"
+                  &ldquo;{translatedSelectedDifficulty.description}&rdquo;
                 </blockquote>
               </div>
 
-              <BoardPreview />
+              <BoardPreview openingPreview={t("preview.openingPreview")} />
             </div>
 
             <div className="grid gap-2 rounded-md border border-[var(--panel-border-soft)] bg-[var(--panel-solid)] p-2.5 sm:grid-cols-4">
@@ -715,7 +717,7 @@ function SetupSelect({
   );
 }
 
-function BoardPreview() {
+function BoardPreview({ openingPreview }: { openingPreview: string }) {
   return (
     <div className="rounded-md border border-[var(--brass)]/30 bg-[var(--panel-solid)] p-3 shadow-[0_22px_60px_rgb(0_0_0_/_34%)]">
       <div className="relative mx-auto max-w-[292px] pt-4 pl-5">
@@ -733,7 +735,7 @@ function BoardPreview() {
       </div>
       <p className="m-0 mt-3 flex items-center gap-2 text-xs font-bold text-[var(--muted-text)]">
         <span className="size-2 rounded-full bg-[var(--brass)]" aria-hidden="true" />
-        Opening preview only. No match has started.
+        {openingPreview}
       </p>
     </div>
   );
