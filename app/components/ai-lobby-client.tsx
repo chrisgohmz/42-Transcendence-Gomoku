@@ -288,7 +288,7 @@ export default function AiLobbyClient() {
     } finally {
       setIsStarting(false);
     }
-  }, [handleSessionReady, playerSeat, selectedDifficultyId]);
+  }, [handleSessionReady, playerSeat, selectedDifficultyId, t]);
 
   const handleBackToLobby = useCallback(() => {
     setShowLobby(true);

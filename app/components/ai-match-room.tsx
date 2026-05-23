@@ -177,7 +177,7 @@ export default function AiMatchRoom({
     } finally {
       setIsLoadingState(false);
     }
-  }, [onSessionLostAction, session.matchId, session.participantId]);
+  }, [onSessionLostAction, session.matchId, session.participantId, t]);
 
   useEffect(() => {
     void loadState();
@@ -275,7 +275,7 @@ export default function AiMatchRoom({
         setIsAiThinking(false);
       }
     },
-    [loadState, session.matchId, session.participantId],
+    [loadState, session.matchId, session.participantId, t],
   );
 
   useEffect(() => {
