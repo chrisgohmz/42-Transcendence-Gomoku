@@ -1,5 +1,4 @@
 import "server-only";
-import nodemailer from "nodemailer";
 
 type AuthEmailMessage = {
   html: string;
@@ -28,7 +27,9 @@ type ResendSmtpConfig = {
   user: string;
 };
 
-type ResendSmtpTransport = ReturnType<typeof nodemailer.createTransport>;
+type NodemailerModule = typeof import("nodemailer");
+type NodemailerRuntimeModule = NodemailerModule & { default?: NodemailerModule };
+type ResendSmtpTransport = import("nodemailer").Transporter;
 
 const defaultResendSmtpHost = "smtp.resend.com";
 const defaultResendSmtpPort = 465;
@@ -102,7 +103,7 @@ function getResendSmtpConfig(): ResendSmtpConfig {
   };
 }
 
-function getResendTransport(config: ResendSmtpConfig): ResendSmtpTransport {
+async function getResendTransport(config: ResendSmtpConfig): Promise<ResendSmtpTransport> {
   const key = JSON.stringify({
     apiKey: config.apiKey,
     host: config.host,
@@ -115,7 +116,8 @@ function getResendTransport(config: ResendSmtpConfig): ResendSmtpTransport {
     return cachedResendTransport.transport;
   }
 
-  const transport = nodemailer.createTransport({
+  const nodemailer: NodemailerRuntimeModule = await import("nodemailer");
+  const transport = (nodemailer.default ?? nodemailer).createTransport({
     auth: {
       pass: config.apiKey,
       user: config.user,
@@ -131,7 +133,7 @@ function getResendTransport(config: ResendSmtpConfig): ResendSmtpTransport {
 
 async function sendResendSmtpEmail(message: AuthEmailMessage): Promise<void> {
   const config = getResendSmtpConfig();
-  const transport = getResendTransport(config);
+  const transport = await getResendTransport(config);
 
   const result = await transport.sendMail({
     from: config.from,
