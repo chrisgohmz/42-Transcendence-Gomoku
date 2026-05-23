@@ -85,9 +85,27 @@ const toneClasses = {
 } as const satisfies Record<AiDifficultyTone, { border: string; icon: string }>;
 
 const trainingRows = [
-  ["Expert (1700)", "Win", "162", "May 14, 2026", "Black - private"],
-  ["Apprentice (1100)", "Win", "128", "May 13, 2026", "White - private"],
-  ["Beginner (800)", "Win", "96", "May 12, 2026", "Black - private"],
+  {
+    dateKey: "training.dates.may14_2026",
+    difficultyId: "expert",
+    moves: "162",
+    notesKey: "training.notes.blackPrivate",
+    resultKey: "training.results.win",
+  },
+  {
+    dateKey: "training.dates.may13_2026",
+    difficultyId: "apprentice",
+    moves: "128",
+    notesKey: "training.notes.whitePrivate",
+    resultKey: "training.results.win",
+  },
+  {
+    dateKey: "training.dates.may12_2026",
+    difficultyId: "beginner",
+    moves: "96",
+    notesKey: "training.notes.blackPrivate",
+    resultKey: "training.results.win",
+  },
 ] as const;
 
 function getErrorMessage(payload: ErrorResponse | null, fallback: string) {
@@ -100,56 +118,6 @@ function getStoredRole(role: string | undefined): StoredMatchSession["role"] {
 
 function isSeat(value: unknown): value is Seat | null {
   return value === "BLACK" || value === "WHITE" || value === null;
-}
-
-function getDifficultyStatLabel(t: ReturnType<typeof useTranslations>, label: string) {
-  switch (label) {
-    case "Accuracy":
-      return t("difficulty.statLabels.accuracy");
-    case "Aggression":
-      return t("difficulty.statLabels.aggression");
-    case "Defense":
-      return t("difficulty.statLabels.defense");
-    default:
-      return label;
-  }
-}
-
-function getDifficultyTraitValue(t: ReturnType<typeof useTranslations>, value: string) {
-  switch (value) {
-    case "Centered":
-      return t("difficulty.traitValues.centered");
-    case "Local":
-      return t("difficulty.traitValues.local");
-    case "Uneven":
-      return t("difficulty.traitValues.uneven");
-    case "Open twos":
-      return t("difficulty.traitValues.openTwos");
-    case "Open threes":
-      return t("difficulty.traitValues.openThrees");
-    case "Balanced":
-      return t("difficulty.traitValues.balanced");
-    case "Careful":
-      return t("difficulty.traitValues.careful");
-    case "Pressure":
-      return t("difficulty.traitValues.pressure");
-    case "Forcing":
-      return t("difficulty.traitValues.forcing");
-    case "Clinical":
-      return t("difficulty.traitValues.clinical");
-    case "Fork threats":
-      return t("difficulty.traitValues.forkThreats");
-    case "Flexible":
-      return t("difficulty.traitValues.flexible");
-    case "Tactical":
-      return t("difficulty.traitValues.tactical");
-    case "Precise":
-      return t("difficulty.traitValues.precise");
-    case "Double threats":
-      return t("difficulty.traitValues.doubleThreats");
-    default:
-      return value;
-  }
 }
 
 export default function AiLobbyClient() {
@@ -172,14 +140,20 @@ export default function AiLobbyClient() {
     return {
       ...selectedDifficulty,
       name: t(`difficulty.names.${id}`),
+      range: t(`difficulty.ranges.${id}`),
       summary: t(`difficulty.summaries.${id}`),
       description: t(`difficulty.descriptions.${id}`),
-      strengths: selectedDifficulty.strengths.map((_, idx) =>
-        t(`difficulty.strengths.${id}.${idx}`),
+      strengths: selectedDifficulty.strengthIds.map((strengthId) =>
+        t(`difficulty.strengths.${id}.${strengthId}`),
       ),
-      traits: selectedDifficulty.traits.map((trait, idx) => ({
+      stats: selectedDifficulty.stats.map((stat) => ({
+        ...stat,
+        label: t(`difficulty.statLabels.${stat.id}`),
+      })),
+      traits: selectedDifficulty.traits.map((trait) => ({
         ...trait,
-        label: t(`difficulty.traits.${id}.${idx}.label`),
+        label: t(`difficulty.traitLabels.${trait.labelId}`),
+        value: t(`difficulty.traitValues.${trait.valueId}`),
       })),
     };
   }, [selectedDifficulty, t]);
@@ -225,7 +199,7 @@ export default function AiLobbyClient() {
         value: t("summary.ratingImpactValue"),
       },
     ],
-    [playerSeat, selectedDifficulty.name, showHints, t],
+    [playerSeat, showHints, t, translatedSelectedDifficulty.name],
   );
 
   const handleSessionReady = useCallback(
@@ -403,7 +377,7 @@ export default function AiLobbyClient() {
                         </span>
                       </span>
                       <span className="flex items-center gap-2 text-xs font-black text-[var(--muted-strong)] tabular-nums">
-                        {difficulty.range}
+                        {t(`difficulty.ranges.${difficulty.id}`)}
                         {selected ? (
                           <span className="grid size-5 place-items-center rounded-full bg-[var(--text)] text-[var(--panel-solid)]">
                             <Check aria-hidden="true" className="size-3" />
@@ -521,7 +495,7 @@ export default function AiLobbyClient() {
                       />
                     </div>
                     <p className="m-0 text-sm font-bold text-[var(--muted-strong)]">
-                      {selectedDifficulty.range}
+                      {translatedSelectedDifficulty.range}
                     </p>
                     <Badge tone="brass">
                       <Gauge aria-hidden="true" className="size-3.5" />
@@ -548,13 +522,13 @@ export default function AiLobbyClient() {
                 </div>
 
                 <div className="grid gap-2">
-                  {selectedDifficulty.stats.map((stat) => (
+                  {translatedSelectedDifficulty.stats.map((stat) => (
                     <div
-                      key={stat.label}
+                      key={stat.id}
                       className="grid grid-cols-[88px_minmax(0,1fr)_42px] items-center gap-3"
                     >
                       <span className="text-sm font-bold text-[var(--muted-text)]">
-                        {getDifficultyStatLabel(t, stat.label)}
+                        {stat.label}
                       </span>
                       <span className="grid grid-cols-8 gap-1">
                         {Array.from({ length: 8 }, (_, index) => (
@@ -594,9 +568,7 @@ export default function AiLobbyClient() {
                     <span className="text-xs font-bold text-[var(--muted-text)]">
                       {trait.label}
                     </span>
-                    <span className="text-sm font-black">
-                      {getDifficultyTraitValue(t, trait.value)}
-                    </span>
+                    <span className="text-sm font-black">{trait.value}</span>
                   </div>
                 );
               })}
@@ -614,22 +586,25 @@ export default function AiLobbyClient() {
                   <span>{t("training.headers.notes")}</span>
                   <span />
                 </div>
-                {trainingRows.map(([level, result, moves, date, notes]) => (
+                {trainingRows.map((row) => (
                   <div
-                    key={`${level}-${date}`}
+                    key={`${row.difficultyId}-${row.dateKey}`}
                     className="grid min-h-10 grid-cols-[1.2fr_0.6fr_0.6fr_0.9fr_1fr_auto] items-center gap-3 border-b border-[var(--panel-border-soft)] px-4 py-1.5 text-sm last:border-b-0 hover:bg-white/[0.045]"
                   >
-                    <span className="font-black">{level}</span>
-                    <span className="font-black text-[var(--mint)]">{result}</span>
+                    <span className="font-black">{t(`training.rows.${row.difficultyId}`)}</span>
+                    <span className="font-black text-[var(--mint)]">{t(row.resultKey)}</span>
                     <span className="font-bold text-[var(--muted-strong)] tabular-nums">
-                      {moves}
+                      {row.moves}
                     </span>
-                    <span className="font-bold text-[var(--muted-text)]">{date}</span>
-                    <span className="font-bold text-[var(--muted-strong)]">{notes}</span>
+                    <span className="font-bold text-[var(--muted-text)]">{t(row.dateKey)}</span>
+                    <span className="font-bold text-[var(--muted-strong)]">{t(row.notesKey)}</span>
                     <button
                       type="button"
                       className="grid size-8 place-items-center rounded-full border border-[var(--brass)]/40 text-[var(--brass)] hover:bg-[var(--brass-soft)]"
-                      aria-label={t("training.reviewAria", { level, date })}
+                      aria-label={t("training.reviewAria", {
+                        date: t(row.dateKey),
+                        level: t(`training.rows.${row.difficultyId}`),
+                      })}
                     >
                       <Play aria-hidden="true" className="size-3.5 fill-current" />
                     </button>
@@ -672,7 +647,7 @@ export default function AiLobbyClient() {
                       </span>
                     </span>
                     <span className="text-sm font-black text-[var(--muted-strong)] tabular-nums">
-                      {difficulty.range}
+                      {t(`difficulty.ranges.${difficulty.id}`)}
                     </span>
                   </article>
                 );

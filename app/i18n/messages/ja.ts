@@ -646,7 +646,6 @@ export const messages = {
     },
   },
   aiLobby: {
-    ...enMessages.aiLobby,
     loading: {
       eyebrow: "AI 練習ロビー",
       title: "ひとり卓を確認しています。",
@@ -698,6 +697,23 @@ export const messages = {
         notes: "メモ",
       },
       reviewAria: "{date} の {level} 練習を確認",
+      results: {
+        win: "勝ち",
+      },
+      rows: {
+        beginner: "初心者 (800)",
+        apprentice: "見習い (1100)",
+        expert: "上級 (1700)",
+      },
+      dates: {
+        may12_2026: "2026年5月12日",
+        may13_2026: "2026年5月13日",
+        may14_2026: "2026年5月14日",
+      },
+      notes: {
+        blackPrivate: "黒 - 非公開",
+        whitePrivate: "白 - 非公開",
+      },
     },
     difficultyGuide: {
       eyebrow: "難易度ガイド",
@@ -709,6 +725,12 @@ export const messages = {
         expert: "上級",
         master: "マスター",
       },
+      ranges: {
+        beginner: "Level 1 - 800",
+        apprentice: "Level 2 - 1100",
+        expert: "Level 5 - 1700",
+        master: "Level 8 - 2300",
+      },
       summaries: {
         beginner: "穏やかな序盤",
         apprentice: "バランスの取れた読み",
@@ -719,6 +741,12 @@ export const messages = {
         accuracy: "正確性",
         aggression: "攻撃性",
         defense: "防御",
+      },
+      traitLabels: {
+        openingStyle: "序盤スタイル",
+        midgame: "中盤",
+        endgame: "終盤",
+        favoritePattern: "得意形",
       },
       descriptions: {
         beginner: "局所の形を学び、強制手を見逃すことがあり、読みやすい手を好みます。",
@@ -744,40 +772,26 @@ export const messages = {
         doubleThreats: "ダブル脅威",
       },
       strengths: {
-        beginner: ["シンプルな形作り", "中央寄りの序盤", "時折の甘い守り"],
-        apprentice: [
-          "オープンフォーを塞ぐ",
-          "バランスの良いライン構築",
-          "ダブル脅威を見落とすことがある",
-        ],
-        expert: ["強制手を読む", "オープンスリーを罰する", "中盤の戦闘に強い"],
-        master: ["ダブル脅威を見つける", "強制的なはしごを守る", "競走を勝ち切る"],
-      },
-      traits: {
-        beginner: [
-          { label: "序盤スタイル" },
-          { label: "中盤" },
-          { label: "終盤" },
-          { label: "得意形" },
-        ],
-        apprentice: [
-          { label: "序盤スタイル" },
-          { label: "中盤" },
-          { label: "終盤" },
-          { label: "得意形" },
-        ],
-        expert: [
-          { label: "序盤スタイル" },
-          { label: "中盤" },
-          { label: "終盤" },
-          { label: "得意形" },
-        ],
-        master: [
-          { label: "序盤スタイル" },
-          { label: "中盤" },
-          { label: "終盤" },
-          { label: "得意形" },
-        ],
+        beginner: {
+          simpleShapeBuilding: "シンプルな形作り",
+          centerFriendlyOpenings: "中央寄りの序盤",
+          occasionalLooseDefense: "時折の甘い守り",
+        },
+        apprentice: {
+          blocksOpenFours: "オープンフォーを塞ぐ",
+          buildsBalancedLanes: "バランスの良いライン構築",
+          canMissDoubleThreats: "ダブル脅威を見落とすことがある",
+        },
+        expert: {
+          readsForcingLines: "強制手を読む",
+          punishesOpenThrees: "オープンスリーを罰する",
+          strongInMidgameFights: "中盤の戦闘に強い",
+        },
+        master: {
+          findsDoubleThreats: "ダブル脅威を見つける",
+          defendsForcingLadders: "強制的なはしごを守る",
+          convertsWinningRaces: "競走を勝ち切る",
+        },
       },
     },
     summary: {
@@ -848,6 +862,7 @@ export const messages = {
       model: {
         eyebrow: "AI モデル",
         depth: "深さ",
+        depthValue: "{plies} 手読み",
         candidates: "候補数",
         randomness: "ランダム性",
       },
@@ -1334,4 +1349,4 @@ export const messages = {
     title: "Tailwind 練習",
     body: "ローカル開発中にスタイルを確認するための小さなルートです。",
   },
-} satisfies typeof enMessages;
+};

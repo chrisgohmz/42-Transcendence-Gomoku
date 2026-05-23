@@ -641,7 +641,6 @@ export const messages = {
     },
   },
   aiLobby: {
-    ...enMessages.aiLobby,
     loading: {
       eyebrow: "AI 练习大厅",
       title: "正在检查你的单人棋桌。",
@@ -683,17 +682,6 @@ export const messages = {
       strengthsLabel: "特点",
       openingPreview: "仅显示开局预览。对局尚未开始。",
     },
-    training: {
-      eyebrow: "最近的 AI 练习",
-      headers: {
-        level: "级别",
-        result: "结果",
-        moves: "步数",
-        date: "日期",
-        notes: "备注",
-      },
-      reviewAria: "查看 {date} 的 {level} 练习",
-    },
     difficultyGuide: {
       eyebrow: "难度指南",
     },
@@ -703,6 +691,12 @@ export const messages = {
         apprentice: "见习",
         expert: "专家",
         master: "大师",
+      },
+      ranges: {
+        beginner: "Level 1 - 800",
+        apprentice: "Level 2 - 1100",
+        expert: "Level 5 - 1700",
+        master: "Level 8 - 2300",
       },
       summaries: {
         beginner: "稳健的开局",
@@ -714,6 +708,12 @@ export const messages = {
         accuracy: "准确率",
         aggression: "进攻性",
         defense: "防守",
+      },
+      traitLabels: {
+        openingStyle: "开局风格",
+        midgame: "中盘",
+        endgame: "终盘",
+        favoritePattern: "常用棋形",
       },
       descriptions: {
         beginner: "学习局部形状，会错过一些强制线，偏好可读的着法。",
@@ -739,36 +739,54 @@ export const messages = {
         doubleThreats: "双重威胁",
       },
       strengths: {
-        beginner: ["简单的形状构建", "适合中心的开局", "偶尔较松的防守"],
-        apprentice: ["阻止开放四", "构建平衡路线", "可能错过双重威胁"],
-        expert: ["阅读强制线", "惩罚开放三", "中盘战斗强"],
-        master: ["发现双重威胁", "防守强制梯形", "赢得竞速"],
+        beginner: {
+          simpleShapeBuilding: "简单的形状构建",
+          centerFriendlyOpenings: "适合中心的开局",
+          occasionalLooseDefense: "偶尔较松的防守",
+        },
+        apprentice: {
+          blocksOpenFours: "阻止开放四",
+          buildsBalancedLanes: "构建平衡路线",
+          canMissDoubleThreats: "可能错过双重威胁",
+        },
+        expert: {
+          readsForcingLines: "阅读强制线",
+          punishesOpenThrees: "惩罚开放三",
+          strongInMidgameFights: "中盘战斗强",
+        },
+        master: {
+          findsDoubleThreats: "发现双重威胁",
+          defendsForcingLadders: "防守强制梯形",
+          convertsWinningRaces: "赢得竞速",
+        },
       },
-      traits: {
-        beginner: [
-          { label: "开局风格" },
-          { label: "中盘" },
-          { label: "终盘" },
-          { label: "常用棋形" },
-        ],
-        apprentice: [
-          { label: "开局风格" },
-          { label: "中盘" },
-          { label: "终盘" },
-          { label: "常用棋形" },
-        ],
-        expert: [
-          { label: "开局风格" },
-          { label: "中盘" },
-          { label: "终盘" },
-          { label: "常用棋形" },
-        ],
-        master: [
-          { label: "开局风格" },
-          { label: "中盘" },
-          { label: "终盘" },
-          { label: "常用棋形" },
-        ],
+    },
+    training: {
+      eyebrow: "最近的 AI 练习",
+      headers: {
+        level: "等级",
+        result: "结果",
+        moves: "手数",
+        date: "日期",
+        notes: "备注",
+      },
+      reviewAria: "查看 {date} 的 {level} 练习",
+      results: {
+        win: "胜利",
+      },
+      rows: {
+        beginner: "初学者 (800)",
+        apprentice: "见习 (1100)",
+        expert: "专家 (1700)",
+      },
+      dates: {
+        may12_2026: "2026年5月12日",
+        may13_2026: "2026年5月13日",
+        may14_2026: "2026年5月14日",
+      },
+      notes: {
+        blackPrivate: "黑 - 私密",
+        whitePrivate: "白 - 私密",
       },
     },
     summary: {
@@ -839,6 +857,7 @@ export const messages = {
       model: {
         eyebrow: "AI 模型",
         depth: "深度",
+        depthValue: "{plies} 手读",
         candidates: "候选数",
         randomness: "随机性",
       },
@@ -1321,4 +1340,4 @@ export const messages = {
     title: "Tailwind 练习",
     body: "用于本地开发时检查样式的小路由。",
   },
-} satisfies typeof enMessages;
+};

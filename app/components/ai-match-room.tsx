@@ -211,6 +211,7 @@ export default function AiMatchRoom({
   const difficulty = getAiDifficulty(
     session.aiDifficulty ?? effectiveUpdate?.aiDifficulty ?? state?.aiDifficulty,
   );
+  const difficultyName = t(`difficulty.names.${difficulty.id}`);
   const moveHistory = useMemo(
     () => effectiveUpdate?.moves ?? state?.moves ?? [],
     [effectiveUpdate?.moves, state?.moves],
@@ -388,7 +389,7 @@ export default function AiMatchRoom({
         lede={
           matchStatus === "FINISHED"
             ? t("page.lede.finished")
-            : t("page.lede.live", { aiName, difficulty: difficulty.name })
+            : t("page.lede.live", { aiName, difficulty: difficultyName })
         }
         actions={
           <>
@@ -518,11 +519,11 @@ export default function AiMatchRoom({
         </section>
 
         <aside className="grid content-start gap-5">
-          <Surface eyebrow={t("model.eyebrow")} icon={BrainCircuit} title={difficulty.name}>
+          <Surface eyebrow={t("model.eyebrow")} icon={BrainCircuit} title={difficultyName}>
             <div className="grid gap-3 text-sm">
               <DetailRow
                 label={t("model.depth")}
-                value={`${difficulty.engine.searchDepth} plies`}
+                value={t("model.depthValue", { plies: difficulty.engine.searchDepth })}
               />
               <DetailRow label={t("model.candidates")} value={difficulty.engine.candidateLimit} />
               <DetailRow

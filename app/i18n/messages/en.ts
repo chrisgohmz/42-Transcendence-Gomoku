@@ -691,17 +691,6 @@ export const messages = {
       strengthsLabel: "Strengths",
       openingPreview: "Opening preview only. No match has started.",
     },
-    training: {
-      eyebrow: "Recent AI training",
-      headers: {
-        level: "Level",
-        result: "Result",
-        moves: "Moves",
-        date: "Date",
-        notes: "Notes",
-      },
-      reviewAria: "Review {level} training from {date}",
-    },
     difficultyGuide: {
       eyebrow: "Difficulty guide",
     },
@@ -711,6 +700,12 @@ export const messages = {
         apprentice: "Apprentice",
         expert: "Expert",
         master: "Master",
+      },
+      ranges: {
+        beginner: "Level 1 - 800",
+        apprentice: "Level 2 - 1100",
+        expert: "Level 5 - 1700",
+        master: "Level 8 - 2300",
       },
       summaries: {
         beginner: "Calm openings",
@@ -746,37 +741,61 @@ export const messages = {
         precise: "Precise",
         doubleThreats: "Double threats",
       },
-      strengths: {
-        beginner: ["Simple shape building", "Center-friendly openings", "Occasional loose defense"],
-        apprentice: ["Blocks open fours", "Builds balanced lanes", "Can miss double threats"],
-        expert: ["Reads forcing lines", "Punishes open threes", "Strong in midgame fights"],
-        master: ["Finds double threats", "Defends forcing ladders", "Converts winning races"],
+      traitLabels: {
+        openingStyle: "Opening Style",
+        midgame: "Midgame",
+        endgame: "Endgame",
+        favoritePattern: "Favorite Pattern",
       },
-      traits: {
-        beginner: [
-          { label: "Opening Style" },
-          { label: "Midgame" },
-          { label: "Endgame" },
-          { label: "Favorite Pattern" },
-        ],
-        apprentice: [
-          { label: "Opening Style" },
-          { label: "Midgame" },
-          { label: "Endgame" },
-          { label: "Favorite Pattern" },
-        ],
-        expert: [
-          { label: "Opening Style" },
-          { label: "Midgame" },
-          { label: "Endgame" },
-          { label: "Favorite Pattern" },
-        ],
-        master: [
-          { label: "Opening Style" },
-          { label: "Midgame" },
-          { label: "Endgame" },
-          { label: "Favorite Pattern" },
-        ],
+      strengths: {
+        beginner: {
+          simpleShapeBuilding: "Simple shape building",
+          centerFriendlyOpenings: "Center-friendly openings",
+          occasionalLooseDefense: "Occasional loose defense",
+        },
+        apprentice: {
+          blocksOpenFours: "Blocks open fours",
+          buildsBalancedLanes: "Builds balanced lanes",
+          canMissDoubleThreats: "Can miss double threats",
+        },
+        expert: {
+          readsForcingLines: "Reads forcing lines",
+          punishesOpenThrees: "Punishes open threes",
+          strongInMidgameFights: "Strong in midgame fights",
+        },
+        master: {
+          findsDoubleThreats: "Finds double threats",
+          defendsForcingLadders: "Defends forcing ladders",
+          convertsWinningRaces: "Converts winning races",
+        },
+      },
+    },
+    training: {
+      eyebrow: "Recent AI training",
+      headers: {
+        level: "Level",
+        result: "Result",
+        moves: "Moves",
+        date: "Date",
+        notes: "Notes",
+      },
+      reviewAria: "Review {level} training from {date}",
+      results: {
+        win: "Win",
+      },
+      rows: {
+        beginner: "Beginner (800)",
+        apprentice: "Apprentice (1100)",
+        expert: "Expert (1700)",
+      },
+      dates: {
+        may12_2026: "May 12, 2026",
+        may13_2026: "May 13, 2026",
+        may14_2026: "May 14, 2026",
+      },
+      notes: {
+        blackPrivate: "Black - private",
+        whitePrivate: "White - private",
       },
     },
     summary: {
@@ -847,6 +866,7 @@ export const messages = {
       model: {
         eyebrow: "AI model",
         depth: "Depth",
+        depthValue: "{plies} plies",
         candidates: "Candidates",
         randomness: "Randomness",
       },
