@@ -13,6 +13,7 @@ const fetchMock = mock(async () => new Response(null, { status: 200 }));
 const originalFetch = globalThis.fetch;
 const originalRealtimeInternalSecret = process.env["REALTIME_INTERNAL_SECRET"];
 const originalRealtimeFriendshipInternalUrl = process.env["REALTIME_FRIENDSHIP_INTERNAL_URL"];
+const friendshipUpdateUrl = "http://localhost:3001/internal/friendship-update";
 
 await mock.module("next/cache", () => ({
   revalidatePath,
@@ -48,6 +49,16 @@ const friendship = {
   status: "ACCEPTED",
 };
 
+function expectFriendshipRefresh(usernames: string[]) {
+  expect(fetchMock).toHaveBeenCalledWith(
+    friendshipUpdateUrl,
+    expect.objectContaining({
+      body: JSON.stringify({ usernames }),
+      method: "POST",
+    }),
+  );
+}
+
 beforeEach(() => {
   getCurrentSession.mockReset();
   findManyUsers.mockReset();
@@ -60,8 +71,7 @@ beforeEach(() => {
 
   globalThis.fetch = fetchMock as unknown as typeof fetch;
   process.env["REALTIME_INTERNAL_SECRET"] = "friend-secret";
-  process.env["REALTIME_FRIENDSHIP_INTERNAL_URL"] =
-    "http://localhost:3001/internal/friendship-update";
+  process.env["REALTIME_FRIENDSHIP_INTERNAL_URL"] = friendshipUpdateUrl;
   getCurrentSession.mockResolvedValue({
     user: { id: "user-a" },
   });
@@ -70,7 +80,9 @@ beforeEach(() => {
     { id: "user-b", username: "bob" },
   ]);
   findFriendship.mockResolvedValue(friendship);
+  createFriendship.mockResolvedValue({});
   deleteFriendship.mockResolvedValue({});
+  updateFriendship.mockResolvedValue({});
   fetchMock.mockResolvedValue(new Response(null, { status: 200 }));
 });
 
@@ -91,18 +103,52 @@ afterEach(() => {
 });
 
 describe("processFriendAction", () => {
+  test("notifies both players when adding a friend from a profile", async () => {
+    findFriendship.mockResolvedValueOnce(null);
+
+    const result = await processFriendAction("user-b", "ADD");
+
+    expect(result).toEqual({ success: true });
+    expect(createFriendship).toHaveBeenCalledWith({
+      data: {
+        requestedById: "user-a",
+        status: "PENDING",
+        userHighId: "user-b",
+        userLowId: "user-a",
+      },
+    });
+    expectFriendshipRefresh(["ada", "bob"]);
+    expect(revalidatePath).toHaveBeenCalledWith("/", "layout");
+  });
+
+  test("notifies both players when accepting a profile friend request", async () => {
+    findFriendship.mockResolvedValueOnce({
+      ...friendship,
+      requestedById: "user-b",
+      status: "PENDING",
+    });
+
+    const result = await processFriendAction("user-b", "ACCEPT");
+
+    expect(result).toEqual({ success: true });
+    expect(updateFriendship).toHaveBeenCalledWith({
+      data: {
+        acceptedAt: expect.any(Date),
+        respondedAt: expect.any(Date),
+        status: "ACCEPTED",
+      },
+      where: { userLowId_userHighId: { userLowId: "user-a", userHighId: "user-b" } },
+    });
+    expectFriendshipRefresh(["ada", "bob"]);
+    expect(revalidatePath).toHaveBeenCalledWith("/", "layout");
+  });
+
   test("uses the shared delete-and-notify path for profile removals", async () => {
     const result = await processFriendAction("user-b", "REMOVE");
 
     expect(result).toEqual({ success: true });
     expect(deleteFriendship).toHaveBeenCalledWith({ where: { id: 42 } });
-    expect(fetchMock).toHaveBeenCalledWith(
-      "http://localhost:3001/internal/friendship-update",
-      expect.objectContaining({
-        body: JSON.stringify({ usernames: ["ada", "bob"] }),
-        method: "POST",
-      }),
-    );
+    expectFriendshipRefresh(["ada", "bob"]);
     expect(revalidatePath).toHaveBeenCalledWith("/", "layout");
   });
 

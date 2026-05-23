@@ -16,6 +16,7 @@ const fetchMock = mock(async () => new Response(null, { status: 200 }));
 const originalFetch = globalThis.fetch;
 const originalRealtimeInternalSecret = process.env["REALTIME_INTERNAL_SECRET"];
 const originalRealtimeFriendshipInternalUrl = process.env["REALTIME_FRIENDSHIP_INTERNAL_URL"];
+const friendshipUpdateUrl = "http://localhost:3001/internal/friendship-update";
 
 await mock.module("next-intl/server", () => ({
   getLocale,
@@ -66,6 +67,16 @@ const pendingFriendship = {
   userLowId: "user-ada",
 };
 
+function expectFriendshipRefresh(usernames: string[]) {
+  expect(fetchMock).toHaveBeenCalledWith(
+    friendshipUpdateUrl,
+    expect.objectContaining({
+      body: JSON.stringify({ usernames }),
+      method: "POST",
+    }),
+  );
+}
+
 beforeEach(() => {
   getLocale.mockReset();
   getTranslations.mockReset();
@@ -81,8 +92,7 @@ beforeEach(() => {
 
   globalThis.fetch = fetchMock as unknown as typeof fetch;
   process.env["REALTIME_INTERNAL_SECRET"] = "friend-secret";
-  process.env["REALTIME_FRIENDSHIP_INTERNAL_URL"] =
-    "http://localhost:3001/internal/friendship-update";
+  process.env["REALTIME_FRIENDSHIP_INTERNAL_URL"] = friendshipUpdateUrl;
   getLocale.mockResolvedValue("en");
   getTranslations.mockImplementation(
     async ({ namespace }: { namespace: string }) =>
@@ -145,7 +155,7 @@ describe("sendFriendRequest", () => {
     });
   });
 
-  test("creates a pending friendship and revalidates shared navigation", async () => {
+  test("creates a pending friendship, notifies both players, and revalidates shared navigation", async () => {
     const result = await sendFriendRequest("grace");
 
     expect(result).toEqual({ success: true });
@@ -157,6 +167,7 @@ describe("sendFriendRequest", () => {
         userLowId: "user-ada",
       },
     });
+    expectFriendshipRefresh(["ada", "grace"]);
     expect(revalidatePath).toHaveBeenCalledWith("/", "layout");
   });
 });
@@ -204,6 +215,7 @@ describe("respondToRequest", () => {
       where: { id: 42 },
     });
     expect(deleteFriendship).not.toHaveBeenCalled();
+    expectFriendshipRefresh(["ada", "grace"]);
     expect(revalidatePath).toHaveBeenCalledWith("/", "layout");
   });
 
@@ -214,13 +226,7 @@ describe("respondToRequest", () => {
 
     expect(result).toEqual({ success: true });
     expect(deleteFriendship).toHaveBeenCalledWith({ where: { id: 42 } });
-    expect(fetchMock).toHaveBeenCalledWith(
-      "http://localhost:3001/internal/friendship-update",
-      expect.objectContaining({
-        body: JSON.stringify({ usernames: ["ada", "grace"] }),
-        method: "POST",
-      }),
-    );
+    expectFriendshipRefresh(["ada", "grace"]);
     expect(updateFriendship).not.toHaveBeenCalled();
   });
 });
@@ -246,7 +252,7 @@ describe("removeFriend", () => {
 
     expect(result).toEqual({ success: true });
     expect(deleteFriendship).toHaveBeenCalledWith({ where: { id: 42 } });
-    expect(fetchMock).toHaveBeenCalled();
+    expectFriendshipRefresh(["ada", "grace"]);
     expect(revalidatePath).toHaveBeenCalledWith("/", "layout");
   });
 });
