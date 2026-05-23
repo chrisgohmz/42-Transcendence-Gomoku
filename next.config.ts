@@ -10,6 +10,7 @@ const withNextIntl = createNextIntlPlugin("./app/i18n/request.ts");
 const nextConfig: NextConfig = {
   cacheComponents: true,
   experimental: {
+    globalNotFound: true,
     instantNavigationDevToolsToggle: true,
   },
   serverExternalPackages: ["nodemailer"],
