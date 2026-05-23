@@ -25,7 +25,7 @@ beforeEach(() => {
 });
 
 function logoutRequest(cookie = "better-auth.session_token=abc") {
-  return new Request("https://10.11.5.5:8443/api/auth/logout", {
+  return new Request("https://lan-host.test:8443/api/auth/logout", {
     method: "POST",
     headers: { cookie },
   });

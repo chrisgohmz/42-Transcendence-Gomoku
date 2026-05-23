@@ -289,8 +289,9 @@ describe("auth API routes", () => {
   });
 
   test("login keeps callbacks on the current request origin when it is trusted", async () => {
-    process.env["BETTER_AUTH_URL"] = "https://10.11.5.5:8443";
-    process.env["BETTER_AUTH_TRUSTED_ORIGINS"] = "https://localhost:8443,https://10.11.5.5:8443";
+    process.env["BETTER_AUTH_URL"] = "https://lan-host.test:8443";
+    process.env["BETTER_AUTH_TRUSTED_ORIGINS"] =
+      "https://localhost:8443,https://lan-host.test:8443";
 
     await loginRoute.POST(
       trustedOriginJsonRequest("https://localhost:8443", "/api/auth/login", {
