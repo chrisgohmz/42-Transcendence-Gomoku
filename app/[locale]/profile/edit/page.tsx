@@ -10,8 +10,14 @@ import {
 } from "@/components/oauth-account-connections";
 import { PageLoadingShell } from "@/components/page-loading-shell";
 import { Link, redirect } from "@/i18n/navigation";
-import { auth, getConfiguredOAuthProviders, getCurrentSession, hasCredentialPassword } from "@/lib/auth";
+import {
+  auth,
+  getConfiguredOAuthProviders,
+  getCurrentSession,
+  hasCredentialPassword,
+} from "@/lib/auth";
 import { oauthProviderIds, type OAuthProviderId } from "@/lib/oauth-providers";
+
 import ProfilePicture from "../profile-picture";
 import EditProfileForm from "./edit-form";
 
@@ -108,7 +114,7 @@ async function EditProfilePageContent({ params }: EditProfilePageProps) {
             </div>
           </Surface>
         </aside>
-		<div className="grid content-start gap-5">
+        <div className="grid content-start gap-5">
           <EditProfileForm
             currentUsername={sessionData.user.username}
             currentDisplayName={sessionData.user.displayName}
