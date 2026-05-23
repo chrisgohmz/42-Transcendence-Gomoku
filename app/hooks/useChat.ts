@@ -48,20 +48,24 @@ export function useChat(conversationId: string | null) {
 
     setStatus("loading");
     setMessages([]);
+    const controller = new AbortController();
+    let isCurrentConversation = true;
 
     // ── Step A: Load message history from the REST API ────────────────────
     // This runs once when the conversation is opened.
     // fetch() is the browser's built-in HTTP function.
-    fetch(`/api/conversations/${conversationId}/messages`)
+    fetch(`/api/conversations/${conversationId}/messages`, { signal: controller.signal })
       .then((res) => {
         if (!res.ok) throw new Error("Failed to load messages");
         return res.json() as Promise<{ messages: ChatMessage[] }>;
       })
       .then((data) => {
+        if (!isCurrentConversation) return;
         setMessages(data.messages);
         setStatus("ready");
       })
       .catch(() => {
+        if (!isCurrentConversation || controller.signal.aborted) return;
         setStatus("error");
       });
 
@@ -85,6 +89,8 @@ export function useChat(conversationId: string | null) {
     //   - conversationId changes (user clicks a different friend)
     // Without cleanup, old listeners would pile up and you'd get duplicate messages.
     return () => {
+      isCurrentConversation = false;
+      controller.abort();
       socket.emit("chat:unsubscribe", { conversationId });
       socket.disconnect();
       socketRef.current = null;

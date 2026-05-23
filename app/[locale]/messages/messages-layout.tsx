@@ -234,9 +234,7 @@ export default function MessagesContent({ currentUserId }: Props) {
 
           <div className="grid gap-2">
             {friends.length === 0 && (
-              <p className="px-2 text-sm text-[var(--muted-text)]">
-                Add friends to start chatting.
-              </p>
+              <p className="px-2 text-sm text-[var(--muted-text)]">{t("empty.noFriends")}</p>
             )}
 
             {visibleEntries.map((entry) => {
@@ -258,7 +256,7 @@ export default function MessagesContent({ currentUserId }: Props) {
                   <span className="min-w-0">
                     <span className="block truncate font-black">{name}</span>
                     <span className="block truncate text-sm text-[var(--muted-text)]">
-                      {entry.lastMessage ?? "No messages yet"}
+                      {entry.lastMessage ?? t("empty.noMessages")}
                     </span>
                   </span>
                   {entry.unreadCount > 0 && <Badge tone="red">{entry.unreadCount}</Badge>}
@@ -276,7 +274,7 @@ export default function MessagesContent({ currentUserId }: Props) {
               <AvatarToken name={activeName} online={!!activeFriend} />
               <div className="min-w-0">
                 <h2 className="m-0 truncate font-serif text-3xl font-bold">
-                  {activeFriend ? activeName : "Select a conversation"}
+                  {activeFriend ? activeName : t("empty.title")}
                 </h2>
                 {activeFriend && (
                   <p className="m-0 text-sm text-[var(--muted-text)]">{t("header.status")}</p>
@@ -301,7 +299,7 @@ export default function MessagesContent({ currentUserId }: Props) {
           >
             {!activeConvId && (
               <p className="text-center text-sm text-[var(--muted-text)]">
-                Choose a friend from the sidebar to start chatting.
+                {t("empty.description")}
               </p>
             )}
 
@@ -346,13 +344,17 @@ export default function MessagesContent({ currentUserId }: Props) {
                 type="text"
                 name="message"
                 autoComplete="off"
-                aria-label={t("composerPlaceholder", { name: activeName || "..." })}
+                aria-label={
+                  activeFriend
+                    ? t("composerPlaceholder", { name: activeName })
+                    : t("empty.composerPlaceholder")
+                }
                 value={messageText}
                 onChange={(e) => setMessageText(e.target.value)}
                 placeholder={
                   activeFriend
                     ? t("composerPlaceholder", { name: activeName })
-                    : "Select a conversation first"
+                    : t("empty.composerPlaceholder")
                 }
                 disabled={!activeConvId || isSending}
                 className="text-input"

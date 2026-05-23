@@ -13,9 +13,9 @@ import type { Socket } from "socket.io";
 import { canAccessDirectConversation, type DirectMessageAccessStore } from "@/lib/chat/access";
 import { prisma } from "@/lib/prisma";
 
-export function convRoomId(conversationId: string): string {
-  return `conv:${conversationId}`;
-}
+import { convRoomId } from "../lib/rooms";
+
+export { convRoomId };
 
 export function registerChatSubscription(socket: Socket, db: DirectMessageAccessStore = prisma) {
   // Event: browser → server, "I want to receive messages for this conversation"

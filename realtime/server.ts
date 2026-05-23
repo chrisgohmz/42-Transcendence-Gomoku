@@ -11,14 +11,16 @@ import { prisma } from "@/lib/prisma";
 import {
   challengeDeclinedPath,
   challengeReceivedPath,
+  chatMessagePath,
   readRealtimeInternalSecret,
 } from "../shared/realtime-internal";
-import { registerChatSubscription, convRoomId } from "./handlers/chat-subscription";
+import { registerChatSubscription } from "./handlers/chat-subscription";
 import { registerMatchSubscription } from "./handlers/match-subscription";
 import { registerMatchmakingQueue } from "./handlers/matchmaking-queue";
 import { resolveFriendshipNotificationTarget } from "./lib/friendship-notifications";
 import { handleInternalChallengeDeclined } from "./lib/internal-challenge-declined";
 import { handleInternalChallengeReceived } from "./lib/internal-challenge-received";
+import { handleInternalChatMessage } from "./lib/internal-chat-message";
 import { handleInternalFriendshipUpdate } from "./lib/internal-friendship-update";
 import { handleInternalGameUpdate } from "./lib/internal-game-update";
 import { handleInternalQueueMatched } from "./lib/internal-queue-matched";
@@ -193,23 +195,8 @@ Bun.serve({
       return handleInternalChallengeReceived(request, io, realtimeInternalSecret);
     }
 
-    // Internal route: Next.js calls this after saving a chat message.
-    // We broadcast to everyone subscribed to that conversation's room.
-    if (url.pathname === "/internal/chat-message" && request.method === "POST") {
-      const secret = request.headers.get("x-realtime-internal-secret");
-      if (!secret || secret !== realtimeInternalSecret) {
-        return new Response("Forbidden", { status: 403 });
-      }
-      try {
-        const payload = (await request.json()) as {
-          conversationId: string;
-          message: unknown;
-        };
-        io.to(convRoomId(payload.conversationId)).emit("chat:message", payload.message);
-        return Response.json({ ok: true });
-      } catch {
-        return new Response("Bad Request", { status: 400 });
-      }
+    if (url.pathname === chatMessagePath && request.method === "POST") {
+      return handleInternalChatMessage(request, io, realtimeInternalSecret);
     }
 
     if (url.pathname === socketPath) {

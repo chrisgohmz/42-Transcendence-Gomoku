@@ -1023,6 +1023,13 @@ export const messages = {
     lede: "一个以对局为先的收件箱，收纳对手、重赛和实时房间邀请。",
     searchPlaceholder: "按用户名搜索...",
     search: "搜索",
+    empty: {
+      noFriends: "添加好友后即可开始聊天。",
+      noMessages: "暂无消息",
+      title: "选择一个对话",
+      description: "从侧边栏选择好友开始聊天。",
+      composerPlaceholder: "请先选择一个对话",
+    },
     header: {
       status: "已准备好接收重赛邀请",
       badge: "可信对手",

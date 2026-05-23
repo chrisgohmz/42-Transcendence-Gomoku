@@ -9,12 +9,13 @@
 //   This file                             → /internal/chat-message
 
 import {
+  chatMessagePath,
   internalRealtimeSecretHeader,
   readRealtimeInternalSecret,
 } from "../../../shared/realtime-internal";
 
 // The shape of the data we send to the Socket.IO server
-export type ChatMessagePayload = {
+export type ChatMessagePublishPayload = {
   conversationId: string;
   message: {
     id: string;
@@ -37,12 +38,12 @@ function resolveChatMessageUrl(env: NodeJS.ProcessEnv = process.env): string {
   const gameUpdateUrl = env["REALTIME_INTERNAL_URL"];
   if (gameUpdateUrl) {
     // Replace the game-update path with chat-message
-    return gameUpdateUrl.replace("/internal/game-update", "/internal/chat-message");
+    return gameUpdateUrl.replace("/internal/game-update", chatMessagePath);
   }
-  return "http://realtime:3001/internal/chat-message";
+  return `http://realtime:3001${chatMessagePath}`;
 }
 
-export async function publishChatMessage(payload: ChatMessagePayload): Promise<void> {
+export async function publishChatMessage(payload: ChatMessagePublishPayload): Promise<void> {
   const internalSecret = readRealtimeInternalSecret();
 
   if (!internalSecret) {
@@ -62,7 +63,13 @@ export async function publishChatMessage(payload: ChatMessagePayload): Promise<v
         // not from an outside attacker
         [internalRealtimeSecretHeader]: internalSecret,
       },
-      body: JSON.stringify(payload),
+      body: JSON.stringify({
+        conversationId: payload.conversationId,
+        message: {
+          ...payload.message,
+          createdAt: payload.message.createdAt.toISOString(),
+        },
+      }),
       cache: "no-store",
       signal: controller.signal,
     });
