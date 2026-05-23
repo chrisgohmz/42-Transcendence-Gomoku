@@ -1033,6 +1033,13 @@ export const messages = {
     lede: "A match-first inbox for rivals, rematches, and live room invites.",
     searchPlaceholder: "Search by username…",
     search: "Search",
+    empty: {
+      noFriends: "Add friends to start chatting.",
+      noMessages: "No messages yet",
+      title: "Select a conversation",
+      description: "Choose a friend from the sidebar to start chatting.",
+      composerPlaceholder: "Select a conversation first",
+    },
     header: {
       status: "Ready for rematch invites",
       badge: "trusted rival",
@@ -1046,6 +1053,7 @@ export const messages = {
       outgoing: "Absolutely! Let me just finish setting up this profile page first.",
     },
     composerPlaceholder: "Message {name}...",
+    conversationLabel: "Conversation with {name}",
     send: "Send",
     invite: {
       eyebrow: "Match invite",
