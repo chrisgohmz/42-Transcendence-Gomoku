@@ -4,6 +4,10 @@ import { Suspense } from "react";
 import { PageLoadingShell } from "@/components/page-loading-shell";
 import { redirect } from "@/i18n/navigation";
 import { getCurrentSession } from "@/lib/auth";
+import {
+  friendshipForUserWhere,
+  getOtherFriendshipUser,
+} from "@/lib/friendships/friendship-queries";
 import { prisma } from "@/lib/prisma";
 
 import FriendsContent from "./friends-layout";
@@ -46,9 +50,7 @@ async function FriendsPageContent({ params, searchParams }: FriendsPageProps) {
   const searchQuery = getSearchQuery(query);
 
   const friendships = await prisma.friendship.findMany({
-    where: {
-      OR: [{ userLowId: currentUserId }, { userHighId: currentUserId }],
-    },
+    where: friendshipForUserWhere(currentUserId),
     include: {
       userLow: {
         include: { gameStats: { where: { ruleType: "GOMOKU" } } },
@@ -84,8 +86,7 @@ async function FriendsPageContent({ params, searchParams }: FriendsPageProps) {
   const sentRequests = [];
 
   for (const friendship of friendships) {
-    const isUserLow = friendship.userLowId === currentUserId;
-    const otherUser = isUserLow ? friendship.userHigh : friendship.userLow;
+    const otherUser = getOtherFriendshipUser(friendship, currentUserId);
 
     const rawStats = otherUser.gameStats[0];
 

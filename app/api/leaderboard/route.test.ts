@@ -73,6 +73,17 @@ describe("GET /api/leaderboard", () => {
     });
   });
 
+  test("passes friends scope from the request query", async () => {
+    const response = await route.GET(new Request("http://localhost/api/leaderboard?scope=friends"));
+    const payload = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(getLeaderboardSnapshot).toHaveBeenCalledWith("user-ada", { scope: "friends" });
+    expect(payload).toMatchObject({
+      entries: [{ playerId: "user-ada", rank: 1 }],
+    });
+  });
+
   test("returns a server error when snapshot fails to load", async () => {
     getLeaderboardSnapshot.mockRejectedValueOnce(new Error("boom"));
 

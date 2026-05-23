@@ -2,6 +2,7 @@
 
 import type { Prisma } from "../../generated/prisma/client";
 import { RuleType } from "../../generated/prisma/enums";
+import { getAcceptedFriendIdsForUser } from "./friendships/friendship-queries";
 import { prisma } from "./prisma";
 
 export const LEADERBOARD_BOARD_SIZE = 15;
@@ -42,6 +43,12 @@ export type LeaderboardSnapshot = {
   currentUser: LeaderboardEntry | null;
 };
 
+export type LeaderboardScope = "all" | "friends";
+
+export type LeaderboardSnapshotOptions = {
+  scope?: LeaderboardScope;
+};
+
 export type LeaderboardRankInput = {
   rating: number | null;
   wins: number;
@@ -73,6 +80,24 @@ export const leaderboardQueryArgs = {
   where: leaderboardRankedWhere,
 } satisfies Prisma.UserGameStatsFindManyArgs;
 
+function buildLeaderboardWhere(friendUserIds: string[] | null): Prisma.UserGameStatsWhereInput {
+  if (!friendUserIds) {
+    return leaderboardRankedWhere;
+  }
+
+  return {
+    ...leaderboardRankedWhere,
+    userId: {
+      in: friendUserIds,
+    },
+  };
+}
+
+async function getFriendsScopeUserIds(userId: string): Promise<string[]> {
+  const friendUserIds = await getAcceptedFriendIdsForUser(userId, prisma);
+  return [userId, ...friendUserIds.filter((friendUserId) => friendUserId !== userId)];
+}
+
 export function formatWinRate(wins: number, matchesPlayed: number): string {
   if (matchesPlayed === 0) {
     return "0.00%";
@@ -87,6 +112,7 @@ function isLeaderboardEligible(stat: { matchesPlayed: number; botMatchesPlayed: 
 
 export function buildLeaderboardAheadWhere(
   stats: LeaderboardRankInput,
+  friendUserIds: string[] | null = null,
 ): Prisma.UserGameStatsWhereInput | null {
   if (stats.matchesPlayed === 0 || stats.matchesPlayed <= stats.botMatchesPlayed) {
     return null;
@@ -107,7 +133,7 @@ export function buildLeaderboardAheadWhere(
   };
 
   return {
-    ...leaderboardRankedWhere,
+    ...buildLeaderboardWhere(friendUserIds),
     OR: [aheadByRating, aheadWithinRating],
   };
 }
@@ -130,19 +156,27 @@ export function toLeaderboardEntries(stats: LeaderboardStat[]): LeaderboardEntry
     .map((stat, index) => toLeaderboardEntry(stat, index + 1));
 }
 
-export async function getLeaderboardEntries(): Promise<LeaderboardEntry[]> {
+async function getLeaderboardEntries(
+  friendUserIds: string[] | null = null,
+): Promise<LeaderboardEntry[]> {
   // Fetch in batches and collect eligible (human) rows until we have
   // `LEADERBOARD_LIMIT` entries or the dataset is exhausted. This moves
   // the eligibility filter into the data/query boundary and avoids
   // returning fewer than `LEADERBOARD_LIMIT` entries on bot-heavy data.
   const results: LeaderboardEntry[] = [];
   let skip = 0;
+  const where = buildLeaderboardWhere(friendUserIds);
+
+  if (friendUserIds && friendUserIds.length === 0) {
+    return results;
+  }
 
   while (results.length < LEADERBOARD_LIMIT) {
     const args = {
       ...leaderboardQueryArgs,
       skip,
       take: LEADERBOARD_FETCH_LIMIT,
+      where,
     } as Prisma.UserGameStatsFindManyArgs;
 
     const stats = (await prisma.userGameStats.findMany(args)) as unknown as LeaderboardStat[];
@@ -166,8 +200,11 @@ export async function getLeaderboardEntries(): Promise<LeaderboardEntry[]> {
   return results.slice(0, LEADERBOARD_LIMIT);
 }
 
-export async function getLeaderboardRank(input: LeaderboardRankInput): Promise<number | null> {
-  const aheadWhere = buildLeaderboardAheadWhere(input);
+export async function getLeaderboardRank(
+  input: LeaderboardRankInput,
+  friendUserIds: string[] | null = null,
+): Promise<number | null> {
+  const aheadWhere = buildLeaderboardAheadWhere(input, friendUserIds);
 
   if (!aheadWhere) {
     return null;
@@ -186,7 +223,10 @@ export async function getLeaderboardRank(input: LeaderboardRankInput): Promise<n
   return aheadCount + 1;
 }
 
-export async function getLeaderboardSpotlight(userId: string): Promise<LeaderboardEntry | null> {
+export async function getLeaderboardSpotlight(
+  userId: string,
+  friendUserIds: string[] | null = null,
+): Promise<LeaderboardEntry | null> {
   const stats = await prisma.userGameStats.findUnique({
     where: {
       userId_ruleType_boardSize: {
@@ -202,18 +242,40 @@ export async function getLeaderboardSpotlight(userId: string): Promise<Leaderboa
     return null;
   }
 
-  const rank = await getLeaderboardRank({
-    rating: stats.rating,
-    wins: stats.wins,
-    losses: stats.losses,
-    matchesPlayed: stats.matchesPlayed,
-    botMatchesPlayed: stats.botMatchesPlayed,
-  });
+  const rank = await getLeaderboardRank(
+    {
+      rating: stats.rating,
+      wins: stats.wins,
+      losses: stats.losses,
+      matchesPlayed: stats.matchesPlayed,
+      botMatchesPlayed: stats.botMatchesPlayed,
+    },
+    friendUserIds,
+  );
 
   return rank === null ? null : toLeaderboardEntry(stats, rank);
 }
 
-export async function getLeaderboardSnapshot(userId: string | null): Promise<LeaderboardSnapshot> {
+export async function getLeaderboardSnapshot(
+  userId: string | null,
+  options: Pick<LeaderboardSnapshotOptions, "scope"> = {},
+): Promise<LeaderboardSnapshot> {
+  const scope = options.scope ?? "all";
+
+  if (scope === "friends") {
+    if (!userId) {
+      return { entries: [], currentUser: null };
+    }
+
+    const friendScopeUserIds = await getFriendsScopeUserIds(userId);
+    const entries = await getLeaderboardEntries(friendScopeUserIds);
+    const currentUser =
+      entries.find((entry) => entry.playerId === userId) ??
+      (await getLeaderboardSpotlight(userId, friendScopeUserIds));
+
+    return { entries, currentUser };
+  }
+
   const [entries, currentUser] = await Promise.all([
     getLeaderboardEntries(),
     userId ? getLeaderboardSpotlight(userId) : Promise.resolve(null),

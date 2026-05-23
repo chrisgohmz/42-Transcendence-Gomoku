@@ -11,13 +11,16 @@ import { prisma } from "@/lib/prisma";
 import {
   challengeDeclinedPath,
   challengeReceivedPath,
+  chatMessagePath,
   readRealtimeInternalSecret,
 } from "../shared/realtime-internal";
+import { registerChatSubscription } from "./handlers/chat-subscription";
 import { registerMatchSubscription } from "./handlers/match-subscription";
 import { registerMatchmakingQueue } from "./handlers/matchmaking-queue";
 import { resolveFriendshipNotificationTarget } from "./lib/friendship-notifications";
 import { handleInternalChallengeDeclined } from "./lib/internal-challenge-declined";
 import { handleInternalChallengeReceived } from "./lib/internal-challenge-received";
+import { handleInternalChatMessage } from "./lib/internal-chat-message";
 import { handleInternalFriendshipUpdate } from "./lib/internal-friendship-update";
 import { handleInternalGameUpdate } from "./lib/internal-game-update";
 import { handleInternalQueueMatched } from "./lib/internal-queue-matched";
@@ -119,6 +122,7 @@ io.on("connection", (socket) => {
   subscribeToPresence(socket, io, connectedUsers);
   registerMatchmakingQueue(socket, io);
   registerMatchSubscription(socket);
+  registerChatSubscription(socket);
 
   socket.on("presence:subscribe", () => {
     subscribeToPresence(socket, io, connectedUsers);
@@ -160,7 +164,7 @@ Bun.serve({
   hostname,
   port,
 
-  fetch(request, server) {
+  async fetch(request, server) {
     const url = new URL(request.url);
 
     if (url.pathname === "/health") {
@@ -189,6 +193,10 @@ Bun.serve({
 
     if (url.pathname === challengeReceivedPath && request.method === "POST") {
       return handleInternalChallengeReceived(request, io, realtimeInternalSecret);
+    }
+
+    if (url.pathname === chatMessagePath && request.method === "POST") {
+      return handleInternalChatMessage(request, io, realtimeInternalSecret);
     }
 
     if (url.pathname === socketPath) {

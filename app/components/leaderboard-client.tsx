@@ -5,25 +5,17 @@ import { useTranslations } from "next-intl";
 
 import LeaderboardTable from "@/components/leaderboardtable";
 import { useLeaderboard } from "@/hooks/useLeaderboard";
+import type { LeaderboardScope, LeaderboardSnapshot } from "@/lib/leaderboard";
 
-type LeaderboardEntry = {
-  playerId: string;
-  rank: number;
-  player: string;
-  rating: number;
-  wins: number;
-  losses: number;
-  winRate: string;
-};
-
-type LeaderboardSnapshot = {
-  entries: LeaderboardEntry[];
-  currentUser: LeaderboardEntry | null;
-};
-
-export default function LeaderboardClient({ initial }: { initial?: LeaderboardSnapshot | null }) {
+export default function LeaderboardClient({
+  initial,
+  scope = "all",
+}: {
+  initial?: LeaderboardSnapshot | null;
+  scope?: LeaderboardScope;
+}) {
   const t = useTranslations("leaderboard");
-  const { entries, currentUser, loading, error, refresh } = useLeaderboard(initial ?? null);
+  const { entries, currentUser, loading, error, refresh } = useLeaderboard(initial ?? null, scope);
 
   return (
     <>
