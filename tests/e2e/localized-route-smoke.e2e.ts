@@ -23,6 +23,8 @@ const messagesByLocale: Record<Locale, AppMessages> = {
 const activeSessionKey = "match:session:v1:active";
 const activeMatchId = "localized-match";
 const activeParticipantId = "localized-player";
+const activeAiMatchId = "localized-ai-match";
+const activeAiParticipantId = "localized-ai-player";
 const translationFailurePattern =
   /MISSING_MESSAGE|IntlError|Missing message|Could not resolve|Failed to format message/i;
 
@@ -62,6 +64,11 @@ const publicRouteCases = [
     heading: (messages: AppMessages) => messages.human.page.lobby.title,
     visibleText: (messages: AppMessages) => messages.human.createRoom.title,
   },
+  {
+    path: "/game",
+    heading: (messages: AppMessages) => messages.aiLobby.hero.title,
+    visibleText: (messages: AppMessages) => messages.aiLobby.preview.openingPreview,
+  },
 ] as const;
 
 for (const locale of locales) {
@@ -82,6 +89,43 @@ for (const locale of locales) {
       await expectNoTranslationArtifacts(page, `${locale}${route.path}`);
       verifyNoRuntimeErrors(`${locale}${route.path}`);
     }
+  });
+}
+
+for (const locale of locales) {
+  test(`localized ${locale} AI route starts an active match`, async ({ page }) => {
+    await mockAiMatchFlow(page);
+    const messages = messagesByLocale[locale];
+    const verifyNoRuntimeErrors = watchRuntimeTranslationErrors(page);
+
+    await gotoLocalizedRoute(page, locale, "/game");
+
+    await expect(
+      page.getByRole("heading", { level: 1, name: messages.aiLobby.hero.title }),
+    ).toBeVisible();
+    await expect(
+      page.getByText(messages.aiLobby.preview.openingPreview, { exact: true }),
+    ).toBeVisible();
+    await expectNoTranslationArtifacts(page, `${locale}/game lobby`);
+
+    const startTrainingButton = page.getByRole("button", {
+      name: messages.aiLobby.setup.startButton,
+    });
+    await expect(startTrainingButton).toBeEnabled({ timeout: 30_000 });
+    await startTrainingButton.click();
+
+    await expect(page.getByTestId("ai-match-room")).toBeVisible({ timeout: 30_000 });
+    await expect(
+      page.getByRole("heading", {
+        level: 1,
+        name: messages.aiLobby.matchRoom.page.title.live,
+      }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("grid", { name: messages.aiLobby.matchRoom.board.ariaLabel }),
+    ).toBeVisible();
+    await expectNoTranslationArtifacts(page, `${locale}/game active match`);
+    verifyNoRuntimeErrors(`${locale}/game active match`);
   });
 }
 
@@ -195,6 +239,39 @@ async function mockHumanMatchState(page: Page) {
   );
 }
 
+async function mockAiMatchFlow(page: Page) {
+  await page.route(
+    (url) => url.pathname === "/api/matches/solo",
+    async (route) => {
+      expect(route.request().postDataJSON()).toMatchObject({
+        difficulty: "expert",
+        playerSeat: "BLACK",
+      });
+      await route.fulfill({
+        body: JSON.stringify({
+          difficulty: "expert",
+          matchId: activeAiMatchId,
+          participantId: activeAiParticipantId,
+          role: "PLAYER",
+          seat: "BLACK",
+        }),
+        contentType: "application/json",
+        status: 200,
+      });
+    },
+  );
+  await page.route(
+    (url) => url.pathname === `/api/matches/${activeAiMatchId}/state`,
+    async (route) => {
+      await route.fulfill({
+        body: JSON.stringify(aiMatchStateResponse()),
+        contentType: "application/json",
+        status: 200,
+      });
+    },
+  );
+}
+
 async function seedStoredHumanMatchSession(page: Page, locale: Locale) {
   await gotoLocalizedRoute(page, locale, "/home");
   await page.evaluate(
@@ -263,6 +340,45 @@ function matchStateResponse() {
     stateVersion: 3,
     status: "IN_PROGRESS",
     visibility: "PUBLIC",
+    winningSeat: null,
+  };
+}
+
+function aiMatchStateResponse() {
+  const board = Array.from({ length: 15 }, () =>
+    Array.from({ length: 15 }, () => ({ occupied: false })),
+  );
+
+  return {
+    aiDifficulty: "expert",
+    board,
+    boardSize: 15,
+    endReason: null,
+    matchId: activeAiMatchId,
+    mode: "ai",
+    moves: [],
+    nextTurnSeat: "BLACK",
+    participants: [
+      {
+        displayName: "Localized Player",
+        joinedAt: "2026-05-17T00:00:00.000Z",
+        leftAt: null,
+        participantId: activeAiParticipantId,
+        role: "PLAYER",
+        seat: "BLACK",
+      },
+      {
+        displayName: "Kata Reader",
+        joinedAt: "2026-05-17T00:00:01.000Z",
+        leftAt: null,
+        participantId: "localized-ai-opponent",
+        role: "PLAYER",
+        seat: "WHITE",
+      },
+    ],
+    stateVersion: 1,
+    status: "IN_PROGRESS",
+    visibility: "PRIVATE",
     winningSeat: null,
   };
 }
