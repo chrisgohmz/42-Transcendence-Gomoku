@@ -1046,6 +1046,7 @@ export const messages = {
       outgoing: "Absolutely! Let me just finish setting up this profile page first.",
     },
     composerPlaceholder: "Message {name}...",
+    conversationLabel: "Conversation with {name}",
     send: "Send",
     invite: {
       eyebrow: "Match invite",

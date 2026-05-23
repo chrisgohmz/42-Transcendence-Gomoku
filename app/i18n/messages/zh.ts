@@ -1036,6 +1036,7 @@ export const messages = {
       outgoing: "当然！我先把这个个人资料页面设置完。",
     },
     composerPlaceholder: "给 {name} 发消息...",
+    conversationLabel: "与 {name} 的对话",
     send: "发送",
     invite: {
       eyebrow: "对局邀请",

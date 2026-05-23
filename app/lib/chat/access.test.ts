@@ -2,9 +2,8 @@ import { beforeEach, describe, expect, mock, test } from "bun:test";
 
 await mock.module("@/lib/prisma", () => ({ prisma: {} }));
 
-const { canAccessDirectConversation, isAcceptedFriend, sortFriendshipKey } = await import(
-  "./access"
-);
+const { canAccessDirectConversation, isAcceptedFriend, sortFriendshipKey } =
+  await import("./access");
 
 const findParticipant = mock();
 const findConversation = mock();

@@ -34,15 +34,19 @@ test("friend message flow: opens friend-specific composer and sends a message", 
     });
     await expect(composer).toBeVisible();
     await expect(composer).toBeEnabled();
+    const thread = page.getByRole("log", {
+      name: new RegExp(`Conversation with ${friend.displayName}`, "i"),
+    });
+    await expect(thread).toBeVisible();
 
     // Send a short message and confirm it lands in the thread. We rely on the
     // POST response (not the socket echo) so the assertion does not need to
     // wait on the realtime publisher.
     const sample = `hello ${randomUUID().slice(0, 8)}`;
     await composer.fill(sample);
-    await page.getByRole("button", { name: /Send/i }).click();
+    await page.getByRole("button", { exact: true, name: "Send" }).click();
 
-    await expect(page.getByText(sample, { exact: true })).toBeVisible();
+    await expect(thread.getByText(sample, { exact: true })).toBeVisible();
   } finally {
     await cleanupTestUsers([user.username, friend.username]);
   }

@@ -17,10 +17,7 @@ export function convRoomId(conversationId: string): string {
   return `conv:${conversationId}`;
 }
 
-export function registerChatSubscription(
-  socket: Socket,
-  db: DirectMessageAccessStore = prisma,
-) {
+export function registerChatSubscription(socket: Socket, db: DirectMessageAccessStore = prisma) {
   // Event: browser → server, "I want to receive messages for this conversation"
   socket.on("chat:subscribe", async (payload: unknown) => {
     if (

@@ -93,8 +93,8 @@ beforeEach(() => {
   findFriendship.mockResolvedValue({ status: "ACCEPTED" });
   findMessages.mockResolvedValue([]);
   updateParticipant.mockResolvedValue({});
-  transaction.mockImplementation(
-    async (callback: (client: typeof txClient) => unknown) => callback(txClient),
+  transaction.mockImplementation(async (callback: (client: typeof txClient) => unknown) =>
+    callback(txClient),
   );
   publishChatMessage.mockResolvedValue(undefined);
 });

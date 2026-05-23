@@ -292,7 +292,13 @@ export default function MessagesContent({ currentUserId }: Props) {
           </header>
 
           {/* Message thread */}
-          <div className="grid content-end gap-5 overflow-y-auto p-5 sm:p-8">
+          <div
+            aria-label={activeFriend ? t("conversationLabel", { name: activeName }) : t("title")}
+            aria-live="polite"
+            aria-relevant="additions text"
+            className="grid content-end gap-5 overflow-y-auto p-5 sm:p-8"
+            role="log"
+          >
             {!activeConvId && (
               <p className="text-center text-sm text-[var(--muted-text)]">
                 Choose a friend from the sidebar to start chatting.
@@ -353,6 +359,7 @@ export default function MessagesContent({ currentUserId }: Props) {
               />
               <button
                 type="submit"
+                aria-label={t("send")}
                 className="btn m-0 px-5"
                 disabled={!messageText.trim() || !activeConvId || isSending}
               >

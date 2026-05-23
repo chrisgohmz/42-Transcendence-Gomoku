@@ -1042,6 +1042,7 @@ export const messages = {
       outgoing: "もちろん！先にプロフィールページの設定だけ終わらせます。",
     },
     composerPlaceholder: "{name} へメッセージ...",
+    conversationLabel: "{name} との会話",
     send: "送信",
     invite: {
       eyebrow: "対局招待",

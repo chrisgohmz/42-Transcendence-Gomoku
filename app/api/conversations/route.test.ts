@@ -134,9 +134,7 @@ describe("GET /api/conversations", () => {
 
   test("filters out conversations where the other user is no longer an accepted friend", async () => {
     findParticipations.mockResolvedValueOnce([bobConversation(), carolConversation()]);
-    findFriendships.mockResolvedValueOnce([
-      { userLowId: "user-alice", userHighId: "user-bob" },
-    ]);
+    findFriendships.mockResolvedValueOnce([{ userLowId: "user-alice", userHighId: "user-bob" }]);
 
     const response = await route.GET();
     const data = (await response.json()) as { conversations: Array<{ id: string }> };
@@ -162,9 +160,7 @@ describe("GET /api/conversations", () => {
 
   test("includes unread count and last message preview for accepted friends", async () => {
     findParticipations.mockResolvedValueOnce([bobConversation()]);
-    findFriendships.mockResolvedValueOnce([
-      { userLowId: "user-alice", userHighId: "user-bob" },
-    ]);
+    findFriendships.mockResolvedValueOnce([{ userLowId: "user-alice", userHighId: "user-bob" }]);
     countMessages.mockResolvedValueOnce(3);
 
     const response = await route.GET();
