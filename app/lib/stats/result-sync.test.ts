@@ -10,6 +10,11 @@ import {
   type ResultSyncOptions,
 } from "./result-sync";
 
+type UserGameStatsUpsertArgs = {
+  create: { rating: number };
+  update: { rating: number };
+};
+
 function summary(overrides: Partial<ResultSyncMatchSummary>): ResultSyncMatchSummary {
   return {
     matchId: "match-1",
@@ -71,7 +76,7 @@ function createResultSyncClient(options: {
       },
       userGameStats: {
         findMany: mock(async () => []),
-        upsert: mock(async () => ({})),
+        upsert: mock(async (_args: UserGameStatsUpsertArgs) => ({})),
       },
     },
     userAchievementUpsert,
@@ -227,5 +232,130 @@ describe("result sync", () => {
         progress: 5,
       },
     });
+  });
+
+  test("saves rating changes for human matches and includes rating in upsert payload", async () => {
+    const t1 = new Date("2026-05-10T10:00:00.000Z");
+    const t2 = new Date("2026-05-11T10:00:00.000Z");
+
+    const client = {
+      achievementDefinition: { findMany: mock(async () => []) },
+      matchMove: { count: mock(async () => 0) },
+      matchParticipant: {
+        findMany: mock(async () => [
+          {
+            id: "p1",
+            result: MatchResult.WIN,
+            match: {
+              id: "m1",
+              boardSize: 15,
+              ruleType: RuleType.GOMOKU,
+              finishedAt: t1,
+              visibility: MatchVisibility.PUBLIC,
+              participants: [
+                { role: Role.PLAYER, userId: "user-1" },
+                { role: Role.PLAYER, userId: "user-2" },
+              ],
+            },
+          },
+          {
+            id: "p2",
+            result: MatchResult.LOSS,
+            match: {
+              id: "m2",
+              boardSize: 15,
+              ruleType: RuleType.GOMOKU,
+              finishedAt: t2,
+              visibility: MatchVisibility.PUBLIC,
+              participants: [
+                { role: Role.PLAYER, userId: "user-1" },
+                { role: Role.PLAYER, userId: "user-2" },
+              ],
+            },
+          },
+        ]),
+      },
+      userAchievement: { findMany: mock(async () => []), upsert: mock(async () => ({})) },
+      userGameStats: {
+        findMany: mock(async () => []),
+        upsert: mock(async (_args: UserGameStatsUpsertArgs) => ({})),
+      },
+    };
+
+    await syncUserGameStatsForUser("user-1", { tx: client as any });
+
+    expect(client.userGameStats.upsert).toHaveBeenCalled();
+    const upsertArg = client.userGameStats.upsert.mock.calls[0]?.[0];
+    // win then loss on human opponents: rating should return to 1500
+    expect(upsertArg?.create.rating).toBe(1500);
+    expect(upsertArg?.update.rating).toBe(1500);
+  });
+
+  test("does not change rating for bot matches", async () => {
+    const t1 = new Date("2026-05-10T10:00:00.000Z");
+
+    const client = {
+      achievementDefinition: { findMany: mock(async () => []) },
+      matchMove: { count: mock(async () => 0) },
+      matchParticipant: {
+        findMany: mock(async () => [
+          {
+            id: "p1",
+            result: MatchResult.WIN,
+            match: {
+              id: "m1",
+              boardSize: 15,
+              ruleType: RuleType.GOMOKU,
+              finishedAt: t1,
+              visibility: MatchVisibility.PUBLIC,
+              participants: [
+                { role: Role.PLAYER, userId: "user-1" },
+                { role: Role.PLAYER, userId: null },
+              ],
+            },
+          },
+        ]),
+      },
+      userAchievement: { findMany: mock(async () => []), upsert: mock(async () => ({})) },
+      userGameStats: {
+        findMany: mock(async () => []),
+        upsert: mock(async (_args: UserGameStatsUpsertArgs) => ({})),
+      },
+    };
+
+    await syncUserGameStatsForUser("user-1", { tx: client as any });
+
+    expect(client.userGameStats.upsert).toHaveBeenCalled();
+    const upsertArg = client.userGameStats.upsert.mock.calls[0]?.[0];
+    expect(upsertArg?.create.rating).toBe(1500);
+    expect(upsertArg?.update.rating).toBe(1500);
+  });
+
+  test("empty snapshots use default rating and upsert payload contains it", async () => {
+    const client = {
+      achievementDefinition: { findMany: mock(async () => []) },
+      matchMove: { count: mock(async () => 0) },
+      matchParticipant: { findMany: mock(async () => []) },
+      userAchievement: { findMany: mock(async () => []), upsert: mock(async () => ({})) },
+      userGameStats: {
+        findMany: mock(async () => [
+          {
+            ruleType: RuleType.GOMOKU,
+            boardSize: 15,
+            rating: 1400,
+            averageMoveTimeMs: null,
+            totalPlayTimeSeconds: 0,
+          },
+        ]),
+        upsert: mock(async (_args: UserGameStatsUpsertArgs) => ({})),
+      },
+    };
+
+    await syncUserGameStatsForUser("user-1", { tx: client as any });
+
+    expect(client.userGameStats.upsert).toHaveBeenCalled();
+    const upsertArg = client.userGameStats.upsert.mock.calls[0]?.[0];
+    expect(upsertArg?.create.rating).toBe(1500);
+    expect(upsertArg?.update.rating).toBe(1500);
   });
 });

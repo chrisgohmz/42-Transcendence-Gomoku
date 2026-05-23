@@ -246,6 +246,74 @@ test("human lobby joins a waiting room and stores the returned session", async (
   await expect(page.getByTestId("human-match-board")).toBeVisible();
 });
 
+test("human lobby paginates waiting rooms through the lobby API", async ({ page }) => {
+  const requestedPages: string[] = [];
+
+  await page.route(
+    (url) => url.pathname === "/api/matches",
+    async (route) => {
+      const url = new URL(route.request().url());
+      const pageNumber = Number(url.searchParams.get("page") ?? "1");
+      requestedPages.push(String(pageNumber));
+
+      await route.fulfill({
+        body: JSON.stringify(
+          lobbyMatchesResponse(
+            [
+              {
+                boardSize: 15,
+                matchId: `page-${pageNumber}-match`,
+                participants: [
+                  {
+                    displayName: pageNumber === 1 ? "Ada" : "Grace",
+                    seat: "BLACK",
+                  },
+                ],
+                status: "WAITING",
+              },
+            ],
+            pageNumber,
+            2,
+          ),
+        ),
+        contentType: "application/json",
+        status: 200,
+      });
+    },
+  );
+
+  await page.goto("/en/human", { waitUntil: "domcontentloaded" });
+
+  await expect.poll(() => requestedPages.at(-1), { timeout: 30_000 }).toBe("1");
+  await expect(page.getByText("Ada's room")).toBeVisible();
+  await expect(page.getByText("Page 1 of 2")).toBeVisible();
+
+  const previousButton = page
+    .getByRole("button", { exact: true, name: "Previous" })
+    .filter({ visible: true });
+  const nextButton = page
+    .getByRole("button", { exact: true, name: "Next" })
+    .filter({ visible: true });
+
+  await expect(previousButton).toBeDisabled();
+  await expect(nextButton).toBeEnabled();
+
+  await nextButton.click();
+
+  await expect.poll(() => requestedPages.at(-1)).toBe("2");
+  await expect(page.getByText("Grace's room")).toBeVisible();
+  await expect(page.getByText("Ada's room")).toHaveCount(0);
+  await expect(page.getByText("Page 2 of 2")).toBeVisible();
+  await expect(nextButton).toBeDisabled();
+  await expect(previousButton).toBeEnabled();
+
+  await previousButton.click();
+
+  await expect.poll(() => requestedPages.at(-1)).toBe("1");
+  await expect(page.getByText("Ada's room")).toBeVisible();
+  await expect(page.getByText("Page 1 of 2")).toBeVisible();
+});
+
 async function readStoredSession(page: Page) {
   return page.evaluate((activeKey) => {
     const activeMatchId = sessionStorage.getItem(activeKey);
@@ -259,13 +327,13 @@ async function readStoredSession(page: Page) {
   }, activeSessionKey);
 }
 
-function lobbyMatchesResponse(data: unknown[]) {
+function lobbyMatchesResponse(data: unknown[], page = 1, totalPages?: number) {
   return {
     data,
     limit: 10,
-    page: 1,
+    page,
     totalMatches: data.length,
-    totalPages: Math.max(1, Math.ceil(data.length / 10)),
+    totalPages: totalPages ?? Math.max(1, Math.ceil(data.length / 10)),
   };
 }
 

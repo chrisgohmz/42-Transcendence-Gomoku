@@ -2,19 +2,21 @@ import { describe, expect, test } from "bun:test";
 
 import {
   LEADERBOARD_BOARD_SIZE,
-  LEADERBOARD_LIMIT,
+  LEADERBOARD_FETCH_LIMIT,
+  LEADERBOARD_RULE_TYPE,
   formatWinRate,
   leaderboardQueryArgs,
   toLeaderboardEntries,
 } from "./leaderboard";
 
 describe("leaderboard data", () => {
-  test("formats ranked player stats for display", () => {
+  test("formats ranked player stats for display and skips bot-only players", () => {
     expect(
       toLeaderboardEntries([
         {
           losses: 2,
           matchesPlayed: 8,
+          botMatchesPlayed: 2,
           rating: 1300,
           userId: "user_1",
           wins: 6,
@@ -24,7 +26,19 @@ describe("leaderboard data", () => {
         },
         {
           losses: 0,
-          matchesPlayed: 0,
+          matchesPlayed: 5,
+          botMatchesPlayed: 5,
+          rating: 1500,
+          userId: "user_bot",
+          wins: 5,
+          user: {
+            displayName: "BotOnly",
+          },
+        },
+        {
+          losses: 1,
+          matchesPlayed: 1,
+          botMatchesPlayed: 0,
           rating: null,
           userId: "user_2",
           wins: 0,
@@ -44,7 +58,7 @@ describe("leaderboard data", () => {
         wins: 6,
       },
       {
-        losses: 0,
+        losses: 1,
         player: "Grace",
         playerId: "user_2",
         rank: 2,
@@ -59,6 +73,7 @@ describe("leaderboard data", () => {
     expect(leaderboardQueryArgs).toMatchObject({
       orderBy: [{ rating: "desc" }, { wins: "desc" }, { losses: "asc" }],
       select: {
+        botMatchesPlayed: true,
         losses: true,
         matchesPlayed: true,
         rating: true,
@@ -70,10 +85,11 @@ describe("leaderboard data", () => {
           },
         },
       },
-      take: LEADERBOARD_LIMIT,
+      take: LEADERBOARD_FETCH_LIMIT,
       where: {
         boardSize: LEADERBOARD_BOARD_SIZE,
-        ruleType: "GOMOKU",
+        ruleType: LEADERBOARD_RULE_TYPE,
+        matchesPlayed: { gt: 0 },
       },
     });
     expect("include" in leaderboardQueryArgs).toBe(false);

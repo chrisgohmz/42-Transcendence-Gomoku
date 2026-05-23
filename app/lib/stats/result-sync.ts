@@ -55,6 +55,7 @@ export type UserGameStatsSnapshot = {
   currentStreak: number;
   bestStreak: number;
   lastPlayedAt: Date | null;
+  rating: number;
 };
 
 export type UserGameStatsKey = {
@@ -176,10 +177,12 @@ export function summarizeMatchResults(
       currentStreak: 0,
       bestStreak: 0,
       lastPlayedAt: null,
+      rating: 1500,
     };
   }
 
   const sorted = [...summaries].sort((a, b) => compareFinishedAtDesc(a.finishedAt, b.finishedAt));
+  const sortedAsc = [...sorted].reverse();
 
   let matchesPlayed = 0;
   let wins = 0;
@@ -187,8 +190,9 @@ export function summarizeMatchResults(
   let draws = 0;
   let botMatchesPlayed = 0;
   let botWins = 0;
+  let rating = 1500;
 
-  for (const summary of sorted) {
+  for (const summary of sortedAsc) {
     if (!isCompetitiveResult(summary.result)) {
       continue;
     }
@@ -196,8 +200,14 @@ export function summarizeMatchResults(
     matchesPlayed += 1;
     if (summary.result === MatchResult.WIN) {
       wins += 1;
+      if (!summary.isBotMatch) {
+        rating += 16; // 対人戦で勝利したら +16
+      }
     } else if (summary.result === MatchResult.LOSS) {
       losses += 1;
+      if (!summary.isBotMatch) {
+        rating = Math.max(0, rating - 16); // 対人戦で敗北したら -16 (0未満には落とさない)
+      }
     } else if (summary.result === MatchResult.DRAW) {
       draws += 1;
     }
@@ -225,6 +235,7 @@ export function summarizeMatchResults(
     currentStreak,
     bestStreak,
     lastPlayedAt,
+    rating,
   };
 }
 
@@ -376,7 +387,7 @@ export async function syncUserGameStatsForUser(
           currentStreak: snapshot.currentStreak,
           bestStreak: snapshot.bestStreak,
           lastPlayedAt: snapshot.lastPlayedAt,
-          rating: existing?.rating ?? null,
+          rating: snapshot.rating,
           averageMoveTimeMs: existing?.averageMoveTimeMs ?? null,
           totalPlayTimeSeconds: existing?.totalPlayTimeSeconds ?? 0,
         },
@@ -390,6 +401,7 @@ export async function syncUserGameStatsForUser(
           currentStreak: snapshot.currentStreak,
           bestStreak: snapshot.bestStreak,
           lastPlayedAt: snapshot.lastPlayedAt,
+          rating: snapshot.rating,
         },
       });
     }),

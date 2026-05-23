@@ -1,4 +1,4 @@
-import { cacheLife } from "next/cache";
+//import { cacheLife } from "next/cache";
 
 import type { Prisma } from "../../generated/prisma/client";
 import { RuleType } from "../../generated/prisma/enums";
@@ -6,18 +6,26 @@ import { prisma } from "./prisma";
 
 export const LEADERBOARD_BOARD_SIZE = 15;
 export const LEADERBOARD_LIMIT = 100;
+export const LEADERBOARD_FETCH_LIMIT = LEADERBOARD_LIMIT * 3;
 export const LEADERBOARD_RULE_TYPE = RuleType.GOMOKU;
 
-type LeaderboardStat = {
-  matchesPlayed: number;
-  rating: number | null;
-  userId: string;
-  wins: number;
-  losses: number;
+const leaderboardSelect = {
+  botMatchesPlayed: true,
+  losses: true,
+  matchesPlayed: true,
+  rating: true,
+  userId: true,
+  wins: true,
   user: {
-    displayName: string;
-  };
-};
+    select: {
+      displayName: true,
+    },
+  },
+} satisfies Prisma.UserGameStatsSelect;
+
+type LeaderboardStat = Prisma.UserGameStatsGetPayload<{
+  select: typeof leaderboardSelect;
+}>;
 
 export type LeaderboardEntry = {
   playerId: string;
@@ -29,11 +37,17 @@ export type LeaderboardEntry = {
   winRate: string;
 };
 
+export type LeaderboardSnapshot = {
+  entries: LeaderboardEntry[];
+  currentUser: LeaderboardEntry | null;
+};
+
 export type LeaderboardRankInput = {
   rating: number | null;
   wins: number;
   losses: number;
   matchesPlayed: number;
+  botMatchesPlayed: number;
 };
 
 export const leaderboardBaseWhere = {
@@ -54,20 +68,9 @@ export const leaderboardRankingOrder = [
 
 export const leaderboardQueryArgs = {
   orderBy: leaderboardRankingOrder,
-  select: {
-    losses: true,
-    matchesPlayed: true,
-    rating: true,
-    userId: true,
-    wins: true,
-    user: {
-      select: {
-        displayName: true,
-      },
-    },
-  },
-  take: LEADERBOARD_LIMIT,
-  where: leaderboardBaseWhere,
+  select: leaderboardSelect,
+  take: LEADERBOARD_FETCH_LIMIT,
+  where: leaderboardRankedWhere,
 } satisfies Prisma.UserGameStatsFindManyArgs;
 
 export function formatWinRate(wins: number, matchesPlayed: number): string {
@@ -78,10 +81,14 @@ export function formatWinRate(wins: number, matchesPlayed: number): string {
   return `${((wins / matchesPlayed) * 100).toFixed(2)}%`;
 }
 
+function isLeaderboardEligible(stat: { matchesPlayed: number; botMatchesPlayed: number }): boolean {
+  return stat.matchesPlayed > stat.botMatchesPlayed;
+}
+
 export function buildLeaderboardAheadWhere(
   stats: LeaderboardRankInput,
 ): Prisma.UserGameStatsWhereInput | null {
-  if (stats.matchesPlayed === 0) {
+  if (stats.matchesPlayed === 0 || stats.matchesPlayed <= stats.botMatchesPlayed) {
     return null;
   }
 
@@ -105,23 +112,112 @@ export function buildLeaderboardAheadWhere(
   };
 }
 
-export function toLeaderboardEntries(stats: LeaderboardStat[]): LeaderboardEntry[] {
-  return stats.map((stat, index) => ({
+function toLeaderboardEntry(stat: LeaderboardStat, rank: number): LeaderboardEntry {
+  return {
     playerId: stat.userId,
-    rank: index + 1,
+    rank,
     player: stat.user.displayName,
     rating: stat.rating ?? 0,
     wins: stat.wins,
     losses: stat.losses,
     winRate: formatWinRate(stat.wins, stat.matchesPlayed),
-  }));
+  };
+}
+
+export function toLeaderboardEntries(stats: LeaderboardStat[]): LeaderboardEntry[] {
+  return stats
+    .filter(isLeaderboardEligible)
+    .map((stat, index) => toLeaderboardEntry(stat, index + 1));
 }
 
 export async function getLeaderboardEntries(): Promise<LeaderboardEntry[]> {
-  "use cache";
-  cacheLife("minutes");
+  // Fetch in batches and collect eligible (human) rows until we have
+  // `LEADERBOARD_LIMIT` entries or the dataset is exhausted. This moves
+  // the eligibility filter into the data/query boundary and avoids
+  // returning fewer than `LEADERBOARD_LIMIT` entries on bot-heavy data.
+  const results: LeaderboardEntry[] = [];
+  let skip = 0;
 
-  const stats = await prisma.userGameStats.findMany(leaderboardQueryArgs);
+  while (results.length < LEADERBOARD_LIMIT) {
+    const args = {
+      ...leaderboardQueryArgs,
+      skip,
+      take: LEADERBOARD_FETCH_LIMIT,
+    } as Prisma.UserGameStatsFindManyArgs;
 
-  return toLeaderboardEntries(stats);
+    const stats = (await prisma.userGameStats.findMany(args)) as unknown as LeaderboardStat[];
+
+    if (stats.length === 0) break;
+
+    for (const stat of stats) {
+      if (!isLeaderboardEligible(stat)) continue;
+
+      const rank = results.length + 1;
+      results.push(toLeaderboardEntry(stat, rank));
+
+      if (results.length >= LEADERBOARD_LIMIT) break;
+    }
+
+    if (stats.length < LEADERBOARD_FETCH_LIMIT) break;
+
+    skip += LEADERBOARD_FETCH_LIMIT;
+  }
+
+  return results.slice(0, LEADERBOARD_LIMIT);
+}
+
+export async function getLeaderboardRank(input: LeaderboardRankInput): Promise<number | null> {
+  const aheadWhere = buildLeaderboardAheadWhere(input);
+
+  if (!aheadWhere) {
+    return null;
+  }
+
+  const allAhead = await prisma.userGameStats.findMany({
+    where: aheadWhere,
+    select: {
+      botMatchesPlayed: true,
+      matchesPlayed: true,
+    },
+  });
+
+  const aheadCount = allAhead.filter(isLeaderboardEligible).length;
+
+  return aheadCount + 1;
+}
+
+export async function getLeaderboardSpotlight(userId: string): Promise<LeaderboardEntry | null> {
+  const stats = await prisma.userGameStats.findUnique({
+    where: {
+      userId_ruleType_boardSize: {
+        userId,
+        ruleType: LEADERBOARD_RULE_TYPE,
+        boardSize: LEADERBOARD_BOARD_SIZE,
+      },
+    },
+    select: leaderboardSelect,
+  });
+
+  if (!stats || !isLeaderboardEligible(stats)) {
+    return null;
+  }
+
+  const rank = await getLeaderboardRank({
+    rating: stats.rating,
+    wins: stats.wins,
+    losses: stats.losses,
+    matchesPlayed: stats.matchesPlayed,
+    botMatchesPlayed: stats.botMatchesPlayed,
+  });
+
+  return rank === null ? null : toLeaderboardEntry(stats, rank);
+}
+
+export async function getLeaderboardSnapshot(userId: string | null): Promise<LeaderboardSnapshot> {
+  const [entries, currentUser] = await Promise.all([
+    getLeaderboardEntries(),
+    userId ? getLeaderboardSpotlight(userId) : Promise.resolve(null),
+  ]);
+
+  return { entries, currentUser };
 }

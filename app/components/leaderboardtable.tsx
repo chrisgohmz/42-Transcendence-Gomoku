@@ -15,92 +15,24 @@ type LeaderboardTableProps = {
   entries: LeaderboardEntry[];
 };
 
-const previewEntries: LeaderboardEntry[] = [
-  {
-    playerId: "preview-1",
-    rank: 1,
-    player: "Hoshi",
-    rating: 2341,
-    wins: 312,
-    losses: 68,
-    winRate: "82.1%",
-  },
-  {
-    playerId: "preview-2",
-    rank: 2,
-    player: "RenjuMaster",
-    rating: 2187,
-    wins: 276,
-    losses: 74,
-    winRate: "78.9%",
-  },
-  {
-    playerId: "preview-3",
-    rank: 3,
-    player: "Kuroishi",
-    rating: 2042,
-    wins: 254,
-    losses: 81,
-    winRate: "75.8%",
-  },
-  {
-    playerId: "preview-4",
-    rank: 4,
-    player: "Shirotora",
-    rating: 1898,
-    wins: 233,
-    losses: 91,
-    winRate: "71.9%",
-  },
-  {
-    playerId: "preview-5",
-    rank: 5,
-    player: "Tenkei",
-    rating: 1756,
-    wins: 201,
-    losses: 83,
-    winRate: "70.8%",
-  },
-  {
-    playerId: "preview-6",
-    rank: 6,
-    player: "Mokuren",
-    rating: 1643,
-    wins: 189,
-    losses: 96,
-    winRate: "66.3%",
-  },
-  {
-    playerId: "preview-7",
-    rank: 7,
-    player: "GomokuSoul",
-    rating: 1532,
-    wins: 174,
-    losses: 104,
-    winRate: "62.6%",
-  },
-  {
-    playerId: "preview-8",
-    rank: 8,
-    player: "IshiNoKokoro",
-    rating: 1421,
-    wins: 158,
-    losses: 109,
-    winRate: "59.2%",
-  },
-];
-
 export default function LeaderboardTable({ entries }: LeaderboardTableProps) {
   const t = useTranslations("leaderboard.table");
-  const rows = entries.length > 0 ? entries : previewEntries;
-  const isPreview = entries.length === 0;
+  const rows = entries;
+  const isEmpty = entries.length === 0;
 
   return (
     <div className="grid gap-3">
-      {isPreview ? (
-        <div className="flex items-center gap-2 rounded-md border border-[var(--brass)]/30 bg-[var(--brass-soft)] px-3 py-2 text-sm font-bold text-[var(--muted-strong)]">
-          <Medal aria-hidden="true" className="size-4 text-[var(--brass)]" />
-          {t("preview")}
+      {isEmpty ? (
+        <div className="grid min-h-[140px] place-items-center rounded-md border border-[var(--panel-border-soft)] bg-white/[0.02] p-6 text-center">
+          <div className="max-w-sm">
+            <div className="mx-auto mb-3 grid size-12 place-items-center rounded-md border border-[var(--panel-border-soft)] bg-white/[0.03]">
+              <Medal aria-hidden="true" className="size-6 text-[var(--brass)]" />
+            </div>
+            <h3 className="m-0 mb-2 font-serif text-xl font-black">{t("empty.title")}</h3>
+            <p className="m-0 text-sm leading-6 text-[var(--muted-text)]">
+              {t("empty.description")}
+            </p>
+          </div>
         </div>
       ) : null}
 

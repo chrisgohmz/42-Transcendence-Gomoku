@@ -9,6 +9,7 @@ import {
   RuleType,
   Seat,
 } from "@/../generated/prisma/enums";
+import { createAuthModuleMock } from "@/test-utils/auth-module-mock";
 
 const getCurrentSession = mock();
 const findUser = mock();
@@ -33,9 +34,11 @@ const tx = {
   },
 };
 
-await mock.module("@/lib/auth", () => ({
-  getCurrentSession,
-}));
+await mock.module("@/lib/auth", () =>
+  createAuthModuleMock({
+    getCurrentSession,
+  }),
+);
 
 await mock.module("@/lib/prisma", () => ({
   prisma: {
@@ -173,6 +176,43 @@ beforeEach(() => {
 });
 
 describe("POST /api/matches/challenge", () => {
+  test("requires authentication and a valid target username", async () => {
+    getCurrentSession.mockResolvedValueOnce(null);
+
+    const unauthorizedResponse = await route.POST(request({ targetUsername: "white" }));
+
+    expect(unauthorizedResponse.status).toBe(401);
+    expect(await unauthorizedResponse.json()).toMatchObject({ error: "unauthorized" });
+    expect(findUser).not.toHaveBeenCalled();
+
+    const invalidResponse = await route.POST(request({ targetUsername: "" }));
+
+    expect(invalidResponse.status).toBe(400);
+    expect(await invalidResponse.json()).toMatchObject({ error: "invalid_payload" });
+    expect(findUser).not.toHaveBeenCalled();
+  });
+
+  test("rejects missing targets and self-challenges before creating a room", async () => {
+    findUser.mockResolvedValueOnce(null);
+
+    const missingResponse = await route.POST(request({ targetUsername: "missing" }));
+
+    expect(missingResponse.status).toBe(404);
+    expect(await missingResponse.json()).toMatchObject({ error: "target_not_found" });
+
+    findUser.mockResolvedValueOnce({
+      id: "user-black",
+      username: "black",
+    });
+
+    const selfResponse = await route.POST(request({ targetUsername: "black" }));
+
+    expect(selfResponse.status).toBe(400);
+    expect(await selfResponse.json()).toMatchObject({ error: "cannot_challenge_self" });
+    expect(createMatch).not.toHaveBeenCalled();
+    expect(publishChallengeReceived).not.toHaveBeenCalled();
+  });
+
   test("requires an accepted friendship with the target user", async () => {
     findFriendship.mockResolvedValueOnce({
       status: FriendshipStatus.PENDING,

@@ -12,6 +12,7 @@ const nextConfig: NextConfig = {
   experimental: {
     instantNavigationDevToolsToggle: true,
   },
+  serverExternalPackages: ["nodemailer"],
   turbopack: {
     root: currentDirectory,
   },

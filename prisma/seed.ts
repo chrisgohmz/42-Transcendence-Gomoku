@@ -39,7 +39,6 @@ const seedUsers = async (): Promise<SeededUsers> => {
         displayName: "Alice Demo",
         email: "alice@example.com",
         emailVerified: true,
-        emailVerifiedAt: new Date(),
         statusMessage: "Ready for ranked matches",
         accounts: {
           create: {
@@ -58,7 +57,6 @@ const seedUsers = async (): Promise<SeededUsers> => {
         displayName: "Bob Demo",
         email: "bob@example.com",
         emailVerified: true,
-        emailVerifiedAt: new Date(),
         statusMessage: "Send me a challenge",
         accounts: {
           create: {
@@ -77,7 +75,6 @@ const seedUsers = async (): Promise<SeededUsers> => {
         displayName: "Carol Demo",
         email: "carol@example.com",
         emailVerified: true,
-        emailVerifiedAt: new Date(),
         statusMessage: "Spectating and learning",
         accounts: {
           create: {
