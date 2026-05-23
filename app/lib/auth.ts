@@ -9,6 +9,11 @@ import { z } from "zod";
 import type { User } from "../../generated/prisma/client";
 import { defaultLocale } from "../i18n/config";
 import type { DuplicateSignupFields } from "./auth-duplicate-fields";
+import {
+  getConfiguredAuthBaseUrl,
+  getTrustedAuthHosts,
+  getTrustedAuthOrigins,
+} from "./auth-origins";
 import { authCredentialPolicy } from "./auth-policy";
 import { oauthProviderIds, type OAuthProviderId } from "./oauth-providers";
 import { prisma } from "./prisma";
@@ -142,11 +147,28 @@ function getPasswordResetUrl(url: string, token: string): string {
 
 const githubCredentials = getOAuthCredentials("github");
 const googleCredentials = getOAuthCredentials("google");
+const trustedOrigins = getTrustedAuthOrigins();
+
+function getBetterAuthBaseUrl() {
+  const fallback = getConfiguredAuthBaseUrl() ?? trustedOrigins[0];
+  const allowedHosts = getTrustedAuthHosts();
+
+  if (allowedHosts.length > 0) {
+    return {
+      allowedHosts,
+      fallback,
+      protocol: "auto" as const,
+    };
+  }
+
+  return fallback ?? process.env["BETTER_AUTH_URL"];
+}
 
 export const auth = betterAuth({
   appName: "42 Transcendence Gomoku",
-  baseURL: process.env["BETTER_AUTH_URL"],
+  baseURL: getBetterAuthBaseUrl(),
   secret: process.env["BETTER_AUTH_SECRET"],
+  trustedOrigins,
   database: prismaAdapter(prisma, {
     provider: "postgresql",
   }),
