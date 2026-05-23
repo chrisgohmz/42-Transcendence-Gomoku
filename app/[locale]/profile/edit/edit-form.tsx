@@ -10,14 +10,18 @@ import { Button } from "@/components/ui/button";
 import { authValidationLimits } from "@/lib/validation/auth-profile-limits";
 
 import { initialProfileSettingsActionState } from "./action-state";
-import { changeAccountPassword, saveDisplayName } from "./actions";
+import { changeAccountPassword, saveDisplayName, setAccountPassword } from "./actions";
 
 export default function EditProfileForm({
   currentDisplayName,
+  currentEmail,
   currentUsername,
+  hasPassword,
 }: {
   currentUsername: string;
   currentDisplayName: string;
+  currentEmail: string | null;
+  hasPassword: boolean;
 }) {
   const [displayNameState, displayNameAction, displayNamePending] = useActionState(
     saveDisplayName,
@@ -27,6 +31,10 @@ export default function EditProfileForm({
     changeAccountPassword,
     initialProfileSettingsActionState,
   );
+  const [setPasswordState, setPasswordAction, setPasswordPending] = useActionState(
+    setAccountPassword,
+    initialProfileSettingsActionState,
+  );
 
   const [isEditingDisplayName, setIsEditingDisplayName] = useState(false);
   const [isEditingPassword, setIsEditingPassword] = useState(false);
@@ -34,6 +42,12 @@ export default function EditProfileForm({
   const passwordFormRef = useRef<HTMLFormElement>(null);
   const t = useTranslations("profile.edit");
 
+  const hasCredentialPassword = hasPassword || Boolean(setPasswordState.successMessage);
+  const accountEmail = currentEmail ?? t("emailMissing");
+  const activePasswordState = hasCredentialPassword ? passwordState : setPasswordState;
+  const activePasswordAction = hasCredentialPassword ? passwordAction : setPasswordAction;
+  const activePasswordPending = hasCredentialPassword ? passwordPending : setPasswordPending;
+  const passwordSuccessMessage = passwordState.successMessage ?? setPasswordState.successMessage;
   const displayNameErrorId = "displayName-errors";
   const currentPasswordErrorId = "currentPassword-errors";
   const newPasswordErrorId = "newPassword-errors";
@@ -48,12 +62,12 @@ export default function EditProfileForm({
 
   // When Password saves successfully, close the form and clear out the secure inputs
   useEffect(() => {
-    if (passwordState.successMessage) {
+    if (passwordState.successMessage || setPasswordState.successMessage) {
       setIsEditingPassword(false);
       const form = passwordFormRef.current;
       if (form) form.reset();
     }
-  }, [passwordState.successMessage]);
+  }, [passwordState.successMessage, setPasswordState.successMessage]);
 
   return (
     <div className="grid gap-5">
@@ -66,6 +80,14 @@ export default function EditProfileForm({
                   {t("usernameReadonly")}
                 </span>
                 <span className="font-medium">@{currentUsername}</span>
+              </div>
+            </div>
+            <div className="flex items-center justify-between rounded-md border border-[var(--panel-border-soft)] bg-white/[0.035] p-4">
+              <div className="grid min-w-0 gap-1">
+                <span className="text-sm font-bold text-[var(--muted-text)]">
+                  {t("linkedEmailReadonly")}
+                </span>
+                <span className="truncate font-medium">{accountEmail}</span>
               </div>
             </div>
             <div className="flex items-center justify-between rounded-md border border-[var(--panel-border-soft)] bg-white/[0.035] p-4">
@@ -105,6 +127,21 @@ export default function EditProfileForm({
                   type="text"
                   defaultValue={currentUsername}
                   autoComplete="username"
+                  className="text-input cursor-not-allowed opacity-70"
+                  readOnly
+                />
+              </div>
+
+              <div className="field">
+                <label htmlFor="email" className="field-label">
+                  {t("linkedEmailReadonly")}
+                </label>
+                <input
+                  id="email"
+                  name="email"
+                  type="text"
+                  defaultValue={accountEmail}
+                  autoComplete="email"
                   className="text-input cursor-not-allowed opacity-70"
                   readOnly
                 />
@@ -159,7 +196,11 @@ export default function EditProfileForm({
         )}
       </Surface>
 
-      <Surface eyebrow={t("security")} icon={LockKeyhole} title={t("changePassword")}>
+      <Surface
+        eyebrow={t("security")}
+        icon={LockKeyhole}
+        title={hasCredentialPassword ? t("changePassword") : t("setPassword")}
+      >
         {!isEditingPassword ? (
           <div className="grid gap-4">
             <div className="flex items-center justify-between rounded-md border border-[var(--panel-border-soft)] bg-white/[0.035] p-4">
@@ -167,8 +208,14 @@ export default function EditProfileForm({
                 <span className="text-sm font-bold text-[var(--muted-text)]">
                   {t("passwordReadonly")}
                 </span>
-                <span className="mt-1 font-medium tracking-[0.2em] text-[var(--muted-text)]">
-                  ••••••••
+                <span
+                  className={
+                    hasCredentialPassword
+                      ? "mt-1 font-medium tracking-[0.2em] text-[var(--muted-text)]"
+                      : "mt-1 font-medium text-[var(--muted-text)]"
+                  }
+                >
+                  {hasCredentialPassword ? "••••••••" : t("passwordNotSet")}
                 </span>
               </div>
               <Button
@@ -178,30 +225,34 @@ export default function EditProfileForm({
                 className="h-10 px-4 font-black"
               >
                 <Pencil aria-hidden="true" className="mr-2 size-4" />
-                {t("change")}
+                {hasCredentialPassword ? t("change") : t("set")}
               </Button>
             </div>
 
-            {passwordState.successMessage ? (
+            {passwordSuccessMessage ? (
               <p className="m-0 text-sm font-bold text-[var(--mint)]" role="status">
-                {passwordState.successMessage}
+                {passwordSuccessMessage}
               </p>
             ) : null}
           </div>
         ) : (
-          <form ref={passwordFormRef} action={passwordAction} className="grid gap-4">
-            <div className="grid gap-4 md:grid-cols-3">
-              <PasswordField
-                errorId={currentPasswordErrorId}
-                errors={passwordState.fields.currentPassword}
-                id="currentPassword"
-                label={t("currentPassword")}
-                name="currentPassword"
-                autoComplete="current-password"
-              />
+          <form ref={passwordFormRef} action={activePasswordAction} className="grid gap-4">
+            <div
+              className={`grid gap-4 ${hasCredentialPassword ? "md:grid-cols-3" : "md:grid-cols-2"}`}
+            >
+              {hasCredentialPassword ? (
+                <PasswordField
+                  errorId={currentPasswordErrorId}
+                  errors={activePasswordState.fields.currentPassword}
+                  id="currentPassword"
+                  label={t("currentPassword")}
+                  name="currentPassword"
+                  autoComplete="current-password"
+                />
+              ) : null}
               <PasswordField
                 errorId={newPasswordErrorId}
-                errors={passwordState.fields.newPassword}
+                errors={activePasswordState.fields.newPassword}
                 id="newPassword"
                 label={t("newPassword")}
                 name="newPassword"
@@ -209,7 +260,7 @@ export default function EditProfileForm({
               />
               <PasswordField
                 errorId={confirmPasswordErrorId}
-                errors={passwordState.fields.confirmPassword}
+                errors={activePasswordState.fields.confirmPassword}
                 id="confirmPassword"
                 label={t("confirmPassword")}
                 name="confirmPassword"
@@ -217,16 +268,24 @@ export default function EditProfileForm({
               />
             </div>
 
-            {passwordState.message ? (
+            {activePasswordState.message ? (
               <p className="m-0 text-sm font-bold text-[var(--danger)]" role="alert">
-                {passwordState.message}
+                {activePasswordState.message}
               </p>
             ) : null}
 
             <div className="flex flex-wrap items-center gap-3">
-              <Button type="submit" disabled={passwordPending} className="h-12 px-5 font-black">
+              <Button
+                type="submit"
+                disabled={activePasswordPending}
+                className="h-12 px-5 font-black"
+              >
                 <LockKeyhole aria-hidden="true" className="size-4" />
-                {passwordPending ? t("savingChanges") : t("updatePassword")}
+                {activePasswordPending
+                  ? t("savingChanges")
+                  : hasCredentialPassword
+                    ? t("updatePassword")
+                    : t("setPassword")}
               </Button>
               <Button
                 type="button"

@@ -11,11 +11,13 @@ await mock.module("next-intl/server", () => ({
 }));
 
 const changePassword = mock();
+const setPassword = mock();
 const revalidatePath = mock();
 const signInEmail = mock();
 const signUpEmail = mock();
 const getCurrentSession = mock();
 const getDuplicateSignupFields = mock();
+const hasCredentialPassword = mock();
 const findUnique = mock();
 const updateUser = mock();
 const originalBetterAuthUrl = process.env["BETTER_AUTH_URL"];
@@ -47,12 +49,14 @@ await mock.module("../../lib/auth", () =>
     auth: {
       api: {
         changePassword,
+        setPassword,
         signInEmail,
         signUpEmail,
       },
     },
     getCurrentSession,
     getDuplicateSignupFields,
+    hasCredentialPassword,
   }),
 );
 
@@ -69,12 +73,14 @@ await mock.module("@/lib/auth", () =>
     auth: {
       api: {
         changePassword,
+        setPassword,
         signInEmail,
         signUpEmail,
       },
     },
     getCurrentSession,
     getDuplicateSignupFields,
+    hasCredentialPassword,
   }),
 );
 await mock.module("@/lib/prisma", () => ({
@@ -155,21 +161,36 @@ function formData(values: Record<string, string>) {
   return data;
 }
 
+function givenSignedOutUser() {
+  getCurrentSession.mockResolvedValueOnce(null);
+}
+
+function givenSignedInCredentialUser() {
+  hasCredentialPassword.mockResolvedValueOnce(true);
+}
+
+function givenSignedInOAuthOnlyUser() {
+  hasCredentialPassword.mockResolvedValueOnce(false);
+}
+
 beforeEach(() => {
   delete process.env["BETTER_AUTH_URL"];
   delete process.env["BETTER_AUTH_TRUSTED_ORIGINS"];
   delete process.env["CADDY_SITE_ADDRESS"];
 
   changePassword.mockReset();
+  setPassword.mockReset();
   signInEmail.mockReset();
   signUpEmail.mockReset();
   getCurrentSession.mockReset();
   getDuplicateSignupFields.mockReset();
+  hasCredentialPassword.mockReset();
   findUnique.mockReset();
   revalidatePath.mockReset();
   updateUser.mockReset();
 
   changePassword.mockResolvedValue({ status: true });
+  setPassword.mockResolvedValue({ status: true });
   signInEmail.mockResolvedValue({
     headers: new Headers({ "set-cookie": "session=login" }),
     response: { user: { id: user.id } },
@@ -811,6 +832,120 @@ describe("auth API routes", () => {
     expect(state).toMatchObject({
       fields: {},
       message: "profileSaveFailed",
+      successMessage: null,
+    });
+  });
+
+  test("setAccountPassword validates password fields before calling Better Auth", async () => {
+    const state = await profileActions.setAccountPassword(
+      previousState,
+      formData({
+        newPassword: "password999",
+      }),
+    );
+
+    expect(state).toMatchObject({
+      fields: {
+        confirmPassword: ["confirmPasswordRequired"],
+      },
+      message: "fixHighlightedFields",
+      successMessage: null,
+    });
+    expect(hasCredentialPassword).not.toHaveBeenCalled();
+    expect(setPassword).not.toHaveBeenCalled();
+  });
+
+  test("setAccountPassword requires a signed-in user", async () => {
+    givenSignedOutUser();
+
+    const state = await profileActions.setAccountPassword(
+      previousState,
+      formData({
+        newPassword: "password999",
+        confirmPassword: "password999",
+      }),
+    );
+
+    expect(hasCredentialPassword).not.toHaveBeenCalled();
+    expect(setPassword).not.toHaveBeenCalled();
+    expect(state).toMatchObject({
+      fields: {},
+      message: "loginRequired",
+      successMessage: null,
+    });
+  });
+
+  test("setAccountPassword refuses accounts that already have a credential password", async () => {
+    givenSignedInCredentialUser();
+
+    const state = await profileActions.setAccountPassword(
+      previousState,
+      formData({
+        newPassword: "password999",
+        confirmPassword: "password999",
+      }),
+    );
+
+    expect(hasCredentialPassword).toHaveBeenCalledWith(user.id);
+    expect(setPassword).not.toHaveBeenCalled();
+    expect(state).toMatchObject({
+      fields: {},
+      message: "passwordAlreadySet",
+      successMessage: null,
+    });
+  });
+
+  test("setAccountPassword creates a credential password for OAuth-only accounts", async () => {
+    givenSignedInOAuthOnlyUser();
+
+    const state = await profileActions.setAccountPassword(
+      previousState,
+      formData({
+        newPassword: "password999",
+        confirmPassword: "password999",
+      }),
+    );
+
+    expect(setPassword).toHaveBeenCalledWith({
+      body: {
+        newPassword: "password999",
+      },
+      headers: expect.any(Headers),
+    });
+    expect(changePassword).not.toHaveBeenCalled();
+    expect(state).toMatchObject({
+      fields: {},
+      message: null,
+      successMessage: "saveSuccess",
+    });
+  });
+
+  test("setAccountPassword maps late Better Auth already-set failures to the already-set message", async () => {
+    givenSignedInOAuthOnlyUser();
+    setPassword.mockRejectedValueOnce(
+      new APIError("BAD_REQUEST", {
+        code: "PASSWORD_ALREADY_SET",
+        message: "password already set",
+      }),
+    );
+
+    const state = await profileActions.setAccountPassword(
+      previousState,
+      formData({
+        newPassword: "password999",
+        confirmPassword: "password999",
+      }),
+    );
+
+    expect(setPassword).toHaveBeenCalledWith({
+      body: {
+        newPassword: "password999",
+      },
+      headers: expect.any(Headers),
+    });
+    expect(state).toMatchObject({
+      fields: {},
+      message: "passwordAlreadySet",
       successMessage: null,
     });
   });

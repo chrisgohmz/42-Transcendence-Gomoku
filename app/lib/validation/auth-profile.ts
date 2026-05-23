@@ -69,6 +69,11 @@ export type ProfilePasswordInput = {
   newPassword?: unknown;
 };
 
+export type ProfileSetPasswordInput = {
+  confirmPassword?: unknown;
+  newPassword?: unknown;
+};
+
 export type PasswordResetRequestInput = {
   email?: unknown;
 };
@@ -262,7 +267,7 @@ const profilePasswordInputSchema = objectFromUnknown({
   }
 });
 
-const passwordResetConfirmInputSchema = objectFromUnknown({
+const newPasswordPairInputSchema = objectFromUnknown({
   newPassword: profilePasswordSchema,
   confirmPassword: profilePasswordSchema,
 }).superRefine((input, ctx) => {
@@ -281,10 +286,14 @@ const passwordResetConfirmInputSchema = objectFromUnknown({
   }
 });
 
+const profileSetPasswordInputSchema = newPasswordPairInputSchema;
+const passwordResetConfirmInputSchema = newPasswordPairInputSchema;
+
 export type ValidLoginInput = z.infer<typeof loginInputSchema>;
 export type ValidSignupInput = z.infer<typeof signupInputSchema>;
 export type ValidProfileDisplayNameInput = z.infer<typeof profileDisplayNameInputSchema>;
 export type ValidProfilePasswordInput = z.infer<typeof profilePasswordInputSchema>;
+export type ValidProfileSetPasswordInput = z.infer<typeof profileSetPasswordInputSchema>;
 export type ValidPasswordResetRequestInput = z.infer<typeof passwordResetRequestInputSchema>;
 export type ValidPasswordResetConfirmInput = z.infer<typeof passwordResetConfirmInputSchema>;
 
@@ -379,6 +388,20 @@ export function validateProfilePasswordInput(
   return zodResultToValidationResult(
     profilePasswordInputSchema.safeParse(input),
     ["confirmPassword", "currentPassword", "newPassword"],
+    profileSettingsIssueCodes,
+  );
+}
+
+export function validateProfileSetPasswordInput(
+  input: ProfileSetPasswordInput,
+): ValidationResult<
+  ValidProfileSetPasswordInput,
+  Exclude<ProfileSettingsField, "currentPassword" | "displayName">,
+  ProfileSettingsValidationIssueCode
+> {
+  return zodResultToValidationResult(
+    profileSetPasswordInputSchema.safeParse(input),
+    ["confirmPassword", "newPassword"],
     profileSettingsIssueCodes,
   );
 }

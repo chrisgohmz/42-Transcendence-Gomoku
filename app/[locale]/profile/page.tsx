@@ -1,4 +1,4 @@
-import { Pencil, ShieldCheck } from "lucide-react";
+import { Mail, Pencil, ShieldCheck } from "lucide-react";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Suspense } from "react";
 
@@ -35,6 +35,7 @@ async function ProfilePageContent({ params }: ProfilePageProps) {
 
   const t = await getTranslations({ locale, namespace: "profile" });
   const realUser = sessionData.user;
+  const accountEmail = realUser.email ?? t("emailMissing");
 
   return (
     <PageShell>
@@ -51,6 +52,11 @@ async function ProfilePageContent({ params }: ProfilePageProps) {
                 {realUser.displayName}
               </h1>
               <p className="text-lg text-[var(--muted-text)]">@{realUser.username}</p>
+              <p className="mt-2 flex min-w-0 items-center gap-2 text-sm font-bold text-[var(--muted-text)]">
+                <Mail aria-hidden="true" className="size-4 shrink-0 text-[var(--brass)]" />
+                <span className="shrink-0">{t("linkedEmail")}:</span>
+                <span className="min-w-0 truncate">{accountEmail}</span>
+              </p>
             </div>
           </div>
           <div className="flex flex-wrap gap-3">
