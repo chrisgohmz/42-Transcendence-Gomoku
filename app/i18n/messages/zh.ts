@@ -960,6 +960,7 @@ export const messages = {
         friends: "好友",
       },
       scope: {
+        friends: "好友",
         global: "全球",
       },
       overview: {

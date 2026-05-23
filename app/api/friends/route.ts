@@ -4,6 +4,10 @@
 
 import { getErrorMessage } from "@/lib/api-errors";
 import { getCurrentSession } from "@/lib/auth";
+import {
+  acceptedFriendshipWhere,
+  getOtherFriendshipUser,
+} from "@/lib/friendships/friendship-queries";
 import { prisma } from "@/lib/prisma";
 
 export async function GET() {
@@ -14,10 +18,7 @@ export async function GET() {
 
   try {
     const friendships = await prisma.friendship.findMany({
-      where: {
-        status: "ACCEPTED",
-        OR: [{ userLowId: session.user.id }, { userHighId: session.user.id }],
-      },
+      where: acceptedFriendshipWhere(session.user.id),
       include: {
         userLow: {
           select: { id: true, username: true, displayName: true, avatarUrl: true },
@@ -30,7 +31,7 @@ export async function GET() {
 
     // For each friendship, return the OTHER user (not the current user)
     const friends = friendships.map((f) => {
-      const other = f.userLowId === session.user.id ? f.userHigh : f.userLow;
+      const other = getOtherFriendshipUser(f, session.user.id);
       return {
         id: other.id,
         username: other.username,

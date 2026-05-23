@@ -969,6 +969,7 @@ export const messages = {
         friends: "Friends",
       },
       scope: {
+        friends: "Friends",
         global: "Global",
       },
       overview: {
