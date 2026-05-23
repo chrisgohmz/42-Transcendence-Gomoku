@@ -2,8 +2,8 @@
 
 import { MessageSquare, Search, Send, ShieldCheck } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { useSearchParams } from "next/navigation";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { FormEvent } from "react";
 
 import { AvatarToken, Badge, PageHeader, PageShell } from "@/components/gomoku-ui";
@@ -46,7 +46,9 @@ type Props = {
 
 export default function MessagesContent({ currentUserId }: Props) {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const t = useTranslations("messagesPage");
+  const deepLinkedFriendId = searchParams.get("friendId");
 
   // Raw data from the two API calls
   const [conversations, setConversations] = useState<Conversation[]>([]);
@@ -54,7 +56,7 @@ export default function MessagesContent({ currentUserId }: Props) {
 
   // The currently open conversation
   const [activeConvId, setActiveConvId] = useState<string | null>(null);
-  //const [activeFriend, setActiveFriend] = useState<Friend | null>(null);
+  const [activeFriendId, setActiveFriendId] = useState<string | null>(null);
 
   // Composer
   const [messageText, setMessageText] = useState("");
@@ -65,12 +67,13 @@ export default function MessagesContent({ currentUserId }: Props) {
 
   // Auto-scroll anchor
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const refreshedReadConversationRef = useRef<string | null>(null);
 
   // useChat loads history + manages the socket for the active conversation
-  const { messages, sendMessage } = useChat(activeConvId);
+  const { messages, sendMessage, status: chatStatus } = useChat(activeConvId);
 
   // ── Fetch conversations + friends ────────────────────────────────────────
-  function loadSidebarData() {
+  const loadSidebarData = useCallback(() => {
     Promise.all([
       fetch("/api/conversations").then((r) => r.json()) as Promise<{
         conversations: Conversation[];
@@ -82,29 +85,45 @@ export default function MessagesContent({ currentUserId }: Props) {
         setFriends(friendData.friends ?? []);
       })
       .catch(console.error);
-  }
+  }, []);
 
   useEffect(() => {
     loadSidebarData();
-  }, []);
+  }, [loadSidebarData]);
 
   // ── Handle ?friendId= query param (link from the friends page) ───────────
   useEffect(() => {
-    const friendId = searchParams.get("friendId");
+    const friendId = deepLinkedFriendId;
     if (!friendId) return;
+
+    setActiveFriendId(friendId);
+    setActiveConvId(null);
+    refreshedReadConversationRef.current = null;
 
     fetch("/api/conversations/direct", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ friendId }),
     })
-      .then((r) => r.json())
+      .then((r) => {
+        if (!r.ok) throw new Error("Failed to open conversation");
+        return r.json() as Promise<{ conversationId: string }>;
+      })
       .then(async (data: { conversationId: string }) => {
+        if (!data.conversationId) throw new Error("Conversation id missing");
         setActiveConvId(data.conversationId);
         loadSidebarData();
       })
       .catch(console.error);
-  }, [searchParams]);
+  }, [deepLinkedFriendId, loadSidebarData]);
+
+  useEffect(() => {
+    if (!activeConvId || chatStatus !== "ready") return;
+    if (refreshedReadConversationRef.current === activeConvId) return;
+
+    refreshedReadConversationRef.current = activeConvId;
+    router.refresh();
+  }, [activeConvId, chatStatus, router]);
 
   // ── Scroll to newest message ─────────────────────────────────────────────
   useEffect(() => {
@@ -146,27 +165,40 @@ export default function MessagesContent({ currentUserId }: Props) {
     });
   }, [friends, conversations]);
 
-  // calcate the active friend value based on the active conversation ID
-  const activeFriend = useMemo(
-    () => sidebarEntries.find((e) => e.conversationId === activeConvId)?.friend ?? null,
-    [sidebarEntries, activeConvId],
-  );
+  // Calculate the active friend from the friend id first. New conversations can
+  // briefly exist before the sidebar refresh has attached the conversation id.
+  const activeFriend = useMemo(() => {
+    if (activeFriendId) {
+      return sidebarEntries.find((entry) => entry.friend.id === activeFriendId)?.friend ?? null;
+    }
+
+    return sidebarEntries.find((entry) => entry.conversationId === activeConvId)?.friend ?? null;
+  }, [sidebarEntries, activeFriendId, activeConvId]);
 
   // Filter by search query
-  const visibleEntries = useMemo(
-    () =>
-      sidebarEntries.filter((entry) => {
-        const name = entry.friend.displayName ?? entry.friend.username;
-        return name.toLowerCase().includes(query.toLowerCase());
-      }),
-    [sidebarEntries, query],
-  );
+  const visibleEntries = useMemo(() => {
+    const normalizedQuery = query.trim().toLowerCase();
+
+    if (normalizedQuery.length < 3) {
+      return sidebarEntries;
+    }
+
+    return sidebarEntries.filter((entry) => {
+      const displayName = entry.friend.displayName.toLowerCase();
+      const username = entry.friend.username.toLowerCase();
+
+      return displayName.startsWith(normalizedQuery) || username.startsWith(normalizedQuery);
+    });
+  }, [sidebarEntries, query]);
 
   // ── Click a sidebar entry ────────────────────────────────────────────────
   async function handleEntryClick(entry: SidebarEntry) {
+    setActiveFriendId(entry.friend.id);
+
     if (entry.conversationId) {
       // Conversation already exists — open it directly
       setActiveConvId(entry.conversationId);
+      refreshedReadConversationRef.current = null;
       // Clear unread badge optimistically
       setConversations((prev) =>
         prev.map((c) => (c.id === entry.conversationId ? { ...c, unreadCount: 0 } : c)),
@@ -174,13 +206,16 @@ export default function MessagesContent({ currentUserId }: Props) {
     } else {
       // First time chatting — create the conversation on demand
       try {
+        setActiveConvId(null);
         const res = await fetch("/api/conversations/direct", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ friendId: entry.friend.id }),
         });
         const data = (await res.json()) as { conversationId: string };
+        if (!res.ok || !data.conversationId) throw new Error("Failed to create conversation");
         setActiveConvId(data.conversationId);
+        refreshedReadConversationRef.current = null;
         loadSidebarData();
       } catch (err) {
         console.error("Failed to create conversation", err);
@@ -239,7 +274,9 @@ export default function MessagesContent({ currentUserId }: Props) {
 
             {visibleEntries.map((entry) => {
               const name = entry.friend.displayName ?? entry.friend.username;
-              const isActive = entry.conversationId === activeConvId && activeConvId !== null;
+              const isActive =
+                (entry.conversationId === activeConvId && activeConvId !== null) ||
+                entry.friend.id === activeFriendId;
 
               return (
                 <button
@@ -252,7 +289,7 @@ export default function MessagesContent({ currentUserId }: Props) {
                       : "border-transparent bg-white/[0.035] hover:border-[var(--panel-border-soft)] hover:bg-white/[0.06]"
                   }`}
                 >
-                  <AvatarToken name={name} />
+                  <AvatarToken image={entry.friend.avatarUrl} name={name} />
                   <span className="min-w-0">
                     <span className="block truncate font-black">{name}</span>
                     <span className="block truncate text-sm text-[var(--muted-text)]">
@@ -271,7 +308,11 @@ export default function MessagesContent({ currentUserId }: Props) {
           {/* Header */}
           <header className="flex items-center justify-between gap-4 border-b border-[var(--panel-border-soft)] bg-[var(--panel-solid)] p-4">
             <div className="flex min-w-0 items-center gap-3">
-              <AvatarToken name={activeName} online={!!activeFriend} />
+              <AvatarToken
+                image={activeFriend?.avatarUrl}
+                name={activeName}
+                online={!!activeFriend}
+              />
               <div className="min-w-0">
                 <h2 className="m-0 truncate font-serif text-3xl font-bold">
                   {activeFriend ? activeName : t("empty.title")}
@@ -313,7 +354,9 @@ export default function MessagesContent({ currentUserId }: Props) {
                   key={msg.id}
                   className={`flex max-w-[82%] gap-3 ${isMe ? "flex-row-reverse justify-self-end" : ""}`}
                 >
-                  {!isMe && <AvatarToken name={senderName} size="sm" />}
+                  {!isMe && (
+                    <AvatarToken image={msg.sender?.avatarUrl} name={senderName} size="sm" />
+                  )}
                   <div
                     className={`rounded-md p-4 ${
                       isMe

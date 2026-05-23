@@ -53,6 +53,10 @@ function request(body: Record<string, unknown>) {
   });
 }
 
+function getRequest(search = "") {
+  return new Request(`http://localhost/api/matches${search}`);
+}
+
 function creatorParticipant() {
   return {
     displayNameSnapshot: "Ada",
@@ -177,7 +181,7 @@ describe("GET /api/matches", () => {
       }),
     ]);
 
-    const response = await route.GET();
+    const response = await route.GET(getRequest());
     const payload = await response.json();
 
     expect(response.status).toBe(200);

@@ -152,7 +152,16 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   // A failure here doesn't roll back the message — the sender already
   // gets it in the response body and other clients will fetch on reload.
   try {
-    await publishChatMessage({ conversationId, message });
+    const recipient = await prisma.user.findUnique({
+      where: { id: access.otherUserId },
+      select: { username: true },
+    });
+
+    await publishChatMessage({
+      conversationId,
+      message,
+      recipientUsername: recipient?.username,
+    });
   } catch (realtimeError) {
     console.error("[chat] Failed to publish realtime message", realtimeError);
   }

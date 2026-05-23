@@ -8,7 +8,7 @@ import { prisma } from "../../app/lib/prisma";
 
 test.setTimeout(90_000);
 
-test("friend message flow: opens friend-specific composer and sends a message", async ({
+test("friend/profile message links open the friend-specific composer and send a message", async ({
   page,
 }, testInfo) => {
   const user = await createAndSignInTestUser(page, testInfo);
@@ -34,10 +34,20 @@ test("friend message flow: opens friend-specific composer and sends a message", 
     });
     await expect(composer).toBeVisible();
     await expect(composer).toBeEnabled();
+    await expect(
+      page.getByRole("img", { exact: true, name: friend.displayName }).first(),
+    ).toBeVisible();
     const thread = page.getByRole("log", {
       name: new RegExp(`Conversation with ${friend.displayName}`, "i"),
     });
     await expect(thread).toBeVisible();
+
+    const search = page.getByRole("textbox", { exact: true, name: "Search" });
+    await search.fill(friend.username.slice(0, 3));
+    await expect(
+      page.getByRole("button", { name: new RegExp(friend.displayName, "i") }),
+    ).toBeVisible();
+    await search.fill("");
 
     // Send a short message and confirm it lands in the thread. We rely on the
     // POST response (not the socket echo) so the assertion does not need to
@@ -47,6 +57,12 @@ test("friend message flow: opens friend-specific composer and sends a message", 
     await page.getByRole("button", { exact: true, name: "Send" }).click();
 
     await expect(thread.getByText(sample, { exact: true })).toBeVisible();
+
+    await page.goto(`/profile/${friend.username}`, { waitUntil: "domcontentloaded" });
+    await page.getByRole("link", { exact: true, name: "Chat" }).click();
+    await page.waitForURL(/\/messages/);
+    await expect(composer).toBeVisible();
+    await expect(composer).toBeEnabled();
   } finally {
     await cleanupTestUsers([user.username, friend.username]);
   }
@@ -115,6 +131,7 @@ async function createAcceptedFriend(userId: string, token: string) {
   const username = `e2e_friend_${token}`;
   const friend = await prisma.user.create({
     data: {
+      avatarUrl: "/icons/Login.svg",
       displayName: `Rival ${token.slice(-4)}`,
       email: `gomoku.friend.${token}@example.com`,
       emailVerified: true,

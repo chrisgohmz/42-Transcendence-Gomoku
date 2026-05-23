@@ -40,14 +40,16 @@ export function SidebarNav({ groups }: SidebarNavProps) {
   useEffect(() => {
     if (!socket) return;
 
-    const handleFriendshipRefresh = () => {
+    const handleRefresh = () => {
       router.refresh();
     };
 
-    socket.on("friendship:refresh", handleFriendshipRefresh);
+    socket.on("friendship:refresh", handleRefresh);
+    socket.on("chat:refresh", handleRefresh);
 
     return () => {
-      socket.off("friendship:refresh", handleFriendshipRefresh);
+      socket.off("friendship:refresh", handleRefresh);
+      socket.off("chat:refresh", handleRefresh);
     };
   }, [router, socket]);
 

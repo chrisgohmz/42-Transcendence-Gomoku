@@ -7,6 +7,7 @@ import { useTransition, useEffect } from "react";
 
 import { usePresence } from "@/components/presence-provider";
 import { useChallengePlayer } from "@/hooks/useChallengePlayer";
+import { Link } from "@/i18n/navigation";
 
 import { processFriendAction } from "./actions";
 
@@ -55,10 +56,6 @@ export default function ProfileActions({
         router.refresh();
       }
     });
-  };
-
-  const handleMessage = () => {
-    router.push(`/messages?friendId=${targetUserId}`);
   };
 
   const isChallenging = challengingUsername === targetUsername;
@@ -144,14 +141,13 @@ export default function ProfileActions({
             <span>{profileT("challenge")}</span>
           </button>
 
-          <button
-            type="button"
-            onClick={handleMessage}
+          <Link
+            href={`/messages?friendId=${targetUserId}`}
             className="btn m-0 w-full px-4 py-2.5 text-sm"
           >
             <MessageSquare aria-hidden="true" className="h-4 w-4" />
             <span>{t("actions.chat")}</span>
-          </button>
+          </Link>
 
           <button
             type="button"

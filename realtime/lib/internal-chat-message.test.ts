@@ -9,6 +9,7 @@ const log = mock((_message: string) => {});
 
 const payload = {
   conversationId: "conv-1",
+  recipientUsername: "bob",
   message: {
     id: "msg-1",
     body: "hello",
@@ -77,7 +78,7 @@ describe("handleInternalChatMessage", () => {
     expect(to).not.toHaveBeenCalled();
   });
 
-  test("broadcasts valid chat messages to the conversation room", async () => {
+  test("broadcasts valid chat messages to the conversation room and refreshes user sidebars", async () => {
     const response = await handleInternalChatMessage(jsonRequest(payload), { to }, "secret", {
       log,
     });
@@ -86,7 +87,10 @@ describe("handleInternalChatMessage", () => {
     expect(response.status).toBe(200);
     expect(responsePayload).toEqual({ ok: true, room: "conv:conv-1" });
     expect(to).toHaveBeenCalledWith("conv:conv-1");
+    expect(to).toHaveBeenCalledWith("user:alice");
+    expect(to).toHaveBeenCalledWith("user:bob");
     expect(emit).toHaveBeenCalledWith("chat:message", payload.message);
+    expect(emit).toHaveBeenCalledWith("chat:refresh", { conversationId: "conv-1" });
     expect(log).toHaveBeenCalledTimes(1);
   });
 });

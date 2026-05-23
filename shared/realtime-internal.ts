@@ -24,6 +24,7 @@ export type FriendshipUpdatePayload = {
 
 export type ChatMessagePayload = {
   conversationId: string;
+  recipientUsername?: string;
   message: {
     id: string;
     body: string;
@@ -94,6 +95,8 @@ export function isChatMessagePayload(payload: unknown): payload is ChatMessagePa
     isBoundedString(message["id"], 128) &&
     isBoundedString(message["body"], 2000) &&
     isBoundedString(message["createdAt"], 128) &&
+    (payload["recipientUsername"] === undefined ||
+      isNonEmptyString(payload["recipientUsername"])) &&
     (sender === null || isChatMessageSender(sender))
   );
 }

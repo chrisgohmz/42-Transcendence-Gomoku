@@ -8,6 +8,7 @@ import { SidebarNav, type SidebarNavItem } from "@/components/sidebar-nav";
 import { Button } from "@/components/ui/button";
 import { Link } from "@/i18n/navigation";
 import { getCurrentSession } from "@/lib/auth";
+import { getUnreadDirectMessageCountForUser } from "@/lib/chat/unread";
 import { prisma } from "@/lib/prisma";
 
 const productLinkMeta = [
@@ -29,15 +30,20 @@ export default async function AppSidebar() {
   const avatarUrl = sessionData?.user.avatarUrl;
 
   let pendingFriendsCount = 0;
+  let unreadMessagesCount = 0;
   if (sessionData) {
-    const pendingCount = await prisma.friendship.count({
-      where: {
-        OR: [{ userLowId: sessionData.user.id }, { userHighId: sessionData.user.id }],
-        status: "PENDING",
-        NOT: { requestedById: sessionData.user.id },
-      },
-    });
+    const [pendingCount, unreadCount] = await Promise.all([
+      prisma.friendship.count({
+        where: {
+          OR: [{ userLowId: sessionData.user.id }, { userHighId: sessionData.user.id }],
+          status: "PENDING",
+          NOT: { requestedById: sessionData.user.id },
+        },
+      }),
+      getUnreadDirectMessageCountForUser(sessionData.user.id),
+    ]);
     pendingFriendsCount = pendingCount;
+    unreadMessagesCount = unreadCount;
   }
 
   const productLinks = productLinkMeta.map(({ href, icon, labelKey }) => ({
@@ -53,7 +59,12 @@ export default async function AppSidebar() {
       label: nav("userMenu.friends"),
       notificationCount: pendingFriendsCount,
     },
-    { href: "/messages", icon: "messages", label: nav("userMenu.messages") },
+    {
+      href: "/messages",
+      icon: "messages",
+      label: nav("userMenu.messages"),
+      notificationCount: unreadMessagesCount,
+    },
     { href: "/profile", icon: "profile", label: nav("userMenu.profile") },
     // { href: "/account", icon: "account", label: "Settings" },
   ];

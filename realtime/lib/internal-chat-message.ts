@@ -8,6 +8,7 @@ import { convRoomId } from "./rooms";
 
 type ChatMessageEmitter = {
   emit(event: "chat:message", payload: ChatMessagePayload["message"]): void;
+  emit(event: "chat:refresh", payload: { conversationId: string }): void;
 };
 
 type ChatMessageServer = {
@@ -47,7 +48,20 @@ export async function handleInternalChatMessage(
   const room = convRoomId(payload.conversationId);
 
   io.to(room).emit("chat:message", payload.message);
+  for (const username of getRefreshUsernames(payload)) {
+    io.to(`user:${username}`).emit("chat:refresh", { conversationId: payload.conversationId });
+  }
   logger.log(`[realtime] broadcast chat:message to ${room}`);
 
   return Response.json({ ok: true, room });
+}
+
+function getRefreshUsernames(payload: ChatMessagePayload): string[] {
+  return Array.from(
+    new Set(
+      [payload.message.sender?.username, payload.recipientUsername].filter(
+        (username): username is string => typeof username === "string" && username.length > 0,
+      ),
+    ),
+  );
 }

@@ -139,7 +139,7 @@ export async function POST(request: Request) {
   }
 }
 
-export async function GET(request: Request = new Request("http://localhost/api/matches")) {
+export async function GET(request: Request) {
   const { cleanupStaleMatchSessions } = await import("@/lib/matches/matchmaking");
 
   await cleanupStaleMatchSessions();
