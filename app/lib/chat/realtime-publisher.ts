@@ -14,6 +14,10 @@ import {
   readRealtimeInternalSecret,
 } from "../../../shared/realtime-internal";
 
+function readPositiveTimeoutMs(timeoutMs: number) {
+  return Number.isFinite(timeoutMs) && timeoutMs > 0 ? timeoutMs : 2000;
+}
+
 // The shape of the data we send to the Socket.IO server
 export type ChatMessagePublishPayload = {
   conversationId: string;
@@ -33,7 +37,7 @@ export type ChatMessagePublishPayload = {
 // Resolve the URL of the Socket.IO server's internal endpoint.
 // Defaults to http://realtime:3001 which is the Docker service name.
 // In local development (no Docker), set REALTIME_INTERNAL_URL in .env
-function resolveChatMessageUrl(env: NodeJS.ProcessEnv = process.env): string {
+export function resolveChatMessageUrl(env: NodeJS.ProcessEnv = process.env): string {
   // Derive the base from the game update URL if set, otherwise use default
   const gameUpdateUrl = env["REALTIME_INTERNAL_URL"];
   if (gameUpdateUrl) {
@@ -43,7 +47,10 @@ function resolveChatMessageUrl(env: NodeJS.ProcessEnv = process.env): string {
   return `http://realtime:3001${chatMessagePath}`;
 }
 
-export async function publishChatMessage(payload: ChatMessagePublishPayload): Promise<void> {
+export async function publishChatMessage(
+  payload: ChatMessagePublishPayload,
+  timeoutMs = Number(process.env["REALTIME_PUBLISH_TIMEOUT_MS"] ?? 2000),
+): Promise<void> {
   const internalSecret = readRealtimeInternalSecret();
 
   if (!internalSecret) {
@@ -52,7 +59,7 @@ export async function publishChatMessage(payload: ChatMessagePublishPayload): Pr
 
   // 2 second timeout — if the Socket.IO server is slow, don't hold up the response
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 2000);
+  const timeoutId = setTimeout(() => controller.abort(), readPositiveTimeoutMs(timeoutMs));
 
   try {
     const response = await fetch(resolveChatMessageUrl(), {
