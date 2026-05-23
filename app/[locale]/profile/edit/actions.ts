@@ -5,7 +5,7 @@ import { getLocale, getTranslations } from "next-intl/server";
 import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
 
-import { auth, getCurrentSession } from "@/lib/auth";
+import { auth, getCurrentSession, hasCredentialPassword } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import {
   fieldIssuesToMap,
@@ -13,6 +13,7 @@ import {
   type ProfileSettingsValidationIssueCode,
   validateProfileDisplayNameInput,
   validateProfilePasswordInput,
+  validateProfileSetPasswordInput,
 } from "@/lib/validation/auth-profile";
 
 import type { ProfileSettingsActionState } from "./action-state";
@@ -22,6 +23,10 @@ function translateProfileIssues(
   t: (key: ProfileSettingsValidationIssueCode) => string,
 ) {
   return fieldIssuesToMap(issues, t);
+}
+
+function getApiErrorCode(error: unknown): string | undefined {
+  return isAPIError(error) ? (error.body as { code?: string } | undefined)?.code : undefined;
 }
 
 export async function saveDisplayName(
@@ -105,6 +110,54 @@ export async function changeAccountPassword(
         message: t("fixHighlightedFields"),
         successMessage: null,
       };
+    }
+
+    return { fields: {}, message: t("profileSaveFailed"), successMessage: null };
+  }
+
+  revalidatePath("/", "layout");
+  return { fields: {}, message: null, successMessage: t("saveSuccess") };
+}
+
+export async function setAccountPassword(
+  _previousState: ProfileSettingsActionState,
+  formData: FormData,
+): Promise<ProfileSettingsActionState> {
+  const locale = await getLocale();
+  const t = await getTranslations({ locale, namespace: "profile.errors" });
+  const sessionData = await getCurrentSession();
+
+  if (!sessionData) {
+    return { fields: {}, message: t("loginRequired"), successMessage: null };
+  }
+
+  const validation = validateProfileSetPasswordInput({
+    confirmPassword: formData.get("confirmPassword"),
+    newPassword: formData.get("newPassword"),
+  });
+
+  if (!validation.ok) {
+    return {
+      fields: translateProfileIssues(validation.issues, t),
+      message: t("fixHighlightedFields"),
+      successMessage: null,
+    };
+  }
+
+  if (await hasCredentialPassword(sessionData.user.id)) {
+    return { fields: {}, message: t("passwordAlreadySet"), successMessage: null };
+  }
+
+  try {
+    await auth.api.setPassword({
+      body: {
+        newPassword: validation.data.newPassword,
+      },
+      headers: await headers(),
+    });
+  } catch (error) {
+    if (getApiErrorCode(error) === "PASSWORD_ALREADY_SET") {
+      return { fields: {}, message: t("passwordAlreadySet"), successMessage: null };
     }
 
     return { fields: {}, message: t("profileSaveFailed"), successMessage: null };

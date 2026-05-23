@@ -327,6 +327,19 @@ export async function getCurrentSession(): Promise<AuthContext | null> {
   return { session: sessionData.session, user };
 }
 
+export async function hasCredentialPassword(userId: string): Promise<boolean> {
+  const account = await prisma.account.findFirst({
+    where: {
+      password: { not: null },
+      providerId: "credential",
+      userId,
+    },
+    select: { id: true },
+  });
+
+  return Boolean(account);
+}
+
 export async function getDuplicateSignupFields(
   email: string,
   username: string,

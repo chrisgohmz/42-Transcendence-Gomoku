@@ -69,6 +69,11 @@ export type ProfilePasswordInput = {
   newPassword?: unknown;
 };
 
+export type ProfileSetPasswordInput = {
+  confirmPassword?: unknown;
+  newPassword?: unknown;
+};
+
 export type PasswordResetRequestInput = {
   email?: unknown;
 };
@@ -262,6 +267,25 @@ const profilePasswordInputSchema = objectFromUnknown({
   }
 });
 
+const profileSetPasswordInputSchema = objectFromUnknown({
+  newPassword: profilePasswordSchema,
+  confirmPassword: profilePasswordSchema,
+}).superRefine((input, ctx) => {
+  if (!input.newPassword) {
+    addZodIssue(ctx, "newPassword", "newPasswordRequired");
+  } else if (input.newPassword.length < authValidationLimits.passwordMinLength) {
+    addZodIssue(ctx, "newPassword", "shortPassword");
+  } else if (input.newPassword.length > authValidationLimits.passwordMaxLength) {
+    addZodIssue(ctx, "newPassword", "passwordTooLong");
+  }
+
+  if (!input.confirmPassword) {
+    addZodIssue(ctx, "confirmPassword", "confirmPasswordRequired");
+  } else if (input.newPassword && input.newPassword !== input.confirmPassword) {
+    addZodIssue(ctx, "confirmPassword", "passwordMismatch");
+  }
+});
+
 const passwordResetConfirmInputSchema = objectFromUnknown({
   newPassword: profilePasswordSchema,
   confirmPassword: profilePasswordSchema,
@@ -285,6 +309,7 @@ export type ValidLoginInput = z.infer<typeof loginInputSchema>;
 export type ValidSignupInput = z.infer<typeof signupInputSchema>;
 export type ValidProfileDisplayNameInput = z.infer<typeof profileDisplayNameInputSchema>;
 export type ValidProfilePasswordInput = z.infer<typeof profilePasswordInputSchema>;
+export type ValidProfileSetPasswordInput = z.infer<typeof profileSetPasswordInputSchema>;
 export type ValidPasswordResetRequestInput = z.infer<typeof passwordResetRequestInputSchema>;
 export type ValidPasswordResetConfirmInput = z.infer<typeof passwordResetConfirmInputSchema>;
 
@@ -379,6 +404,20 @@ export function validateProfilePasswordInput(
   return zodResultToValidationResult(
     profilePasswordInputSchema.safeParse(input),
     ["confirmPassword", "currentPassword", "newPassword"],
+    profileSettingsIssueCodes,
+  );
+}
+
+export function validateProfileSetPasswordInput(
+  input: ProfileSetPasswordInput,
+): ValidationResult<
+  ValidProfileSetPasswordInput,
+  Exclude<ProfileSettingsField, "currentPassword" | "displayName">,
+  ProfileSettingsValidationIssueCode
+> {
+  return zodResultToValidationResult(
+    profileSetPasswordInputSchema.safeParse(input),
+    ["confirmPassword", "newPassword"],
     profileSettingsIssueCodes,
   );
 }
