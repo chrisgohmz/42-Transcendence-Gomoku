@@ -21,6 +21,7 @@ import {
   Trophy,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import AiMatchRoom from "@/components/ai-match-room";
@@ -84,9 +85,27 @@ const toneClasses = {
 } as const satisfies Record<AiDifficultyTone, { border: string; icon: string }>;
 
 const trainingRows = [
-  ["Expert (1700)", "Win", "162", "May 14, 2026", "Black - private"],
-  ["Apprentice (1100)", "Win", "128", "May 13, 2026", "White - private"],
-  ["Beginner (800)", "Win", "96", "May 12, 2026", "Black - private"],
+  {
+    dateKey: "training.dates.may14_2026",
+    difficultyId: "expert",
+    moves: "162",
+    notesKey: "training.notes.blackPrivate",
+    resultKey: "training.results.win",
+  },
+  {
+    dateKey: "training.dates.may13_2026",
+    difficultyId: "apprentice",
+    moves: "128",
+    notesKey: "training.notes.whitePrivate",
+    resultKey: "training.results.win",
+  },
+  {
+    dateKey: "training.dates.may12_2026",
+    difficultyId: "beginner",
+    moves: "96",
+    notesKey: "training.notes.blackPrivate",
+    resultKey: "training.results.win",
+  },
 ] as const;
 
 function getErrorMessage(payload: ErrorResponse | null, fallback: string) {
@@ -102,6 +121,7 @@ function isSeat(value: unknown): value is Seat | null {
 }
 
 export default function AiLobbyClient() {
+  const t = useTranslations("aiLobby");
   const restoredMatch = useMatchInitialize();
   const setRestoredSession = restoredMatch.setSession;
   const [selectedDifficultyId, setSelectedDifficultyId] =
@@ -114,6 +134,29 @@ export default function AiLobbyClient() {
   const [isStarting, setIsStarting] = useState(false);
   const [startError, setStartError] = useState<string | null>(null);
   const selectedDifficulty = getAiDifficulty(selectedDifficultyId);
+
+  const translatedSelectedDifficulty = useMemo(() => {
+    const id = selectedDifficulty.id;
+    return {
+      ...selectedDifficulty,
+      name: t(`difficulty.names.${id}`),
+      range: t(`difficulty.ranges.${id}`),
+      summary: t(`difficulty.summaries.${id}`),
+      description: t(`difficulty.descriptions.${id}`),
+      strengths: selectedDifficulty.strengthIds.map((strengthId) =>
+        t(`difficulty.strengths.${id}.${strengthId}`),
+      ),
+      stats: selectedDifficulty.stats.map((stat) => ({
+        ...stat,
+        label: t(`difficulty.statLabels.${stat.id}`),
+      })),
+      traits: selectedDifficulty.traits.map((trait) => ({
+        ...trait,
+        label: t(`difficulty.traitLabels.${trait.labelId}`),
+        value: t(`difficulty.traitValues.${trait.valueId}`),
+      })),
+    };
+  }, [selectedDifficulty, t]);
 
   useEffect(() => {
     setIsClientReady(true);
@@ -133,14 +176,30 @@ export default function AiLobbyClient() {
 
   const sessionSummary = useMemo(
     () => [
-      { icon: Bot, label: "Mode", value: "AI Match" },
-      { icon: Radio, label: "Rules", value: "15 x 15 / Standard" },
-      { icon: Circle, label: "Player Color", value: playerSeat },
-      { icon: Gauge, label: "Difficulty", value: selectedDifficulty.name },
-      { icon: Lightbulb, label: "Hints", value: showHints ? "Enabled" : "Hidden" },
-      { icon: ShieldCheck, label: "Rating Impact", value: "Practice only" },
+      { icon: Bot, label: t("summary.modeLabel"), value: t("summary.modeValue") },
+      { icon: Radio, label: t("summary.rulesLabel"), value: t("summary.rulesValue") },
+      {
+        icon: Circle,
+        label: t("summary.playerColorLabel"),
+        value: playerSeat === "BLACK" ? t("seat.black") : t("seat.white"),
+      },
+      {
+        icon: Gauge,
+        label: t("summary.difficultyLabel"),
+        value: translatedSelectedDifficulty.name,
+      },
+      {
+        icon: Lightbulb,
+        label: t("summary.hintsLabel"),
+        value: showHints ? t("summary.hintsEnabled") : t("summary.hintsHidden"),
+      },
+      {
+        icon: ShieldCheck,
+        label: t("summary.ratingImpactLabel"),
+        value: t("summary.ratingImpactValue"),
+      },
     ],
-    [playerSeat, selectedDifficulty.name, showHints],
+    [playerSeat, showHints, t, translatedSelectedDifficulty.name],
   );
 
   const handleSessionReady = useCallback(
@@ -171,7 +230,10 @@ export default function AiLobbyClient() {
       if (!response.ok) {
         const errorPayload = (await response.json().catch(() => null)) as ErrorResponse | null;
         setStartError(
-          getErrorMessage(errorPayload, `Solo match request failed (${response.status})`),
+          getErrorMessage(
+            errorPayload,
+            t("errors.soloMatchRequestFailed", { status: response.status }),
+          ),
         );
         return;
       }
@@ -179,7 +241,7 @@ export default function AiLobbyClient() {
       const result = (await response.json()) as SoloMatchResponse;
 
       if (!result.matchId || !result.participantId) {
-        setStartError("Solo match response was missing the match session.");
+        setStartError(t("errors.missingSoloMatchSession"));
         return;
       }
 
@@ -196,11 +258,11 @@ export default function AiLobbyClient() {
       saveStoredMatchSession(storedSession);
       handleSessionReady(storedSession);
     } catch {
-      setStartError("Network error while starting the solo match.");
+      setStartError(t("errors.networkStartSoloMatch"));
     } finally {
       setIsStarting(false);
     }
-  }, [handleSessionReady, playerSeat, selectedDifficultyId]);
+  }, [handleSessionReady, playerSeat, selectedDifficultyId, t]);
 
   const handleBackToLobby = useCallback(() => {
     setShowLobby(true);
@@ -218,8 +280,8 @@ export default function AiLobbyClient() {
       <AiMatchRoom
         initialState={restoredMatch.state}
         isRestoring={restoredMatch.isLoading}
-        onBackToLobby={handleBackToLobby}
-        onSessionLost={handleSessionLost}
+        onBackToLobbyAction={handleBackToLobby}
+        onSessionLostAction={handleSessionLost}
         restoreError={restoredMatch.error}
         session={activeSession}
       />
@@ -230,10 +292,10 @@ export default function AiLobbyClient() {
     return (
       <PageShell>
         <PageHeader
-          eyebrow="AI Training Lobby"
+          eyebrow={t("loading.eyebrow")}
           icon={Swords}
-          title="Checking your solo table."
-          lede="Loading the most recent active AI match."
+          title={t("loading.title")}
+          lede={t("loading.lede")}
         />
       </PageShell>
     );
@@ -244,17 +306,15 @@ export default function AiLobbyClient() {
       <section className="command-panel mb-4 px-5 py-3 xl:px-6">
         <div className="relative z-10 grid gap-5 xl:grid-cols-[minmax(0,1fr)_auto_auto] xl:items-start">
           <div className="min-w-0">
-            <p className="eyebrow">AI Training Lobby</p>
+            <p className="eyebrow">{t("hero.eyebrow")}</p>
             <h1 className="page-title !max-w-none text-[3.15rem] xl:text-[3.55rem]">
-              Choose your opponent.
+              {t("hero.title")}
             </h1>
-            <p className="lede mt-2 max-w-3xl">
-              Tune the challenge before the first stone is placed.
-            </p>
+            <p className="lede mt-2 max-w-3xl">{t("hero.lede")}</p>
           </div>
 
           <div className="inline-flex w-fit max-w-full overflow-x-auto rounded-md border border-[var(--panel-border-soft)] bg-[var(--panel-solid)] p-1">
-            {["Setup", "Analysis", "History"].map((item, index) => (
+            {[t("tabs.setup"), t("tabs.analysis"), t("tabs.history")].map((item, index) => (
               <button
                 key={item}
                 type="button"
@@ -272,16 +332,16 @@ export default function AiLobbyClient() {
 
           <button type="button" className="btn btn-subtle m-0 min-h-11 px-4">
             <BookOpen aria-hidden="true" className="size-4" />
-            Training Rules
+            {t("hero.rulesButton")}
           </button>
         </div>
       </section>
 
       <section className="grid gap-5 xl:grid-cols-[330px_minmax(0,1fr)] 2xl:grid-cols-[348px_minmax(0,1fr)_390px]">
         <aside className="grid content-start gap-5">
-          <Surface className="!gap-3 !p-4" eyebrow="Match setup">
+          <Surface className="!gap-3 !p-4" eyebrow={t("setup.eyebrow")}>
             <div>
-              <p className="label">Difficulty</p>
+              <p className="label">{t("setup.difficultyLabel")}</p>
               <div className="grid gap-2">
                 {aiDifficultyOptions.map((difficulty) => {
                   const tone = toneClasses[difficulty.tone];
@@ -309,13 +369,15 @@ export default function AiLobbyClient() {
                         <Bot aria-hidden="true" className="size-5" />
                       </span>
                       <span className="min-w-0">
-                        <span className="block truncate font-black">{difficulty.name}</span>
+                        <span className="block truncate font-black">
+                          {t(`difficulty.names.${difficulty.id}`)}
+                        </span>
                         <span className="block truncate text-xs font-bold text-[var(--muted-text)]">
-                          {difficulty.summary}
+                          {t(`difficulty.summaries.${difficulty.id}`)}
                         </span>
                       </span>
                       <span className="flex items-center gap-2 text-xs font-black text-[var(--muted-strong)] tabular-nums">
-                        {difficulty.range}
+                        {t(`difficulty.ranges.${difficulty.id}`)}
                         {selected ? (
                           <span className="grid size-5 place-items-center rounded-full bg-[var(--text)] text-[var(--panel-solid)]">
                             <Check aria-hidden="true" className="size-3" />
@@ -328,10 +390,10 @@ export default function AiLobbyClient() {
               </div>
             </div>
 
-            <SetupSelect label="Rules" value="15 x 15 / Standard" />
+            <SetupSelect label={t("setup.rulesLabel")} value={t("setup.rulesValue")} />
 
             <div>
-              <p className="label">Player color</p>
+              <p className="label">{t("setup.playerColorLabel")}</p>
               <div className="grid grid-cols-2 gap-2">
                 {(["BLACK", "WHITE"] as const).map((seat) => (
                   <button
@@ -353,16 +415,20 @@ export default function AiLobbyClient() {
                       )}
                       aria-hidden="true"
                     />
-                    {seat === "BLACK" ? "Black" : "White"}
+                    {seat === "BLACK" ? t("seat.black") : t("seat.white")}
                   </button>
                 ))}
               </div>
             </div>
 
-            <SetupSelect icon={Clock3} label="Time control" value="Practice / untimed" />
+            <SetupSelect
+              icon={Clock3}
+              label={t("setup.timeControlLabel")}
+              value={t("setup.timeControlValue")}
+            />
 
             <div className="flex items-center justify-between gap-3">
-              <p className="label m-0">Show AI hints</p>
+              <p className="label m-0">{t("setup.showHintsLabel")}</p>
               <button
                 type="button"
                 className={cn(
@@ -372,7 +438,7 @@ export default function AiLobbyClient() {
                     : "border-[var(--panel-border-soft)] bg-white/[0.08]",
                 )}
                 aria-pressed={showHints}
-                aria-label={showHints ? "Show AI hints enabled" : "Show AI hints disabled"}
+                aria-label={showHints ? t("setup.showHintsEnabled") : t("setup.showHintsDisabled")}
                 onClick={() => setShowHints((value) => !value)}
               >
                 <span
@@ -394,7 +460,7 @@ export default function AiLobbyClient() {
               aria-busy={isStarting}
             >
               <Swords aria-hidden="true" className="size-5" />
-              {isStarting ? "Starting..." : "Start Training"}
+              {isStarting ? t("setup.startingButton") : t("setup.startButton")}
             </button>
 
             {startError ? (
@@ -405,13 +471,13 @@ export default function AiLobbyClient() {
 
             <p className="m-0 flex items-center gap-2 border-t border-[var(--panel-border-soft)] pt-3 text-sm font-bold text-[var(--muted-text)]">
               <Lightbulb aria-hidden="true" className="size-4 text-[var(--brass)]" />
-              Tip: AI matches are private and unrated.
+              {t("setup.tip")}
             </p>
           </Surface>
         </aside>
 
         <div className="grid min-w-0 gap-5">
-          <Surface className="!gap-3 !p-3" eyebrow="Opponent preview">
+          <Surface className="!gap-3 !p-3" eyebrow={t("preview.eyebrow")}>
             <div className="grid gap-3 xl:grid-cols-[minmax(235px,0.58fr)_minmax(286px,1fr)]">
               <div className="grid content-start gap-3">
                 <div className="flex items-center gap-4">
@@ -420,18 +486,22 @@ export default function AiLobbyClient() {
                   </span>
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
-                      <h2 className="m-0 truncate text-2xl font-black">Kata Reader</h2>
+                      <h2 className="m-0 truncate text-2xl font-black">
+                        <span translate="no">{t("preview.title")}</span>
+                      </h2>
                       <span
                         className="size-2.5 rounded-full bg-[var(--mint)] shadow-[0_0_12px_var(--mint)]"
                         aria-hidden="true"
                       />
                     </div>
                     <p className="m-0 text-sm font-bold text-[var(--muted-strong)]">
-                      {selectedDifficulty.range}
+                      {translatedSelectedDifficulty.range}
                     </p>
                     <Badge tone="brass">
                       <Gauge aria-hidden="true" className="size-3.5" />
-                      {selectedDifficulty.name} AI
+                      {t("preview.difficultyBadge", {
+                        difficulty: translatedSelectedDifficulty.name,
+                      })}
                     </Badge>
                   </div>
                 </div>
@@ -439,10 +509,10 @@ export default function AiLobbyClient() {
                 <div className="split-line" />
 
                 <div>
-                  <p className="label">Strengths</p>
+                  <p className="label">{t("preview.strengthsLabel")}</p>
                   <div className="grid gap-1.5 text-sm font-bold text-[var(--muted-strong)]">
-                    {selectedDifficulty.strengths.map((strength) => (
-                      <p key={strength} className="m-0 flex items-center gap-2">
+                    {translatedSelectedDifficulty.strengths.map((strength, index) => (
+                      <p key={index} className="m-0 flex items-center gap-2">
                         <span
                           className="size-2 rounded-full bg-[var(--mint)] shadow-[0_0_10px_var(--mint)]"
                           aria-hidden="true"
@@ -454,9 +524,9 @@ export default function AiLobbyClient() {
                 </div>
 
                 <div className="grid gap-2">
-                  {selectedDifficulty.stats.map((stat) => (
+                  {translatedSelectedDifficulty.stats.map((stat) => (
                     <div
-                      key={stat.label}
+                      key={stat.id}
                       className="grid grid-cols-[88px_minmax(0,1fr)_42px] items-center gap-3"
                     >
                       <span className="text-sm font-bold text-[var(--muted-text)]">
@@ -481,19 +551,19 @@ export default function AiLobbyClient() {
                 </div>
 
                 <blockquote className="m-0 rounded-md border border-[var(--panel-border-soft)] bg-white/[0.035] p-2.5 text-sm leading-6 font-bold text-[var(--muted-strong)]">
-                  "{selectedDifficulty.description}"
+                  &ldquo;{translatedSelectedDifficulty.description}&rdquo;
                 </blockquote>
               </div>
 
-              <BoardPreview />
+              <BoardPreview openingPreview={t("preview.openingPreview")} />
             </div>
 
             <div className="grid gap-2 rounded-md border border-[var(--panel-border-soft)] bg-[var(--panel-solid)] p-2.5 sm:grid-cols-4">
-              {selectedDifficulty.traits.map((trait, index) => {
+              {translatedSelectedDifficulty.traits.map((trait, index) => {
                 const Icon = opponentTraitIcons[index] ?? Sparkles;
                 return (
                   <div
-                    key={trait.label}
+                    key={index}
                     className="grid gap-1 border-b border-[var(--panel-border-soft)] pb-2 last:border-b-0 sm:border-r sm:border-b-0 sm:pb-0 sm:last:border-r-0"
                   >
                     <Icon aria-hidden="true" className="size-5 text-[var(--brass)]" />
@@ -507,33 +577,36 @@ export default function AiLobbyClient() {
             </div>
           </Surface>
 
-          <Surface className="!gap-2 !p-3" eyebrow="Recent AI training">
+          <Surface className="!gap-2 !p-3" eyebrow={t("training.eyebrow")}>
             <div className="overflow-x-auto rounded-md border border-[var(--panel-border-soft)] bg-white/[0.025]">
               <div className="min-w-[680px]">
                 <div className="grid grid-cols-[1.2fr_0.6fr_0.6fr_0.9fr_1fr_auto] gap-3 border-b border-[var(--panel-border-soft)] bg-black/20 px-4 py-2 text-xs font-black tracking-[0.12em] text-[var(--muted-text)] uppercase">
-                  <span>Level</span>
-                  <span>Result</span>
-                  <span>Moves</span>
-                  <span>Date</span>
-                  <span>Notes</span>
+                  <span>{t("training.headers.level")}</span>
+                  <span>{t("training.headers.result")}</span>
+                  <span>{t("training.headers.moves")}</span>
+                  <span>{t("training.headers.date")}</span>
+                  <span>{t("training.headers.notes")}</span>
                   <span />
                 </div>
-                {trainingRows.map(([level, result, moves, date, notes]) => (
+                {trainingRows.map((row) => (
                   <div
-                    key={`${level}-${date}`}
+                    key={`${row.difficultyId}-${row.dateKey}`}
                     className="grid min-h-10 grid-cols-[1.2fr_0.6fr_0.6fr_0.9fr_1fr_auto] items-center gap-3 border-b border-[var(--panel-border-soft)] px-4 py-1.5 text-sm last:border-b-0 hover:bg-white/[0.045]"
                   >
-                    <span className="font-black">{level}</span>
-                    <span className="font-black text-[var(--mint)]">{result}</span>
+                    <span className="font-black">{t(`training.rows.${row.difficultyId}`)}</span>
+                    <span className="font-black text-[var(--mint)]">{t(row.resultKey)}</span>
                     <span className="font-bold text-[var(--muted-strong)] tabular-nums">
-                      {moves}
+                      {row.moves}
                     </span>
-                    <span className="font-bold text-[var(--muted-text)]">{date}</span>
-                    <span className="font-bold text-[var(--muted-strong)]">{notes}</span>
+                    <span className="font-bold text-[var(--muted-text)]">{t(row.dateKey)}</span>
+                    <span className="font-bold text-[var(--muted-strong)]">{t(row.notesKey)}</span>
                     <button
                       type="button"
                       className="grid size-8 place-items-center rounded-full border border-[var(--brass)]/40 text-[var(--brass)] hover:bg-[var(--brass-soft)]"
-                      aria-label={`Review ${level} training from ${date}`}
+                      aria-label={t("training.reviewAria", {
+                        date: t(row.dateKey),
+                        level: t(`training.rows.${row.difficultyId}`),
+                      })}
                     >
                       <Play aria-hidden="true" className="size-3.5 fill-current" />
                     </button>
@@ -545,7 +618,7 @@ export default function AiLobbyClient() {
         </div>
 
         <aside className="grid content-start gap-5 xl:grid-cols-2 2xl:grid-cols-1">
-          <Surface className="!gap-2 !p-3" eyebrow="Difficulty guide">
+          <Surface className="!gap-2 !p-3" eyebrow={t("difficultyGuide.eyebrow")}>
             <div className="grid gap-2">
               {aiDifficultyOptions.map((difficulty) => {
                 const colors = toneClasses[difficulty.tone];
@@ -568,13 +641,15 @@ export default function AiLobbyClient() {
                       <Bot aria-hidden="true" className="size-5" />
                     </span>
                     <span className="min-w-0">
-                      <span className="block truncate font-black">{difficulty.name}</span>
+                      <span className="block truncate font-black">
+                        {t(`difficulty.names.${difficulty.id}`)}
+                      </span>
                       <span className="block text-sm leading-5 text-[var(--muted-text)]">
-                        {difficulty.description}
+                        {t(`difficulty.descriptions.${difficulty.id}`)}
                       </span>
                     </span>
                     <span className="text-sm font-black text-[var(--muted-strong)] tabular-nums">
-                      {difficulty.range}
+                      {t(`difficulty.ranges.${difficulty.id}`)}
                     </span>
                   </article>
                 );
@@ -582,7 +657,7 @@ export default function AiLobbyClient() {
             </div>
           </Surface>
 
-          <Surface className="!gap-2 !p-3" eyebrow="Session summary">
+          <Surface className="!gap-2 !p-3" eyebrow={t("summary.eyebrow")}>
             <div className="grid gap-3 text-sm">
               {sessionSummary.map((item) => {
                 const Icon = item.icon;
@@ -599,13 +674,15 @@ export default function AiLobbyClient() {
               })}
               <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 border-t border-[var(--panel-border-soft)] pt-3">
                 <Info aria-hidden="true" className="size-4 text-[var(--brass)]" />
-                <span className="font-bold text-[var(--muted-text)]">Status</span>
+                <span className="font-bold text-[var(--muted-text)]">
+                  {t("summary.statusLabel")}
+                </span>
                 <span className="flex items-center justify-end gap-2 font-black text-[var(--mint)]">
                   <span
                     className="size-2 rounded-full bg-[var(--mint)] shadow-[0_0_10px_var(--mint)]"
                     aria-hidden="true"
                   />
-                  Ready
+                  {t("summary.readyValue")}
                 </span>
               </div>
             </div>
@@ -640,7 +717,7 @@ function SetupSelect({
   );
 }
 
-function BoardPreview() {
+function BoardPreview({ openingPreview }: { openingPreview: string }) {
   return (
     <div className="rounded-md border border-[var(--brass)]/30 bg-[var(--panel-solid)] p-3 shadow-[0_22px_60px_rgb(0_0_0_/_34%)]">
       <div className="relative mx-auto max-w-[292px] pt-4 pl-5">
@@ -658,7 +735,7 @@ function BoardPreview() {
       </div>
       <p className="m-0 mt-3 flex items-center gap-2 text-xs font-bold text-[var(--muted-text)]">
         <span className="size-2 rounded-full bg-[var(--brass)]" aria-hidden="true" />
-        Opening preview only. No match has started.
+        {openingPreview}
       </p>
     </div>
   );
