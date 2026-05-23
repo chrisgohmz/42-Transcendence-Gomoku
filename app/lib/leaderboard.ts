@@ -1,7 +1,8 @@
 //import { cacheLife } from "next/cache";
 
 import type { Prisma } from "../../generated/prisma/client";
-import { FriendshipStatus, RuleType } from "../../generated/prisma/enums";
+import { RuleType } from "../../generated/prisma/enums";
+import { getAcceptedFriendIdsForUser } from "./friendships/friendship-queries";
 import { prisma } from "./prisma";
 
 export const LEADERBOARD_BOARD_SIZE = 15;
@@ -46,7 +47,6 @@ export type LeaderboardScope = "all" | "friends";
 
 export type LeaderboardSnapshotOptions = {
   scope?: LeaderboardScope;
-  userId: string | null;
 };
 
 export type LeaderboardRankInput = {
@@ -93,25 +93,8 @@ function buildLeaderboardWhere(friendUserIds: string[] | null): Prisma.UserGameS
   };
 }
 
-async function getAcceptedFriendUserIds(userId: string): Promise<string[]> {
-  const friendships = await prisma.friendship.findMany({
-    where: {
-      status: FriendshipStatus.ACCEPTED,
-      OR: [{ userLowId: userId }, { userHighId: userId }],
-    },
-    select: {
-      userLowId: true,
-      userHighId: true,
-    },
-  });
-
-  return friendships.map((friendship) =>
-    friendship.userLowId === userId ? friendship.userHighId : friendship.userLowId,
-  );
-}
-
 async function getFriendsScopeUserIds(userId: string): Promise<string[]> {
-  const friendUserIds = await getAcceptedFriendUserIds(userId);
+  const friendUserIds = await getAcceptedFriendIdsForUser(userId, prisma);
   return [userId, ...friendUserIds.filter((friendUserId) => friendUserId !== userId)];
 }
 
@@ -129,6 +112,7 @@ function isLeaderboardEligible(stat: { matchesPlayed: number; botMatchesPlayed: 
 
 export function buildLeaderboardAheadWhere(
   stats: LeaderboardRankInput,
+  friendUserIds: string[] | null = null,
 ): Prisma.UserGameStatsWhereInput | null {
   if (stats.matchesPlayed === 0 || stats.matchesPlayed <= stats.botMatchesPlayed) {
     return null;
@@ -149,7 +133,7 @@ export function buildLeaderboardAheadWhere(
   };
 
   return {
-    ...leaderboardRankedWhere,
+    ...buildLeaderboardWhere(friendUserIds),
     OR: [aheadByRating, aheadWithinRating],
   };
 }
@@ -216,8 +200,11 @@ async function getLeaderboardEntries(
   return results.slice(0, LEADERBOARD_LIMIT);
 }
 
-export async function getLeaderboardRank(input: LeaderboardRankInput): Promise<number | null> {
-  const aheadWhere = buildLeaderboardAheadWhere(input);
+export async function getLeaderboardRank(
+  input: LeaderboardRankInput,
+  friendUserIds: string[] | null = null,
+): Promise<number | null> {
+  const aheadWhere = buildLeaderboardAheadWhere(input, friendUserIds);
 
   if (!aheadWhere) {
     return null;
@@ -236,7 +223,10 @@ export async function getLeaderboardRank(input: LeaderboardRankInput): Promise<n
   return aheadCount + 1;
 }
 
-export async function getLeaderboardSpotlight(userId: string): Promise<LeaderboardEntry | null> {
+export async function getLeaderboardSpotlight(
+  userId: string,
+  friendUserIds: string[] | null = null,
+): Promise<LeaderboardEntry | null> {
   const stats = await prisma.userGameStats.findUnique({
     where: {
       userId_ruleType_boardSize: {
@@ -252,13 +242,16 @@ export async function getLeaderboardSpotlight(userId: string): Promise<Leaderboa
     return null;
   }
 
-  const rank = await getLeaderboardRank({
-    rating: stats.rating,
-    wins: stats.wins,
-    losses: stats.losses,
-    matchesPlayed: stats.matchesPlayed,
-    botMatchesPlayed: stats.botMatchesPlayed,
-  });
+  const rank = await getLeaderboardRank(
+    {
+      rating: stats.rating,
+      wins: stats.wins,
+      losses: stats.losses,
+      matchesPlayed: stats.matchesPlayed,
+      botMatchesPlayed: stats.botMatchesPlayed,
+    },
+    friendUserIds,
+  );
 
   return rank === null ? null : toLeaderboardEntry(stats, rank);
 }
@@ -276,7 +269,9 @@ export async function getLeaderboardSnapshot(
 
     const friendScopeUserIds = await getFriendsScopeUserIds(userId);
     const entries = await getLeaderboardEntries(friendScopeUserIds);
-    const currentUser = entries.find((entry) => entry.playerId === userId) ?? null;
+    const currentUser =
+      entries.find((entry) => entry.playerId === userId) ??
+      (await getLeaderboardSpotlight(userId, friendScopeUserIds));
 
     return { entries, currentUser };
   }

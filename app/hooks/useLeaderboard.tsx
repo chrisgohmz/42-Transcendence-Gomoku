@@ -4,6 +4,14 @@ import { useEffect, useRef, useState, useCallback } from "react";
 
 import type { LeaderboardEntry, LeaderboardScope, LeaderboardSnapshot } from "@/lib/leaderboard";
 
+export function getLeaderboardApiPath(scope: LeaderboardScope): string {
+  if (scope === "friends") {
+    return "/api/leaderboard?scope=friends";
+  }
+
+  return "/api/leaderboard";
+}
+
 export function useLeaderboard(
   initial?: LeaderboardSnapshot | null,
   scope: LeaderboardScope = "all",
@@ -31,15 +39,7 @@ export function useLeaderboard(
       setLoading(true);
       setError(null);
       try {
-        const searchParams = new URLSearchParams();
-        if (scope === "friends") {
-          searchParams.set("scope", scope);
-        }
-
-        const res = await fetch(
-          `/api/leaderboard${searchParams.size > 0 ? `?${searchParams.toString()}` : ""}`,
-          { signal },
-        );
+        const res = await fetch(getLeaderboardApiPath(scope), { signal });
         if (!res.ok) throw new Error(`status ${res.status}`);
         const body: LeaderboardSnapshot = await res.json();
         setEntries(body.entries ?? []);

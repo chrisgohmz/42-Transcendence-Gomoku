@@ -131,6 +131,8 @@ async function LeaderBoardContent({ params, searchParams }: LeaderBoardProps) {
         ].map((band) => ({ ...band, share: `${Math.round((band.count / entries.length) * 100)}%` }))
       : [];
   const topPlayers = entries.slice(0, 3);
+  const ScopeIcon = scope === "friends" ? Users : Globe2;
+  const scopeLabel = scope === "friends" ? t("page.scope.friends") : t("page.scope.global");
 
   const tabBaseClass =
     "inline-flex min-h-10 min-w-32 items-center justify-center rounded-sm px-4 text-sm font-black transition-colors";
@@ -164,8 +166,8 @@ async function LeaderBoardContent({ params, searchParams }: LeaderBoardProps) {
               </Link>
             </div>
             <Badge tone="brass">
-              <Globe2 aria-hidden="true" className="size-3.5" />
-              {t("page.scope.global")}
+              <ScopeIcon aria-hidden="true" className="size-3.5" />
+              {scopeLabel}
             </Badge>
           </>
         }
