@@ -6,11 +6,11 @@ import { LocaleSwitcher } from "@/components/locale-switcher";
 import { PlayerProfile } from "@/components/player-menu";
 import { Button } from "@/components/ui/button";
 import { Link } from "@/i18n/navigation";
-import { getCurrentSession } from "@/lib/auth";
+import { getCurrentSessionIdentity } from "@/lib/auth";
 
 export default async function Navbar() {
   const [sessionData, brand, nav] = await Promise.all([
-    getCurrentSession(),
+    getCurrentSessionIdentity(),
     getTranslations("brand"),
     getTranslations("nav"),
   ]);

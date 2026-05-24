@@ -7,7 +7,7 @@ import { PlayerProfile, PlayerLogout } from "@/components/player-menu";
 import { SidebarNav, type SidebarNavItem } from "@/components/sidebar-nav";
 import { Button } from "@/components/ui/button";
 import { Link } from "@/i18n/navigation";
-import { getCurrentSession } from "@/lib/auth";
+import { getCurrentSessionIdentity } from "@/lib/auth";
 import { getUnreadDirectMessageCountForUser } from "@/lib/chat/unread";
 import { prisma } from "@/lib/prisma";
 
@@ -20,7 +20,7 @@ const productLinkMeta = [
 
 export default async function AppSidebar() {
   const [sessionData, brand, nav] = await Promise.all([
-    getCurrentSession(),
+    getCurrentSessionIdentity(),
     getTranslations("brand"),
     getTranslations("nav"),
   ]);
