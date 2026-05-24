@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Cormorant_Garamond, Manrope } from "next/font/google";
-
 import { cookies } from "next/headers";
+
 import { defaultLocale, localeCookieName, locales, type Locale } from "@/i18n/config";
 import { messageLoaders } from "@/i18n/messages";
 
@@ -44,9 +44,7 @@ export default async function GlobalNotFound() {
             <h1 className="font-serif text-5xl leading-none font-bold text-[var(--text)]">
               {t.title}
             </h1>
-            <p className="mt-4 text-base leading-7 text-[var(--muted-text)]">
-              {t.description}
-            </p>
+            <p className="mt-4 text-base leading-7 text-[var(--muted-text)]">{t.description}</p>
             {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- This standalone 404 must enter the localized root document. */}
             <a
               href="/en"
