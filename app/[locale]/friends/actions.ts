@@ -4,7 +4,11 @@ import { getLocale, getTranslations } from "next-intl/server";
 import { revalidatePath } from "next/cache";
 
 import { getCurrentSession } from "@/lib/auth";
-import { deleteFriendshipAndNotify, getLowHighIds } from "@/lib/friendships/friendship-mutations";
+import {
+  deleteFriendshipAndNotify,
+  getLowHighIds,
+  notifyFriendshipUpdateForUserIdsSafely,
+} from "@/lib/friendships/friendship-mutations";
 import { prisma } from "@/lib/prisma";
 
 export async function sendFriendRequest(targetUsername: string) {
@@ -38,6 +42,7 @@ export async function sendFriendRequest(targetUsername: string) {
       status: "PENDING",
     },
   });
+  await notifyFriendshipUpdateForUserIdsSafely(userLowId, userHighId);
 
   revalidatePath("/", "layout");
   return { success: true };
@@ -68,6 +73,7 @@ export async function respondToRequest(friendshipId: number, accept: boolean) {
         respondedAt: new Date(),
       },
     });
+    await notifyFriendshipUpdateForUserIdsSafely(friendship.userLowId, friendship.userHighId);
   } else {
     await deleteFriendshipAndNotify(friendship);
   }

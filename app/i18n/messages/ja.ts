@@ -965,6 +965,7 @@ export const messages = {
         friends: "フレンド",
       },
       scope: {
+        friends: "フレンド",
         global: "グローバル",
       },
       overview: {
@@ -1029,6 +1030,13 @@ export const messages = {
     lede: "ライバル、再戦、ライブのルーム招待をまとめた、対局優先の受信箱です。",
     searchPlaceholder: "ユーザー名で検索...",
     search: "検索",
+    empty: {
+      noFriends: "チャットを始めるにはフレンドを追加してください。",
+      noMessages: "まだメッセージはありません",
+      title: "会話を選択",
+      description: "サイドバーからフレンドを選んでチャットを始めましょう。",
+      composerPlaceholder: "先に会話を選択してください",
+    },
     header: {
       status: "再戦の招待を受け付けています",
       badge: "信頼できる相手",
@@ -1042,6 +1050,7 @@ export const messages = {
       outgoing: "もちろん！先にプロフィールページの設定だけ終わらせます。",
     },
     composerPlaceholder: "{name} へメッセージ...",
+    conversationLabel: "{name} との会話",
     send: "送信",
     invite: {
       eyebrow: "対局招待",
@@ -1056,6 +1065,8 @@ export const messages = {
     title: "プロフィール",
     lede: "詳細情報を管理し、五目並べの戦績を確認できます。",
     editProfile: "プロフィール編集",
+    linkedEmail: "連携メール",
+    emailMissing: "メール未連携",
     statsTitle: "総合戦績",
     friendStatsTitle: "全体の統計",
     publicPage: {
@@ -1223,8 +1234,11 @@ export const messages = {
       security: "セキュリティ",
       profileDetails: "プロフィールの詳細",
       usernameReadonly: "ユーザー名 (編集不可)",
+      linkedEmailReadonly: "連携メール (編集不可)",
+      emailMissing: "メール未連携",
       displayName: "表示名",
       changePassword: "パスワードの変更",
+      setPassword: "パスワードを設定",
       passwordHelp: "パスワードを変更しない場合は、空白のままにしてください。",
       currentPassword: "現在のパスワード",
       newPassword: "新しいパスワード",
@@ -1234,9 +1248,11 @@ export const messages = {
       savingChanges: "保存中...",
       edit: "編集",
       change: "変更",
+      set: "設定",
       editNameAria: "名前を編集",
       editPasswordAria: "パスワードを編集",
       passwordReadonly: "パスワード",
+      passwordNotSet: "パスワード未設定",
       updatePassword: "パスワードを更新",
       returnToProfile: "プロフィールに戻る",
     },
@@ -1257,6 +1273,8 @@ export const messages = {
       shortPassword: "パスワードは 8 文字以上にしてください。",
       passwordTooLong: "パスワードは 128 文字以内にしてください。",
       currentPasswordIncorrect: "現在のパスワードが正しくありません。",
+      passwordAlreadySet:
+        "このアカウントにはすでにパスワードがあります。パスワードの変更を使用してください。",
       fixHighlightedFields: "強調表示された項目を修正してください。",
       saveSuccess: "変更を保存しました。",
     },

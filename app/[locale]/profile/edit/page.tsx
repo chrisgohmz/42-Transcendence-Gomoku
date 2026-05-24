@@ -5,7 +5,7 @@ import { Suspense } from "react";
 import { AvatarToken, Badge, PageHeader, PageShell, Surface } from "@/components/gomoku-ui";
 import { PageLoadingShell } from "@/components/page-loading-shell";
 import { Link, redirect } from "@/i18n/navigation";
-import { getCurrentSession } from "@/lib/auth";
+import { getCurrentSession, hasCredentialPassword } from "@/lib/auth";
 
 import ProfilePicture from "../profile-picture";
 import EditProfileForm from "./edit-form";
@@ -35,7 +35,10 @@ async function EditProfilePageContent({ params }: EditProfilePageProps) {
     return null;
   }
 
-  const t = await getTranslations({ locale, namespace: "profile.edit" });
+  const [t, hasPassword] = await Promise.all([
+    getTranslations({ locale, namespace: "profile.edit" }),
+    hasCredentialPassword(sessionData.user.id),
+  ]);
 
   return (
     <PageShell>
@@ -78,6 +81,8 @@ async function EditProfilePageContent({ params }: EditProfilePageProps) {
         <EditProfileForm
           currentUsername={sessionData.user.username}
           currentDisplayName={sessionData.user.displayName}
+          currentEmail={sessionData.user.email}
+          hasPassword={hasPassword}
         />
       </section>
     </PageShell>

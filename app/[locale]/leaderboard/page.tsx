@@ -1,5 +1,6 @@
 import { AlertTriangle, BarChart3, Globe2, Medal, Trophy, Users } from "lucide-react";
 import { getTranslations, setRequestLocale } from "next-intl/server";
+import Link from "next/link";
 import { connection } from "next/server";
 import { Suspense } from "react";
 
@@ -11,6 +12,7 @@ import {
   getLeaderboardSnapshot,
   type LeaderboardSnapshot,
   type LeaderboardEntry,
+  type LeaderboardScope,
 } from "@/lib/leaderboard";
 import { getSeasonSnapshot, type SeasonSnapshot } from "@/lib/stats/season-stats";
 
@@ -18,12 +20,15 @@ type LeaderBoardProps = {
   params: Promise<{
     locale: string;
   }>;
+  searchParams: Promise<{
+    scope?: string | string[];
+  }>;
 };
 
-export default function LeaderBoard({ params }: LeaderBoardProps) {
+export default function LeaderBoard({ params, searchParams }: LeaderBoardProps) {
   return (
     <Suspense fallback={<PageLoadingShell />}>
-      <LeaderBoardContent params={params} />
+      <LeaderBoardContent params={params} searchParams={searchParams} />
     </Suspense>
   );
 }
@@ -65,8 +70,9 @@ function LeaderboardEmptyState({ description, title }: { description: string; ti
   );
 }
 
-async function LeaderBoardContent({ params }: LeaderBoardProps) {
+async function LeaderBoardContent({ params, searchParams }: LeaderBoardProps) {
   const { locale } = await params;
+  const { scope: rawScope } = await searchParams;
   setRequestLocale(locale);
   await connection();
 
@@ -84,11 +90,12 @@ async function LeaderBoardContent({ params }: LeaderBoardProps) {
     },
   };
   let leaderboardUnavailable = false;
+  const scope = rawScope === "friends" ? "friends" : "all";
 
   try {
     const session = await getCurrentSession();
     const [leaderboardData, seasonData] = await Promise.all([
-      getLeaderboardSnapshot(session?.user.id ?? null),
+      getLeaderboardSnapshot(session?.user.id ?? null, { scope }),
       getSeasonSnapshot(),
     ]);
     snapshot = leaderboardData;
@@ -124,6 +131,16 @@ async function LeaderBoardContent({ params }: LeaderBoardProps) {
         ].map((band) => ({ ...band, share: `${Math.round((band.count / entries.length) * 100)}%` }))
       : [];
   const topPlayers = entries.slice(0, 3);
+  const ScopeIcon = scope === "friends" ? Users : Globe2;
+  const scopeLabel = scope === "friends" ? t("page.scope.friends") : t("page.scope.global");
+
+  const tabBaseClass =
+    "inline-flex min-h-10 min-w-32 items-center justify-center rounded-sm px-4 text-sm font-black transition-colors";
+  const activeTabClass = "bg-[var(--mint-soft)] text-[var(--mint)]";
+  const inactiveTabClass = "text-[var(--muted-text)] hover:text-[var(--text)]";
+
+  const buildScopeHref = (nextScope: LeaderboardScope) =>
+    nextScope === "friends" ? "?scope=friends" : "?scope=all";
 
   return (
     <PageShell>
@@ -135,23 +152,22 @@ async function LeaderBoardContent({ params }: LeaderBoardProps) {
         actions={
           <>
             <div className="inline-flex rounded-md border border-[var(--panel-border-soft)] bg-[var(--panel-solid)] p-1">
-              {[t("page.tabs.allPlayers"), t("page.tabs.friends")].map((item, index) => (
-                <button
-                  key={item}
-                  type="button"
-                  className={`min-h-10 min-w-32 rounded-sm px-4 text-sm font-black ${
-                    index === 0
-                      ? "bg-[var(--mint-soft)] text-[var(--mint)]"
-                      : "text-[var(--muted-text)]"
-                  }`}
-                >
-                  {item}
-                </button>
-              ))}
+              <Link
+                className={`${tabBaseClass} ${scope === "all" ? activeTabClass : inactiveTabClass}`}
+                href={buildScopeHref("all")}
+              >
+                {t("page.tabs.allPlayers")}
+              </Link>
+              <Link
+                className={`${tabBaseClass} ${scope === "friends" ? activeTabClass : inactiveTabClass}`}
+                href={buildScopeHref("friends")}
+              >
+                {t("page.tabs.friends")}
+              </Link>
             </div>
             <Badge tone="brass">
-              <Globe2 aria-hidden="true" className="size-3.5" />
-              {t("page.scope.global")}
+              <ScopeIcon aria-hidden="true" className="size-3.5" />
+              {scopeLabel}
             </Badge>
           </>
         }
@@ -166,7 +182,7 @@ async function LeaderBoardContent({ params }: LeaderBoardProps) {
             />
           ) : (
             <>
-              <LeaderboardClient initial={snapshot} />
+              <LeaderboardClient initial={snapshot} scope={scope} />
             </>
           )}
         </Surface>

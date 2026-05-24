@@ -2,8 +2,10 @@ import { describe, expect, test } from "bun:test";
 
 import {
   validateLoginInput,
+  validatePasswordResetConfirmInput,
   validateProfileDisplayNameInput,
   validateProfilePasswordInput,
+  validateProfileSetPasswordInput,
   validateSignupInput,
 } from "./auth-profile";
 
@@ -171,6 +173,37 @@ describe("auth/profile validation", () => {
     });
 
     expect(result).toMatchObject({
+      issues: [{ code: "passwordMismatch", field: "confirmPassword" }],
+      ok: false,
+    });
+  });
+
+  test("validates set-password inputs without requiring a current password", () => {
+    const result = validateProfileSetPasswordInput({
+      confirmPassword: "password999",
+      newPassword: "password999",
+    });
+
+    expect(result).toMatchObject({
+      data: {
+        confirmPassword: "password999",
+        newPassword: "password999",
+      },
+      ok: true,
+    });
+  });
+
+  test("keeps new-password pair validation consistent across set and reset flows", () => {
+    const input = {
+      confirmPassword: "password999",
+      newPassword: "password123",
+    };
+
+    expect(validateProfileSetPasswordInput(input)).toMatchObject({
+      issues: [{ code: "passwordMismatch", field: "confirmPassword" }],
+      ok: false,
+    });
+    expect(validatePasswordResetConfirmInput(input)).toMatchObject({
       issues: [{ code: "passwordMismatch", field: "confirmPassword" }],
       ok: false,
     });

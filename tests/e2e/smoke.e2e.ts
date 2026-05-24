@@ -148,9 +148,10 @@ test("authenticated redesigned pages render at desktop and mobile widths", async
     await expect(page.getByTestId("friends-table").filter({ visible: true })).toBeVisible();
     await expectNoDocumentOverflow(page, "/friends");
 
+    // Shallow check that /messages renders for an authenticated user.
+    // The friend-to-message workflow has its own scenario in messages.e2e.ts.
     await gotoAppRoute(page, "/messages");
     await expect(page.getByRole("heading", { level: 1, name: "Messages" })).toBeVisible();
-    await expect(page.getByRole("textbox", { name: "Message MJ..." })).toBeVisible();
     await expectNoDocumentOverflow(page, "/messages");
   } finally {
     await cleanupTestUsers([user.username, friend.username]);

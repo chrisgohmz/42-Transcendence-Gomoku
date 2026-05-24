@@ -3,7 +3,11 @@
 import { revalidatePath } from "next/cache";
 
 import { getCurrentSession } from "@/lib/auth";
-import { deleteFriendshipAndNotify, getLowHighIds } from "@/lib/friendships/friendship-mutations";
+import {
+  deleteFriendshipAndNotify,
+  getLowHighIds,
+  notifyFriendshipUpdateForUserIdsSafely,
+} from "@/lib/friendships/friendship-mutations";
 import { prisma } from "@/lib/prisma";
 
 export async function processFriendAction(
@@ -35,6 +39,7 @@ export async function processFriendAction(
           status: "PENDING",
         },
       });
+      await notifyFriendshipUpdateForUserIdsSafely(userLowId, userHighId);
     } else if (action === "ACCEPT") {
       if (!existing || existing.status !== "PENDING" || existing.requestedById === loggedInUserId) {
         return { error: "Invalid transition" };
@@ -48,6 +53,7 @@ export async function processFriendAction(
           respondedAt: new Date(),
         },
       });
+      await notifyFriendshipUpdateForUserIdsSafely(userLowId, userHighId);
     } else if (action === "DECLINE" || action === "REMOVE" || action === "CANCEL") {
       if (!existing) return { error: "Not found" };
 

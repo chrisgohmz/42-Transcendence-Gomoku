@@ -58,7 +58,7 @@ export default function ProfileActions({
   };
 
   const handleMessage = () => {
-    router.push(`/messages?user=${targetUsername}`);
+    router.push(`/messages?friendId=${targetUserId}`);
   };
 
   const isChallenging = challengingUsername === targetUsername;
