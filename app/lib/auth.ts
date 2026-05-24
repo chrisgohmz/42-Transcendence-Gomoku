@@ -15,6 +15,13 @@ import {
   getTrustedAuthOrigins,
 } from "./auth-origins";
 import { authCredentialPolicy } from "./auth-policy";
+import {
+  createAuthSessionAccessors,
+  type AuthContext as BaseAuthContext,
+  type AuthSessionIdentity as BaseAuthSessionIdentity,
+  type AuthSessionUser,
+  type SessionLookupOptions,
+} from "./auth-session-access";
 import { oauthProviderIds, type OAuthProviderId } from "./oauth-providers";
 import { prisma } from "./prisma";
 import { authValidationLimits } from "./validation/auth-profile-limits";
@@ -302,102 +309,27 @@ export const auth = betterAuth({
 });
 
 type BetterAuthSessionData = NonNullable<Awaited<ReturnType<typeof auth.api.getSession>>>;
-type BetterAuthSessionUser = BetterAuthSessionData["user"] & {
-  avatarUrl?: string | null;
-  displayName?: string | null;
-  image?: string | null;
-  name?: string | null;
-  username?: string | null;
-};
-
-type SessionLookupOptions = {
-  disableCookieCache?: boolean;
-};
 
 type UserEmailVerification = {
   emailVerified?: boolean | null;
   emailVerifiedAt?: Date | null;
 };
 
-export type AuthSessionUser = Pick<
-  User,
-  "avatarUrl" | "displayName" | "email" | "emailVerified" | "id" | "username"
->;
+export type { AuthSessionUser, SessionLookupOptions };
+export type AuthSessionIdentity = BaseAuthSessionIdentity<BetterAuthSessionData["session"]>;
+export type AuthContext = BaseAuthContext<BetterAuthSessionData["session"]>;
 
-export type AuthSessionIdentity = {
-  session: BetterAuthSessionData["session"];
-  user: AuthSessionUser;
-};
+const sessionAccessors = createAuthSessionAccessors<BetterAuthSessionData>({
+  findUserById: (userId) =>
+    prisma.user.findUnique({
+      where: { id: userId },
+    }),
+  getHeaders: headers,
+  getSession: (params) => auth.api.getSession(params),
+});
 
-export type AuthContext = {
-  session: BetterAuthSessionData["session"];
-  user: User;
-};
-
-async function getBetterAuthSession(options: SessionLookupOptions = {}) {
-  const query = options.disableCookieCache ? { disableCookieCache: true } : undefined;
-
-  return auth.api.getSession({
-    headers: await headers(),
-    ...(query ? { query } : {}),
-  });
-}
-
-function getSessionDisplayName(user: BetterAuthSessionUser): string {
-  return user.displayName ?? user.name ?? user.username ?? "Gomoku Player";
-}
-
-function getSessionUsername(user: BetterAuthSessionUser): string {
-  return user.username ?? user.id;
-}
-
-function toAuthSessionUser(user: BetterAuthSessionData["user"]): AuthSessionUser {
-  const sessionUser = user as BetterAuthSessionUser;
-
-  return {
-    avatarUrl: sessionUser.avatarUrl ?? sessionUser.image ?? null,
-    displayName: getSessionDisplayName(sessionUser),
-    email: sessionUser.email ?? null,
-    emailVerified: Boolean(sessionUser.emailVerified),
-    id: sessionUser.id,
-    username: getSessionUsername(sessionUser),
-  };
-}
-
-export async function getCurrentSessionIdentity(
-  options: SessionLookupOptions = {},
-): Promise<AuthSessionIdentity | null> {
-  const sessionData = await getBetterAuthSession(options);
-
-  if (!sessionData) {
-    return null;
-  }
-
-  return {
-    session: sessionData.session,
-    user: toAuthSessionUser(sessionData.user),
-  };
-}
-
-export async function getCurrentSession(
-  options: SessionLookupOptions = {},
-): Promise<AuthContext | null> {
-  const sessionData = await getBetterAuthSession(options);
-
-  if (!sessionData) {
-    return null;
-  }
-
-  const user = await prisma.user.findUnique({
-    where: { id: sessionData.user.id },
-  });
-
-  if (!user) {
-    return null;
-  }
-
-  return { session: sessionData.session, user };
-}
+export const getCurrentSessionIdentity = sessionAccessors.getCurrentSessionIdentity;
+export const getCurrentSession = sessionAccessors.getCurrentSession;
 
 export async function hasCredentialPassword(userId: string): Promise<boolean> {
   const account = await prisma.account.findFirst({
