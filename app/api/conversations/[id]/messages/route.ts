@@ -8,6 +8,7 @@
 import { getErrorMessage } from "@/lib/api-errors";
 import { getCurrentSession } from "@/lib/auth";
 import { canAccessDirectConversation } from "@/lib/chat/access";
+import { markDirectConversationRead } from "@/lib/chat/read-state";
 import { publishChatMessage } from "@/lib/chat/realtime-publisher";
 import { prisma } from "@/lib/prisma";
 
@@ -62,13 +63,8 @@ export async function GET(
       orderBy: { createdAt: "asc" },
     });
 
-    // Mark conversation as read: update the lastReadAt timestamp for this user
-    await prisma.conversationParticipant.update({
-      where: {
-        conversationId_userId: { conversationId, userId: session.user.id },
-      },
-      data: { lastReadAt: new Date() },
-    });
+    // Mark conversation as read: update the lastReadAt timestamp for this user.
+    await markDirectConversationRead(conversationId, session.user.id);
 
     return Response.json({ messages });
   } catch (error) {

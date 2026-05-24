@@ -69,9 +69,6 @@ export default function MessagesContent({ currentUserId }: Props) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const refreshedReadConversationRef = useRef<string | null>(null);
 
-  // useChat loads history + manages the socket for the active conversation
-  const { messages, sendMessage, status: chatStatus } = useChat(activeConvId);
-
   // ── Fetch conversations + friends ────────────────────────────────────────
   const loadSidebarData = useCallback(() => {
     Promise.all([
@@ -86,6 +83,25 @@ export default function MessagesContent({ currentUserId }: Props) {
       })
       .catch(console.error);
   }, []);
+
+  const handleReadAcknowledged = useCallback(
+    (conversationId: string) => {
+      setConversations((prev) =>
+        prev.map((conversation) =>
+          conversation.id === conversationId ? { ...conversation, unreadCount: 0 } : conversation,
+        ),
+      );
+      loadSidebarData();
+      router.refresh();
+    },
+    [loadSidebarData, router],
+  );
+
+  // useChat loads history + manages the socket for the active conversation
+  const { messages, sendMessage, status: chatStatus } = useChat(activeConvId, {
+    currentUserId,
+    onReadAcknowledged: handleReadAcknowledged,
+  });
 
   useEffect(() => {
     loadSidebarData();
@@ -122,8 +138,8 @@ export default function MessagesContent({ currentUserId }: Props) {
     if (refreshedReadConversationRef.current === activeConvId) return;
 
     refreshedReadConversationRef.current = activeConvId;
-    router.refresh();
-  }, [activeConvId, chatStatus, router]);
+    handleReadAcknowledged(activeConvId);
+  }, [activeConvId, chatStatus, handleReadAcknowledged]);
 
   // ── Scroll to newest message ─────────────────────────────────────────────
   useEffect(() => {

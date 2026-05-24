@@ -10,6 +10,7 @@
 // It keeps all the chat logic in one place so the UI component stays simple.
 
 import { useEffect, useRef, useState } from "react";
+import type { Dispatch, SetStateAction } from "react";
 import type { Socket } from "socket.io-client";
 
 import { createSocket } from "@/lib/socket-client";
@@ -27,7 +28,22 @@ export type ChatMessage = {
   } | null;
 };
 
-export function useChat(conversationId: string | null) {
+type ReadAcknowledgedCallback = (conversationId: string) => void | Promise<void>;
+
+type UseChatOptions = {
+  currentUserId: string;
+  onReadAcknowledged?: ReadAcknowledgedCallback;
+};
+
+type HandleRealtimeChatMessageOptions = UseChatOptions & {
+  conversationId: string;
+  setMessages: Dispatch<SetStateAction<ChatMessage[]>>;
+  signal?: AbortSignal;
+};
+
+export function useChat(conversationId: string | null, options: UseChatOptions) {
+  const { currentUserId, onReadAcknowledged } = options;
+
   // The list of messages displayed in the chat window
   const [messages, setMessages] = useState<ChatMessage[]>([]);
 
@@ -80,7 +96,16 @@ export function useChat(conversationId: string | null) {
 
     // When a new message arrives from the server, append it to the list
     socket.on("chat:message", (msg: ChatMessage) => {
-      setMessages((prev) => appendDedup(prev, msg));
+      void handleRealtimeChatMessage(msg, {
+        conversationId,
+        currentUserId,
+        onReadAcknowledged,
+        setMessages,
+        signal: controller.signal,
+      }).catch((error: unknown) => {
+        if (isAbortError(error)) return;
+        console.error("[chat] Failed to acknowledge realtime message read state", error);
+      });
     });
 
     // ── Cleanup ────────────────────────────────────────────────────────────
@@ -95,7 +120,7 @@ export function useChat(conversationId: string | null) {
       socket.disconnect();
       socketRef.current = null;
     };
-  }, [conversationId]); // re-run this effect whenever conversationId changes
+  }, [conversationId, currentUserId, onReadAcknowledged]); // re-run when the active chat changes
 
   // ── sendMessage: called when the user submits the chat form ──────────────
   async function sendMessage(text: string): Promise<void> {
@@ -121,8 +146,51 @@ export function useChat(conversationId: string | null) {
   return { messages, status, sendMessage };
 }
 
+export async function handleRealtimeChatMessage(
+  msg: ChatMessage,
+  {
+    conversationId,
+    currentUserId,
+    onReadAcknowledged,
+    setMessages,
+    signal,
+  }: HandleRealtimeChatMessageOptions,
+): Promise<void> {
+  setMessages((prev) => appendDedup(prev, msg));
+
+  if (msg.sender?.id === currentUserId) {
+    return;
+  }
+
+  await acknowledgeConversationRead(conversationId, signal);
+  await onReadAcknowledged?.(conversationId);
+}
+
+export async function acknowledgeConversationRead(
+  conversationId: string,
+  signal?: AbortSignal,
+): Promise<void> {
+  const response = await fetch(`/api/conversations/${encodeURIComponent(conversationId)}/read`, {
+    method: "POST",
+    signal,
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to acknowledge read state");
+  }
+}
+
 // Append a message to the list, skipping if we already have it by id.
 function appendDedup(prev: ChatMessage[], msg: ChatMessage): ChatMessage[] {
   if (prev.some((m) => m.id === msg.id)) return prev;
   return [...prev, msg];
+}
+
+function isAbortError(error: unknown): boolean {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "name" in error &&
+    error.name === "AbortError"
+  );
 }
