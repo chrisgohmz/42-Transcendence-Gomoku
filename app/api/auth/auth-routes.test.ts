@@ -664,6 +664,9 @@ describe("auth API routes", () => {
       }),
     );
 
+    expect(getCurrentSession).toHaveBeenCalledWith({
+      disableCookieCache: true,
+    });
     expect(updateUser).toHaveBeenCalledWith({
       where: { id: user.id },
       data: { displayName: "Max J" },
@@ -801,6 +804,9 @@ describe("auth API routes", () => {
       }),
     );
 
+    expect(getCurrentSession).toHaveBeenCalledWith({
+      disableCookieCache: true,
+    });
     expect(changePassword).toHaveBeenCalledWith({
       body: {
         currentPassword: "password123",
@@ -906,6 +912,9 @@ describe("auth API routes", () => {
       }),
     );
 
+    expect(getCurrentSession).toHaveBeenCalledWith({
+      disableCookieCache: true,
+    });
     expect(setPassword).toHaveBeenCalledWith({
       body: {
         newPassword: "password999",

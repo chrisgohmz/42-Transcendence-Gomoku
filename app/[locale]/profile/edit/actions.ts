@@ -35,7 +35,7 @@ export async function saveDisplayName(
 ): Promise<ProfileSettingsActionState> {
   const locale = await getLocale();
   const t = await getTranslations({ locale, namespace: "profile.errors" });
-  const sessionData = await getCurrentSession();
+  const sessionData = await getCurrentSession({ disableCookieCache: true });
 
   if (!sessionData) {
     return { fields: {}, message: t("loginRequired"), successMessage: null };
@@ -74,7 +74,7 @@ export async function changeAccountPassword(
 ): Promise<ProfileSettingsActionState> {
   const locale = await getLocale();
   const t = await getTranslations({ locale, namespace: "profile.errors" });
-  const sessionData = await getCurrentSession();
+  const sessionData = await getCurrentSession({ disableCookieCache: true });
 
   if (!sessionData) {
     return { fields: {}, message: t("loginRequired"), successMessage: null };
@@ -125,7 +125,7 @@ export async function setAccountPassword(
 ): Promise<ProfileSettingsActionState> {
   const locale = await getLocale();
   const t = await getTranslations({ locale, namespace: "profile.errors" });
-  const sessionData = await getCurrentSession();
+  const sessionData = await getCurrentSession({ disableCookieCache: true });
 
   if (!sessionData) {
     return { fields: {}, message: t("loginRequired"), successMessage: null };

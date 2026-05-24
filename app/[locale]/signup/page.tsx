@@ -6,7 +6,7 @@ import { BoardShowpiece, PageShell } from "@/components/gomoku-ui";
 import { PageLoadingShell } from "@/components/page-loading-shell";
 import { SignupForm } from "@/components/signup-form";
 import { redirect } from "@/i18n/navigation";
-import { getConfiguredOAuthProviders, getCurrentSession } from "@/lib/auth";
+import { getConfiguredOAuthProviders, getCurrentSessionIdentity } from "@/lib/auth";
 
 type SignupPageProps = {
   params: Promise<{
@@ -26,7 +26,7 @@ async function SignupPageContent({ params }: SignupPageProps) {
   const { locale } = await params;
   setRequestLocale(locale);
 
-  const session = await getCurrentSession();
+  const session = await getCurrentSessionIdentity();
 
   if (session) {
     redirect({ href: "/account", locale });

@@ -12,7 +12,7 @@ import { Suspense, type ReactNode } from "react";
 import AppSidebar from "@/components/app-sidebar";
 import { PresenceProvider, PresenceSessionSync } from "@/components/presence-provider";
 import { routing } from "@/i18n/routing";
-import { getCurrentSession } from "@/lib/auth";
+import { getCurrentSessionIdentity } from "@/lib/auth";
 import { cn } from "@/lib/utils";
 
 const manrope = Manrope({
@@ -97,7 +97,7 @@ export default async function RootLayout({ children, params }: RootLayoutProps) 
 }
 
 async function PresenceSession() {
-  const context = await getCurrentSession();
+  const context = await getCurrentSessionIdentity();
 
   return <PresenceSessionSync username={context?.user.username} />;
 }

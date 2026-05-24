@@ -15,12 +15,20 @@ import {
   getTrustedAuthOrigins,
 } from "./auth-origins";
 import { authCredentialPolicy } from "./auth-policy";
+import {
+  createAuthSessionAccessors,
+  type AuthContext as BaseAuthContext,
+  type AuthSessionIdentity as BaseAuthSessionIdentity,
+  type AuthSessionUser,
+  type SessionLookupOptions,
+} from "./auth-session-access";
 import { oauthProviderIds, type OAuthProviderId } from "./oauth-providers";
 import { prisma } from "./prisma";
 import { authValidationLimits } from "./validation/auth-profile-limits";
 
 const SESSION_TTL_SECONDS = 7 * 24 * 60 * 60;
 const SESSION_REFRESH_SECONDS = 24 * 60 * 60;
+const SESSION_COOKIE_CACHE_SECONDS = 60;
 const usernamePattern = /^[A-Za-z0-9_-]+$/;
 const OAUTH_USERNAME_SUFFIX_LENGTH = 6;
 
@@ -234,6 +242,11 @@ export const auth = betterAuth({
     fields: {
       token: "sessionToken",
     },
+    cookieCache: {
+      enabled: true,
+      maxAge: SESSION_COOKIE_CACHE_SECONDS,
+      strategy: "compact",
+    },
     expiresIn: SESSION_TTL_SECONDS,
     updateAge: SESSION_REFRESH_SECONDS,
     freshAge: 0,
@@ -302,30 +315,21 @@ type UserEmailVerification = {
   emailVerifiedAt?: Date | null;
 };
 
-export type AuthContext = {
-  session: BetterAuthSessionData["session"];
-  user: User;
-};
+export type { AuthSessionUser, SessionLookupOptions };
+export type AuthSessionIdentity = BaseAuthSessionIdentity<BetterAuthSessionData["session"]>;
+export type AuthContext = BaseAuthContext<BetterAuthSessionData["session"]>;
 
-export async function getCurrentSession(): Promise<AuthContext | null> {
-  const sessionData = await auth.api.getSession({
-    headers: await headers(),
-  });
+const sessionAccessors = createAuthSessionAccessors<BetterAuthSessionData>({
+  findUserById: (userId) =>
+    prisma.user.findUnique({
+      where: { id: userId },
+    }),
+  getHeaders: headers,
+  getSession: (params) => auth.api.getSession(params),
+});
 
-  if (!sessionData) {
-    return null;
-  }
-
-  const user = await prisma.user.findUnique({
-    where: { id: sessionData.user.id },
-  });
-
-  if (!user) {
-    return null;
-  }
-
-  return { session: sessionData.session, user };
-}
+export const getCurrentSessionIdentity = sessionAccessors.getCurrentSessionIdentity;
+export const getCurrentSession = sessionAccessors.getCurrentSession;
 
 export async function hasCredentialPassword(userId: string): Promise<boolean> {
   const account = await prisma.account.findFirst({

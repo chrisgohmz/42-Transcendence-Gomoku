@@ -7,7 +7,7 @@ import { Suspense } from "react";
 import { Badge, MetricCard, PageHeader, PageShell, Surface } from "@/components/gomoku-ui";
 import LeaderboardClient from "@/components/leaderboard-client";
 import { PageLoadingShell } from "@/components/page-loading-shell";
-import { getCurrentSession } from "@/lib/auth";
+import { getCurrentSessionIdentity } from "@/lib/auth";
 import {
   getLeaderboardSnapshot,
   type LeaderboardSnapshot,
@@ -93,7 +93,7 @@ async function LeaderBoardContent({ params, searchParams }: LeaderBoardProps) {
   const scope = rawScope === "friends" ? "friends" : "all";
 
   try {
-    const session = await getCurrentSession();
+    const session = await getCurrentSessionIdentity();
     const [leaderboardData, seasonData] = await Promise.all([
       getLeaderboardSnapshot(session?.user.id ?? null, { scope }),
       getSeasonSnapshot(),

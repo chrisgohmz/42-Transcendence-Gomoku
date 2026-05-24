@@ -1,10 +1,10 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
-const getCurrentSession = mock();
+const getCurrentSessionIdentity = mock();
 const getLeaderboardSnapshot = mock();
 
 await mock.module("@/lib/auth", () => ({
-  getCurrentSession,
+  getCurrentSessionIdentity,
 }));
 
 await mock.module("@/lib/leaderboard", () => ({
@@ -14,10 +14,10 @@ await mock.module("@/lib/leaderboard", () => ({
 const route = await import("./route");
 
 beforeEach(() => {
-  getCurrentSession.mockReset();
+  getCurrentSessionIdentity.mockReset();
   getLeaderboardSnapshot.mockReset();
 
-  getCurrentSession.mockResolvedValue({
+  getCurrentSessionIdentity.mockResolvedValue({
     user: {
       id: "user-ada",
     },
@@ -61,7 +61,7 @@ describe("GET /api/leaderboard", () => {
   });
 
   test("allows anonymous access", async () => {
-    getCurrentSession.mockResolvedValueOnce(null);
+    getCurrentSessionIdentity.mockResolvedValueOnce(null);
 
     const response = await route.GET();
     const payload = await response.json();
