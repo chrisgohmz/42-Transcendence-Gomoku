@@ -98,7 +98,11 @@ export default function MessagesContent({ currentUserId }: Props) {
   );
 
   // useChat loads history + manages the socket for the active conversation
-  const { messages, sendMessage, status: chatStatus } = useChat(activeConvId, {
+  const {
+    messages,
+    sendMessage,
+    status: chatStatus,
+  } = useChat(activeConvId, {
     currentUserId,
     onReadAcknowledged: handleReadAcknowledged,
   });

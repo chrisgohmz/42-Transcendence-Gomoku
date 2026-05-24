@@ -14,10 +14,7 @@ function deniedResponse(reason: "not_found" | "not_friends" | "not_direct") {
   return Response.json({ error: "not_friends" }, { status: 403 });
 }
 
-export async function POST(
-  _request: Request,
-  { params }: { params: Promise<{ id: string }> },
-) {
+export async function POST(_request: Request, { params }: { params: Promise<{ id: string }> }) {
   const session = await getCurrentSession();
   if (!session) {
     return Response.json({ error: "unauthorized" }, { status: 401 });
