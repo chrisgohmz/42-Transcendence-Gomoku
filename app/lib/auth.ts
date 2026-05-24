@@ -21,6 +21,7 @@ import { authValidationLimits } from "./validation/auth-profile-limits";
 
 const SESSION_TTL_SECONDS = 7 * 24 * 60 * 60;
 const SESSION_REFRESH_SECONDS = 24 * 60 * 60;
+const SESSION_COOKIE_CACHE_SECONDS = 60;
 const usernamePattern = /^[A-Za-z0-9_-]+$/;
 const OAUTH_USERNAME_SUFFIX_LENGTH = 6;
 
@@ -234,6 +235,11 @@ export const auth = betterAuth({
     fields: {
       token: "sessionToken",
     },
+    cookieCache: {
+      enabled: true,
+      maxAge: SESSION_COOKIE_CACHE_SECONDS,
+      strategy: "compact",
+    },
     expiresIn: SESSION_TTL_SECONDS,
     updateAge: SESSION_REFRESH_SECONDS,
     freshAge: 0,
@@ -296,10 +302,31 @@ export const auth = betterAuth({
 });
 
 type BetterAuthSessionData = NonNullable<Awaited<ReturnType<typeof auth.api.getSession>>>;
+type BetterAuthSessionUser = BetterAuthSessionData["user"] & {
+  avatarUrl?: string | null;
+  displayName?: string | null;
+  image?: string | null;
+  name?: string | null;
+  username?: string | null;
+};
+
+type SessionLookupOptions = {
+  disableCookieCache?: boolean;
+};
 
 type UserEmailVerification = {
   emailVerified?: boolean | null;
   emailVerifiedAt?: Date | null;
+};
+
+export type AuthSessionUser = Pick<
+  User,
+  "avatarUrl" | "displayName" | "email" | "emailVerified" | "id" | "username"
+>;
+
+export type AuthSessionIdentity = {
+  session: BetterAuthSessionData["session"];
+  user: AuthSessionUser;
 };
 
 export type AuthContext = {
@@ -307,10 +334,55 @@ export type AuthContext = {
   user: User;
 };
 
-export async function getCurrentSession(): Promise<AuthContext | null> {
-  const sessionData = await auth.api.getSession({
+async function getBetterAuthSession(options: SessionLookupOptions = {}) {
+  const query = options.disableCookieCache ? { disableCookieCache: true } : undefined;
+
+  return auth.api.getSession({
     headers: await headers(),
+    ...(query ? { query } : {}),
   });
+}
+
+function getSessionDisplayName(user: BetterAuthSessionUser): string {
+  return user.displayName ?? user.name ?? user.username ?? "Gomoku Player";
+}
+
+function getSessionUsername(user: BetterAuthSessionUser): string {
+  return user.username ?? user.id;
+}
+
+function toAuthSessionUser(user: BetterAuthSessionData["user"]): AuthSessionUser {
+  const sessionUser = user as BetterAuthSessionUser;
+
+  return {
+    avatarUrl: sessionUser.avatarUrl ?? sessionUser.image ?? null,
+    displayName: getSessionDisplayName(sessionUser),
+    email: sessionUser.email ?? null,
+    emailVerified: Boolean(sessionUser.emailVerified),
+    id: sessionUser.id,
+    username: getSessionUsername(sessionUser),
+  };
+}
+
+export async function getCurrentSessionIdentity(
+  options: SessionLookupOptions = {},
+): Promise<AuthSessionIdentity | null> {
+  const sessionData = await getBetterAuthSession(options);
+
+  if (!sessionData) {
+    return null;
+  }
+
+  return {
+    session: sessionData.session,
+    user: toAuthSessionUser(sessionData.user),
+  };
+}
+
+export async function getCurrentSession(
+  options: SessionLookupOptions = {},
+): Promise<AuthContext | null> {
+  const sessionData = await getBetterAuthSession(options);
 
   if (!sessionData) {
     return null;

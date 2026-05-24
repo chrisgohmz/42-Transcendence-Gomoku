@@ -1,4 +1,4 @@
-import { getCurrentSession } from "@/lib/auth";
+import { getCurrentSessionIdentity } from "@/lib/auth";
 import { getLeaderboardSnapshot, type LeaderboardScope } from "@/lib/leaderboard";
 
 function resolveScope(searchParams: URLSearchParams): LeaderboardScope {
@@ -11,7 +11,7 @@ function getErrorMessage(error: unknown): string {
 
 export async function GET(request?: Request) {
   try {
-    const context = await getCurrentSession();
+    const context = await getCurrentSessionIdentity();
     const scope = resolveScope(
       new URL(request?.url ?? "http://localhost/api/leaderboard").searchParams,
     );

@@ -16,7 +16,7 @@ import { Suspense } from "react";
 import { MatchResult, MatchStatus, Role } from "@/../generated/prisma/enums";
 import { Badge, MetricCard, PageShell, Surface } from "@/components/gomoku-ui";
 import { PageLoadingShell } from "@/components/page-loading-shell";
-import { getCurrentSession } from "@/lib/auth";
+import { getCurrentSessionIdentity } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getProfileStatsForUser } from "@/lib/stats/profile-stats";
 
@@ -125,7 +125,7 @@ async function PublicProfilePageContent({ params, searchParams }: ProfilePagePro
     notFound();
   }
 
-  const session = await getCurrentSession();
+  const session = await getCurrentSessionIdentity();
   const loggedInUserId = session?.user?.id;
 
   let relationshipState: "NOT_FRIENDS" | "FRIENDS" | "REQUEST_SENT" | "REQUEST_RECEIVED" | "SELF" =
