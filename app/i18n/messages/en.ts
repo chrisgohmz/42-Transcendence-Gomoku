@@ -1349,6 +1349,11 @@ export const messages = {
       },
     },
   },
+  notFound: {
+    title: "Page not found",
+    description: "The page you requested could not be found.",
+    returnHome: "Return to the main page",
+  },
   test: {
     title: "Tailwind Practice",
     body: "A small route for checking styling during local development.",

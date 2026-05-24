@@ -1346,6 +1346,11 @@ export const messages = {
       },
     },
   },
+  notFound: {
+    title: "ページが見つかりません",
+    description: "リクエストされたページは見つかりませんでした。",
+    returnHome: "メインページに戻る",
+  },
   test: {
     title: "Tailwind 練習",
     body: "ローカル開発中にスタイルを確認するための小さなルートです。",

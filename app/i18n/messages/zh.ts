@@ -1337,6 +1337,11 @@ export const messages = {
       },
     },
   },
+  notFound: {
+    title: "页面未找到",
+    description: "您请求的页面无法找到。",
+    returnHome: "返回主页",
+  },
   test: {
     title: "Tailwind 练习",
     body: "用于本地开发时检查样式的小路由。",
