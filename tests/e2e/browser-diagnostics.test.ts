@@ -69,6 +69,24 @@ describe("browser diagnostics", () => {
     expect(
       getConsoleDiagnostic({
         location: {
+          url: "http://localhost:3000/_next/static/chunks/socket.js",
+        },
+        text: '[JavaScript Error: "Firefox cannot establish a connection to the server at ws://localhost:3001/socket.io/?EIO=4&transport=websocket&sid=session." {file: "http://localhost:3000/_next/static/chunks/socket.js" line: 1}]',
+        type: "error",
+      }),
+    ).toBeNull();
+    expect(
+      getConsoleDiagnostic({
+        location: {
+          url: "http://localhost:3000/_next/static/chunks/socket.js",
+        },
+        text: '[JavaScript Error: "The connection to ws://localhost:3001/socket.io/?EIO=4&transport=websocket&sid=session was interrupted while the page was loading." {file: "http://localhost:3000/_next/static/chunks/socket.js" line: 1}]',
+        type: "error",
+      }),
+    ).toBeNull();
+    expect(
+      getConsoleDiagnostic({
+        location: {
           url: "http://localhost:3001/socket.io/?EIO=4&transport=polling",
         },
         text: "Failed to load resource: net::ERR_CONNECTION_REFUSED",

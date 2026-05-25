@@ -6,7 +6,14 @@ import { hashPassword } from "better-auth/crypto";
 import { prisma } from "../../app/lib/prisma";
 import { expect, type Page, type TestInfo, test } from "./fixtures";
 
-const routes = ["/", "/game", "/human", "/leaderboard", "/login", "/signup"] as const;
+const routes = [
+  { heading: "Master the board.", path: "/" },
+  { heading: "Choose your opponent.", path: "/game" },
+  { heading: "Play Online", path: "/human" },
+  { heading: "Leaderboard", path: "/leaderboard" },
+  { heading: "Welcome back.", path: "/login" },
+  { heading: "Create your account.", path: "/signup" },
+] as const;
 
 test.setTimeout(90_000);
 
@@ -63,16 +70,21 @@ test("auth pages expose usable sign-in and sign-up forms", async ({ page }) => {
 
 test("localized shell avoids horizontal overflow on public routes", async ({ page }) => {
   for (const route of routes) {
-    await gotoAppRoute(page, route);
+    await gotoAppRoute(page, route.path);
+    await expect(
+      page.getByRole("heading", { exact: true, name: route.heading }),
+      `${route.path} should finish rendering before the next route navigation`,
+    ).toBeVisible();
 
     const dimensions = await page.evaluate(() => ({
       clientWidth: document.documentElement.clientWidth,
       scrollWidth: document.documentElement.scrollWidth,
     }));
 
-    expect(dimensions.scrollWidth, `${route} should not horizontally overflow`).toBeLessThanOrEqual(
-      dimensions.clientWidth + 1,
-    );
+    expect(
+      dimensions.scrollWidth,
+      `${route.path} should not horizontally overflow`,
+    ).toBeLessThanOrEqual(dimensions.clientWidth + 1);
   }
 });
 

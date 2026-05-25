@@ -115,14 +115,16 @@ function isSocketIoTransportTeardown({
   location,
   text,
 }: Pick<ConsoleDiagnosticInput, "location" | "text">) {
-  if (
-    !text.includes("WebSocket is closed before the connection is established") &&
-    !text.includes("Failed to load resource: the server responded with a status of 400")
-  ) {
+  if (!isSocketIoUrl(location?.url) && !text.includes("/socket.io/")) {
     return false;
   }
 
-  return isSocketIoUrl(location?.url) || text.includes("/socket.io/");
+  return (
+    text.includes("WebSocket is closed before the connection is established") ||
+    text.includes("Failed to load resource: the server responded with a status of 400") ||
+    text.includes("establish a connection to the server at ws://") ||
+    text.includes("was interrupted while the page was loading")
+  );
 }
 
 function isSocketIoUrl(url: string | undefined) {
