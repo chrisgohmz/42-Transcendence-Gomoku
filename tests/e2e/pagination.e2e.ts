@@ -133,6 +133,17 @@ test("leaderboard search filters sorting and pagination combine without stale ro
     await expect(visibleText(page, "Page 2 of 2 · 12 players")).toBeVisible();
     await expect(table.getByText(pageTwoPlayer.displayName, { exact: true })).toBeVisible();
     await expect(table.getByText(pageOnePlayer.displayName, { exact: true })).toHaveCount(0);
+
+    await page.getByRole("button", { exact: true, name: "Clear" }).click();
+
+    await expect(page).not.toHaveURL(/q=Advanced/);
+    await expect(page).not.toHaveURL(/band=kyu/);
+    await expect(page).not.toHaveURL(/minMatches=3/);
+    await expect(page).not.toHaveURL(/sort=wins_desc/);
+    await expect(page.getByLabel("Player")).toHaveValue("");
+    await expect(page.getByLabel("Band")).toHaveValue("all");
+    await expect(page.getByLabel("Min matches")).toHaveValue("");
+    await expect(page.getByLabel("Sort")).toHaveValue("rank");
   } finally {
     await cleanupUsers(created.players.map((player) => player.username));
   }

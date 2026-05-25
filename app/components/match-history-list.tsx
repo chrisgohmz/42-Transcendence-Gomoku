@@ -88,6 +88,7 @@ export default function MatchHistoryList({
     <Surface eyebrow={t("page.recentMatches.eyebrow")} title={t("page.recentMatches.title")}>
       {canFilter ? (
         <form
+          key={queryString}
           className="grid gap-3 rounded-md border border-[var(--panel-border-soft)] bg-white/[0.025] p-3"
           onSubmit={(event) => {
             event.preventDefault();

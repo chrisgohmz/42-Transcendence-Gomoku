@@ -91,13 +91,11 @@ export default function ProfileStatsPanel() {
             });
             next.delete("page");
             router.replace(`${pathname}?${next.toString()}`, { scroll: false });
-            void refresh(1, next.toString());
           }}
           onPageChange={(page) => {
             const next = new URLSearchParams(searchParams.toString());
             next.set("page", String(page));
             router.replace(`${pathname}?${next.toString()}`, { scroll: false });
-            void refresh(page, next.toString());
           }}
         />
       </div>

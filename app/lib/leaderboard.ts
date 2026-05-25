@@ -33,6 +33,15 @@ type LeaderboardStat = Prisma.UserGameStatsGetPayload<{
   select: typeof leaderboardSelect;
 }>;
 
+const leaderboardEligibilitySelect = {
+  botMatchesPlayed: true,
+  matchesPlayed: true,
+} satisfies Prisma.UserGameStatsSelect;
+
+type LeaderboardEligibilityStat = Prisma.UserGameStatsGetPayload<{
+  select: typeof leaderboardEligibilitySelect;
+}>;
+
 export type LeaderboardEntry = {
   playerId: string;
   rank: number;
@@ -356,6 +365,86 @@ function orderStatsForSearch(stats: LeaderboardStat[], sort: LeaderboardSort): L
   return ordered;
 }
 
+function getLeaderboardSearchOrderBy(
+  sort: LeaderboardSort,
+): Prisma.UserGameStatsOrderByWithRelationInput[] | null {
+  if (sort === "rating_asc") {
+    return [{ rating: "asc" }, { wins: "desc" }, { losses: "asc" }];
+  }
+
+  if (sort === "wins_desc") {
+    return [{ wins: "desc" }, { rating: "desc" }, { losses: "asc" }];
+  }
+
+  if (sort === "matches_desc") {
+    return [{ matchesPlayed: "desc" }, { rating: "desc" }, { wins: "desc" }];
+  }
+
+  if (sort === "rank") {
+    return leaderboardRankingOrder;
+  }
+
+  return null;
+}
+
+async function countEligibleLeaderboardSearchEntries(
+  where: Prisma.UserGameStatsWhereInput,
+): Promise<number> {
+  const stats = (await prisma.userGameStats.findMany({
+    select: leaderboardEligibilitySelect,
+    where,
+  })) as unknown as LeaderboardEligibilityStat[];
+
+  return stats.filter(isLeaderboardEligible).length;
+}
+
+async function getLeaderboardSearchPage(
+  where: Prisma.UserGameStatsWhereInput,
+  sort: LeaderboardSort,
+  page: number,
+  limit: number,
+): Promise<LeaderboardStat[]> {
+  const orderBy = getLeaderboardSearchOrderBy(sort);
+
+  if (!orderBy) {
+    const stats = (await prisma.userGameStats.findMany({
+      orderBy: leaderboardRankingOrder,
+      select: leaderboardSelect,
+      where,
+    })) as unknown as LeaderboardStat[];
+
+    return orderStatsForSearch(stats.filter(isLeaderboardEligible), sort).slice(
+      (page - 1) * limit,
+      page * limit,
+    );
+  }
+
+  const targetEligibleCount = page * limit;
+  const eligibleStats: LeaderboardStat[] = [];
+  const batchSize = Math.max(LEADERBOARD_FETCH_LIMIT, limit * 3);
+  let skip = 0;
+
+  while (eligibleStats.length < targetEligibleCount) {
+    const stats = (await prisma.userGameStats.findMany({
+      orderBy,
+      select: leaderboardSelect,
+      skip,
+      take: batchSize,
+      where,
+    })) as unknown as LeaderboardStat[];
+
+    if (stats.length === 0) break;
+
+    eligibleStats.push(...stats.filter(isLeaderboardEligible));
+
+    if (stats.length < batchSize) break;
+
+    skip += batchSize;
+  }
+
+  return eligibleStats.slice((page - 1) * limit, page * limit);
+}
+
 export async function getLeaderboardSearchSnapshot(
   userId: string | null,
   query: LeaderboardSearchQuery,
@@ -379,20 +468,12 @@ export async function getLeaderboardSearchSnapshot(
   const baseWhere = buildLeaderboardWhere(friendUserIds);
   const filterWhere = buildLeaderboardFilterWhere(query);
   const where = mergeLeaderboardWhere(baseWhere, filterWhere);
-  const stats = (await prisma.userGameStats.findMany({
-    orderBy: leaderboardRankingOrder,
-    select: leaderboardSelect,
-    where,
-  })) as unknown as LeaderboardStat[];
-  const eligibleStats = stats.filter(isLeaderboardEligible);
-  const orderedStats = orderStatsForSearch(eligibleStats, query.sort);
-  const totalEntries = orderedStats.length;
+  const totalEntries = await countEligibleLeaderboardSearchEntries(where);
   const totalPages = Math.max(1, Math.ceil(totalEntries / query.limit));
   const currentPage = Math.min(query.page, totalPages);
   const startIndex = (currentPage - 1) * query.limit;
-  const entries = orderedStats
-    .slice(startIndex, startIndex + query.limit)
-    .map((stat, index) => toLeaderboardEntry(stat, startIndex + index + 1));
+  const pageStats = await getLeaderboardSearchPage(where, query.sort, currentPage, query.limit);
+  const entries = pageStats.map((stat, index) => toLeaderboardEntry(stat, startIndex + index + 1));
   const currentUser =
     entries.find((entry) => entry.playerId === userId) ??
     (userId ? await getLeaderboardSpotlight(userId, friendUserIds) : null);

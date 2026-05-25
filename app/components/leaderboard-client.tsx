@@ -79,6 +79,7 @@ export default function LeaderboardClient({
   return (
     <>
       <LeaderboardControls
+        formKey={queryString}
         hasFilters={hasFilters}
         query={query}
         onClear={clearFilters}
@@ -176,11 +177,13 @@ export default function LeaderboardClient({
 }
 
 function LeaderboardControls({
+  formKey,
   hasFilters,
   query,
   onClear,
   onUpdate,
 }: {
+  formKey: string;
   hasFilters: boolean;
   query: LeaderboardSearchQuery;
   onClear: () => void;
@@ -194,6 +197,7 @@ function LeaderboardControls({
 
   return (
     <form
+      key={formKey}
       className="grid gap-3 rounded-md border border-[var(--panel-border-soft)] bg-white/[0.025] p-3"
       onSubmit={(event) => {
         event.preventDefault();
