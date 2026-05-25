@@ -146,7 +146,7 @@ bun run lint:fix
 
 ### Health, backups, and recovery
 
-The internal status page is available at `/status`, for example `https://localhost:8443/en/status` in Docker/Caddy mode. The aggregate machine-readable endpoint is `/api/status`.
+The internal status page is available to signed-in users at `/status`, for example `https://localhost:8443/en/status` in Docker/Caddy mode. The aggregate machine-readable endpoint is `/api/status`; internal monitors can call it with `x-operations-status-token` when `OPERATIONS_STATUS_TOKEN` is configured.
 
 The `database-backup` Compose service writes scheduled PostgreSQL custom-format dumps into the separate `postgres_backups` named volume. Run a manual backup with:
 

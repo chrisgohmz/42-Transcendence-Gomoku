@@ -153,6 +153,13 @@ test("authenticated redesigned pages render at desktop and mobile widths", async
     await gotoAppRoute(page, "/messages");
     await expect(page.getByRole("heading", { level: 1, name: "Messages" })).toBeVisible();
     await expectNoDocumentOverflow(page, "/messages");
+
+    await gotoAppRoute(page, "/status");
+    await expect(page.getByRole("heading", { level: 1, name: "System status" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "PostgreSQL" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Realtime Service" })).toBeVisible();
+    await expect(page.getByText("Backup Schedule", { exact: true })).toBeVisible();
+    await expectNoDocumentOverflow(page, "/status");
   } finally {
     await cleanupTestUsers([user.username, friend.username]);
   }

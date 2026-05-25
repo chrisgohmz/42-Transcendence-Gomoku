@@ -15,7 +15,8 @@ import { Suspense, type ReactNode } from "react";
 
 import { Badge, MetricCard, PageHeader, PageShell, Surface } from "@/components/gomoku-ui";
 import { PageLoadingShell } from "@/components/page-loading-shell";
-import { Link } from "@/i18n/navigation";
+import { Link, redirect } from "@/i18n/navigation";
+import { getCurrentSessionIdentity } from "@/lib/auth";
 import {
   getSystemHealth,
   type HealthCheckId,
@@ -191,8 +192,14 @@ export default function StatusPage({ params }: StatusPageProps) {
 async function StatusPageContent({ params }: StatusPageProps) {
   const { locale } = await params;
   setRequestLocale(locale);
-  await connection();
 
+  const session = await getCurrentSessionIdentity();
+
+  if (!session) {
+    redirect({ href: "/login", locale });
+  }
+
+  await connection();
   const health = await getSystemHealth();
 
   return <StatusDashboard health={health} locale={locale} />;

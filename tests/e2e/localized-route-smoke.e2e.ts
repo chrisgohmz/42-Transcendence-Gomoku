@@ -133,7 +133,7 @@ test("protected social routes redirect to localized login while signed out", asy
   for (const locale of locales) {
     const messages = messagesByLocale[locale];
 
-    for (const route of ["/friends", "/messages"]) {
+    for (const route of ["/friends", "/messages", "/status"]) {
       const verifyNoRuntimeErrors = watchRuntimeTranslationErrors(page);
       await gotoLocalizedRoute(page, locale, route);
 
