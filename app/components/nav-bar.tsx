@@ -19,7 +19,7 @@ export default async function Navbar() {
   const avatarUrl = sessionData?.user.avatarUrl;
   const navItems = [
     { href: "/", icon: Home, label: nav("home") },
-    { href: "/game", icon: Bot, label: nav("vsAi") },
+    { href: "/ai", icon: Bot, label: nav("vsAi") },
     { href: "/human", icon: Swords, label: nav("vsHuman") },
     { href: "/leaderboard", icon: Trophy, label: nav("leaderboard") },
   ] as const;

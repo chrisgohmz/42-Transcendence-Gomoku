@@ -59,7 +59,7 @@ export default async function HomeDashboard() {
           <ActionCard
             body={t("cards.ai.body")}
             cta={t("cards.ai.cta")}
-            href="/game"
+            href="/ai"
             icon={Bot}
             title={t("cards.ai.title")}
             tone="mint"

@@ -8,7 +8,7 @@ import { expect, type Page, type TestInfo, test } from "./fixtures";
 
 const routes = [
   { heading: "Master the board.", path: "/" },
-  { heading: "Choose your opponent.", path: "/game" },
+  { heading: "Choose your opponent.", path: "/ai" },
   { heading: "Play Online", path: "/human" },
   { heading: "Leaderboard", path: "/leaderboard" },
   { heading: "Welcome back.", path: "/login" },
@@ -34,7 +34,7 @@ test("home page renders the redesigned command center", async ({ page }) => {
 });
 
 test("primary game routes render their new page shells", async ({ page }) => {
-  await gotoAppRoute(page, "/game");
+  await gotoAppRoute(page, "/ai");
   await expect(
     page.getByRole("heading", { level: 1, name: "Choose your opponent." }),
   ).toBeVisible();

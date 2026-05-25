@@ -344,7 +344,7 @@ Acceptance markers:
 ### 02 Active Game / vs AI
 
 Reference: [02-active-game.png](./02-active-game.png)  
-Route: `/[locale]/game`
+Route: `/[locale]/ai`
 
 Purpose:
 

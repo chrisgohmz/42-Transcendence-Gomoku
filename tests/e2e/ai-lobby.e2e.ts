@@ -39,7 +39,7 @@ test("AI lobby starts a solo match and renders the shared match board", async ({
     },
   );
 
-  await page.goto("/en/game", { waitUntil: "domcontentloaded" });
+  await page.goto("/en/ai", { waitUntil: "domcontentloaded" });
   await expect(
     page.getByRole("heading", { level: 1, name: "Choose your opponent." }),
   ).toBeVisible();

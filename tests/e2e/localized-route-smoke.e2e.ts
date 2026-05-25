@@ -64,7 +64,7 @@ const publicRouteCases = [
     visibleText: (messages: AppMessages) => messages.human.createRoom.title,
   },
   {
-    path: "/game",
+    path: "/ai",
     heading: (messages: AppMessages) => messages.aiLobby.hero.title,
     visibleText: (messages: AppMessages) => messages.aiLobby.preview.openingPreview,
   },
@@ -97,7 +97,7 @@ for (const locale of locales) {
     const messages = messagesByLocale[locale];
     const verifyNoRuntimeErrors = watchRuntimeTranslationErrors(page);
 
-    await gotoLocalizedRoute(page, locale, "/game");
+    await gotoLocalizedRoute(page, locale, "/ai");
 
     await expect(
       page.getByRole("heading", { level: 1, name: messages.aiLobby.hero.title }),
@@ -105,7 +105,7 @@ for (const locale of locales) {
     await expect(
       page.getByText(messages.aiLobby.preview.openingPreview, { exact: true }),
     ).toBeVisible();
-    await expectNoTranslationArtifacts(page, `${locale}/game lobby`);
+    await expectNoTranslationArtifacts(page, `${locale}/ai lobby`);
 
     const startTrainingButton = page.getByRole("button", {
       name: messages.aiLobby.setup.startButton,
@@ -123,8 +123,8 @@ for (const locale of locales) {
     await expect(
       page.getByRole("grid", { name: messages.aiLobby.matchRoom.board.ariaLabel }),
     ).toBeVisible();
-    await expectNoTranslationArtifacts(page, `${locale}/game active match`);
-    verifyNoRuntimeErrors(`${locale}/game active match`);
+    await expectNoTranslationArtifacts(page, `${locale}/ai active match`);
+    verifyNoRuntimeErrors(`${locale}/ai active match`);
   });
 }
 
