@@ -16,6 +16,31 @@ services:
       retries: 10
       start_period: 5s
 
+  database-backup:
+    image: postgres:18.3-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-transcendence}
+      POSTGRES_USER: ${POSTGRES_USER:-transcendence}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+      POSTGRES_HOST: database
+      POSTGRES_PORT: 5432
+      POSTGRES_BACKUP_DIR: /backups
+      POSTGRES_BACKUP_DISABLED: ${POSTGRES_BACKUP_DISABLED:-false}
+      POSTGRES_BACKUP_INTERVAL_SECONDS: ${POSTGRES_BACKUP_INTERVAL_SECONDS:-86400}
+      POSTGRES_BACKUP_RETENTION_DAYS: ${POSTGRES_BACKUP_RETENTION_DAYS:-7}
+    command: ["sh", "/usr/local/bin/postgres-backup-loop"]
+    depends_on:
+      database:
+        condition: service_healthy
+    restart: unless-stopped
+    volumes:
+      - postgres_backups:/backups
+      - ./scripts/postgres-backup-loop.sh:/usr/local/bin/postgres-backup-loop:ro
+      - ./scripts/postgres-backup.sh:/usr/local/bin/postgres-backup:ro
+      - ./scripts/postgres-restore.sh:/usr/local/bin/postgres-restore:ro
+    networks:
+      - transcendence
+
   app:
     build:
       context: .
@@ -30,6 +55,10 @@ services:
       GITHUB_CLIENT_SECRET: ${GITHUB_CLIENT_SECRET:-}
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+      POSTGRES_BACKUP_DIR: /backups
+      POSTGRES_BACKUP_DISABLED: ${POSTGRES_BACKUP_DISABLED:-false}
+      POSTGRES_BACKUP_INTERVAL_SECONDS: ${POSTGRES_BACKUP_INTERVAL_SECONDS:-86400}
+      POSTGRES_BACKUP_RETENTION_DAYS: ${POSTGRES_BACKUP_RETENTION_DAYS:-7}
       REALTIME_INTERNAL_URL: http://realtime:3001/internal/game-update
       REALTIME_FRIENDSHIP_INTERNAL_URL: http://realtime:3001/internal/friendship-update
       REALTIME_INTERNAL_SECRET: ${REALTIME_INTERNAL_SECRET:-}
@@ -117,4 +146,5 @@ volumes:
   app_uploads:
   caddy_config:
   caddy_data:
+  postgres_backups:
   postgres_data:

@@ -119,7 +119,7 @@ data you need to keep.
 docker compose up --build
 ```
 
-This runs the Next app, Bun realtime service, Caddy HTTPS reverse proxy, and PostgreSQL in a production-style local container mode. Open the app at `https://localhost:8443`.
+This runs the Next app, Bun realtime service, Caddy HTTPS reverse proxy, PostgreSQL, and the PostgreSQL backup sidecar in a production-style local container mode. Open the app at `https://localhost:8443`.
 
 ### Run the full stack in Docker dev mode
 
@@ -143,6 +143,24 @@ Then import `./caddy-local-root.crt` into your OS/browser trust store.
 bun run lint
 bun run lint:fix
 ```
+
+### Health, backups, and recovery
+
+The internal status page is available at `/status`, for example `https://localhost:8443/en/status` in Docker/Caddy mode. The aggregate machine-readable endpoint is `/api/status`.
+
+The `database-backup` Compose service writes scheduled PostgreSQL custom-format dumps into the separate `postgres_backups` named volume. Run a manual backup with:
+
+```bash
+docker compose run --rm database-backup /usr/local/bin/postgres-backup
+```
+
+Run an isolated restore drill against the latest backup artifact with:
+
+```bash
+./scripts/postgres-restore-drill.sh
+```
+
+See `docs/operations/health-backup-disaster-recovery.md` for the full runbook and `docs/operations/restore-drill-log.md` for drill records.
 
 ### Authentication quickstart
 
