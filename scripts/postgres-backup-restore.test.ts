@@ -171,6 +171,33 @@ exit 0
 }
 
 describe("PostgreSQL backup and restore scripts", () => {
+  test("backup loop runs a mounted backup script through sh", async () => {
+    const root = await createTempRoot();
+    const logDir = join(root, "logs");
+    const backupScript = join(root, "postgres-backup");
+    await mkdirp(logDir);
+    await writeFile(
+      backupScript,
+      `#!/bin/sh
+set -eu
+printf "ran\\n" > "$FAKE_SCRIPT_LOG_DIR/backup-ran"
+exit 42
+`,
+    );
+
+    const result = await runShellScript(
+      "scripts/postgres-backup-loop.sh",
+      createEnv({
+        FAKE_SCRIPT_LOG_DIR: logDir,
+        POSTGRES_BACKUP_INTERVAL_SECONDS: "1",
+        POSTGRES_BACKUP_SCRIPT: backupScript,
+      }),
+    );
+
+    expect(result.exitCode).toBe(42);
+    expect(await readFile(join(logDir, "backup-ran"), "utf8")).toBe("ran\n");
+  });
+
   test("creates a dump and checksum artifact that the restore script accepts", async () => {
     const root = await createTempRoot();
     const backupDir = join(root, "backups");

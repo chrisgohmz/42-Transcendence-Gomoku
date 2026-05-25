@@ -6,7 +6,9 @@ if [ "${POSTGRES_BACKUP_DISABLED:-false}" = "true" ]; then
   exec tail -f /dev/null
 fi
 
+backup_script="${POSTGRES_BACKUP_SCRIPT:-/usr/local/bin/postgres-backup}"
+
 while true; do
-  /usr/local/bin/postgres-backup
+  sh "$backup_script"
   sleep "${POSTGRES_BACKUP_INTERVAL_SECONDS:-86400}"
 done
