@@ -21,6 +21,7 @@ function readPositiveTimeoutMs(timeoutMs: number) {
 // The shape of the data we send to the Socket.IO server
 export type ChatMessagePublishPayload = {
   conversationId: string;
+  recipientUsername?: string;
   message: {
     id: string;
     body: string;
@@ -72,6 +73,7 @@ export async function publishChatMessage(
       },
       body: JSON.stringify({
         conversationId: payload.conversationId,
+        recipientUsername: payload.recipientUsername,
         message: {
           ...payload.message,
           createdAt: payload.message.createdAt.toISOString(),

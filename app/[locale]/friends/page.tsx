@@ -3,7 +3,7 @@ import { Suspense } from "react";
 
 import { PageLoadingShell } from "@/components/page-loading-shell";
 import { redirect } from "@/i18n/navigation";
-import { getCurrentSession } from "@/lib/auth";
+import { getCurrentSessionIdentity } from "@/lib/auth";
 import {
   friendshipForUserWhere,
   getOtherFriendshipUser,
@@ -39,7 +39,7 @@ async function FriendsPageContent({ params, searchParams }: FriendsPageProps) {
   const { query } = await searchParams;
   setRequestLocale(locale);
 
-  const sessionData = await getCurrentSession();
+  const sessionData = await getCurrentSessionIdentity();
 
   if (!sessionData) {
     redirect({ href: "/login", locale });

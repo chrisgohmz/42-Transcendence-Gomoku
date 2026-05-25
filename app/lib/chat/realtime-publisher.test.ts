@@ -23,6 +23,7 @@ const originalEnv = Object.fromEntries(envKeys.map((key) => [key, process.env[ke
 const createdAt = new Date("2026-05-23T10:00:00.000Z");
 const payload = {
   conversationId: "conv-1",
+  recipientUsername: "bob",
   message: {
     id: "msg-1",
     body: "hello",
@@ -116,6 +117,7 @@ describe("publishChatMessage", () => {
       method: "POST",
       body: JSON.stringify({
         conversationId: "conv-1",
+        recipientUsername: "bob",
         message: {
           ...payload.message,
           createdAt: createdAt.toISOString(),

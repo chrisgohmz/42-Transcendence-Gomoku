@@ -8,6 +8,7 @@
 import { getErrorMessage } from "@/lib/api-errors";
 import { getCurrentSession } from "@/lib/auth";
 import { canAccessDirectConversation } from "@/lib/chat/access";
+import { markDirectConversationRead } from "@/lib/chat/read-state";
 import { publishChatMessage } from "@/lib/chat/realtime-publisher";
 import { prisma } from "@/lib/prisma";
 
@@ -62,13 +63,8 @@ export async function GET(
       orderBy: { createdAt: "asc" },
     });
 
-    // Mark conversation as read: update the lastReadAt timestamp for this user
-    await prisma.conversationParticipant.update({
-      where: {
-        conversationId_userId: { conversationId, userId: session.user.id },
-      },
-      data: { lastReadAt: new Date() },
-    });
+    // Mark conversation as read: update the lastReadAt timestamp for this user.
+    await markDirectConversationRead(conversationId, session.user.id);
 
     return Response.json({ messages });
   } catch (error) {
@@ -152,7 +148,16 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   // A failure here doesn't roll back the message — the sender already
   // gets it in the response body and other clients will fetch on reload.
   try {
-    await publishChatMessage({ conversationId, message });
+    const recipient = await prisma.user.findUnique({
+      where: { id: access.otherUserId },
+      select: { username: true },
+    });
+
+    await publishChatMessage({
+      conversationId,
+      message,
+      recipientUsername: recipient?.username,
+    });
   } catch (realtimeError) {
     console.error("[chat] Failed to publish realtime message", realtimeError);
   }

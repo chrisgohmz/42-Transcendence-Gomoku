@@ -16,7 +16,8 @@ type AuthModuleMock = {
     api: Record<string, unknown>;
   };
   getConfiguredOAuthProviders: () => string[];
-  getCurrentSession: () => Promise<unknown>;
+  getCurrentSession: (...args: unknown[]) => Promise<unknown>;
+  getCurrentSessionIdentity: (...args: unknown[]) => Promise<unknown>;
   getDuplicateSignupFields: (email: string, username: string) => Promise<DuplicateSignupFields>;
   hasCredentialPassword: (userId: string) => Promise<boolean>;
   serializeUserForResponse: (user: UserForResponse) => {
@@ -35,6 +36,7 @@ export function createAuthModuleMock(overrides: Partial<AuthModuleMock> = {}): A
     },
     getConfiguredOAuthProviders: () => [],
     getCurrentSession: async () => null,
+    getCurrentSessionIdentity: async () => null,
     getDuplicateSignupFields: async () => ({}),
     hasCredentialPassword: async () => false,
     serializeUserForResponse: (user) => ({

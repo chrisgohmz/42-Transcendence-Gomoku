@@ -1076,6 +1076,7 @@ export const messages = {
       backToLeaderboard: "Back to leaderboard",
       badge: "Public profile",
       challenge: "Challenge",
+      goBack: "Go Back",
       progress: {
         eyebrow: "Rating Progress",
         title: "Season curve",

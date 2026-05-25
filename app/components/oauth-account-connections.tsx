@@ -18,11 +18,16 @@ export type OAuthProviderConnection = {
 };
 
 type OAuthAccountConnectionsProps = {
+  callbackPath?: string;
   locale: string;
   providers: OAuthProviderConnection[];
 };
 
-export function OAuthAccountConnections({ locale, providers }: OAuthAccountConnectionsProps) {
+export function OAuthAccountConnections({
+  callbackPath = "/account",
+  locale,
+  providers,
+}: OAuthAccountConnectionsProps) {
   const router = useRouter();
   const t = useTranslations("account.settings.sections.connections");
   const [pendingProvider, setPendingProvider] = useState<OAuthProviderId | null>(null);
@@ -33,8 +38,8 @@ export function OAuthAccountConnections({ locale, providers }: OAuthAccountConne
     setMessage(null);
 
     const { error } = await authClient.linkSocial({
-      callbackURL: `/${locale}/account`,
-      errorCallbackURL: `/${locale}/account`,
+      callbackURL: `/${locale}${callbackPath}`,
+      errorCallbackURL: `/${locale}${callbackPath}`,
       provider: provider.id,
     });
 
@@ -67,7 +72,7 @@ export function OAuthAccountConnections({ locale, providers }: OAuthAccountConne
     <div className="grid gap-4">
       <p className="m-0 text-sm leading-6 text-[var(--muted-text)]">{t("description")}</p>
 
-      <div className="grid gap-3">
+      <div className="grid gap-3 md:grid-cols-2">
         {providers.map((provider) => {
           const isPending = pendingProvider === provider.id;
           const isConnecting = isPending && !provider.linked;
@@ -76,10 +81,10 @@ export function OAuthAccountConnections({ locale, providers }: OAuthAccountConne
           return (
             <div
               key={provider.id}
-              className="flex flex-col gap-3 rounded-md border border-[var(--panel-border-soft)] bg-white/[0.035] p-3 sm:flex-row sm:items-center sm:justify-between"
+              className="flex flex-col gap-3 rounded-md border border-[var(--panel-border-soft)] bg-white/[0.035] p-3"
             >
               <div
-                className="min-w-0 sm:w-72"
+                className="min-w-0"
                 title={
                   provider.linked
                     ? t("connected")
@@ -112,7 +117,7 @@ export function OAuthAccountConnections({ locale, providers }: OAuthAccountConne
               {provider.linked ? (
                 <button
                   type="button"
-                  className="btn btn-subtle m-0 min-h-10 w-full sm:w-auto"
+                  className="btn btn-subtle m-0 min-h-10 w-full"
                   disabled={isDisconnecting || !provider.canUnlink}
                   title={!provider.canUnlink ? t("lastAccount") : undefined}
                   onClick={() => void disconnectProvider(provider)}

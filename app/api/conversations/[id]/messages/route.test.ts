@@ -14,6 +14,7 @@ const createMessage = mock();
 const updateConversation = mock();
 const transaction = mock();
 const publishChatMessage = mock();
+const findUser = mock();
 
 const txClient = {
   conversation: { update: updateConversation },
@@ -40,6 +41,9 @@ await mock.module("@/lib/prisma", () => ({
     },
     friendship: {
       findUnique: findFriendship,
+    },
+    user: {
+      findUnique: findUser,
     },
     $transaction: transaction,
   },
@@ -84,6 +88,7 @@ beforeEach(() => {
   updateConversation.mockReset();
   transaction.mockReset();
   publishChatMessage.mockReset();
+  findUser.mockReset();
 
   getCurrentSession.mockResolvedValue({
     user: { id: "user-alice", username: "alice", displayName: "Alice" },
@@ -97,6 +102,7 @@ beforeEach(() => {
     callback(txClient),
   );
   publishChatMessage.mockResolvedValue(undefined);
+  findUser.mockResolvedValue({ username: "bob" });
 });
 
 describe("GET /api/conversations/[id]/messages", () => {
@@ -246,6 +252,7 @@ describe("POST /api/conversations/[id]/messages", () => {
     expect(publishChatMessage).toHaveBeenCalledWith({
       conversationId: "conv-1",
       message: created,
+      recipientUsername: "bob",
     });
   });
 

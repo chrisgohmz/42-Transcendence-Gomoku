@@ -31,7 +31,7 @@ export function LocaleSwitcher() {
   }
 
   return (
-    <DropdownMenu>
+    <DropdownMenu modal={false}>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" size="sm" className="flex cursor-pointer items-center gap-2">
           <Globe className="h-4 w-4 text-[var(--brass)]" />

@@ -1073,6 +1073,7 @@ export const messages = {
       backToLeaderboard: "ランキングへ戻る",
       badge: "公開プロフィール",
       challenge: "対局を申し込む",
+      goBack: "戻る",
       progress: {
         eyebrow: "レーティング推移",
         title: "シーズン曲線",

@@ -1,11 +1,22 @@
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, KeyRound } from "lucide-react";
 import { getTranslations, setRequestLocale } from "next-intl/server";
+import { headers } from "next/headers";
 import { Suspense } from "react";
 
 import { AvatarToken, Badge, PageHeader, PageShell, Surface } from "@/components/gomoku-ui";
+import {
+  OAuthAccountConnections,
+  type OAuthProviderConnection,
+} from "@/components/oauth-account-connections";
 import { PageLoadingShell } from "@/components/page-loading-shell";
 import { Link, redirect } from "@/i18n/navigation";
-import { getCurrentSession, hasCredentialPassword } from "@/lib/auth";
+import {
+  auth,
+  getConfiguredOAuthProviders,
+  getCurrentSession,
+  hasCredentialPassword,
+} from "@/lib/auth";
+import { oauthProviderIds, type OAuthProviderId } from "@/lib/oauth-providers";
 
 import ProfilePicture from "../profile-picture";
 import EditProfileForm from "./edit-form";
@@ -15,6 +26,30 @@ type EditProfilePageProps = {
     locale: string;
   }>;
 };
+
+async function loadOAuthProviders(): Promise<OAuthProviderConnection[]> {
+  const accounts = await auth.api.listUserAccounts({
+    headers: await headers(),
+  });
+  const configuredProviders = new Set(getConfiguredOAuthProviders());
+  const linkedAccounts = new Map(
+    accounts
+      .filter((account) => oauthProviderIds.includes(account.providerId as OAuthProviderId))
+      .map((account) => [account.providerId as OAuthProviderId, account]),
+  );
+
+  return oauthProviderIds.map((provider) => {
+    const linkedAccount = linkedAccounts.get(provider);
+
+    return {
+      accountId: linkedAccount?.accountId ?? null,
+      canUnlink: Boolean(linkedAccount) && accounts.length > 1,
+      configured: configuredProviders.has(provider),
+      id: provider,
+      linked: Boolean(linkedAccount),
+    };
+  });
+}
 
 export default function EditProfilePage({ params }: EditProfilePageProps) {
   return (
@@ -35,7 +70,9 @@ async function EditProfilePageContent({ params }: EditProfilePageProps) {
     return null;
   }
 
-  const [t, hasPassword] = await Promise.all([
+  const [accountT, oauthProviders, t, hasPassword] = await Promise.all([
+    getTranslations({ locale, namespace: "account" }),
+    loadOAuthProviders(),
     getTranslations({ locale, namespace: "profile.edit" }),
     hasCredentialPassword(sessionData.user.id),
   ]);
@@ -45,10 +82,10 @@ async function EditProfilePageContent({ params }: EditProfilePageProps) {
       <div className="mb-2">
         <Link
           href="/profile"
-          className="inline-flex items-center gap-2 text-sm font-black text-[var(--brass)] no-underline hover:opacity-80"
+          className="inline-flex items-center gap-2 text-sm font-black text-(--brass) no-underline hover:opacity-80"
         >
           <ArrowLeft aria-hidden="true" className="size-4" />
-          Return to Profile
+          {t("returnToProfile")}
         </Link>
       </div>
 
@@ -61,7 +98,7 @@ async function EditProfilePageContent({ params }: EditProfilePageProps) {
             </div>
           </Surface>
           <Surface eyebrow={t("page.preview.eyebrow")} title={t("page.preview.title")}>
-            <div className="flex items-center gap-3 rounded-md border border-[var(--panel-border-soft)] bg-white/[0.035] p-3">
+            <div className="flex items-center gap-3 rounded-md border border-(--panel-border-soft) bg-white/[0.035] p-3">
               <AvatarToken
                 image={sessionData.user.avatarUrl}
                 name={sessionData.user.displayName}
@@ -69,7 +106,7 @@ async function EditProfilePageContent({ params }: EditProfilePageProps) {
               />
               <div className="min-w-0">
                 <p className="m-0 truncate font-black">{sessionData.user.displayName}</p>
-                <p className="m-0 truncate text-sm text-[var(--muted-text)]">
+                <p className="m-0 truncate text-sm text-(--muted-text)">
                   @{sessionData.user.username}
                 </p>
               </div>
@@ -77,13 +114,25 @@ async function EditProfilePageContent({ params }: EditProfilePageProps) {
             </div>
           </Surface>
         </aside>
-
-        <EditProfileForm
-          currentUsername={sessionData.user.username}
-          currentDisplayName={sessionData.user.displayName}
-          currentEmail={sessionData.user.email}
-          hasPassword={hasPassword}
-        />
+        <div className="grid content-start gap-5">
+          <EditProfileForm
+            currentUsername={sessionData.user.username}
+            currentDisplayName={sessionData.user.displayName}
+            currentEmail={sessionData.user.email}
+            hasPassword={hasPassword}
+          />
+          <Surface
+            eyebrow={accountT("settings.sections.connections.eyebrow")}
+            icon={KeyRound}
+            title={accountT("settings.sections.connections.title")}
+          >
+            <OAuthAccountConnections
+              callbackPath="/profile/edit"
+              locale={locale}
+              providers={oauthProviders}
+            />
+          </Surface>
+        </div>
       </section>
     </PageShell>
   );
