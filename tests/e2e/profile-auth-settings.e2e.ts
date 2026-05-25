@@ -1,10 +1,10 @@
 import { randomUUID } from "node:crypto";
 
 import { createId } from "@paralleldrive/cuid2";
-import { expect, type Page, type TestInfo, test } from "@playwright/test";
 import { hashPassword } from "better-auth/crypto";
 
 import { prisma } from "../../app/lib/prisma";
+import { expect, type Page, type TestInfo, test } from "./fixtures";
 
 test.setTimeout(90_000);
 

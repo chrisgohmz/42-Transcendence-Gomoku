@@ -1,9 +1,8 @@
-import { expect, type ConsoleMessage, type Page, test } from "@playwright/test";
-
 import { locales, type Locale } from "../../app/i18n/config";
 import { messages as enMessages } from "../../app/i18n/messages/en";
 import { messages as jaMessages } from "../../app/i18n/messages/ja";
 import { messages as zhMessages } from "../../app/i18n/messages/zh";
+import { expect, type ConsoleMessage, type Page, test } from "./fixtures";
 
 type AppMessages = typeof enMessages;
 

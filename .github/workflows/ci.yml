@@ -71,7 +71,7 @@ jobs:
         run: bun run build
 
       - name: Install Playwright browsers
-        run: bun run pw:install --with-deps chromium
+        run: bun run pw:install --with-deps
 
       - name: Run Playwright E2E tests
         env:

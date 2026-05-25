@@ -48,8 +48,11 @@ export async function generateMetadata({ params }: MetadataProps): Promise<Metad
   const t = await getTranslations({ locale, namespace: "metadata" });
 
   return {
-    title: t("title"),
     description: t("description"),
+    icons: {
+      icon: "/icons/Gomoku.svg",
+    },
+    title: t("title"),
   };
 }
 
