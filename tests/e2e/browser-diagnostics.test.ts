@@ -47,6 +47,42 @@ describe("browser diagnostics", () => {
     ).toBeNull();
   });
 
+  test("ignores Socket.IO transport teardown noise while keeping real socket failures", () => {
+    expect(
+      getConsoleDiagnostic({
+        location: {
+          url: "http://localhost:3000/_next/static/chunks/socket.js",
+        },
+        text: "WebSocket connection to 'ws://localhost:3001/socket.io/?EIO=4&transport=websocket' failed: WebSocket is closed before the connection is established.",
+        type: "warning",
+      }),
+    ).toBeNull();
+    expect(
+      getConsoleDiagnostic({
+        location: {
+          url: "http://localhost:3001/socket.io/?EIO=4&transport=polling&sid=session",
+        },
+        text: "Failed to load resource: the server responded with a status of 400 (Bad Request)",
+        type: "error",
+      }),
+    ).toBeNull();
+    expect(
+      getConsoleDiagnostic({
+        location: {
+          url: "http://localhost:3001/socket.io/?EIO=4&transport=polling",
+        },
+        text: "Failed to load resource: net::ERR_CONNECTION_REFUSED",
+        type: "error",
+      }),
+    ).toEqual({
+      location: {
+        url: "http://localhost:3001/socket.io/?EIO=4&transport=polling",
+      },
+      text: "Failed to load resource: net::ERR_CONNECTION_REFUSED",
+      type: "console.error",
+    });
+  });
+
   test("characterizes page asset requests as guarded while leaving API fetches alone", () => {
     for (const resourceType of ["document", "font", "image", "manifest", "script", "stylesheet"]) {
       expect(

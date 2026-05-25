@@ -68,7 +68,6 @@ jobs:
         env:
           BETTER_AUTH_SECRET: ci_better_auth_secret_change_me_32_chars
           BETTER_AUTH_URL: http://localhost:3000
-          NEXT_PUBLIC_SOCKET_TRANSPORTS: polling
         run: bun run build
 
       - name: Install Playwright browsers

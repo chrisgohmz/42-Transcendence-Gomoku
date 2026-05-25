@@ -4,16 +4,12 @@ import { io } from "socket.io-client";
 
 type SocketLocation = Pick<Location, "hostname" | "port">;
 
-const socketTransports =
-  process.env["NEXT_PUBLIC_SOCKET_TRANSPORTS"] === "polling" ? ["polling"] : undefined;
-
 export const socketClientOptions = {
   path: "/socket.io",
   reconnection: true,
   reconnectionDelay: 500,
   reconnectionDelayMax: 5000,
   timeout: 10000,
-  ...(socketTransports ? { transports: socketTransports } : {}),
   withCredentials: true,
 } as const;
 

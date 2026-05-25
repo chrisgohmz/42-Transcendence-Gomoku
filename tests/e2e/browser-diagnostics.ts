@@ -55,6 +55,10 @@ export function getConsoleDiagnostic({
     return null;
   }
 
+  if (isSocketIoTransportTeardown({ location, text })) {
+    return null;
+  }
+
   return {
     location,
     text,
@@ -105,4 +109,30 @@ export function shouldFailOnRequest({ resourceType, url }: RequestDiagnosticInpu
 
 function isRequestAbort(failureText: string | undefined) {
   return failureText === "net::ERR_ABORTED" || failureText === "NS_BINDING_ABORTED";
+}
+
+function isSocketIoTransportTeardown({
+  location,
+  text,
+}: Pick<ConsoleDiagnosticInput, "location" | "text">) {
+  if (
+    !text.includes("WebSocket is closed before the connection is established") &&
+    !text.includes("Failed to load resource: the server responded with a status of 400")
+  ) {
+    return false;
+  }
+
+  return isSocketIoUrl(location?.url) || text.includes("/socket.io/");
+}
+
+function isSocketIoUrl(url: string | undefined) {
+  if (!url) {
+    return false;
+  }
+
+  try {
+    return new URL(url).pathname.replace(/\/$/, "") === "/socket.io";
+  } catch {
+    return false;
+  }
 }
