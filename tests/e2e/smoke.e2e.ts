@@ -160,7 +160,9 @@ test("authenticated redesigned pages render at desktop and mobile widths", async
     await expect(
       page.getByRole("heading", { exact: true, name: "Realtime Service" }),
     ).toBeVisible();
-    await expect(page.getByText("Backup Schedule", { exact: true })).toBeVisible();
+    await expect(
+      page.getByRole("heading", { exact: true, name: "PostgreSQL artifacts" }),
+    ).toBeVisible();
     await expectNoDocumentOverflow(page, "/status");
   } finally {
     await cleanupTestUsers([user.username, friend.username]);
