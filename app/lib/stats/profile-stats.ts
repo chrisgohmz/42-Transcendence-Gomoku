@@ -1,5 +1,6 @@
 import type { Prisma } from "../../../generated/prisma/client";
 import { MatchResult, Role } from "../../../generated/prisma/enums";
+import type { MatchHistorySearchQuery } from "../advanced-search";
 import {
   LEADERBOARD_BOARD_SIZE,
   LEADERBOARD_RULE_TYPE,
@@ -17,6 +18,7 @@ export const PROFILE_RECENT_MATCHES_MAX_LIMIT = 50;
 export type ProfileStatsOptions = {
   recentMatchesPage?: number;
   recentMatchesLimit?: number;
+  recentMatchesSearch?: MatchHistorySearchQuery;
 };
 
 export type ProfileRecentMatch = {
@@ -154,7 +156,7 @@ export async function getProfileStatsForUser(
         },
       },
     }),
-    getMatchHistoryPageForUser(userId, page, limit),
+    getMatchHistoryPageForUser(userId, page, limit, options.recentMatchesSearch),
   ]);
 
   const stats = {

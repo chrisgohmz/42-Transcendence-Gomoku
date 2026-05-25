@@ -6,6 +6,7 @@ type LeaderboardEntry = {
   rank: number;
   player: string;
   rating: number;
+  matchesPlayed: number;
   wins: number;
   losses: number;
   winRate: string;
@@ -36,11 +37,15 @@ export default function LeaderboardTable({ entries }: LeaderboardTableProps) {
         </div>
       ) : null}
 
-      <div className="overflow-hidden rounded-md border border-[var(--panel-border-soft)] bg-white/[0.025]">
-        <div className="hidden grid-cols-[64px_minmax(150px,1fr)_86px_64px_72px_82px_86px] gap-3 border-b border-[var(--panel-border-soft)] bg-black/20 px-4 py-3 text-xs font-black tracking-[0.12em] text-[var(--muted-text)] uppercase md:grid">
+      <div
+        data-testid="leaderboard-table"
+        className="overflow-hidden rounded-md border border-[var(--panel-border-soft)] bg-white/[0.025]"
+      >
+        <div className="hidden grid-cols-[64px_minmax(150px,1fr)_86px_82px_64px_72px_82px_86px] gap-3 border-b border-[var(--panel-border-soft)] bg-black/20 px-4 py-3 text-xs font-black tracking-[0.12em] text-[var(--muted-text)] uppercase md:grid">
           <span>{t("rank")}</span>
           <span>{t("player")}</span>
           <span>{t("rating")}</span>
+          <span>{t("matches")}</span>
           <span>{t("wins")}</span>
           <span>{t("losses")}</span>
           <span>{t("winRate")}</span>
@@ -50,7 +55,7 @@ export default function LeaderboardTable({ entries }: LeaderboardTableProps) {
         {rows.map((entry) => (
           <article
             key={entry.playerId}
-            className="grid gap-3 border-b border-[var(--panel-border-soft)] px-4 py-3 transition-[background-color] last:border-b-0 hover:bg-white/[0.055] md:grid-cols-[64px_minmax(150px,1fr)_86px_64px_72px_82px_86px] md:items-center"
+            className="grid gap-3 border-b border-[var(--panel-border-soft)] px-4 py-3 transition-[background-color] last:border-b-0 hover:bg-white/[0.055] md:grid-cols-[64px_minmax(150px,1fr)_86px_82px_64px_72px_82px_86px] md:items-center"
           >
             <div className="flex items-center gap-3">
               <span
@@ -81,6 +86,7 @@ export default function LeaderboardTable({ entries }: LeaderboardTableProps) {
             </div>
 
             <Metric label={t("rating")} value={entry.rating.toLocaleString("en-US")} accent />
+            <Metric label={t("matches")} value={entry.matchesPlayed} />
             <Metric label={t("wins")} value={entry.wins} />
             <Metric label={t("losses")} value={entry.losses} />
             <Metric label={t("winRate")} value={entry.winRate} accent />

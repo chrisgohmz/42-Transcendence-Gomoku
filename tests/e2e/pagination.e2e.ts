@@ -97,6 +97,58 @@ test("public profile match history pagination updates the historyPage query", as
   }
 });
 
+test("leaderboard search filters sorting and pagination combine without stale rows", async ({
+  page,
+}) => {
+  const created = await createLeaderboardSearchFixture(12);
+  const pageOnePlayer = created.players[0];
+  const pageTwoPlayer = created.players[10];
+
+  if (!pageOnePlayer || !pageTwoPlayer) {
+    throw new Error("Expected leaderboard fixture to create enough players");
+  }
+
+  try {
+    await gotoAppRoute(page, "/leaderboard");
+
+    await page.getByLabel("Player").fill(created.searchTerm);
+    await page.getByLabel("Band").selectOption("kyu");
+    await page.getByLabel("Min matches").fill("3");
+    await page.getByLabel("Sort").selectOption("wins_desc");
+    await page.getByRole("button", { exact: true, name: "Apply" }).click();
+
+    await expect(page).toHaveURL(/q=Advanced/);
+    await expect(page).toHaveURL(/band=kyu/);
+    await expect(page).toHaveURL(/minMatches=3/);
+    await expect(page).toHaveURL(/sort=wins_desc/);
+    await expect(visibleText(page, "Page 1 of 2 · 12 players")).toBeVisible();
+
+    const table = page.getByTestId("leaderboard-table").filter({ visible: true });
+    await expect(table.getByText(pageOnePlayer.displayName, { exact: true })).toBeVisible();
+    await expect(table.getByText(pageTwoPlayer.displayName, { exact: true })).toHaveCount(0);
+
+    await page.getByRole("button", { exact: true, name: "Next" }).filter({ visible: true }).click();
+
+    await expect(page).toHaveURL(/page=2/);
+    await expect(visibleText(page, "Page 2 of 2 · 12 players")).toBeVisible();
+    await expect(table.getByText(pageTwoPlayer.displayName, { exact: true })).toBeVisible();
+    await expect(table.getByText(pageOnePlayer.displayName, { exact: true })).toHaveCount(0);
+
+    await page.getByRole("button", { exact: true, name: "Clear" }).click();
+
+    await expect(page).not.toHaveURL(/q=Advanced/);
+    await expect(page).not.toHaveURL(/band=kyu/);
+    await expect(page).not.toHaveURL(/minMatches=3/);
+    await expect(page).not.toHaveURL(/sort=wins_desc/);
+    await expect(page.getByLabel("Player")).toHaveValue("");
+    await expect(page.getByLabel("Band")).toHaveValue("all");
+    await expect(page.getByLabel("Min matches")).toHaveValue("");
+    await expect(page.getByLabel("Sort")).toHaveValue("rank");
+  } finally {
+    await cleanupUsers(created.players.map((player) => player.username));
+  }
+});
+
 async function gotoAppRoute(page: Page, route: string) {
   await page.goto(route, { waitUntil: "domcontentloaded" });
 }
@@ -272,6 +324,42 @@ async function createProfileWithMatchHistory(count: number) {
   }
 
   return { matchIds, opponents, profile };
+}
+
+async function createLeaderboardSearchFixture(count: number) {
+  const token = `lb_${randomUUID().slice(0, 8)}`;
+  const players: Array<{ displayName: string; username: string }> = [];
+
+  for (let index = 0; index < count; index += 1) {
+    const suffix = `${token}_${index.toString().padStart(2, "0")}`;
+    const displayName = `Advanced Ladder ${index.toString().padStart(2, "0")} ${token.slice(-4)}`;
+    const user = await prisma.user.create({
+      data: {
+        displayName,
+        email: `gomoku.leaderboard.${suffix}@example.com`,
+        emailVerified: true,
+        gameStats: {
+          create: {
+            boardSize: 15,
+            botMatchesPlayed: 0,
+            losses: index,
+            matchesPlayed: 8 + index,
+            rating: 1500 - index,
+            ruleType: RuleType.GOMOKU,
+            wins: count - index,
+          },
+        },
+        username: `e2e_lb_${suffix}`,
+      },
+    });
+
+    players.push({
+      displayName: user.displayName,
+      username: user.username,
+    });
+  }
+
+  return { players, searchTerm: "Advanced" };
 }
 
 function orderedFriendshipIds(left: string, right: string) {

@@ -15,6 +15,7 @@ export function getLeaderboardApiPath(scope: LeaderboardScope): string {
 export function useLeaderboard(
   initial?: LeaderboardSnapshot | null,
   scope: LeaderboardScope = "all",
+  queryString = "",
   debounceMs = 800,
 ) {
   const [entries, setEntries] = useState<LeaderboardEntry[]>(initial?.entries ?? []);
@@ -32,14 +33,17 @@ export function useLeaderboard(
     setCurrentUser(initial?.currentUser ?? null);
     setLoading(!initial);
     setError(null);
-  }, [initial, scope]);
+  }, [initial, scope, queryString]);
 
   const fetchSnapshot = useCallback(
     async (signal?: AbortSignal) => {
       setLoading(true);
       setError(null);
       try {
-        const res = await fetch(getLeaderboardApiPath(scope), { signal });
+        const fallbackPath = getLeaderboardApiPath(scope);
+        const res = await fetch(queryString ? `/api/leaderboard?${queryString}` : fallbackPath, {
+          signal,
+        });
         if (!res.ok) throw new Error(`status ${res.status}`);
         const body: LeaderboardSnapshot = await res.json();
         setEntries(body.entries ?? []);
@@ -51,7 +55,7 @@ export function useLeaderboard(
         setLoading(false);
       }
     },
-    [scope],
+    [queryString, scope],
   );
 
   const refreshDebounced = useCallback(() => {

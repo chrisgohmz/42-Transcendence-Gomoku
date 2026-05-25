@@ -2,6 +2,7 @@
 
 import { Activity, Trophy, TrendingDown, TrendingUp } from "lucide-react";
 import { useTranslations } from "next-intl";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 import { MetricCard } from "@/components/gomoku-ui";
 import MatchHistoryList from "@/components/match-history-list";
@@ -22,7 +23,11 @@ function formatValue(
 
 export default function ProfileStatsPanel() {
   const t = useTranslations("profile");
-  const { data, error, isLoading, refresh } = useProfileStats();
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const queryString = searchParams.toString();
+  const { data, error, isLoading, refresh } = useProfileStats(queryString);
 
   const stats = data?.stats ?? null;
   const ratingValue = formatValue(stats?.rating, t("page.stats.unrated"), isLoading);
@@ -45,7 +50,7 @@ export default function ProfileStatsPanel() {
                 type="button"
                 className="btn btn-subtle m-0"
                 onClick={() => {
-                  void refresh();
+                  void refresh(recentMatchesPagination.page, queryString);
                 }}
                 disabled={isLoading}
                 aria-busy={isLoading}
@@ -74,8 +79,23 @@ export default function ProfileStatsPanel() {
           error={error}
           page={recentMatchesPagination.page}
           totalPages={recentMatchesPagination.totalPages}
+          queryString={queryString}
+          onFiltersChange={(updates) => {
+            const next = new URLSearchParams(searchParams.toString());
+            Object.entries(updates).forEach(([key, value]) => {
+              if (value) {
+                next.set(key, value);
+              } else {
+                next.delete(key);
+              }
+            });
+            next.delete("page");
+            router.replace(`${pathname}?${next.toString()}`, { scroll: false });
+          }}
           onPageChange={(page) => {
-            void refresh(page);
+            const next = new URLSearchParams(searchParams.toString());
+            next.set("page", String(page));
+            router.replace(`${pathname}?${next.toString()}`, { scroll: false });
           }}
         />
       </div>
