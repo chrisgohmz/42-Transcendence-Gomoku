@@ -284,7 +284,6 @@ function LeaderboardControls({
             <option value="rank">{t("page.search.sortOptions.rank")}</option>
             <option value="rating_asc">{t("page.search.sortOptions.ratingAsc")}</option>
             <option value="wins_desc">{t("page.search.sortOptions.winsDesc")}</option>
-            <option value="win_rate_desc">{t("page.search.sortOptions.winRateDesc")}</option>
             <option value="matches_desc">{t("page.search.sortOptions.matchesDesc")}</option>
           </select>
         </Field>

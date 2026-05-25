@@ -990,7 +990,6 @@ export const messages = {
           rank: "排名",
           ratingAsc: "等级分升序",
           winsDesc: "胜场",
-          winRateDesc: "胜率",
           matchesDesc: "对局数",
         },
         apply: "应用",

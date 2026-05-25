@@ -12,6 +12,7 @@ await mock.module("./prisma", () => ({
   },
 }));
 
+const { parseLeaderboardSearchParams } = await import("./advanced-search");
 const { LEADERBOARD_FETCH_LIMIT, getLeaderboardSearchSnapshot } = await import("./leaderboard");
 
 beforeEach(() => {
@@ -118,6 +119,32 @@ describe("getLeaderboardSearchSnapshot", () => {
 
     expect(findMany.mock.calls[1]?.[0]).toMatchObject({
       orderBy: [{ matchesPlayed: "desc" }, { rating: "desc" }, { wins: "desc" }],
+      skip: 0,
+      take: LEADERBOARD_FETCH_LIMIT,
+    });
+  });
+
+  test("normalizes deferred win-rate sorting to the bounded rank query path", async () => {
+    findMany.mockResolvedValueOnce([{ botMatchesPlayed: 0, matchesPlayed: 3 }]);
+    findMany.mockResolvedValueOnce([
+      {
+        botMatchesPlayed: 0,
+        losses: 1,
+        matchesPlayed: 3,
+        rating: 1700,
+        userId: "user-ada",
+        wins: 2,
+        user: { displayName: "Ada" },
+      },
+    ]);
+
+    const query = parseLeaderboardSearchParams(new URLSearchParams({ sort: "win_rate_desc" }));
+
+    await getLeaderboardSearchSnapshot(null, query);
+
+    expect(query.sort).toBe("rank");
+    expect(findMany.mock.calls[1]?.[0]).toMatchObject({
+      orderBy: [{ rating: "desc" }, { wins: "desc" }, { losses: "asc" }],
       skip: 0,
       take: LEADERBOARD_FETCH_LIMIT,
     });

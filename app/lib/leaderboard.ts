@@ -319,55 +319,9 @@ function mergeLeaderboardWhere(
   };
 }
 
-function orderStatsForSearch(stats: LeaderboardStat[], sort: LeaderboardSort): LeaderboardStat[] {
-  const ordered = [...stats];
-
-  ordered.sort((left, right) => {
-    if (sort === "rating_asc") {
-      return (
-        (left.rating ?? 0) - (right.rating ?? 0) ||
-        right.wins - left.wins ||
-        left.losses - right.losses
-      );
-    }
-
-    if (sort === "wins_desc") {
-      return (
-        right.wins - left.wins ||
-        (right.rating ?? 0) - (left.rating ?? 0) ||
-        left.losses - right.losses
-      );
-    }
-
-    if (sort === "win_rate_desc") {
-      const leftRate = left.matchesPlayed > 0 ? left.wins / left.matchesPlayed : 0;
-      const rightRate = right.matchesPlayed > 0 ? right.wins / right.matchesPlayed : 0;
-      return (
-        rightRate - leftRate || (right.rating ?? 0) - (left.rating ?? 0) || right.wins - left.wins
-      );
-    }
-
-    if (sort === "matches_desc") {
-      return (
-        right.matchesPlayed - left.matchesPlayed ||
-        (right.rating ?? 0) - (left.rating ?? 0) ||
-        right.wins - left.wins
-      );
-    }
-
-    return (
-      (right.rating ?? 0) - (left.rating ?? 0) ||
-      right.wins - left.wins ||
-      left.losses - right.losses
-    );
-  });
-
-  return ordered;
-}
-
 function getLeaderboardSearchOrderBy(
   sort: LeaderboardSort,
-): Prisma.UserGameStatsOrderByWithRelationInput[] | null {
+): Prisma.UserGameStatsOrderByWithRelationInput[] {
   if (sort === "rating_asc") {
     return [{ rating: "asc" }, { wins: "desc" }, { losses: "asc" }];
   }
@@ -384,7 +338,7 @@ function getLeaderboardSearchOrderBy(
     return leaderboardRankingOrder;
   }
 
-  return null;
+  return leaderboardRankingOrder;
 }
 
 async function countEligibleLeaderboardSearchEntries(
@@ -405,20 +359,6 @@ async function getLeaderboardSearchPage(
   limit: number,
 ): Promise<LeaderboardStat[]> {
   const orderBy = getLeaderboardSearchOrderBy(sort);
-
-  if (!orderBy) {
-    const stats = (await prisma.userGameStats.findMany({
-      orderBy: leaderboardRankingOrder,
-      select: leaderboardSelect,
-      where,
-    })) as unknown as LeaderboardStat[];
-
-    return orderStatsForSearch(stats.filter(isLeaderboardEligible), sort).slice(
-      (page - 1) * limit,
-      page * limit,
-    );
-  }
-
   const targetEligibleCount = page * limit;
   const eligibleStats: LeaderboardStat[] = [];
   const batchSize = Math.max(LEADERBOARD_FETCH_LIMIT, limit * 3);

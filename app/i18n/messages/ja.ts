@@ -995,7 +995,6 @@ export const messages = {
           rank: "順位",
           ratingAsc: "レーティング昇順",
           winsDesc: "勝利数",
-          winRateDesc: "勝率",
           matchesDesc: "対局数",
         },
         apply: "適用",

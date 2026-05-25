@@ -61,6 +61,12 @@ describe("advanced search parsing", () => {
     });
   });
 
+  test("defers win-rate sorting until it has a bounded query strategy", () => {
+    const query = parseLeaderboardSearchParams(new URLSearchParams({ sort: "win_rate_desc" }));
+
+    expect(query.sort).toBe("rank");
+  });
+
   test("builds leaderboard Prisma filters for player, rank band, rating, and match floor", () => {
     expect(
       buildLeaderboardFilterWhere({

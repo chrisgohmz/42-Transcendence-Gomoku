@@ -8,12 +8,7 @@ export const MATCH_HISTORY_SEARCH_DEFAULT_LIMIT = 10;
 export const MATCH_HISTORY_SEARCH_MAX_LIMIT = 50;
 
 export type LeaderboardRankBand = "all" | "dan" | "kyu" | "unranked";
-export type LeaderboardSort =
-  | "rank"
-  | "rating_asc"
-  | "wins_desc"
-  | "win_rate_desc"
-  | "matches_desc";
+export type LeaderboardSort = "rank" | "rating_asc" | "wins_desc" | "matches_desc";
 
 export type LeaderboardSearchQuery = {
   q: string;
@@ -87,13 +82,7 @@ export function parseLeaderboardSearchParams(params: URLSearchParams): Leaderboa
     minRating: optionalIntegerParam(params, "minRating"),
     maxRating: optionalIntegerParam(params, "maxRating"),
     minMatches: optionalIntegerParam(params, "minMatches"),
-    sort:
-      sort === "rating_asc" ||
-      sort === "wins_desc" ||
-      sort === "win_rate_desc" ||
-      sort === "matches_desc"
-        ? sort
-        : "rank",
+    sort: sort === "rating_asc" || sort === "wins_desc" || sort === "matches_desc" ? sort : "rank",
     page: boundedPositive(integerParam(params, "page", 1), 1, Number.MAX_SAFE_INTEGER),
     limit: boundedPositive(
       integerParam(params, "limit", LEADERBOARD_SEARCH_DEFAULT_LIMIT),

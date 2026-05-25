@@ -999,7 +999,6 @@ export const messages = {
           rank: "Rank",
           ratingAsc: "Rating ascending",
           winsDesc: "Wins",
-          winRateDesc: "Win rate",
           matchesDesc: "Matches",
         },
         apply: "Apply",
