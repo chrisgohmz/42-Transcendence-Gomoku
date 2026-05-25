@@ -1,38 +1,18 @@
 import { expect, test as base } from "@playwright/test";
 import type { ConsoleMessage, Locator, Page, Request, Response, TestInfo } from "@playwright/test";
 
-type BrowserDiagnostic = {
-  location?: ReturnType<ConsoleMessage["location"]>;
-  text: string;
-  type: string;
-};
+import {
+  formatDiagnostic,
+  getConsoleDiagnostic,
+  getPageErrorDiagnostic,
+  getRequestFailedDiagnostic,
+  getResponseDiagnostic,
+  type BrowserDiagnostic,
+} from "./browser-diagnostics";
 
 type ConsoleGuardFixtures = {
   consoleDiagnostics: void;
 };
-
-function formatDiagnostic(diagnostic: BrowserDiagnostic) {
-  const location = diagnostic.location;
-  const source =
-    location && (location.url || location.lineNumber || location.columnNumber)
-      ? ` at ${location.url}:${location.lineNumber}:${location.columnNumber}`
-      : "";
-
-  return `[${diagnostic.type}]${source} ${diagnostic.text}`;
-}
-
-function shouldFailOnRequest(request: Request) {
-  const resourceType = request.resourceType();
-
-  if (resourceType === "fetch" || resourceType === "xhr") {
-    return new URL(request.url()).pathname === "/favicon.ico";
-  }
-
-  return (
-    ["document", "font", "image", "manifest", "script", "stylesheet"].includes(resourceType) ||
-    new URL(request.url()).pathname === "/favicon.ico"
-  );
-}
 
 export const test = base.extend<ConsoleGuardFixtures>({
   consoleDiagnostics: [
@@ -54,45 +34,43 @@ export const test = base.extend<ConsoleGuardFixtures>({
         }
 
         const onConsole = (message: ConsoleMessage) => {
-          if (message.type() !== "warning" && message.type() !== "error") {
-            return;
-          }
-
-          diagnostics.push({
+          const diagnostic = getConsoleDiagnostic({
             location: message.location(),
             text: message.text(),
-            type: `console.${message.type()}`,
+            type: message.type(),
           });
+
+          if (diagnostic) {
+            diagnostics.push(diagnostic);
+          }
         };
         const onPageError = (error: Error) => {
-          diagnostics.push({
-            text: error.stack ?? error.message,
-            type: "pageerror",
-          });
+          diagnostics.push(getPageErrorDiagnostic(error));
         };
         const onRequestFailed = (request: Request) => {
-          if (!shouldFailOnRequest(request)) {
-            return;
-          }
-
-          diagnostics.push({
-            text: `${request.method()} ${request.url()} failed: ${
-              request.failure()?.errorText ?? "unknown network failure"
-            }`,
-            type: `requestfailed.${request.resourceType()}`,
+          const diagnostic = getRequestFailedDiagnostic({
+            failureText: request.failure()?.errorText,
+            method: request.method(),
+            resourceType: request.resourceType(),
+            url: request.url(),
           });
+
+          if (diagnostic) {
+            diagnostics.push(diagnostic);
+          }
         };
         const onResponse = (response: Response) => {
           const request = response.request();
-
-          if (response.status() < 400 || !shouldFailOnRequest(request)) {
-            return;
-          }
-
-          diagnostics.push({
-            text: `${request.method()} ${response.url()} returned ${response.status()}`,
-            type: `response.${request.resourceType()}`,
+          const diagnostic = getResponseDiagnostic({
+            method: request.method(),
+            resourceType: request.resourceType(),
+            status: response.status(),
+            url: response.url(),
           });
+
+          if (diagnostic) {
+            diagnostics.push(diagnostic);
+          }
         };
 
         page.on("console", onConsole);
