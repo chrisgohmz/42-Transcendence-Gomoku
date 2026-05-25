@@ -7,9 +7,10 @@ import { Suspense } from "react";
 import { Badge, MetricCard, PageHeader, PageShell, Surface } from "@/components/gomoku-ui";
 import LeaderboardClient from "@/components/leaderboard-client";
 import { PageLoadingShell } from "@/components/page-loading-shell";
+import { parseLeaderboardSearchParams } from "@/lib/advanced-search";
 import { getCurrentSessionIdentity } from "@/lib/auth";
 import {
-  getLeaderboardSnapshot,
+  getLeaderboardSearchSnapshot,
   type LeaderboardSnapshot,
   type LeaderboardEntry,
   type LeaderboardScope,
@@ -21,7 +22,15 @@ type LeaderBoardProps = {
     locale: string;
   }>;
   searchParams: Promise<{
+    band?: string | string[];
+    limit?: string | string[];
+    maxRating?: string | string[];
+    minMatches?: string | string[];
+    minRating?: string | string[];
+    page?: string | string[];
+    q?: string | string[];
     scope?: string | string[];
+    sort?: string | string[];
   }>;
 };
 
@@ -72,7 +81,7 @@ function LeaderboardEmptyState({ description, title }: { description: string; ti
 
 async function LeaderBoardContent({ params, searchParams }: LeaderBoardProps) {
   const { locale } = await params;
-  const { scope: rawScope } = await searchParams;
+  const rawSearchParams = await searchParams;
   setRequestLocale(locale);
   await connection();
 
@@ -90,12 +99,14 @@ async function LeaderBoardContent({ params, searchParams }: LeaderBoardProps) {
     },
   };
   let leaderboardUnavailable = false;
-  const scope = rawScope === "friends" ? "friends" : "all";
+  const queryParams = toUrlSearchParams(rawSearchParams);
+  const query = parseLeaderboardSearchParams(queryParams);
+  const scope = query.scope;
 
   try {
     const session = await getCurrentSessionIdentity();
     const [leaderboardData, seasonData] = await Promise.all([
-      getLeaderboardSnapshot(session?.user.id ?? null, { scope }),
+      getLeaderboardSearchSnapshot(session?.user.id ?? null, query),
       getSeasonSnapshot(),
     ]);
     snapshot = leaderboardData;
@@ -139,8 +150,12 @@ async function LeaderBoardContent({ params, searchParams }: LeaderBoardProps) {
   const activeTabClass = "bg-[var(--mint-soft)] text-[var(--mint)]";
   const inactiveTabClass = "text-[var(--muted-text)] hover:text-[var(--text)]";
 
-  const buildScopeHref = (nextScope: LeaderboardScope) =>
-    nextScope === "friends" ? "?scope=friends" : "?scope=all";
+  const buildScopeHref = (nextScope: LeaderboardScope) => {
+    const params = new URLSearchParams(queryParams);
+    params.set("scope", nextScope);
+    params.delete("page");
+    return `?${params.toString()}`;
+  };
 
   return (
     <PageShell>
@@ -182,7 +197,12 @@ async function LeaderBoardContent({ params, searchParams }: LeaderBoardProps) {
             />
           ) : (
             <>
-              <LeaderboardClient initial={snapshot} scope={scope} />
+              <LeaderboardClient
+                initial={snapshot}
+                scope={scope}
+                query={query}
+                queryString={queryParams.toString()}
+              />
             </>
           )}
         </Surface>
@@ -278,6 +298,19 @@ async function LeaderBoardContent({ params, searchParams }: LeaderBoardProps) {
       </section>
     </PageShell>
   );
+}
+
+function toUrlSearchParams(input: Awaited<LeaderBoardProps["searchParams"]>): URLSearchParams {
+  const params = new URLSearchParams();
+
+  Object.entries(input).forEach(([key, value]) => {
+    const firstValue = Array.isArray(value) ? value[0] : value;
+    if (firstValue) {
+      params.set(key, firstValue);
+    }
+  });
+
+  return params;
 }
 
 function LeaderboardUnavailable({ description, title }: { description: string; title: string }) {

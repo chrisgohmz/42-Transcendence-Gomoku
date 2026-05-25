@@ -1,9 +1,6 @@
+import { parseLeaderboardSearchParams } from "@/lib/advanced-search";
 import { getCurrentSessionIdentity } from "@/lib/auth";
-import { getLeaderboardSnapshot, type LeaderboardScope } from "@/lib/leaderboard";
-
-function resolveScope(searchParams: URLSearchParams): LeaderboardScope {
-  return searchParams.get("scope") === "friends" ? "friends" : "all";
-}
+import { getLeaderboardSearchSnapshot } from "@/lib/leaderboard";
 
 function getErrorMessage(error: unknown): string {
   return error instanceof Error ? error.message : "Unknown error";
@@ -12,13 +9,10 @@ function getErrorMessage(error: unknown): string {
 export async function GET(request?: Request) {
   try {
     const context = await getCurrentSessionIdentity();
-    const scope = resolveScope(
+    const query = parseLeaderboardSearchParams(
       new URL(request?.url ?? "http://localhost/api/leaderboard").searchParams,
     );
-    const snapshot =
-      scope === "friends"
-        ? await getLeaderboardSnapshot(context?.user.id ?? null, { scope })
-        : await getLeaderboardSnapshot(context?.user.id ?? null);
+    const snapshot = await getLeaderboardSearchSnapshot(context?.user.id ?? null, query);
 
     return Response.json(snapshot);
   } catch (error) {

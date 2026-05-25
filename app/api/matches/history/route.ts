@@ -1,7 +1,8 @@
+import { parseMatchHistorySearchParams } from "@/lib/advanced-search";
 import { getCurrentSession } from "@/lib/auth";
 import {
   MATCH_HISTORY_MAX_LIMIT,
-  getMatchHistoryForUser,
+  getMatchHistoryPageForUser,
   normalizeMatchHistoryLimit,
 } from "@/lib/matches/match-history";
 
@@ -22,6 +23,12 @@ function parseLimit(request: Request): number | null {
   }
 
   return limit;
+}
+
+function parsePage(request: Request): number {
+  const rawPage = new URL(request.url).searchParams.get("page");
+  const page = Number(rawPage);
+  return Number.isInteger(page) && page > 0 ? page : 1;
 }
 
 export async function GET(request: Request) {
@@ -49,12 +56,21 @@ export async function GET(request: Request) {
   }
 
   try {
-    const matches = await getMatchHistoryForUser(context.user.id, limit);
+    const query = parseMatchHistorySearchParams(new URL(request.url).searchParams);
+    const page = parsePage(request);
+    const history = await getMatchHistoryPageForUser(context.user.id, page, limit, {
+      ...query,
+      limit,
+      page,
+    });
 
     return Response.json({
-      count: matches.length,
+      count: history.entries.length,
       limit,
-      matches,
+      matches: history.entries,
+      page: history.page,
+      totalMatches: history.totalMatches,
+      totalPages: history.totalPages,
     });
   } catch (error) {
     return Response.json(

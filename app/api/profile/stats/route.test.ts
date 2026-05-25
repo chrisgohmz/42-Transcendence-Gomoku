@@ -101,10 +101,13 @@ describe("GET /api/profile/stats", () => {
     const payload = await response.json();
 
     expect(response.status).toBe(200);
-    expect(getProfileStatsForUser).toHaveBeenCalledWith("user-ada", {
-      recentMatchesLimit: 10,
-      recentMatchesPage: 1,
-    });
+    expect(getProfileStatsForUser).toHaveBeenCalledWith(
+      "user-ada",
+      expect.objectContaining({
+        recentMatchesLimit: 10,
+        recentMatchesPage: 1,
+      }),
+    );
     expect(payload).toMatchObject({
       userId: "user-ada",
       stats: {
@@ -124,10 +127,35 @@ describe("GET /api/profile/stats", () => {
     );
 
     expect(response.status).toBe(200);
-    expect(getProfileStatsForUser).toHaveBeenCalledWith("user-ada", {
-      recentMatchesLimit: 50,
-      recentMatchesPage: 3,
-    });
+    expect(getProfileStatsForUser).toHaveBeenCalledWith(
+      "user-ada",
+      expect.objectContaining({
+        recentMatchesLimit: 50,
+        recentMatchesPage: 3,
+      }),
+    );
+  });
+
+  test("passes match history advanced search params to profile stats", async () => {
+    const response = await route.GET(
+      new Request(
+        "http://localhost/api/profile/stats?opponent=Grace&result=WIN&matchType=gomoku&dateFrom=2026-05-01&dateTo=2026-05-31&sort=moves_desc&page=2",
+      ),
+    );
+
+    expect(response.status).toBe(200);
+    expect(getProfileStatsForUser).toHaveBeenCalledWith(
+      "user-ada",
+      expect.objectContaining({
+        recentMatchesSearch: expect.objectContaining({
+          opponent: "Grace",
+          result: "WIN",
+          matchType: "gomoku",
+          sort: "moves_desc",
+          page: 2,
+        }),
+      }),
+    );
   });
 
   test("falls back for invalid pagination params", async () => {
@@ -136,10 +164,13 @@ describe("GET /api/profile/stats", () => {
     );
 
     expect(response.status).toBe(200);
-    expect(getProfileStatsForUser).toHaveBeenCalledWith("user-ada", {
-      recentMatchesLimit: 10,
-      recentMatchesPage: 1,
-    });
+    expect(getProfileStatsForUser).toHaveBeenCalledWith(
+      "user-ada",
+      expect.objectContaining({
+        recentMatchesLimit: 10,
+        recentMatchesPage: 1,
+      }),
+    );
   });
 
   test("returns a server error when stats fail to load", async () => {

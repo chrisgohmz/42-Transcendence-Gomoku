@@ -13,19 +13,22 @@ function getErrorMessage(payload: ErrorResponse | null) {
   return payload?.message ?? null;
 }
 
-export function useProfileStats() {
+export function useProfileStats(queryString = "") {
   const t = useTranslations("profile");
   const [data, setData] = useState<ProfileStatsSnapshot | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(
-    async (pageToLoad = 1) => {
+    async (pageToLoad = 1, queryString = "") => {
       setIsLoading(true);
       setError(null);
 
       try {
-        const response = await fetch(`/api/profile/stats?page=${pageToLoad}&limit=10`, {
+        const params = new URLSearchParams(queryString);
+        params.set("page", String(pageToLoad));
+        params.set("limit", "10");
+        const response = await fetch(`/api/profile/stats?${params.toString()}`, {
           cache: "no-store",
         });
 
@@ -58,8 +61,10 @@ export function useProfileStats() {
   );
 
   useEffect(() => {
-    void load();
-  }, [load]);
+    const params = new URLSearchParams(queryString);
+    const page = Number(params.get("page") ?? "1");
+    void load(Number.isInteger(page) && page > 0 ? page : 1, queryString);
+  }, [load, queryString]);
 
   return {
     data,

@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, mock, test } from "bun:test";
 import { createAuthModuleMock } from "@/test-utils/auth-module-mock";
 
 const getCurrentSessionIdentity = mock();
-const getLeaderboardSnapshot = mock();
+const getLeaderboardSearchSnapshot = mock();
 
 await mock.module("@/lib/auth", () =>
   createAuthModuleMock({
@@ -12,7 +12,7 @@ await mock.module("@/lib/auth", () =>
 );
 
 await mock.module("@/lib/leaderboard", () => ({
-  getLeaderboardSnapshot,
+  getLeaderboardSearchSnapshot,
 }));
 
 const route = await import("./route");
@@ -23,7 +23,7 @@ function request(path = "http://localhost/api/leaderboard") {
 
 beforeEach(() => {
   getCurrentSessionIdentity.mockReset();
-  getLeaderboardSnapshot.mockReset();
+  getLeaderboardSearchSnapshot.mockReset();
 
   getCurrentSessionIdentity.mockResolvedValue({
     user: {
@@ -31,13 +31,14 @@ beforeEach(() => {
     },
   });
 
-  getLeaderboardSnapshot.mockResolvedValue({
+  getLeaderboardSearchSnapshot.mockResolvedValue({
     entries: [
       {
         playerId: "user-ada",
         rank: 1,
         player: "Ada",
         rating: 1200,
+        matchesPlayed: 4,
         wins: 3,
         losses: 1,
         winRate: "75.00%",
@@ -48,6 +49,7 @@ beforeEach(() => {
       rank: 1,
       player: "Ada",
       rating: 1200,
+      matchesPlayed: 4,
       wins: 3,
       losses: 1,
       winRate: "75.00%",
@@ -61,7 +63,10 @@ describe("GET /api/leaderboard", () => {
     const payload = await response.json();
 
     expect(response.status).toBe(200);
-    expect(getLeaderboardSnapshot).toHaveBeenCalledWith("user-ada");
+    expect(getLeaderboardSearchSnapshot).toHaveBeenCalledWith(
+      "user-ada",
+      expect.objectContaining({ scope: "all" }),
+    );
     expect(payload).toMatchObject({
       entries: [{ playerId: "user-ada", rank: 1 }],
       currentUser: { playerId: "user-ada", rank: 1 },
@@ -75,7 +80,10 @@ describe("GET /api/leaderboard", () => {
     const payload = await response.json();
 
     expect(response.status).toBe(200);
-    expect(getLeaderboardSnapshot).toHaveBeenCalledWith(null);
+    expect(getLeaderboardSearchSnapshot).toHaveBeenCalledWith(
+      null,
+      expect.objectContaining({ scope: "all" }),
+    );
     expect(payload).toMatchObject({
       entries: [{ playerId: "user-ada", rank: 1 }],
     });
@@ -86,14 +94,17 @@ describe("GET /api/leaderboard", () => {
     const payload = await response.json();
 
     expect(response.status).toBe(200);
-    expect(getLeaderboardSnapshot).toHaveBeenCalledWith("user-ada", { scope: "friends" });
+    expect(getLeaderboardSearchSnapshot).toHaveBeenCalledWith(
+      "user-ada",
+      expect.objectContaining({ scope: "friends" }),
+    );
     expect(payload).toMatchObject({
       entries: [{ playerId: "user-ada", rank: 1 }],
     });
   });
 
   test("returns a server error when snapshot fails to load", async () => {
-    getLeaderboardSnapshot.mockRejectedValueOnce(new Error("boom"));
+    getLeaderboardSearchSnapshot.mockRejectedValueOnce(new Error("boom"));
 
     const response = await route.GET(request());
     const payload = await response.json();

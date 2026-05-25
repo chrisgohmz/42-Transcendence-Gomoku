@@ -227,6 +227,16 @@ Do not regenerate lockfiles with npm. Commit the Bun lockfiles instead.
 1. Users can play against each other in real-time, with a live chat feature to communicate during the game
 2. The gameplay takes place on separate computers and takes place in real-time
 
+## Advanced Search Minor Module
+
+The leaderboard and signed-in profile match-history views expose evaluation-ready advanced search.
+
+- Leaderboard controls are visible on `/leaderboard` and are reflected in URL/API params: `q`, `scope`, `band`, `minRating`, `maxRating`, `minMatches`, `sort`, `page`, and `limit`.
+- Match-history controls are visible on `/profile` and are reflected in `/api/profile/stats` params: `opponent`, `result`, `matchType`, `dateFrom`, `dateTo`, `sort`, `page`, and `limit`.
+- Shared parsing and Prisma filter helpers live in `app/lib/advanced-search.ts`; leaderboard query composition lives in `app/lib/leaderboard.ts`, and match-history query composition lives in `app/lib/matches/match-history.ts`.
+- Pagination is server-backed and clamps to valid pages after filters or sort changes, so combined search/filter/sort/page flows do not reuse stale rows.
+- E2E coverage for a combined leaderboard search + rank-band filter + minimum-match filter + custom sort + pagination flow is in `tests/e2e/pagination.e2e.ts`.
+
 ## DevOps
 
 1. The project currently runs as a Next.js app, a dedicated Bun realtime service for Socket.IO, a Caddy HTTPS reverse proxy, and PostgreSQL in Docker
