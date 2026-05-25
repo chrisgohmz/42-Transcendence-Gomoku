@@ -66,7 +66,6 @@ export function useProfileStats(queryString = "") {
           return;
         }
         if (requestId !== requestIdRef.current) return;
-        console.error("Error loading profile stats:", caught);
         setData(null);
         setError(t("page.errors.network"));
       } finally {

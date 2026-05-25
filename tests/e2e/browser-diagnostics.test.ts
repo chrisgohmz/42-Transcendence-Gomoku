@@ -105,6 +105,15 @@ describe("browser diagnostics", () => {
       text: "GET http://localhost:3000/app.css failed: net::ERR_FAILED",
       type: "requestfailed.stylesheet",
     });
+
+    expect(
+      getRequestFailedDiagnostic({
+        failureText: "net::ERR_ABORTED",
+        method: "GET",
+        resourceType: "image",
+        url: "http://localhost:3000/icons/Gomoku.svg",
+      }),
+    ).toBeNull();
   });
 
   test("formats diagnostics with optional source locations and page errors", () => {

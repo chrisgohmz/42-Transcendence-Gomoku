@@ -81,7 +81,7 @@ export default function MessagesContent({ currentUserId }: Props) {
         setConversations(convData.conversations ?? []);
         setFriends(friendData.friends ?? []);
       })
-      .catch(console.error);
+      .catch(() => undefined);
   }, []);
 
   const handleReadAcknowledged = useCallback(
@@ -134,7 +134,7 @@ export default function MessagesContent({ currentUserId }: Props) {
         setActiveConvId(data.conversationId);
         loadSidebarData();
       })
-      .catch(console.error);
+      .catch(() => undefined);
   }, [deepLinkedFriendId, loadSidebarData]);
 
   useEffect(() => {

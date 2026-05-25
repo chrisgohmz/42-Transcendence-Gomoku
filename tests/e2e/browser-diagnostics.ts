@@ -72,7 +72,7 @@ export function getPageErrorDiagnostic(error: Error): BrowserDiagnostic {
 export function getRequestFailedDiagnostic(
   request: RequestDiagnosticInput,
 ): BrowserDiagnostic | null {
-  if (!shouldFailOnRequest(request)) {
+  if (!shouldFailOnRequest(request) || isRequestAbort(request.failureText)) {
     return null;
   }
 
@@ -101,4 +101,8 @@ export function shouldFailOnRequest({ resourceType, url }: RequestDiagnosticInpu
   }
 
   return guardedResourceTypes.has(resourceType) || new URL(url).pathname === "/favicon.ico";
+}
+
+function isRequestAbort(failureText: string | undefined) {
+  return failureText === "net::ERR_ABORTED" || failureText === "NS_BINDING_ABORTED";
 }
