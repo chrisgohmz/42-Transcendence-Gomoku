@@ -10,6 +10,7 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import { setRequestLocale } from "next-intl/server";
+import { notFound } from "next/navigation";
 import { connection } from "next/server";
 import { Suspense, type ReactNode } from "react";
 
@@ -17,6 +18,7 @@ import { Badge, MetricCard, PageHeader, PageShell, Surface } from "@/components/
 import { PageLoadingShell } from "@/components/page-loading-shell";
 import { Link, redirect } from "@/i18n/navigation";
 import { getCurrentSessionIdentity } from "@/lib/auth";
+import { canViewOperationsStatus } from "@/lib/operations/status-access";
 import {
   getSystemHealth,
   type HealthCheckId,
@@ -197,6 +199,10 @@ async function StatusPageContent({ params }: StatusPageProps) {
 
   if (!session) {
     redirect({ href: "/login", locale });
+  }
+
+  if (!canViewOperationsStatus(session)) {
+    notFound();
   }
 
   await connection();

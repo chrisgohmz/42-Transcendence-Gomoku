@@ -1,4 +1,8 @@
 import { getCurrentSessionIdentity } from "@/lib/auth";
+import {
+  canViewOperationsStatus,
+  hasValidOperationsStatusToken,
+} from "@/lib/operations/status-access";
 import { getSystemHealth } from "@/lib/operations/system-health";
 
 type StatusDependencies = {
@@ -7,17 +11,8 @@ type StatusDependencies = {
   getSessionIdentity?: typeof getCurrentSessionIdentity;
 };
 
-const statusTokenHeader = "x-operations-status-token";
-
 function statusCodeForHealth(status: "degraded" | "ok" | "unhealthy") {
   return status === "ok" ? 200 : 503;
-}
-
-function hasValidStatusToken(request: Request | undefined, env: NodeJS.ProcessEnv) {
-  const configuredToken = env["OPERATIONS_STATUS_TOKEN"]?.trim();
-  const suppliedToken = request?.headers.get(statusTokenHeader)?.trim();
-
-  return Boolean(configuredToken && suppliedToken && suppliedToken === configuredToken);
 }
 
 export function createStatusHandler({
@@ -26,10 +21,15 @@ export function createStatusHandler({
   getSessionIdentity = getCurrentSessionIdentity,
 }: StatusDependencies = {}) {
   return async function GET(request?: Request) {
-    const session = hasValidStatusToken(request, env) ? true : await getSessionIdentity();
+    const hasStatusToken = hasValidOperationsStatusToken(request, env);
+    const session = hasStatusToken ? null : await getSessionIdentity();
 
-    if (!session) {
+    if (!hasStatusToken && !session) {
       return Response.json({ error: "unauthorized" }, { status: 401 });
+    }
+
+    if (!hasStatusToken && !canViewOperationsStatus(session, env)) {
+      return Response.json({ error: "forbidden" }, { status: 403 });
     }
 
     const payload = await getHealth();

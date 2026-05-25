@@ -14,6 +14,10 @@ webServerEnv["GITHUB_CLIENT_ID"] ||= "playwright-github-client";
 webServerEnv["GITHUB_CLIENT_SECRET"] ||= "playwright-github-secret";
 webServerEnv["GOOGLE_CLIENT_ID"] ||= "playwright-google-client";
 webServerEnv["GOOGLE_CLIENT_SECRET"] ||= "playwright-google-secret";
+webServerEnv["OPERATIONS_STATUS_USERNAMES"] ||= [
+  "e2e_status_operator_chromium",
+  "e2e_status_operator_mobilechrome",
+].join(",");
 
 export default defineConfig({
   testDir: "./tests/e2e",

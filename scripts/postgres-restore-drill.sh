@@ -6,10 +6,19 @@ backup_volume="${POSTGRES_BACKUP_VOLUME:-${project_name}_postgres_backups}"
 restore_db="${RESTORE_DRILL_DB:-transcendence_restore}"
 restore_user="${RESTORE_DRILL_USER:-transcendence}"
 restore_password="${RESTORE_DRILL_PASSWORD:-restore_drill_password}"
+ready_timeout_seconds="${RESTORE_DRILL_READY_TIMEOUT_SECONDS:-60}"
 timestamp="$(date -u +%Y%m%dT%H%M%SZ)"
 network="gomoku_restore_drill_${timestamp}"
 data_volume="gomoku_restore_drill_data_${timestamp}"
 container="gomoku_restore_drill_db_${timestamp}"
+
+case "$ready_timeout_seconds" in
+  "" | *[!0-9]*) ready_timeout_seconds=60 ;;
+esac
+
+if [ "$ready_timeout_seconds" -lt 1 ]; then
+  ready_timeout_seconds=60
+fi
 
 cleanup() {
   if [ "${KEEP_RESTORE_DRILL:-false}" != "true" ]; then
@@ -54,7 +63,15 @@ docker run \
   --volume "${data_volume}:/var/lib/postgresql" \
   postgres:18.3-alpine >/dev/null
 
+ready_attempts=0
 until docker exec "$container" pg_isready -U "$restore_user" -d "$restore_db" >/dev/null 2>&1; do
+  ready_attempts=$((ready_attempts + 1))
+  if [ "$ready_attempts" -ge "$ready_timeout_seconds" ]; then
+    echo "Restore drill database did not become ready within ${ready_timeout_seconds}s." >&2
+    docker logs "$container" >&2 || true
+    exit 2
+  fi
+
   sleep 1
 done
 

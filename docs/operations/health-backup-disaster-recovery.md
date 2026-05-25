@@ -11,8 +11,8 @@ Backend microservice extraction is not required for this module. When more backe
 
 ## Status Surfaces
 
-- Human status page: `/status` through the localized app route, for example `https://localhost:8443/en/status`. This page requires a signed-in session.
-- Aggregate machine endpoint: `/api/status`. This endpoint requires either a signed-in session cookie or `x-operations-status-token` matching `OPERATIONS_STATUS_TOKEN`.
+- Human status page: `/status` through the localized app route, for example `https://localhost:8443/en/status`. This page requires a signed-in session whose user ID or username is allowlisted in operations status configuration.
+- Aggregate machine endpoint: `/api/status`. This endpoint requires either an allowlisted signed-in session cookie or `x-operations-status-token` matching `OPERATIONS_STATUS_TOKEN`.
 - App and database health endpoint: `/api/health`.
 - Realtime service health endpoint: `/health` on the realtime service.
 
@@ -27,6 +27,7 @@ Useful local host settings when running without containers:
 ```bash
 REALTIME_INTERNAL_URL=http://localhost:3001/internal/game-update
 REALTIME_HEALTH_URL=http://localhost:3001/health
+OPERATIONS_STATUS_USERNAMES=ops_username
 OPERATIONS_STATUS_TOKEN=change_me_to_a_random_monitoring_token
 ```
 
@@ -97,7 +98,7 @@ docker compose exec database psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c '\dt'
 docker compose exec app bun run prisma:migrate:deploy
 ```
 
-Then sign in, open `/status`, and confirm app, realtime, and PostgreSQL checks are healthy.
+Then sign in as an allowlisted operations user, open `/status`, and confirm app, realtime, and PostgreSQL checks are healthy.
 
 ## Restore Drill
 
@@ -120,6 +121,8 @@ To keep the temporary database for manual inspection:
 ```bash
 KEEP_RESTORE_DRILL=true ./scripts/postgres-restore-drill.sh
 ```
+
+The temporary database readiness wait is bounded by `RESTORE_DRILL_READY_TIMEOUT_SECONDS`, which defaults to `60`.
 
 Record each completed drill in `docs/operations/restore-drill-log.md`.
 

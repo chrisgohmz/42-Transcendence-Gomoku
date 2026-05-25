@@ -13,17 +13,23 @@ beforeEach(() => {
   getSessionIdentity.mockReset();
   getSessionIdentity.mockResolvedValue({
     session: { id: "session-1" },
-    user: { id: "user-1" },
+    user: { id: "user-1", username: "operator" },
   });
 });
 
 describe("GET /api/status", () => {
+  const operatorEnv: NodeJS.ProcessEnv = {
+    NODE_ENV: "test",
+    OPERATIONS_STATUS_USER_IDS: "user-1",
+  };
+
   test("returns 200 when the aggregate system status is ok", async () => {
     getSystemHealth.mockResolvedValueOnce({
       status: "ok",
     });
 
     const response = await createStatusHandler({
+      env: operatorEnv,
       getHealth: getSystemHealth,
       getSessionIdentity,
     })();
@@ -39,6 +45,7 @@ describe("GET /api/status", () => {
     });
 
     const response = await createStatusHandler({
+      env: operatorEnv,
       getHealth: getSystemHealth,
       getSessionIdentity,
     })();
@@ -52,6 +59,7 @@ describe("GET /api/status", () => {
     getSessionIdentity.mockResolvedValueOnce(null);
 
     const response = await createStatusHandler({
+      env: operatorEnv,
       getHealth: getSystemHealth,
       getSessionIdentity,
     })();
@@ -59,6 +67,22 @@ describe("GET /api/status", () => {
 
     expect(response.status).toBe(401);
     expect(payload).toEqual({ error: "unauthorized" });
+    expect(getSystemHealth).not.toHaveBeenCalled();
+  });
+
+  test("returns 403 before checking detailed health for a signed-in non-operator", async () => {
+    const response = await createStatusHandler({
+      env: {
+        NODE_ENV: "test",
+        OPERATIONS_STATUS_USER_IDS: "other-user",
+      },
+      getHealth: getSystemHealth,
+      getSessionIdentity,
+    })();
+    const payload = await response.json();
+
+    expect(response.status).toBe(403);
+    expect(payload).toEqual({ error: "forbidden" });
     expect(getSystemHealth).not.toHaveBeenCalled();
   });
 
