@@ -80,7 +80,6 @@ jobs:
           PLAYWRIGHT_WEB_SERVER_COMMAND: bun run start
           REALTIME_INTERNAL_URL: http://127.0.0.1:3001/internal/game-update
           SOCKET_CORS_ORIGIN: http://localhost:3000
-          SOCKET_PUBLIC_URL: http://localhost:3001
         run: |
           bun run start:realtime > /tmp/realtime.log 2>&1 &
           REALTIME_PID=$!

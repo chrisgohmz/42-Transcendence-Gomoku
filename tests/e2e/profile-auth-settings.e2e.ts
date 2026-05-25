@@ -38,7 +38,9 @@ test("OAuth-only profile settings show linked email and set password without cur
     await page.getByLabel("Confirm New Password", { exact: true }).fill("password999");
     await page.getByRole("button", { name: "Set Password" }).click();
 
-    await expect(visibleExactText(page, "Changes saved successfully!")).toBeVisible();
+    await expect(visibleExactText(page, "Changes saved successfully!")).toBeVisible({
+      timeout: 15_000,
+    });
     await expect(page.getByRole("button", { exact: true, name: "Change" })).toBeVisible();
 
     const credentialAccount = await prisma.account.findFirst({

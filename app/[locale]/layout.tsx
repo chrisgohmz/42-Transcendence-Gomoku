@@ -64,13 +64,12 @@ export default async function RootLayout({ children, params }: RootLayoutProps) 
   }
 
   setRequestLocale(locale);
-  const socketUrl = process.env["SOCKET_PUBLIC_URL"];
 
   return (
     <html lang={locale} className={cn("dark font-sans", manrope.variable, cormorant.variable)}>
       <body>
         <NextIntlClientProvider>
-          <PresenceProvider socketUrl={socketUrl}>
+          <PresenceProvider>
             <Suspense fallback={null}>
               <PresenceSession />
             </Suspense>
