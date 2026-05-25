@@ -189,6 +189,7 @@ exit 42
       "scripts/postgres-backup-loop.sh",
       createEnv({
         FAKE_SCRIPT_LOG_DIR: logDir,
+        POSTGRES_BACKUP_DISABLED: "false",
         POSTGRES_BACKUP_INTERVAL_SECONDS: "1",
         POSTGRES_BACKUP_SCRIPT: backupScript,
       }),
