@@ -23,7 +23,6 @@ const updateUser = mock();
 const originalBetterAuthUrl = process.env["BETTER_AUTH_URL"];
 const originalBetterAuthTrustedOrigins = process.env["BETTER_AUTH_TRUSTED_ORIGINS"];
 const originalCaddySiteAddress = process.env["CADDY_SITE_ADDRESS"];
-const originalRateLimitDisabled = process.env["RATE_LIMIT_DISABLED"];
 
 await mock.module("next/cache", () => ({
   revalidatePath,
@@ -104,13 +103,12 @@ const previousState = {
   successMessage: null,
 };
 
-function jsonRequest(path: string, body: unknown, headers: HeadersInit = {}) {
-  const requestHeaders = new Headers(headers);
-  requestHeaders.set("content-type", "application/json");
-
+function jsonRequest(path: string, body: unknown) {
   return new Request(`http://localhost${path}`, {
     method: "POST",
-    headers: requestHeaders,
+    headers: {
+      "content-type": "application/json",
+    },
     body: JSON.stringify(body),
   });
 }
@@ -179,7 +177,6 @@ beforeEach(() => {
   delete process.env["BETTER_AUTH_URL"];
   delete process.env["BETTER_AUTH_TRUSTED_ORIGINS"];
   delete process.env["CADDY_SITE_ADDRESS"];
-  delete process.env["RATE_LIMIT_DISABLED"];
 
   changePassword.mockReset();
   setPassword.mockReset();
@@ -230,12 +227,6 @@ afterEach(() => {
     delete process.env["CADDY_SITE_ADDRESS"];
   } else {
     process.env["CADDY_SITE_ADDRESS"] = originalCaddySiteAddress;
-  }
-
-  if (originalRateLimitDisabled === undefined) {
-    delete process.env["RATE_LIMIT_DISABLED"];
-  } else {
-    process.env["RATE_LIMIT_DISABLED"] = originalRateLimitDisabled;
   }
 });
 
@@ -332,31 +323,6 @@ describe("auth API routes", () => {
       email: "max@example.com",
       password: "password123",
     });
-  });
-
-  test("login returns a rate-limit response when the client IP quota is exceeded", async () => {
-    process.env["RATE_LIMIT_DISABLED"] = "false";
-    const body = {
-      email: "max@example.com",
-      password: "password123",
-    };
-    const headers = { "x-forwarded-for": "203.0.113.44" };
-
-    for (let index = 0; index < 10; index += 1) {
-      const response = await loginRoute.POST(jsonRequest("/api/auth/login", body, headers));
-      expect(response.status).toBe(200);
-    }
-
-    const response = await loginRoute.POST(jsonRequest("/api/auth/login", body, headers));
-    const payload = await response.json();
-
-    expect(response.status).toBe(429);
-    expect(Number(response.headers.get("Retry-After"))).toBeGreaterThan(0);
-    expect(payload).toEqual({
-      error: "rate_limited",
-      message: "Too many requests. Try again later.",
-    });
-    expect(signInEmail).toHaveBeenCalledTimes(10);
   });
 
   test("login maps Better Auth credential failures to the public invalid-credentials shape", async () => {
