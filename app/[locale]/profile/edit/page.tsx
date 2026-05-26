@@ -17,6 +17,7 @@ import {
   hasCredentialPassword,
 } from "@/lib/auth";
 import { oauthProviderIds, type OAuthProviderId } from "@/lib/oauth-providers";
+import { createPageMetadata } from "@/lib/page-metadata";
 
 import ProfilePicture from "../profile-picture";
 import EditProfileForm from "./edit-form";
@@ -26,6 +27,8 @@ type EditProfilePageProps = {
     locale: string;
   }>;
 };
+
+export const generateMetadata = createPageMetadata("editProfile");
 
 async function loadOAuthProviders(): Promise<OAuthProviderConnection[]> {
   const accounts = await auth.api.listUserAccounts({

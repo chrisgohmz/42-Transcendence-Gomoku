@@ -173,7 +173,7 @@ function getBetterAuthBaseUrl() {
 }
 
 export const auth = betterAuth({
-  appName: "42 Transcendence Gomoku",
+  appName: "Gomoku Heroes",
   baseURL: getBetterAuthBaseUrl(),
   secret: process.env["BETTER_AUTH_SECRET"],
   trustedOrigins,

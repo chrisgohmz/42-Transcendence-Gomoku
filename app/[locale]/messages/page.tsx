@@ -4,6 +4,7 @@ import { Suspense } from "react";
 import { PageLoadingShell } from "@/components/page-loading-shell";
 import { redirect } from "@/i18n/navigation";
 import { getCurrentSessionIdentity } from "@/lib/auth";
+import { createPageMetadata } from "@/lib/page-metadata";
 
 import MessagesContent from "./messages-layout";
 
@@ -12,6 +13,8 @@ type MessagesPageProps = {
     locale: string;
   }>;
 };
+
+export const generateMetadata = createPageMetadata("messages");
 
 export default function MessagesPage({ params }: MessagesPageProps) {
   return (

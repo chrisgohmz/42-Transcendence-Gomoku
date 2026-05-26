@@ -7,12 +7,15 @@ import { PageLoadingShell } from "@/components/page-loading-shell";
 import ProfileStatsPanel from "@/components/profile-stats-panel";
 import { Link, redirect } from "@/i18n/navigation";
 import { getCurrentSession } from "@/lib/auth";
+import { createPageMetadata } from "@/lib/page-metadata";
 
 type ProfilePageProps = {
   params: Promise<{
     locale: string;
   }>;
 };
+
+export const generateMetadata = createPageMetadata("profile");
 
 export default function ProfilePage({ params }: ProfilePageProps) {
   return (

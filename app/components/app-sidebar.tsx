@@ -71,21 +71,21 @@ export default async function AppSidebar() {
 
   return (
     <>
-      <aside className="app-sidebar" aria-label="Primary navigation">
+      <aside className="app-sidebar" aria-label={nav("primaryLabel")}>
         <Link href="/" className="sidebar-brand">
           <Image src="/icons/Gomoku.svg" alt={brand("logoAlt")} width={52} height={52} priority />
           <span>
             <span className="sidebar-brand-mark" translate="no">
               {brand("name")}
             </span>
-            <span className="sidebar-brand-subtitle">Competitive Gomoku</span>
+            <span className="sidebar-brand-subtitle">{brand("subtitle")}</span>
           </span>
         </Link>
 
         <SidebarNav
           groups={[
-            { label: "Play", items: productLinks },
-            { label: "Social", items: socialLinks },
+            { label: nav("groups.play"), items: productLinks },
+            { label: nav("groups.social"), items: socialLinks },
           ]}
         />
 
@@ -102,7 +102,7 @@ export default async function AppSidebar() {
             <div className="flex items-center justify-between gap-2 text-xs font-bold text-[var(--muted-strong)]">
               <div className="flex items-center gap-2">
                 <ShieldCheck aria-hidden="true" className="size-4 text-[var(--mint)]" />
-                <span>Ranked Session</span>
+                <span>{nav("session")}</span>
               </div>
               <div className="-mr-2">
                 <LocaleSwitcher />

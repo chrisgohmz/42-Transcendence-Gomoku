@@ -1,5 +1,8 @@
 import CreateRoomCard from "@/components/create-room-card";
 import GameLobbyTableClient from "@/components/game-lobby-table-client";
+import { createPageMetadata } from "@/lib/page-metadata";
+
+export const generateMetadata = createPageMetadata("test");
 
 const entries = [
   {

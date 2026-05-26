@@ -3,11 +3,94 @@ import { messages as enMessages } from "./en";
 export const messages = {
   ...enMessages,
   metadata: {
-    title: "Transcendence",
-    description: "42 Transcendence 用のローカルフルスタック Next.js アプリです。",
+    appName: "五目並べヒーローズ",
+    title: "五目並べヒーローズ",
+    titleTemplate: "{pageTitle} | {appName}",
+    description: "AI 練習、フレンドとの対局、ランキング管理を楽しめる五目並べヒーローズです。",
+    pages: {
+      account: {
+        title: "アカウント設定",
+        description: "五目並べヒーローズのプロフィール、セキュリティ、連携を管理します。",
+      },
+      ai: {
+        title: "AI 戦",
+        description: "強さを調整できる AI と五目並べを練習し、対局を振り返ります。",
+      },
+      editProfile: {
+        title: "プロフィール編集",
+        description: "表示名、アバター、アカウント情報を更新します。",
+      },
+      forgotPassword: {
+        title: "パスワード再設定",
+        description: "五目並べヒーローズの安全なパスワード再設定リンクをリクエストします。",
+      },
+      friends: {
+        title: "フレンド",
+        description: "フレンド、申請、メッセージ、対局チャレンジを管理します。",
+      },
+      home: {
+        title: "ホーム",
+        description: "AI 練習、対人戦、メッセージ、ライブランキングへ移動できます。",
+      },
+      human: {
+        title: "対人戦",
+        description: "マッチメイキング、ルーム作成、他プレイヤーへの挑戦を行います。",
+      },
+      leaderboard: {
+        title: "ランキング",
+        description: "五目並べヒーローズの順位、レーティング変動、上位プレイヤーを確認します。",
+      },
+      login: {
+        title: "ログイン",
+        description: "五目並べヒーローズにログインして、対局とプロフィール機能を利用します。",
+      },
+      messages: {
+        title: "メッセージ",
+        description: "フレンドとチャットし、再戦や対局の予定を調整します。",
+      },
+      privacy: {
+        title: "プライバシーポリシー",
+        description: "アカウント、セッション、ソーシャル、対局データの扱いを確認します。",
+      },
+      profile: {
+        title: "プロフィール",
+        description: "自分のプロフィール、対局履歴、統計、実績を確認します。",
+      },
+      publicProfile: {
+        title: "@{username} のプロフィール",
+        description: "@{username} のレーティング、対局履歴、実績を確認します。",
+      },
+      resetPassword: {
+        title: "新しいパスワードを設定",
+        description: "安全なリンクから五目並べヒーローズのパスワード再設定を完了します。",
+      },
+      signup: {
+        title: "登録",
+        description: "五目並べヒーローズのアカウントを作成してオンライン対局を始めます。",
+      },
+      status: {
+        title: "システム状態",
+        description: "サービスのヘルス、バックアップ、復旧準備状況を確認します。",
+      },
+      terms: {
+        title: "利用規約",
+        description: "アカウント利用、フェアプレイ、運用ルールを確認します。",
+      },
+      test: {
+        title: "UI テスト",
+        description: "ローカル開発用にインターフェース部品を確認するルートです。",
+      },
+    },
+  },
+  brand: {
+    ...enMessages.brand,
+    name: "五目並べヒーローズ",
+    subtitle: "競技五目並べ",
+    logoAlt: "五目並べヒーローズのロゴ",
   },
   nav: {
     ...enMessages.nav,
+    primaryLabel: "メインナビゲーション",
     home: "ホーム",
     vsAi: "AI 戦",
     vsHuman: "対人戦",
@@ -16,6 +99,11 @@ export const messages = {
     login: "ログイン",
     signup: "登録",
     languageLabel: "言語",
+    groups: {
+      play: "対局",
+      social: "交流",
+    },
+    session: "ランク戦セッション",
     userMenu: {
       ...enMessages.nav.userMenu,
       trigger: "プロフィール",
@@ -31,6 +119,7 @@ export const messages = {
     ...enMessages.footer,
     terms: "利用規約",
     privacy: "プライバシーポリシー",
+    copyright: "© {year} 五目並べヒーローズ",
   },
   home: {
     eyebrow: "42 Transcendence",

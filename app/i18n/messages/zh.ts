@@ -3,11 +3,94 @@ import { messages as enMessages } from "./en";
 export const messages = {
   ...enMessages,
   metadata: {
-    title: "Transcendence",
-    description: "42 Transcendence 的本地全栈 Next.js 应用。",
+    appName: "五子棋英雄",
+    title: "五子棋英雄",
+    titleTemplate: "{pageTitle} | {appName}",
+    description: "在五子棋英雄中练习 AI、挑战好友，并追踪你的五子棋天梯。",
+    pages: {
+      account: {
+        title: "账户设置",
+        description: "管理五子棋英雄账户、资料、安全设置和登录连接。",
+      },
+      ai: {
+        title: "对战 AI",
+        description: "与可调难度的 AI 练习五子棋，并回顾训练对局。",
+      },
+      editProfile: {
+        title: "编辑资料",
+        description: "更新你的显示名称、头像和账户信息。",
+      },
+      forgotPassword: {
+        title: "重置密码",
+        description: "为五子棋英雄账户请求安全的密码重置链接。",
+      },
+      friends: {
+        title: "好友",
+        description: "管理好友、请求、消息和对局挑战。",
+      },
+      home: {
+        title: "首页",
+        description: "进入 AI 训练、真人对战、消息或实时排行榜。",
+      },
+      human: {
+        title: "真人对战",
+        description: "加入匹配、创建房间，并挑战其他五子棋玩家。",
+      },
+      leaderboard: {
+        title: "排行榜",
+        description: "查看五子棋英雄排名、等级分变化和顶尖玩家。",
+      },
+      login: {
+        title: "登录",
+        description: "登录五子棋英雄以进行对局并访问个人资料。",
+      },
+      messages: {
+        title: "消息",
+        description: "与好友聊天，并安排重赛和房间邀请。",
+      },
+      privacy: {
+        title: "隐私政策",
+        description: "了解五子棋英雄如何处理账户、会话、社交和对局数据。",
+      },
+      profile: {
+        title: "个人资料",
+        description: "查看你的个人资料、对局历史、统计和成就。",
+      },
+      publicProfile: {
+        title: "@{username} 的资料",
+        description: "查看 @{username} 的五子棋等级分、对局历史和成就。",
+      },
+      resetPassword: {
+        title: "设置新密码",
+        description: "通过安全链接完成五子棋英雄密码重置。",
+      },
+      signup: {
+        title: "注册",
+        description: "创建五子棋英雄账户并开始在线对局。",
+      },
+      status: {
+        title: "系统状态",
+        description: "检查服务健康、备份计划和恢复准备情况。",
+      },
+      terms: {
+        title: "服务条款",
+        description: "阅读账户访问、公平对局和规则执行相关条款。",
+      },
+      test: {
+        title: "UI 测试",
+        description: "用于本地开发时检查界面组件的路由。",
+      },
+    },
+  },
+  brand: {
+    ...enMessages.brand,
+    name: "五子棋英雄",
+    subtitle: "竞技五子棋",
+    logoAlt: "五子棋英雄标志",
   },
   nav: {
     ...enMessages.nav,
+    primaryLabel: "主导航",
     home: "首页",
     vsAi: "对战 AI",
     vsHuman: "真人对战",
@@ -16,6 +99,11 @@ export const messages = {
     login: "登录",
     signup: "注册",
     languageLabel: "语言",
+    groups: {
+      play: "对局",
+      social: "社交",
+    },
+    session: "排位会话",
     userMenu: {
       ...enMessages.nav.userMenu,
       trigger: "个人资料",
@@ -31,6 +119,7 @@ export const messages = {
     ...enMessages.footer,
     terms: "服务条款",
     privacy: "隐私政策",
+    copyright: "© {year} 五子棋英雄",
   },
   home: {
     eyebrow: "42 Transcendence",

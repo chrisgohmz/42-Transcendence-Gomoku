@@ -7,12 +7,15 @@ import { LoginForm } from "@/components/login-form";
 import { PageLoadingShell } from "@/components/page-loading-shell";
 import { redirect } from "@/i18n/navigation";
 import { getConfiguredOAuthProviders, getCurrentSessionIdentity } from "@/lib/auth";
+import { createPageMetadata } from "@/lib/page-metadata";
 
 type LoginPageProps = {
   params: Promise<{
     locale: string;
   }>;
 };
+
+export const generateMetadata = createPageMetadata("login");
 
 export default function LoginPage({ params }: LoginPageProps) {
   return (

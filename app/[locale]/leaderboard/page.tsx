@@ -15,6 +15,7 @@ import {
   type LeaderboardEntry,
   type LeaderboardScope,
 } from "@/lib/leaderboard";
+import { createPageMetadata } from "@/lib/page-metadata";
 import { getSeasonSnapshot, type SeasonSnapshot } from "@/lib/stats/season-stats";
 
 type LeaderBoardProps = {
@@ -33,6 +34,8 @@ type LeaderBoardProps = {
     sort?: string | string[];
   }>;
 };
+
+export const generateMetadata = createPageMetadata("leaderboard");
 
 export default function LeaderBoard({ params, searchParams }: LeaderBoardProps) {
   return (

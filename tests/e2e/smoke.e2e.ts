@@ -20,7 +20,7 @@ test.setTimeout(90_000);
 test("home page renders the redesigned command center", async ({ page }) => {
   await gotoAppRoute(page, "/");
 
-  await expect(page).toHaveTitle(/Transcendence/);
+  await expect(page).toHaveTitle(/Home \| Gomoku Heroes/);
   await expect(page).toHaveURL(/\/en$/);
   await expect(page.getByRole("heading", { level: 1, name: "Master the board." })).toBeVisible();
   await expect(page.getByText("Ranked Snapshot", { exact: true })).toBeVisible();

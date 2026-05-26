@@ -103,7 +103,7 @@ describe("sendPasswordResetEmail", () => {
   test("sends reset emails through Resend SMTP mode", async () => {
     process.env["AUTH_EMAIL_MODE"] = "resend-smtp";
     process.env["RESEND_API_KEY"] = "re_test_key";
-    process.env["RESEND_FROM_EMAIL"] = "42 Transcendence Gomoku <passwords@example.com>";
+    process.env["RESEND_FROM_EMAIL"] = "Gomoku Heroes <passwords@example.com>";
     process.env["RESEND_REPLY_TO_EMAIL"] = "support@example.com";
 
     const originalConsoleInfo = console.info;
@@ -131,10 +131,10 @@ describe("sendPasswordResetEmail", () => {
 
     const message = sendMail.mock.calls[0]?.[0];
 
-    expect(message?.from).toBe("42 Transcendence Gomoku <passwords@example.com>");
+    expect(message?.from).toBe("Gomoku Heroes <passwords@example.com>");
     expect(message?.to).toBe("player@example.com");
     expect(message?.replyTo).toBe("support@example.com");
-    expect(message?.subject).toBe("Reset your 42 Transcendence Gomoku password");
+    expect(message?.subject).toBe("Reset your Gomoku Heroes password");
     expect(message?.text).toContain("https://app.test/en/reset-password?token=abc123");
     expect(message?.text).toContain("This link expires in 1 hour.");
     expect(message?.html).toContain("Reset your password");
@@ -147,7 +147,7 @@ describe("sendPasswordResetEmail", () => {
 
   test("requires Resend credentials before sending through SMTP", async () => {
     process.env["AUTH_EMAIL_MODE"] = "resend-smtp";
-    process.env["RESEND_FROM_EMAIL"] = "42 Transcendence Gomoku <passwords@example.com>";
+    process.env["RESEND_FROM_EMAIL"] = "Gomoku Heroes <passwords@example.com>";
 
     let error: unknown;
 
@@ -196,7 +196,7 @@ describe("sendEmailVerificationEmail", () => {
   test("sends verification emails through the shared auth email transport", async () => {
     process.env["AUTH_EMAIL_MODE"] = "resend-smtp";
     process.env["RESEND_API_KEY"] = "re_verify_key";
-    process.env["RESEND_FROM_EMAIL"] = "42 Transcendence Gomoku <passwords@example.com>";
+    process.env["RESEND_FROM_EMAIL"] = "Gomoku Heroes <passwords@example.com>";
 
     const originalConsoleInfo = console.info;
     const consoleInfo = mock((_message: string, _details: unknown) => undefined);
@@ -222,9 +222,9 @@ describe("sendEmailVerificationEmail", () => {
       port: 465,
       secure: true,
     });
-    expect(message?.from).toBe("42 Transcendence Gomoku <passwords@example.com>");
+    expect(message?.from).toBe("Gomoku Heroes <passwords@example.com>");
     expect(message?.to).toBe("player@example.com");
-    expect(message?.subject).toBe("Verify your 42 Transcendence Gomoku email");
+    expect(message?.subject).toBe("Verify your Gomoku Heroes email");
     expect(message?.text).toContain("https://app.test/api/auth/verify-email?token=verify123");
     expect(message?.html).toContain("Verify your email address");
     expect(consoleInfo).toHaveBeenCalledWith("[auth-email] Resend SMTP accepted auth email", {

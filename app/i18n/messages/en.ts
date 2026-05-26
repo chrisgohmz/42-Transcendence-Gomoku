@@ -1,13 +1,92 @@
 export const messages = {
   metadata: {
-    title: "Transcendence",
-    description: "Local full-stack Next.js app for 42 Transcendence.",
+    appName: "Gomoku Heroes",
+    title: "Gomoku Heroes",
+    titleTemplate: "{pageTitle} | {appName}",
+    description:
+      "Train against AI, challenge friends, and track your Gomoku ladder in Gomoku Heroes.",
+    pages: {
+      account: {
+        title: "Account Settings",
+        description: "Manage your Gomoku Heroes account, profile, security, and connections.",
+      },
+      ai: {
+        title: "vs AI",
+        description: "Practice Gomoku against adjustable AI opponents and review your training.",
+      },
+      editProfile: {
+        title: "Edit Profile",
+        description: "Update your Gomoku Heroes display name, avatar, and account details.",
+      },
+      forgotPassword: {
+        title: "Reset Password",
+        description: "Request a secure password reset link for your Gomoku Heroes account.",
+      },
+      friends: {
+        title: "Friends",
+        description: "Manage friends, requests, messages, and match challenges.",
+      },
+      home: {
+        title: "Home",
+        description: "Choose AI training, human matches, messages, or the live leaderboard.",
+      },
+      human: {
+        title: "vs Human",
+        description: "Join matchmaking, create rooms, and challenge other Gomoku players.",
+      },
+      leaderboard: {
+        title: "Leaderboard",
+        description: "View Gomoku Heroes rankings, rating movement, and top players.",
+      },
+      login: {
+        title: "Log In",
+        description: "Sign in to Gomoku Heroes to play matches and access your profile.",
+      },
+      messages: {
+        title: "Messages",
+        description: "Chat with friends and coordinate rematches in Gomoku Heroes.",
+      },
+      privacy: {
+        title: "Privacy Policy",
+        description: "Read how Gomoku Heroes handles account, session, social, and match data.",
+      },
+      profile: {
+        title: "Profile",
+        description: "View your Gomoku Heroes profile, match history, stats, and achievements.",
+      },
+      publicProfile: {
+        title: "@{username}'s Profile",
+        description: "View @{username}'s Gomoku rating, match history, and achievements.",
+      },
+      resetPassword: {
+        title: "Choose New Password",
+        description: "Finish resetting your Gomoku Heroes password with a secure link.",
+      },
+      signup: {
+        title: "Sign Up",
+        description: "Create a Gomoku Heroes account and start playing online.",
+      },
+      status: {
+        title: "System Status",
+        description: "Check Gomoku Heroes service health, backups, and recovery readiness.",
+      },
+      terms: {
+        title: "Terms of Service",
+        description: "Read the Gomoku Heroes terms for account access, fair play, and enforcement.",
+      },
+      test: {
+        title: "UI Test",
+        description: "A local development route for checking Gomoku Heroes interface pieces.",
+      },
+    },
   },
   brand: {
-    name: "五目並べヒーロー",
-    logoAlt: "Transcendence logo",
+    name: "Gomoku Heroes",
+    subtitle: "Competitive Gomoku",
+    logoAlt: "Gomoku Heroes logo",
   },
   nav: {
+    primaryLabel: "Primary navigation",
     home: "Home",
     vsAi: "vs AI",
     vsHuman: "vs Human",
@@ -21,6 +100,11 @@ export const messages = {
       ja: "日本語",
       zh: "中文",
     },
+    groups: {
+      play: "Play",
+      social: "Social",
+    },
+    session: "Ranked Session",
     userMenu: {
       trigger: "Profile",
       avatarAlt: "User avatar",
@@ -35,7 +119,7 @@ export const messages = {
   footer: {
     terms: "Terms of Service",
     privacy: "Privacy Policy",
-    copyright: "© {year} 五目並べヒーロー",
+    copyright: "© {year} Gomoku Heroes",
   },
   home: {
     eyebrow: "42 Transcendence",

@@ -19,6 +19,7 @@ import {
   serializeUserForResponse,
 } from "@/lib/auth";
 import { oauthProviderIds, type OAuthProviderId } from "@/lib/oauth-providers";
+import { createPageMetadata } from "@/lib/page-metadata";
 
 type SessionPayload = {
   user: {
@@ -80,6 +81,8 @@ type AccountPageProps = {
     locale: string;
   }>;
 };
+
+export const generateMetadata = createPageMetadata("account");
 
 export default function AccountPage({ params }: AccountPageProps) {
   return (

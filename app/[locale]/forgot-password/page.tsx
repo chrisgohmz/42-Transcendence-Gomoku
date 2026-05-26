@@ -6,12 +6,15 @@ import { Suspense } from "react";
 import { BoardShowpiece, PageShell } from "@/components/gomoku-ui";
 import { PageLoadingShell } from "@/components/page-loading-shell";
 import { PasswordResetRequestForm } from "@/components/password-reset-request-form";
+import { createPageMetadata } from "@/lib/page-metadata";
 
 type ForgotPasswordPageProps = {
   params: Promise<{
     locale: string;
   }>;
 };
+
+export const generateMetadata = createPageMetadata("forgotPassword");
 
 export default function ForgotPasswordPage({ params }: ForgotPasswordPageProps) {
   return (

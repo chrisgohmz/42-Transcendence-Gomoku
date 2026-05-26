@@ -7,12 +7,15 @@ import { PageLoadingShell } from "@/components/page-loading-shell";
 import { SignupForm } from "@/components/signup-form";
 import { redirect } from "@/i18n/navigation";
 import { getConfiguredOAuthProviders, getCurrentSessionIdentity } from "@/lib/auth";
+import { createPageMetadata } from "@/lib/page-metadata";
 
 type SignupPageProps = {
   params: Promise<{
     locale: string;
   }>;
 };
+
+export const generateMetadata = createPageMetadata("signup");
 
 export default function SignupPage({ params }: SignupPageProps) {
   return (

@@ -13,6 +13,7 @@ import AppSidebar from "@/components/app-sidebar";
 import { PresenceProvider, PresenceSessionSync } from "@/components/presence-provider";
 import { routing } from "@/i18n/routing";
 import { getCurrentSessionIdentity } from "@/lib/auth";
+import { getLocaleOpenGraphLocale, getRootMetadataBase } from "@/lib/page-metadata";
 import { cn } from "@/lib/utils";
 
 const manrope = Manrope({
@@ -46,13 +47,37 @@ export function generateStaticParams() {
 export async function generateMetadata({ params }: MetadataProps): Promise<Metadata> {
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: "metadata" });
+  const appName = t("appName");
 
   return {
+    applicationName: appName,
+    appleWebApp: {
+      title: appName,
+    },
     description: t("description"),
+    formatDetection: {
+      address: false,
+      email: false,
+      telephone: false,
+    },
     icons: {
       icon: "/icons/Gomoku.svg",
     },
-    title: t("title"),
+    metadataBase: getRootMetadataBase(),
+    openGraph: {
+      description: t("description"),
+      locale: getLocaleOpenGraphLocale(locale),
+      siteName: appName,
+      title: appName,
+      type: "website",
+    },
+    referrer: "origin-when-cross-origin",
+    title: appName,
+    twitter: {
+      card: "summary",
+      description: t("description"),
+      title: appName,
+    },
   };
 }
 

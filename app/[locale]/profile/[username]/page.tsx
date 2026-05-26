@@ -17,6 +17,7 @@ import { MatchResult, MatchStatus, Role } from "@/../generated/prisma/enums";
 import { Badge, MetricCard, PageShell, Surface } from "@/components/gomoku-ui";
 import { PageLoadingShell } from "@/components/page-loading-shell";
 import { getCurrentSessionIdentity } from "@/lib/auth";
+import { buildPageMetadata } from "@/lib/page-metadata";
 import { prisma } from "@/lib/prisma";
 import { getProfileStatsForUser } from "@/lib/stats/profile-stats";
 
@@ -36,6 +37,19 @@ type ProfilePageProps = {
 };
 
 const achievements = ["sharpOpening", "calmEndgame", "fastRematch"] as const;
+
+export async function generateMetadata({ params }: ProfilePageProps) {
+  const { locale, username } = await params;
+
+  return buildPageMetadata({
+    locale,
+    page: "publicProfile",
+    path: `/profile/${encodeURIComponent(username)}`,
+    values: {
+      username,
+    },
+  });
+}
 
 function getSearchParamNumber(value: string | string[] | undefined) {
   const rawValue = Array.isArray(value) ? value[0] : value;

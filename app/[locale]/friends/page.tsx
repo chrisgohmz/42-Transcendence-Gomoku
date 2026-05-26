@@ -8,6 +8,7 @@ import {
   friendshipForUserWhere,
   getOtherFriendshipUser,
 } from "@/lib/friendships/friendship-queries";
+import { createPageMetadata } from "@/lib/page-metadata";
 import { prisma } from "@/lib/prisma";
 
 import FriendsContent from "./friends-layout";
@@ -20,6 +21,8 @@ type FriendsPageProps = {
     query?: string | string[];
   }>;
 };
+
+export const generateMetadata = createPageMetadata("friends");
 
 function getSearchQuery(query: string | string[] | undefined) {
   const rawQuery = Array.isArray(query) ? query[0] : query;
