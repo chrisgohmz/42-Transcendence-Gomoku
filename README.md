@@ -61,8 +61,8 @@ This host-shell path still serves plain HTTP on `http://localhost:3000`. Set
 the Next route handlers can publish match updates to the host-side realtime
 service. Friendship refreshes are derived from that URL unless you set
 `REALTIME_FRIENDSHIP_INTERNAL_URL` explicitly. Internal friendship publishes use
-`REALTIME_INTERNAL_SECRET`, falling back to `BETTER_AUTH_SECRET`, as the shared
-service-to-service header secret.
+`REALTIME_INTERNAL_SECRET` as the shared service-to-service header secret. In
+production this must be distinct from `BETTER_AUTH_SECRET`.
 
 ### Prisma workflow
 

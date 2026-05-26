@@ -476,6 +476,7 @@ export const messages = {
       unauthorized: "Unauthorized.",
       invalidTransition: "Invalid transition.",
       friendshipNotFound: "Friendship not found.",
+      tryAgainLater: "Too many requests. Please try again later.",
     },
     empty: {
       friends: "No friends yet. Add someone above!",

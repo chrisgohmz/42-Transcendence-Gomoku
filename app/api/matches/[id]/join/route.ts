@@ -8,6 +8,9 @@ import { getChallengeMatchMetadata } from "@/lib/matches/challenge-metadata";
 import { buildGameUpdatePayload } from "@/lib/matches/game-update";
 import { publishGameUpdate, publishQueueMatched } from "@/lib/matches/realtime-publisher";
 import { prisma } from "@/lib/prisma";
+import { consumeRateLimit, rateLimitResponse } from "@/lib/rate-limit";
+import { rateLimitRule, userRateLimitSubject } from "@/lib/rate-limit-rules";
+import { enforceMutationRequest } from "@/lib/request-security";
 
 const joinMatchRequestSchema = z.preprocess(
   (value) => (typeof value === "object" && value !== null && !Array.isArray(value) ? value : {}),
@@ -34,6 +37,12 @@ async function verifyMatchPassword(hash: string, password: string | undefined) {
 }
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  const requestGuardResponse = enforceMutationRequest(request, { requireJson: true });
+
+  if (requestGuardResponse) {
+    return requestGuardResponse;
+  }
+
   const context = await getCurrentSession();
 
   if (!context) {
@@ -57,6 +66,15 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
 
     const displayName =
       validation.data.displayName ?? (context.user.displayName || context.user.username);
+
+    const rateLimit = consumeRateLimit(
+      request.headers,
+      rateLimitRule("matchJoin", userRateLimitSubject(context.user.id)),
+    );
+
+    if (!rateLimit.allowed) {
+      return rateLimitResponse(rateLimit);
+    }
 
     const match = await prisma.match.findUnique({
       where: { id: matchId },
@@ -202,16 +220,14 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     });
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
-      return Response.json(
-        { error: "match_full", detail: getErrorMessage(error) },
-        { status: 409 },
-      );
+      console.error("[api/matches/join] unique constraint failed:", getErrorMessage(error));
+      return Response.json({ error: "match_full" }, { status: 409 });
     }
 
+    console.error("[api/matches/join] join failed:", getErrorMessage(error));
     return Response.json(
       {
         error: "failed_to_join_match",
-        detail: getErrorMessage(error),
       },
       { status: 500 },
     );

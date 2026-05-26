@@ -189,9 +189,10 @@ async function checkDatabase(
       target: describeDatabaseTarget(env),
     };
   } catch (error) {
+    console.error("[system-health] database check failed:", getErrorMessage(error));
     return {
       checkedAt,
-      detail: getErrorMessage(error),
+      detail: "PostgreSQL health check failed.",
       id: "database",
       label: "PostgreSQL",
       responseTimeMs: getElapsedMs(startedAt),
@@ -229,9 +230,10 @@ async function checkRealtime(
       target: redactUrl(realtimeHealthUrl),
     };
   } catch (error) {
+    console.error("[system-health] realtime check failed:", getErrorMessage(error));
     return {
       checkedAt,
-      detail: getErrorMessage(error),
+      detail: "Realtime health check failed.",
       id: "realtime",
       label: "Realtime Service",
       responseTimeMs: getElapsedMs(startedAt),

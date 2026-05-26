@@ -14,8 +14,17 @@ import { getErrorMessage } from "@/lib/api-errors";
 import { getCurrentSession } from "@/lib/auth";
 import { isAcceptedFriend } from "@/lib/chat/access";
 import { prisma } from "@/lib/prisma";
+import { consumeRateLimit, rateLimitResponse } from "@/lib/rate-limit";
+import { rateLimitRule, userRateLimitSubject } from "@/lib/rate-limit-rules";
+import { enforceMutationRequest } from "@/lib/request-security";
 
 export async function POST(request: Request) {
+  const requestGuardResponse = enforceMutationRequest(request, { requireJson: true });
+
+  if (requestGuardResponse) {
+    return requestGuardResponse;
+  }
+
   // 1. Check login
   const session = await getCurrentSession();
   if (!session) {
@@ -62,6 +71,15 @@ export async function POST(request: Request) {
   }
 
   try {
+    const rateLimit = consumeRateLimit(
+      request.headers,
+      rateLimitRule("conversationDirect", userRateLimitSubject(session.user.id)),
+    );
+
+    if (!rateLimit.allowed) {
+      return rateLimitResponse(rateLimit);
+    }
+
     // 6. Build the directKey — sort the two IDs so the key is always identical
     //    no matter which user initiates the conversation
     //    e.g. if userA = "abc" and userB = "xyz", key = "abc:xyz" always
@@ -84,9 +102,7 @@ export async function POST(request: Request) {
 
     return Response.json({ conversationId: conversation.id });
   } catch (error) {
-    return Response.json(
-      { error: "failed_to_create_conversation", detail: getErrorMessage(error) },
-      { status: 500 },
-    );
+    console.error("[api/conversations/direct] create failed:", getErrorMessage(error));
+    return Response.json({ error: "failed_to_create_conversation" }, { status: 500 });
   }
 }

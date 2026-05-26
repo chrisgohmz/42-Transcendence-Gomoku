@@ -109,17 +109,14 @@ describe("/api/matches/queue", () => {
 
     expect(statusResponse.status).toBe(500);
     expect(await statusResponse.json()).toEqual({
-      detail: "read failed",
       error: "failed_to_load_queue_status",
     });
     expect(joinResponse.status).toBe(500);
     expect(await joinResponse.json()).toEqual({
-      detail: "join failed",
       error: "failed_to_join_queue",
     });
     expect(cancelResponse.status).toBe(500);
     expect(await cancelResponse.json()).toEqual({
-      detail: "Unknown error",
       error: "failed_to_cancel_queue",
     });
   });

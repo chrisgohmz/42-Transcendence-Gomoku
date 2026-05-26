@@ -156,6 +156,9 @@ function getPasswordResetUrl(url: string, token: string): string {
 const githubCredentials = getOAuthCredentials("github");
 const googleCredentials = getOAuthCredentials("google");
 const trustedOrigins = getTrustedAuthOrigins();
+const betterAuthRateLimitEnabled =
+  process.env["BETTER_AUTH_RATE_LIMIT_ENABLED"] === "true" ||
+  process.env["NODE_ENV"] === "production";
 
 function getBetterAuthBaseUrl() {
   const fallback = getConfiguredAuthBaseUrl() ?? trustedOrigins[0];
@@ -177,6 +180,25 @@ export const auth = betterAuth({
   baseURL: getBetterAuthBaseUrl(),
   secret: process.env["BETTER_AUTH_SECRET"],
   trustedOrigins,
+  rateLimit: {
+    enabled: betterAuthRateLimitEnabled,
+    window: 60,
+    max: 100,
+    customRules: {
+      "/request-password-reset": {
+        window: 60,
+        max: 3,
+      },
+      "/sign-in/email": {
+        window: 10,
+        max: 3,
+      },
+      "/sign-up/email": {
+        window: 60,
+        max: 5,
+      },
+    },
+  },
   database: prismaAdapter(prisma, {
     provider: "postgresql",
   }),

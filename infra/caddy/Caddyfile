@@ -7,8 +7,14 @@
 
 	@socket path /socket.io/*
 	handle @socket {
-		reverse_proxy realtime:3001
+		reverse_proxy realtime:3001 {
+			header_up -CF-Connecting-IP
+			header_up -X-Real-IP
+		}
 	}
 
-	reverse_proxy app:3000
+	reverse_proxy app:3000 {
+		header_up -CF-Connecting-IP
+		header_up -X-Real-IP
+	}
 }

@@ -130,6 +130,7 @@ jobs:
         env:
           BETTER_AUTH_SECRET: ci_better_auth_secret_change_me_32_chars
           POSTGRES_PASSWORD: ci-password
+          REALTIME_INTERNAL_SECRET: ci_realtime_internal_secret_change_me
         run: docker compose -f docker-compose.yml -f docker-compose.dev.yml config
 
       - name: Smoke test realtime server

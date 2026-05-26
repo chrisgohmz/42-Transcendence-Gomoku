@@ -55,7 +55,7 @@ export async function publishChatMessage(
   const internalSecret = readRealtimeInternalSecret();
 
   if (!internalSecret) {
-    throw new Error("Missing REALTIME_INTERNAL_SECRET or BETTER_AUTH_SECRET");
+    throw new Error("Missing REALTIME_INTERNAL_SECRET");
   }
 
   // 2 second timeout — if the Socket.IO server is slow, don't hold up the response

@@ -296,9 +296,9 @@ describe("POST /api/matches/challenge", () => {
 
     expect(response.status).toBe(502);
     expect(payload).toMatchObject({
-      detail: "realtime down",
       error: "failed_to_deliver_challenge",
     });
+    expect(payload).not.toHaveProperty("detail");
     expect(updateManyMatches).toHaveBeenCalledWith({
       data: expect.objectContaining({
         endReason: "challenge_invite_failed",

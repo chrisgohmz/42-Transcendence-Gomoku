@@ -11,6 +11,9 @@ import { canAccessDirectConversation } from "@/lib/chat/access";
 import { markDirectConversationRead } from "@/lib/chat/read-state";
 import { publishChatMessage } from "@/lib/chat/realtime-publisher";
 import { prisma } from "@/lib/prisma";
+import { consumeRateLimit, rateLimitResponse } from "@/lib/rate-limit";
+import { rateLimitRule, userRateLimitSubject } from "@/lib/rate-limit-rules";
+import { enforceMutationRequest } from "@/lib/request-security";
 
 // not useable with cacheComponents
 //export const dynamic = "force-dynamic";
@@ -68,16 +71,20 @@ export async function GET(
 
     return Response.json({ messages });
   } catch (error) {
-    return Response.json(
-      { error: "failed_to_load_messages", detail: getErrorMessage(error) },
-      { status: 500 },
-    );
+    console.error("[api/conversations/messages] load failed:", getErrorMessage(error));
+    return Response.json({ error: "failed_to_load_messages" }, { status: 500 });
   }
 }
 
 // ─── POST: send a message ─────────────────────────────────────────────────────
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  const requestGuardResponse = enforceMutationRequest(request, { requireJson: true });
+
+  if (requestGuardResponse) {
+    return requestGuardResponse;
+  }
+
   const session = await getCurrentSession();
   if (!session) {
     return Response.json({ error: "unauthorized" }, { status: 401 });
@@ -88,6 +95,15 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   const access = await canAccessDirectConversation(session.user.id, conversationId);
   if (!access.allowed) {
     return deniedResponse(access.reason);
+  }
+
+  const rateLimit = consumeRateLimit(
+    request.headers,
+    rateLimitRule("conversationMessage", userRateLimitSubject(session.user.id)),
+  );
+
+  if (!rateLimit.allowed) {
+    return rateLimitResponse(rateLimit);
   }
 
   // Parse and validate the request body
@@ -138,10 +154,8 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       return created;
     });
   } catch (error) {
-    return Response.json(
-      { error: "failed_to_send_message", detail: getErrorMessage(error) },
-      { status: 500 },
-    );
+    console.error("[api/conversations/messages] send failed:", getErrorMessage(error));
+    return Response.json({ error: "failed_to_send_message" }, { status: 500 });
   }
 
   // Realtime publish runs only after the DB transaction has committed.

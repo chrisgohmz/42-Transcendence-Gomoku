@@ -7,6 +7,9 @@ import { buildGameUpdatePayload } from "@/lib/matches/game-update";
 import { evaluateMoveOutcome, standardGomokuBoardSize } from "@/lib/matches/move-rules";
 import { publishGameUpdate } from "@/lib/matches/realtime-publisher";
 import { prisma } from "@/lib/prisma";
+import { consumeRateLimit, rateLimitResponse } from "@/lib/rate-limit";
+import { rateLimitRule, userRateLimitSubject } from "@/lib/rate-limit-rules";
+import { enforceMutationRequest } from "@/lib/request-security";
 
 type SoloMatchRequestBody = {
   difficulty?: unknown;
@@ -31,6 +34,12 @@ function oppositeSeat(seat: Seat): Seat {
 }
 
 export async function POST(request: Request) {
+  const requestGuardResponse = enforceMutationRequest(request, { requireJson: true });
+
+  if (requestGuardResponse) {
+    return requestGuardResponse;
+  }
+
   const context = await getCurrentSession();
 
   if (!context) {
@@ -44,6 +53,15 @@ export async function POST(request: Request) {
   }
 
   try {
+    const rateLimit = consumeRateLimit(
+      request.headers,
+      rateLimitRule("matchSolo", userRateLimitSubject(context.user.id)),
+    );
+
+    if (!rateLimit.allowed) {
+      return rateLimitResponse(rateLimit);
+    }
+
     const body = await readBody(request);
     const difficulty = getAiDifficulty(body.difficulty);
     const playerSeat = getPlayerSeat(body.playerSeat);
@@ -206,9 +224,9 @@ export async function POST(request: Request) {
       status: result.match.status,
     });
   } catch (error) {
+    console.error("[api/matches/solo] create failed:", getErrorMessage(error));
     return Response.json(
       {
-        detail: getErrorMessage(error),
         error: "failed_to_create_solo_match",
       },
       { status: 500 },

@@ -58,7 +58,7 @@ export async function publishFriendshipUpdate(
   const internalSecret = readRealtimeInternalSecret();
 
   if (!internalSecret) {
-    throw new Error("Missing REALTIME_INTERNAL_SECRET or BETTER_AUTH_SECRET");
+    throw new Error("Missing REALTIME_INTERNAL_SECRET");
   }
 
   const controller = new AbortController();

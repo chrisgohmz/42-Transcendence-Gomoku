@@ -16,6 +16,7 @@ webServerEnv["GOOGLE_CLIENT_ID"] ||= "playwright-google-client";
 webServerEnv["GOOGLE_CLIENT_SECRET"] ||= "playwright-google-secret";
 webServerEnv["BETTER_AUTH_SECRET"] ||= "playwright_better_auth_secret_change_me_32_chars";
 webServerEnv["BETTER_AUTH_URL"] ||= baseURL;
+webServerEnv["RATE_LIMIT_DISABLED"] ||= "true";
 webServerEnv["OPERATIONS_STATUS_USERNAMES"] ||= [
   "e2e_status_operator_chrome",
   "e2e_status_operator_firefox",
