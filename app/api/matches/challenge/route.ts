@@ -17,6 +17,7 @@ import { standardGomokuBoardSize } from "@/lib/matches/move-rules";
 import { publishChallengeReceived, publishGameUpdate } from "@/lib/matches/realtime-publisher";
 import { prisma } from "@/lib/prisma";
 import { consumeRateLimit, rateLimitResponse } from "@/lib/rate-limit";
+import { rateLimitRule, userRateLimitSubject } from "@/lib/rate-limit-rules";
 import { enforceMutationRequest } from "@/lib/request-security";
 
 const maxChallengeNameLength = 80;
@@ -102,12 +103,10 @@ export async function POST(request: Request) {
       return Response.json({ error: "challenge_name_too_long" }, { status: 400 });
     }
 
-    const rateLimit = consumeRateLimit(request.headers, {
-      key: "matches:challenge",
-      max: 20,
-      subject: `user:${context.user.id}`,
-      windowSeconds: 60,
-    });
+    const rateLimit = consumeRateLimit(
+      request.headers,
+      rateLimitRule("matchChallengeCreate", userRateLimitSubject(context.user.id)),
+    );
 
     if (!rateLimit.allowed) {
       return rateLimitResponse(rateLimit);

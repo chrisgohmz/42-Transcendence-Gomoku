@@ -1,5 +1,6 @@
 import { auth } from "../../../lib/auth";
 import { consumeRateLimit, rateLimitResponse } from "../../../lib/rate-limit";
+import { rateLimitRule } from "../../../lib/rate-limit-rules";
 import { enforceMutationRequest } from "../../../lib/request-security";
 
 const authCookieNames = [
@@ -65,11 +66,7 @@ export async function POST(request: Request) {
     return requestGuardResponse;
   }
 
-  const rateLimit = consumeRateLimit(request.headers, {
-    key: "auth:logout",
-    max: 30,
-    windowSeconds: 60,
-  });
+  const rateLimit = consumeRateLimit(request.headers, rateLimitRule("authLogout"));
 
   if (!rateLimit.allowed) {
     return rateLimitResponse(rateLimit);

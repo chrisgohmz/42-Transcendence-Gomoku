@@ -15,6 +15,7 @@ import { getCurrentSession } from "@/lib/auth";
 import { isAcceptedFriend } from "@/lib/chat/access";
 import { prisma } from "@/lib/prisma";
 import { consumeRateLimit, rateLimitResponse } from "@/lib/rate-limit";
+import { rateLimitRule, userRateLimitSubject } from "@/lib/rate-limit-rules";
 import { enforceMutationRequest } from "@/lib/request-security";
 
 export async function POST(request: Request) {
@@ -70,12 +71,10 @@ export async function POST(request: Request) {
   }
 
   try {
-    const rateLimit = consumeRateLimit(request.headers, {
-      key: "conversations:direct",
-      max: 30,
-      subject: `user:${session.user.id}`,
-      windowSeconds: 60,
-    });
+    const rateLimit = consumeRateLimit(
+      request.headers,
+      rateLimitRule("conversationDirect", userRateLimitSubject(session.user.id)),
+    );
 
     if (!rateLimit.allowed) {
       return rateLimitResponse(rateLimit);

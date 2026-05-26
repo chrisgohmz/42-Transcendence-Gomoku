@@ -9,6 +9,7 @@ import { buildGameUpdatePayload } from "@/lib/matches/game-update";
 import { publishGameUpdate, publishQueueMatched } from "@/lib/matches/realtime-publisher";
 import { prisma } from "@/lib/prisma";
 import { consumeRateLimit, rateLimitResponse } from "@/lib/rate-limit";
+import { rateLimitRule, userRateLimitSubject } from "@/lib/rate-limit-rules";
 import { enforceMutationRequest } from "@/lib/request-security";
 
 const joinMatchRequestSchema = z.preprocess(
@@ -66,12 +67,10 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     const displayName =
       validation.data.displayName ?? (context.user.displayName || context.user.username);
 
-    const rateLimit = consumeRateLimit(request.headers, {
-      key: "matches:join",
-      max: 30,
-      subject: `user:${context.user.id}`,
-      windowSeconds: 60,
-    });
+    const rateLimit = consumeRateLimit(
+      request.headers,
+      rateLimitRule("matchJoin", userRateLimitSubject(context.user.id)),
+    );
 
     if (!rateLimit.allowed) {
       return rateLimitResponse(rateLimit);

@@ -12,15 +12,24 @@ import {
 } from "@/lib/friendships/friendship-mutations";
 import { prisma } from "@/lib/prisma";
 import { consumeRateLimit } from "@/lib/rate-limit";
+import {
+  rateLimitRule,
+  type RateLimitRuleName,
+  userRateLimitSubject,
+} from "@/lib/rate-limit-rules";
 
-async function isFriendActionRateLimited(userId: string, key: string): Promise<boolean> {
+type FriendRateLimitRuleName = Extract<
+  RateLimitRuleName,
+  "friendsRemove" | "friendsRespond" | "friendsSend"
+>;
+
+async function isFriendActionRateLimited(
+  userId: string,
+  ruleName: FriendRateLimitRuleName,
+): Promise<boolean> {
   const headerList = await headers();
-  return !consumeRateLimit(headerList, {
-    key,
-    max: 30,
-    subject: `user:${userId}`,
-    windowSeconds: 60,
-  }).allowed;
+  return !consumeRateLimit(headerList, rateLimitRule(ruleName, userRateLimitSubject(userId)))
+    .allowed;
 }
 
 export async function sendFriendRequest(targetUsername: string) {
@@ -28,7 +37,7 @@ export async function sendFriendRequest(targetUsername: string) {
   const t = await getTranslations({ locale, namespace: "friends" });
   const session = await getCurrentSession();
   if (!session) return { error: t("actions.signInToAddFriends") };
-  if (await isFriendActionRateLimited(session.user.id, "friends:send")) {
+  if (await isFriendActionRateLimited(session.user.id, "friendsSend")) {
     return { error: t("actions.tryAgainLater") };
   }
 
@@ -68,7 +77,7 @@ export async function respondToRequest(friendshipId: number, accept: boolean) {
   const t = await getTranslations({ locale, namespace: "friends" });
   const session = await getCurrentSession();
   if (!session) return { error: t("actions.signIn") };
-  if (await isFriendActionRateLimited(session.user.id, "friends:respond")) {
+  if (await isFriendActionRateLimited(session.user.id, "friendsRespond")) {
     return { error: t("actions.tryAgainLater") };
   }
 
@@ -105,7 +114,7 @@ export async function removeFriend(friendshipId: number) {
   const t = await getTranslations({ locale, namespace: "friends" });
   const session = await getCurrentSession();
   if (!session) return { error: t("actions.signIn") };
-  if (await isFriendActionRateLimited(session.user.id, "friends:remove")) {
+  if (await isFriendActionRateLimited(session.user.id, "friendsRemove")) {
     return { error: t("actions.tryAgainLater") };
   }
   const friendship = await prisma.friendship.findUnique({

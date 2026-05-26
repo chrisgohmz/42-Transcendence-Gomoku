@@ -9,6 +9,11 @@ import { auth, getCurrentSession, hasCredentialPassword } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { consumeRateLimit } from "@/lib/rate-limit";
 import {
+  rateLimitRule,
+  type RateLimitRuleName,
+  userRateLimitSubject,
+} from "@/lib/rate-limit-rules";
+import {
   fieldIssuesToMap,
   type ProfileSettingsField,
   type ProfileSettingsValidationIssueCode,
@@ -30,13 +35,17 @@ function getApiErrorCode(error: unknown): string | undefined {
   return isAPIError(error) ? (error.body as { code?: string } | undefined)?.code : undefined;
 }
 
-async function isProfileSettingsRateLimited(userId: string, key: string): Promise<boolean> {
-  return !consumeRateLimit(await headers(), {
-    key,
-    max: 20,
-    subject: `user:${userId}`,
-    windowSeconds: 60,
-  }).allowed;
+type ProfileSettingsRateLimitRuleName = Extract<
+  RateLimitRuleName,
+  "profileChangePassword" | "profileDisplayName" | "profileSetPassword"
+>;
+
+async function isProfileSettingsRateLimited(
+  userId: string,
+  ruleName: ProfileSettingsRateLimitRuleName,
+): Promise<boolean> {
+  return !consumeRateLimit(await headers(), rateLimitRule(ruleName, userRateLimitSubject(userId)))
+    .allowed;
 }
 
 export async function saveDisplayName(
@@ -51,7 +60,7 @@ export async function saveDisplayName(
     return { fields: {}, message: t("loginRequired"), successMessage: null };
   }
 
-  if (await isProfileSettingsRateLimited(sessionData.user.id, "profile:display-name")) {
+  if (await isProfileSettingsRateLimited(sessionData.user.id, "profileDisplayName")) {
     return { fields: {}, message: t("profileSaveFailed"), successMessage: null };
   }
 
@@ -94,7 +103,7 @@ export async function changeAccountPassword(
     return { fields: {}, message: t("loginRequired"), successMessage: null };
   }
 
-  if (await isProfileSettingsRateLimited(sessionData.user.id, "profile:change-password")) {
+  if (await isProfileSettingsRateLimited(sessionData.user.id, "profileChangePassword")) {
     return { fields: {}, message: t("profileSaveFailed"), successMessage: null };
   }
 
@@ -149,7 +158,7 @@ export async function setAccountPassword(
     return { fields: {}, message: t("loginRequired"), successMessage: null };
   }
 
-  if (await isProfileSettingsRateLimited(sessionData.user.id, "profile:set-password")) {
+  if (await isProfileSettingsRateLimited(sessionData.user.id, "profileSetPassword")) {
     return { fields: {}, message: t("profileSaveFailed"), successMessage: null };
   }
 

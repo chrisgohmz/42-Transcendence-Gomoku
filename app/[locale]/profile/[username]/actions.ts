@@ -11,6 +11,7 @@ import {
 } from "@/lib/friendships/friendship-mutations";
 import { prisma } from "@/lib/prisma";
 import { consumeRateLimit } from "@/lib/rate-limit";
+import { rateLimitRule, userRateLimitSubject } from "@/lib/rate-limit-rules";
 
 export async function processFriendAction(
   targetUserId: string,
@@ -23,12 +24,10 @@ export async function processFriendAction(
     return { error: "Unauthorized" };
   }
 
-  const rateLimit = consumeRateLimit(await headers(), {
-    key: "profile:friend-action",
-    max: 30,
-    subject: `user:${loggedInUserId}`,
-    windowSeconds: 60,
-  });
+  const rateLimit = consumeRateLimit(
+    await headers(),
+    rateLimitRule("profileFriendAction", userRateLimitSubject(loggedInUserId)),
+  );
 
   if (!rateLimit.allowed) {
     return { error: "Too many requests. Please try again later." };

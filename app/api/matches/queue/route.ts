@@ -5,6 +5,7 @@ import {
   joinMatchmakingQueue,
 } from "@/lib/matches/matchmaking";
 import { consumeRateLimit, rateLimitResponse } from "@/lib/rate-limit";
+import { rateLimitRule, userRateLimitSubject } from "@/lib/rate-limit-rules";
 import { enforceMutationRequest } from "@/lib/request-security";
 
 function getErrorMessage(error: unknown): string {
@@ -57,12 +58,10 @@ export async function POST(
   }
 
   try {
-    const rateLimit = consumeRateLimit(request.headers, {
-      key: "matches:queue:join",
-      max: 30,
-      subject: `user:${context.user.id}`,
-      windowSeconds: 60,
-    });
+    const rateLimit = consumeRateLimit(
+      request.headers,
+      rateLimitRule("matchQueueJoin", userRateLimitSubject(context.user.id)),
+    );
 
     if (!rateLimit.allowed) {
       return rateLimitResponse(rateLimit);
@@ -96,12 +95,10 @@ export async function DELETE(
   }
 
   try {
-    const rateLimit = consumeRateLimit(request.headers, {
-      key: "matches:queue:cancel",
-      max: 30,
-      subject: `user:${context.user.id}`,
-      windowSeconds: 60,
-    });
+    const rateLimit = consumeRateLimit(
+      request.headers,
+      rateLimitRule("matchQueueCancel", userRateLimitSubject(context.user.id)),
+    );
 
     if (!rateLimit.allowed) {
       return rateLimitResponse(rateLimit);

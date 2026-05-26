@@ -19,6 +19,7 @@ import {
 } from "./lib/auth-duplicate-fields";
 import { getLocalizedAuthAppUrl } from "./lib/auth-urls";
 import { consumeRateLimit } from "./lib/rate-limit";
+import { rateLimitRule, type RateLimitRuleName } from "./lib/rate-limit-rules";
 import {
   fieldIssuesToMap,
   type AuthField,
@@ -90,9 +91,9 @@ function isEmailNotVerifiedError(error: unknown): boolean {
 
 function isActionRateLimited(
   headerList: Pick<Headers, "get">,
-  rule: { key: string; max: number; windowSeconds: number },
+  ruleName: RateLimitRuleName,
 ): boolean {
-  return !consumeRateLimit(headerList, rule).allowed;
+  return !consumeRateLimit(headerList, rateLimitRule(ruleName)).allowed;
 }
 
 export async function loginAction(
@@ -118,7 +119,7 @@ export async function loginAction(
   try {
     const headerList = await headers();
 
-    if (isActionRateLimited(headerList, { key: "auth-action:login", max: 10, windowSeconds: 60 })) {
+    if (isActionRateLimited(headerList, "authActionLogin")) {
       return {
         email: rawEmail,
         fields: {},
@@ -183,13 +184,7 @@ export async function requestPasswordResetAction(
   try {
     const headerList = await headers();
 
-    if (
-      isActionRateLimited(headerList, {
-        key: "auth-action:password-reset-request",
-        max: 3,
-        windowSeconds: 60,
-      })
-    ) {
+    if (isActionRateLimited(headerList, "authActionPasswordResetRequest")) {
       return {
         email,
         fields: {},
@@ -253,13 +248,7 @@ export async function resetPasswordAction(
   try {
     const headerList = await headers();
 
-    if (
-      isActionRateLimited(headerList, {
-        key: "auth-action:password-reset-confirm",
-        max: 10,
-        windowSeconds: 60,
-      })
-    ) {
+    if (isActionRateLimited(headerList, "authActionPasswordResetConfirm")) {
       return {
         fields: {},
         message: t("passwordResetUnavailable"),
@@ -318,7 +307,7 @@ export async function signupAction(
   try {
     const headerList = await headers();
 
-    if (isActionRateLimited(headerList, { key: "auth-action:signup", max: 5, windowSeconds: 60 })) {
+    if (isActionRateLimited(headerList, "authActionSignup")) {
       return {
         displayName,
         email,

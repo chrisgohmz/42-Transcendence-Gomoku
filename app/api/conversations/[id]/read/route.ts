@@ -7,6 +7,7 @@ import { getCurrentSession } from "@/lib/auth";
 import { canAccessDirectConversation } from "@/lib/chat/access";
 import { markDirectConversationRead } from "@/lib/chat/read-state";
 import { consumeRateLimit, rateLimitResponse } from "@/lib/rate-limit";
+import { rateLimitRule, userRateLimitSubject } from "@/lib/rate-limit-rules";
 import { enforceMutationRequest } from "@/lib/request-security";
 
 function deniedResponse(reason: "not_found" | "not_friends" | "not_direct") {
@@ -35,12 +36,10 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     return deniedResponse(access.reason);
   }
 
-  const rateLimit = consumeRateLimit(request.headers, {
-    key: "conversations:read",
-    max: 120,
-    subject: `user:${session.user.id}`,
-    windowSeconds: 60,
-  });
+  const rateLimit = consumeRateLimit(
+    request.headers,
+    rateLimitRule("conversationRead", userRateLimitSubject(session.user.id)),
+  );
 
   if (!rateLimit.allowed) {
     return rateLimitResponse(rateLimit);

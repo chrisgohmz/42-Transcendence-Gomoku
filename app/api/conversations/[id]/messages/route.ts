@@ -12,6 +12,7 @@ import { markDirectConversationRead } from "@/lib/chat/read-state";
 import { publishChatMessage } from "@/lib/chat/realtime-publisher";
 import { prisma } from "@/lib/prisma";
 import { consumeRateLimit, rateLimitResponse } from "@/lib/rate-limit";
+import { rateLimitRule, userRateLimitSubject } from "@/lib/rate-limit-rules";
 import { enforceMutationRequest } from "@/lib/request-security";
 
 // not useable with cacheComponents
@@ -96,12 +97,10 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     return deniedResponse(access.reason);
   }
 
-  const rateLimit = consumeRateLimit(request.headers, {
-    key: "conversations:message",
-    max: 60,
-    subject: `user:${session.user.id}`,
-    windowSeconds: 60,
-  });
+  const rateLimit = consumeRateLimit(
+    request.headers,
+    rateLimitRule("conversationMessage", userRateLimitSubject(session.user.id)),
+  );
 
   if (!rateLimit.allowed) {
     return rateLimitResponse(rateLimit);

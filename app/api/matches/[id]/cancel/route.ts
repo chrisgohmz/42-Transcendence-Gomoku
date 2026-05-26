@@ -7,6 +7,7 @@ import { isActiveParticipantForUser } from "@/lib/matches/participant-access";
 import { publishGameUpdate } from "@/lib/matches/realtime-publisher";
 import { prisma } from "@/lib/prisma";
 import { consumeRateLimit, rateLimitResponse } from "@/lib/rate-limit";
+import { rateLimitRule, userRateLimitSubject } from "@/lib/rate-limit-rules";
 import { enforceMutationRequest } from "@/lib/request-security";
 
 const endReasonHostCancelled = "host_cancelled";
@@ -39,12 +40,10 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
 
     const participantId = requestValidation.data.participantId;
     const baseVersion = requestValidation.data.baseVersion ?? null;
-    const rateLimit = consumeRateLimit(request.headers, {
-      key: "matches:cancel",
-      max: 30,
-      subject: `user:${context.user.id}`,
-      windowSeconds: 60,
-    });
+    const rateLimit = consumeRateLimit(
+      request.headers,
+      rateLimitRule("matchCancel", userRateLimitSubject(context.user.id)),
+    );
 
     if (!rateLimit.allowed) {
       return rateLimitResponse(rateLimit);

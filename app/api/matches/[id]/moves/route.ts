@@ -8,6 +8,7 @@ import { isActiveParticipantForUser } from "@/lib/matches/participant-access";
 import { publishGameUpdate } from "@/lib/matches/realtime-publisher";
 import { prisma } from "@/lib/prisma";
 import { consumeRateLimit, rateLimitResponse } from "@/lib/rate-limit";
+import { rateLimitRule, userRateLimitSubject } from "@/lib/rate-limit-rules";
 import { enforceMutationRequest } from "@/lib/request-security";
 import { syncUserGameStatsForUser } from "@/lib/stats/result-sync";
 
@@ -77,12 +78,10 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     const position = validation.data.position;
     const requestId = validation.data.requestId ?? null;
     const baseVersion = validation.data.baseVersion ?? null;
-    const rateLimit = consumeRateLimit(request.headers, {
-      key: "matches:move",
-      max: 120,
-      subject: `user:${context.user.id}`,
-      windowSeconds: 60,
-    });
+    const rateLimit = consumeRateLimit(
+      request.headers,
+      rateLimitRule("matchMove", userRateLimitSubject(context.user.id)),
+    );
 
     if (!rateLimit.allowed) {
       return rateLimitResponse(rateLimit);

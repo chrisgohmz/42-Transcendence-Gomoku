@@ -14,6 +14,7 @@ import { isActiveParticipantForUser } from "@/lib/matches/participant-access";
 import { publishGameUpdate } from "@/lib/matches/realtime-publisher";
 import { prisma } from "@/lib/prisma";
 import { consumeRateLimit, rateLimitResponse } from "@/lib/rate-limit";
+import { rateLimitRule, userRateLimitSubject } from "@/lib/rate-limit-rules";
 import { enforceMutationRequest } from "@/lib/request-security";
 import { syncUserGameStatsForUser } from "@/lib/stats/result-sync";
 
@@ -88,12 +89,10 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       return Response.json({ error: "missing_participant_id" }, { status: 400 });
     }
 
-    const rateLimit = consumeRateLimit(request.headers, {
-      key: "matches:ai-turn",
-      max: 60,
-      subject: `user:${context.user.id}`,
-      windowSeconds: 60,
-    });
+    const rateLimit = consumeRateLimit(
+      request.headers,
+      rateLimitRule("matchAiTurn", userRateLimitSubject(context.user.id)),
+    );
 
     if (!rateLimit.allowed) {
       return rateLimitResponse(rateLimit);

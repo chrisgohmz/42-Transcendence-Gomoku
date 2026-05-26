@@ -7,6 +7,7 @@ import { getLocalizedAuthAppUrl } from "../../../lib/auth-urls";
 import { resolveApiLocale } from "../../../lib/i18n/api";
 import { prisma } from "../../../lib/prisma";
 import { consumeRateLimit, rateLimitResponse } from "../../../lib/rate-limit";
+import { rateLimitRule } from "../../../lib/rate-limit-rules";
 import { enforceMutationRequest } from "../../../lib/request-security";
 import { fieldIssuesToMap, validateLoginInput } from "../../../lib/validation/auth-profile";
 
@@ -38,11 +39,7 @@ export async function POST(request: Request) {
     return requestGuardResponse;
   }
 
-  const rateLimit = consumeRateLimit(request.headers, {
-    key: "auth:login",
-    max: 10,
-    windowSeconds: 60,
-  });
+  const rateLimit = consumeRateLimit(request.headers, rateLimitRule("authLogin"));
 
   if (!rateLimit.allowed) {
     return rateLimitResponse(rateLimit);

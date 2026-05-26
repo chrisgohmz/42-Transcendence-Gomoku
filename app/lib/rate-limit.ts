@@ -7,6 +7,12 @@ type RateLimitBucket = {
   resetAt: number;
 };
 
+type RateLimitOptions = {
+  env?: NodeJS.ProcessEnv;
+  now?: number;
+  store?: Map<string, RateLimitBucket>;
+};
+
 export type RateLimitRule = {
   key: string;
   max: number;
@@ -44,26 +50,25 @@ function getFirstHeaderValue(value: string | null): string | null {
 }
 
 export function getClientIp(headers?: HeaderReader | null): string {
-  return (
-    getFirstHeaderValue(headers?.get("cf-connecting-ip") ?? null) ??
-    getFirstHeaderValue(headers?.get("x-real-ip") ?? null) ??
-    getFirstHeaderValue(headers?.get("x-forwarded-for") ?? null) ??
-    "unknown"
-  );
+  return getFirstHeaderValue(headers?.get("x-forwarded-for") ?? null) ?? "unknown";
 }
 
 function isRateLimitDisabled(env: NodeJS.ProcessEnv = process.env): boolean {
+  if (env["RATE_LIMIT_DISABLED"] === "false") {
+    return false;
+  }
+
   return env["RATE_LIMIT_DISABLED"] === "true" || env["NODE_ENV"] === "test";
 }
 
-function pruneExpiredBuckets(now: number) {
-  if (buckets.size < maxBuckets) {
+function pruneExpiredBuckets(now: number, store: Map<string, RateLimitBucket>) {
+  if (store.size < maxBuckets) {
     return;
   }
 
-  for (const [key, bucket] of buckets) {
+  for (const [key, bucket] of store) {
     if (bucket.resetAt <= now) {
-      buckets.delete(key);
+      store.delete(key);
     }
   }
 }
@@ -93,12 +98,17 @@ function buildHeaders({
   return headers;
 }
 
-export function consumeRateLimit(headers: HeaderReader | null | undefined, rule: RateLimitRule) {
-  const now = Date.now();
+export function consumeRateLimit(
+  headers: HeaderReader | null | undefined,
+  rule: RateLimitRule,
+  options: RateLimitOptions = {},
+) {
+  const now = options.now ?? Date.now();
   const windowMs = Math.max(1, rule.windowSeconds) * 1000;
   const resetAt = now + windowMs;
+  const store = options.store ?? buckets;
 
-  if (isRateLimitDisabled()) {
+  if (isRateLimitDisabled(options.env)) {
     return {
       allowed: true,
       headers: buildHeaders({ limit: rule.max, remaining: rule.max, resetAt }),
@@ -108,15 +118,15 @@ export function consumeRateLimit(headers: HeaderReader | null | undefined, rule:
     } satisfies RateLimitResult;
   }
 
-  pruneExpiredBuckets(now);
+  pruneExpiredBuckets(now, store);
 
   const subject = rule.subject?.trim() || `ip:${getClientIp(headers)}`;
   const key = `${rule.key}:${subject}`;
-  const current = buckets.get(key);
+  const current = store.get(key);
   const bucket = current && current.resetAt > now ? current : { count: 0, resetAt };
 
   bucket.count += 1;
-  buckets.set(key, bucket);
+  store.set(key, bucket);
 
   const remaining = Math.max(0, rule.max - bucket.count);
 

@@ -12,6 +12,7 @@ import { z } from "zod";
 import { getCurrentSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { consumeRateLimit } from "@/lib/rate-limit";
+import { rateLimitRule, userRateLimitSubject } from "@/lib/rate-limit-rules";
 
 const maxProfilePictureBytes = 5 * 1024 * 1024;
 const profilePictureFileSchema = z
@@ -71,12 +72,10 @@ export async function uploadProfilePicture(formData: FormData) {
     return { error: t("loginRequired") };
   }
 
-  const rateLimit = consumeRateLimit(await headers(), {
-    key: "profile:avatar-upload",
-    max: 10,
-    subject: `user:${sessionData.user.id}`,
-    windowSeconds: 3600,
-  });
+  const rateLimit = consumeRateLimit(
+    await headers(),
+    rateLimitRule("profileAvatarUpload", userRateLimitSubject(sessionData.user.id)),
+  );
 
   if (!rateLimit.allowed) {
     return { error: t("pictureSaveFailed") };
