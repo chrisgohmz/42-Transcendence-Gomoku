@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { headers } from "next/headers";
 
 import { getCurrentSession } from "@/lib/auth";
 import {
@@ -9,6 +10,7 @@ import {
   notifyFriendshipUpdateForUserIdsSafely,
 } from "@/lib/friendships/friendship-mutations";
 import { prisma } from "@/lib/prisma";
+import { consumeRateLimit } from "@/lib/rate-limit";
 
 export async function processFriendAction(
   targetUserId: string,
@@ -19,6 +21,17 @@ export async function processFriendAction(
 
   if (!loggedInUserId) {
     return { error: "Unauthorized" };
+  }
+
+  const rateLimit = consumeRateLimit(await headers(), {
+    key: "profile:friend-action",
+    max: 30,
+    subject: `user:${loggedInUserId}`,
+    windowSeconds: 60,
+  });
+
+  if (!rateLimit.allowed) {
+    return { error: "Too many requests. Please try again later." };
   }
 
   const { userLowId, userHighId } = getLowHighIds(loggedInUserId, targetUserId);

@@ -7,6 +7,11 @@ import { buildGameUpdatePayload } from "@/lib/matches/game-update";
 import { standardGomokuBoardSize } from "@/lib/matches/move-rules";
 import { publishGameUpdate } from "@/lib/matches/realtime-publisher";
 import { prisma } from "@/lib/prisma";
+import { consumeRateLimit, rateLimitResponse } from "@/lib/rate-limit";
+import { enforceMutationRequest } from "@/lib/request-security";
+
+const maxRoomNameLength = 80;
+const maxRoomPasswordLength = 128;
 
 function getErrorMessage(error: unknown): string {
   return error instanceof Error ? error.message : "Unknown error";
@@ -27,6 +32,12 @@ function isLobbyListedMatch({
 }
 
 export async function POST(request: Request) {
+  const requestGuardResponse = enforceMutationRequest(request, { requireJson: true });
+
+  if (requestGuardResponse) {
+    return requestGuardResponse;
+  }
+
   const context = await getCurrentSession();
 
   if (!context) {
@@ -56,10 +67,36 @@ export async function POST(request: Request) {
         ? MatchVisibility.PRIVATE
         : MatchVisibility.PUBLIC;
 
-    const password =
-      visibility === MatchVisibility.PRIVATE && rawPassword
-        ? await hashPassword(rawPassword)
-        : null;
+    if (name && name.length > maxRoomNameLength) {
+      return Response.json(
+        {
+          error: "room_name_too_long",
+          message: "Room names must be 80 characters or fewer.",
+        },
+        { status: 400 },
+      );
+    }
+
+    if (rawPassword && rawPassword.length > maxRoomPasswordLength) {
+      return Response.json(
+        {
+          error: "room_password_too_long",
+          message: "Room passwords must be 128 characters or fewer.",
+        },
+        { status: 400 },
+      );
+    }
+
+    const rateLimit = consumeRateLimit(request.headers, {
+      key: "matches:create",
+      max: 20,
+      subject: `user:${context.user.id}`,
+      windowSeconds: 60,
+    });
+
+    if (!rateLimit.allowed) {
+      return rateLimitResponse(rateLimit);
+    }
 
     if (visibility === MatchVisibility.PRIVATE && !rawPassword) {
       return Response.json(
@@ -70,6 +107,11 @@ export async function POST(request: Request) {
         { status: 400 },
       );
     }
+
+    const password =
+      visibility === MatchVisibility.PRIVATE && rawPassword
+        ? await hashPassword(rawPassword)
+        : null;
 
     const match = await prisma.match.create({
       data: {
@@ -129,10 +171,10 @@ export async function POST(request: Request) {
       createdAt: match.createdAt,
     });
   } catch (error) {
+    console.error("[api/matches] create failed:", getErrorMessage(error));
     return Response.json(
       {
         error: "failed_to_create_match",
-        detail: getErrorMessage(error),
       },
       { status: 500 },
     );

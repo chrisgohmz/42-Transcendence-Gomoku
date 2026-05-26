@@ -9,6 +9,7 @@ const createFriendship = mock();
 const deleteFriendship = mock();
 const updateFriendship = mock();
 const revalidatePath = mock();
+const headers = mock();
 const fetchMock = mock(async () => new Response(null, { status: 200 }));
 const originalFetch = globalThis.fetch;
 const originalRealtimeInternalSecret = process.env["REALTIME_INTERNAL_SECRET"];
@@ -17,6 +18,10 @@ const friendshipUpdateUrl = "http://localhost:3001/internal/friendship-update";
 
 await mock.module("next/cache", () => ({
   revalidatePath,
+}));
+
+await mock.module("next/headers", () => ({
+  headers,
 }));
 
 await mock.module("@/lib/auth", () =>
@@ -67,11 +72,13 @@ beforeEach(() => {
   deleteFriendship.mockReset();
   updateFriendship.mockReset();
   revalidatePath.mockReset();
+  headers.mockReset();
   fetchMock.mockReset();
 
   globalThis.fetch = fetchMock as unknown as typeof fetch;
   process.env["REALTIME_INTERNAL_SECRET"] = "friend-secret";
   process.env["REALTIME_FRIENDSHIP_INTERNAL_URL"] = friendshipUpdateUrl;
+  headers.mockResolvedValue(new Headers({ "x-forwarded-for": "127.0.0.1" }));
   getCurrentSession.mockResolvedValue({
     user: { id: "user-a" },
   });

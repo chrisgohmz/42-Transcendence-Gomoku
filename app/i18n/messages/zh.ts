@@ -473,6 +473,7 @@ export const messages = {
       unauthorized: "没有权限。",
       invalidTransition: "无效的状态转换。",
       friendshipNotFound: "未找到好友关系。",
+      tryAgainLater: "请求过多。请稍后再试。",
     },
     empty: {
       friends: "暂无好友。在上面搜索并添加吧！",

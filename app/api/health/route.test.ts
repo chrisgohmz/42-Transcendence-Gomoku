@@ -38,9 +38,9 @@ describe("GET /api/health", () => {
     expect(response.status).toBe(503);
     expect(payload).toMatchObject({
       database: "unreachable",
-      error: "connection refused",
       service: "app",
       status: "degraded",
     });
+    expect(payload).not.toHaveProperty("error");
   });
 });

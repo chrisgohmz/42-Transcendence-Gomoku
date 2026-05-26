@@ -1,14 +1,17 @@
 "use server";
 
 import { writeFile, mkdir } from "fs/promises";
+import { randomUUID } from "node:crypto";
 import path from "path";
 
 import { getLocale, getTranslations } from "next-intl/server";
 import { revalidatePath } from "next/cache";
+import { headers } from "next/headers";
 import { z } from "zod";
 
 import { getCurrentSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { consumeRateLimit } from "@/lib/rate-limit";
 
 const maxProfilePictureBytes = 5 * 1024 * 1024;
 const profilePictureFileSchema = z
@@ -18,7 +21,7 @@ const profilePictureFileSchema = z
   .refine((file) => file.size > 0, { message: "noFile" })
   .refine((file) => file.size <= maxProfilePictureBytes, { message: "imageTooLarge" });
 
-function isSupportedProfileImageBuffer(buffer: Buffer): boolean {
+function getSupportedProfileImageExtension(buffer: Buffer): "jpg" | "png" | "webp" | null {
   const isJPEG =
     buffer.length > 2 && buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff;
   const isPNG =
@@ -38,12 +41,26 @@ function isSupportedProfileImageBuffer(buffer: Buffer): boolean {
     buffer[10] === 0x42 &&
     buffer[11] === 0x50;
 
-  return isJPEG || isPNG || isWebP;
+  if (isJPEG) {
+    return "jpg";
+  }
+
+  if (isPNG) {
+    return "png";
+  }
+
+  if (isWebP) {
+    return "webp";
+  }
+
+  return null;
 }
 
 const profilePictureBufferSchema = z
   .custom<Buffer>((value) => Buffer.isBuffer(value), { message: "invalidImage" })
-  .refine(isSupportedProfileImageBuffer, { message: "invalidImage" });
+  .refine((buffer) => getSupportedProfileImageExtension(buffer) !== null, {
+    message: "invalidImage",
+  });
 
 export async function uploadProfilePicture(formData: FormData) {
   const locale = await getLocale();
@@ -52,6 +69,17 @@ export async function uploadProfilePicture(formData: FormData) {
 
   if (!sessionData) {
     return { error: t("loginRequired") };
+  }
+
+  const rateLimit = consumeRateLimit(await headers(), {
+    key: "profile:avatar-upload",
+    max: 10,
+    subject: `user:${sessionData.user.id}`,
+    windowSeconds: 3600,
+  });
+
+  if (!rateLimit.allowed) {
+    return { error: t("pictureSaveFailed") };
   }
 
   const fileValidation = profilePictureFileSchema.safeParse(formData.get("file"));
@@ -71,7 +99,13 @@ export async function uploadProfilePicture(formData: FormData) {
       return { error: t("invalidImage") };
     }
 
-    const filename = `${sessionData.user.id}-${Date.now()}${path.extname(file.name)}`;
+    const extension = getSupportedProfileImageExtension(buffer);
+
+    if (!extension) {
+      return { error: t("invalidImage") };
+    }
+
+    const filename = `${sessionData.user.id}-${randomUUID()}.${extension}`;
     const uploadDir = path.join(process.cwd(), "public", "uploads");
 
     await mkdir(uploadDir, { recursive: true });

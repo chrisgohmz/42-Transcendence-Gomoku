@@ -16,10 +16,10 @@ export async function GET(request?: Request) {
 
     return Response.json(snapshot);
   } catch (error) {
+    console.error("[api/leaderboard] load failed:", getErrorMessage(error));
     return Response.json(
       {
         error: "failed_to_load_leaderboard",
-        detail: getErrorMessage(error),
       },
       { status: 500 },
     );

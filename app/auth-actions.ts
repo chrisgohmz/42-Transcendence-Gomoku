@@ -18,6 +18,7 @@ import {
   hasDuplicateSignupFields,
 } from "./lib/auth-duplicate-fields";
 import { getLocalizedAuthAppUrl } from "./lib/auth-urls";
+import { consumeRateLimit } from "./lib/rate-limit";
 import {
   fieldIssuesToMap,
   type AuthField,
@@ -87,6 +88,13 @@ function isEmailNotVerifiedError(error: unknown): boolean {
   );
 }
 
+function isActionRateLimited(
+  headerList: Pick<Headers, "get">,
+  rule: { key: string; max: number; windowSeconds: number },
+): boolean {
+  return !consumeRateLimit(headerList, rule).allowed;
+}
+
 export async function loginAction(
   _previousState: LoginActionState,
   formData: FormData,
@@ -109,6 +117,14 @@ export async function loginAction(
 
   try {
     const headerList = await headers();
+
+    if (isActionRateLimited(headerList, { key: "auth-action:login", max: 10, windowSeconds: 60 })) {
+      return {
+        email: rawEmail,
+        fields: {},
+        message: t("loginUnavailable"),
+      };
+    }
 
     await auth.api.signInEmail({
       body: {
@@ -167,6 +183,21 @@ export async function requestPasswordResetAction(
   try {
     const headerList = await headers();
 
+    if (
+      isActionRateLimited(headerList, {
+        key: "auth-action:password-reset-request",
+        max: 3,
+        windowSeconds: 60,
+      })
+    ) {
+      return {
+        email,
+        fields: {},
+        message: t("passwordResetUnavailable"),
+        successMessage: null,
+      };
+    }
+
     await auth.api.requestPasswordReset({
       body: {
         email: validation.data.email,
@@ -220,6 +251,22 @@ export async function resetPasswordAction(
   }
 
   try {
+    const headerList = await headers();
+
+    if (
+      isActionRateLimited(headerList, {
+        key: "auth-action:password-reset-confirm",
+        max: 10,
+        windowSeconds: 60,
+      })
+    ) {
+      return {
+        fields: {},
+        message: t("passwordResetUnavailable"),
+        successMessage: null,
+      };
+    }
+
     await auth.api.resetPassword({
       body: {
         newPassword: validation.data.newPassword,
@@ -269,6 +316,19 @@ export async function signupAction(
   }
 
   try {
+    const headerList = await headers();
+
+    if (isActionRateLimited(headerList, { key: "auth-action:signup", max: 5, windowSeconds: 60 })) {
+      return {
+        displayName,
+        email,
+        fields: {},
+        message: t("signupUnavailable"),
+        successMessage: null,
+        username,
+      };
+    }
+
     const duplicateFields = await findDuplicateSignupFields(
       validation.data.email,
       validation.data.username,
@@ -284,8 +344,6 @@ export async function signupAction(
         username,
       };
     }
-
-    const headerList = await headers();
 
     await auth.api.signUpEmail({
       body: {

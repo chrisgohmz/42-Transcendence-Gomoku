@@ -73,9 +73,9 @@ export async function GET(request: Request) {
       totalPages: history.totalPages,
     });
   } catch (error) {
+    console.error("[api/matches/history] load failed:", getErrorMessage(error));
     return Response.json(
       {
-        detail: getErrorMessage(error),
         error: "failed_to_load_match_history",
       },
       { status: 500 },

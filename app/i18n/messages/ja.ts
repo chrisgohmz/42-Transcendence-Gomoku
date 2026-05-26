@@ -477,6 +477,7 @@ export const messages = {
       unauthorized: "権限がありません。",
       invalidTransition: "無効な遷移です。",
       friendshipNotFound: "フレンド関係が見つかりません。",
+      tryAgainLater: "リクエストが多すぎます。しばらくしてからもう一度お試しください。",
     },
     empty: {
       friends: "まだフレンドがいません。上で検索して追加しましょう！",

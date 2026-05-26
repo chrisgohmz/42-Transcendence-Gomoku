@@ -124,9 +124,7 @@ export async function GET() {
 
     return Response.json({ conversations });
   } catch (error) {
-    return Response.json(
-      { error: "failed_to_load_conversations", detail: getErrorMessage(error) },
-      { status: 500 },
-    );
+    console.error("[api/conversations] load failed:", getErrorMessage(error));
+    return Response.json({ error: "failed_to_load_conversations" }, { status: 500 });
   }
 }

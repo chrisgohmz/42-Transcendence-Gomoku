@@ -42,9 +42,7 @@ export async function GET() {
 
     return Response.json({ friends });
   } catch (error) {
-    return Response.json(
-      { error: "failed_to_load_friends", detail: getErrorMessage(error) },
-      { status: 500 },
-    );
+    console.error("[api/friends] load failed:", getErrorMessage(error));
+    return Response.json({ error: "failed_to_load_friends" }, { status: 500 });
   }
 }

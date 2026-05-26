@@ -7,6 +7,7 @@ import { headers } from "next/headers";
 
 import { auth, getCurrentSession, hasCredentialPassword } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { consumeRateLimit } from "@/lib/rate-limit";
 import {
   fieldIssuesToMap,
   type ProfileSettingsField,
@@ -29,6 +30,15 @@ function getApiErrorCode(error: unknown): string | undefined {
   return isAPIError(error) ? (error.body as { code?: string } | undefined)?.code : undefined;
 }
 
+async function isProfileSettingsRateLimited(userId: string, key: string): Promise<boolean> {
+  return !consumeRateLimit(await headers(), {
+    key,
+    max: 20,
+    subject: `user:${userId}`,
+    windowSeconds: 60,
+  }).allowed;
+}
+
 export async function saveDisplayName(
   _previousState: ProfileSettingsActionState,
   formData: FormData,
@@ -39,6 +49,10 @@ export async function saveDisplayName(
 
   if (!sessionData) {
     return { fields: {}, message: t("loginRequired"), successMessage: null };
+  }
+
+  if (await isProfileSettingsRateLimited(sessionData.user.id, "profile:display-name")) {
+    return { fields: {}, message: t("profileSaveFailed"), successMessage: null };
   }
 
   const validation = validateProfileDisplayNameInput({
@@ -78,6 +92,10 @@ export async function changeAccountPassword(
 
   if (!sessionData) {
     return { fields: {}, message: t("loginRequired"), successMessage: null };
+  }
+
+  if (await isProfileSettingsRateLimited(sessionData.user.id, "profile:change-password")) {
+    return { fields: {}, message: t("profileSaveFailed"), successMessage: null };
   }
 
   const validation = validateProfilePasswordInput({
@@ -129,6 +147,10 @@ export async function setAccountPassword(
 
   if (!sessionData) {
     return { fields: {}, message: t("loginRequired"), successMessage: null };
+  }
+
+  if (await isProfileSettingsRateLimited(sessionData.user.id, "profile:set-password")) {
+    return { fields: {}, message: t("profileSaveFailed"), successMessage: null };
   }
 
   const validation = validateProfileSetPasswordInput({

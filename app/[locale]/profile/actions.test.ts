@@ -7,6 +7,7 @@ const writeFile = mock();
 const getLocale = mock();
 const getTranslations = mock();
 const revalidatePath = mock();
+const headers = mock();
 const getCurrentSession = mock();
 const updateUser = mock();
 
@@ -22,6 +23,10 @@ await mock.module("next-intl/server", () => ({
 
 await mock.module("next/cache", () => ({
   revalidatePath,
+}));
+
+await mock.module("next/headers", () => ({
+  headers,
 }));
 
 await mock.module("@/lib/auth", () =>
@@ -46,6 +51,7 @@ beforeEach(() => {
   getLocale.mockReset();
   getTranslations.mockReset();
   revalidatePath.mockReset();
+  headers.mockReset();
   getCurrentSession.mockReset();
   updateUser.mockReset();
 
@@ -57,6 +63,7 @@ beforeEach(() => {
       (key: string) =>
         `${namespace}:${key}`,
   );
+  headers.mockResolvedValue(new Headers({ "x-forwarded-for": "127.0.0.1" }));
   getCurrentSession.mockResolvedValue({
     user: {
       id: "user-ada",
@@ -115,7 +122,9 @@ describe("uploadProfilePicture", () => {
     );
     expect(updateUser).toHaveBeenCalledWith({
       data: {
-        avatarUrl: expect.stringMatching(/^\/uploads\/user-ada-\d+\.png$/),
+        avatarUrl: expect.stringMatching(
+          /^\/uploads\/user-ada-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.png$/,
+        ),
       },
       where: { id: "user-ada" },
     });

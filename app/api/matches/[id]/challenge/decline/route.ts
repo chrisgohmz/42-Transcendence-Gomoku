@@ -5,6 +5,8 @@ import { getCurrentSession } from "@/lib/auth";
 import { getChallengeMatchMetadata } from "@/lib/matches/challenge-metadata";
 import { publishChallengeDeclined } from "@/lib/matches/realtime-publisher";
 import { prisma } from "@/lib/prisma";
+import { consumeRateLimit, rateLimitResponse } from "@/lib/rate-limit";
+import { enforceMutationRequest } from "@/lib/request-security";
 
 function getErrorMessage(error: unknown): string {
   return error instanceof Error ? error.message : "Unknown error";
@@ -23,6 +25,12 @@ async function verifyDeclineToken(hash: string, token: string) {
 }
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  const requestGuardResponse = enforceMutationRequest(request, { requireJson: true });
+
+  if (requestGuardResponse) {
+    return requestGuardResponse;
+  }
+
   const context = await getCurrentSession();
 
   if (!context) {
@@ -40,6 +48,17 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
 
     if (!declineToken) {
       return Response.json({ error: "missing_decline_token" }, { status: 400 });
+    }
+
+    const rateLimit = consumeRateLimit(request.headers, {
+      key: "matches:challenge:decline",
+      max: 30,
+      subject: `user:${context.user.id}`,
+      windowSeconds: 60,
+    });
+
+    if (!rateLimit.allowed) {
+      return rateLimitResponse(rateLimit);
     }
 
     const match = await prisma.match.findUnique({
@@ -123,10 +142,10 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
 
     return Response.json({ matchId, status: MatchStatus.CANCELLED });
   } catch (error) {
+    console.error("[api/matches/challenge/decline] failed:", getErrorMessage(error));
     return Response.json(
       {
         error: "failed_to_decline_challenge",
-        detail: getErrorMessage(error),
       },
       { status: 500 },
     );

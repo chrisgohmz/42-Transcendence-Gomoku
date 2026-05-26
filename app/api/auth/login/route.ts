@@ -1,11 +1,13 @@
 import { isAPIError } from "better-auth/api";
 import { getTranslations } from "next-intl/server";
 
-import { apiErrorResponse, getErrorMessage } from "../../../lib/api-errors";
+import { apiErrorResponse } from "../../../lib/api-errors";
 import { auth, serializeUserForResponse } from "../../../lib/auth";
 import { getLocalizedAuthAppUrl } from "../../../lib/auth-urls";
 import { resolveApiLocale } from "../../../lib/i18n/api";
 import { prisma } from "../../../lib/prisma";
+import { consumeRateLimit, rateLimitResponse } from "../../../lib/rate-limit";
+import { enforceMutationRequest } from "../../../lib/request-security";
 import { fieldIssuesToMap, validateLoginInput } from "../../../lib/validation/auth-profile";
 
 type LoginBody = {
@@ -30,6 +32,22 @@ function isEmailNotVerifiedError(error: unknown): boolean {
 }
 
 export async function POST(request: Request) {
+  const requestGuardResponse = enforceMutationRequest(request, { requireJson: true });
+
+  if (requestGuardResponse) {
+    return requestGuardResponse;
+  }
+
+  const rateLimit = consumeRateLimit(request.headers, {
+    key: "auth:login",
+    max: 10,
+    windowSeconds: 60,
+  });
+
+  if (!rateLimit.allowed) {
+    return rateLimitResponse(rateLimit);
+  }
+
   const body = (await request.json().catch(() => null)) as LoginBody | null;
   const t = await getTranslations({ locale: resolveApiLocale(request), namespace: "auth.errors" });
 
@@ -101,7 +119,6 @@ export async function POST(request: Request) {
     return apiErrorResponse(
       {
         error: "login_failed",
-        detail: getErrorMessage(error),
         message: t("loginUnavailable"),
       },
       500,

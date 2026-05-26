@@ -6,6 +6,8 @@ import { getErrorMessage } from "@/lib/api-errors";
 import { getCurrentSession } from "@/lib/auth";
 import { canAccessDirectConversation } from "@/lib/chat/access";
 import { markDirectConversationRead } from "@/lib/chat/read-state";
+import { consumeRateLimit, rateLimitResponse } from "@/lib/rate-limit";
+import { enforceMutationRequest } from "@/lib/request-security";
 
 function deniedResponse(reason: "not_found" | "not_friends" | "not_direct") {
   if (reason === "not_found") {
@@ -14,7 +16,13 @@ function deniedResponse(reason: "not_found" | "not_friends" | "not_direct") {
   return Response.json({ error: "not_friends" }, { status: 403 });
 }
 
-export async function POST(_request: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  const requestGuardResponse = enforceMutationRequest(request);
+
+  if (requestGuardResponse) {
+    return requestGuardResponse;
+  }
+
   const session = await getCurrentSession();
   if (!session) {
     return Response.json({ error: "unauthorized" }, { status: 401 });
@@ -27,13 +35,22 @@ export async function POST(_request: Request, { params }: { params: Promise<{ id
     return deniedResponse(access.reason);
   }
 
+  const rateLimit = consumeRateLimit(request.headers, {
+    key: "conversations:read",
+    max: 120,
+    subject: `user:${session.user.id}`,
+    windowSeconds: 60,
+  });
+
+  if (!rateLimit.allowed) {
+    return rateLimitResponse(rateLimit);
+  }
+
   try {
     const lastReadAt = await markDirectConversationRead(conversationId, session.user.id);
     return Response.json({ lastReadAt });
   } catch (error) {
-    return Response.json(
-      { error: "failed_to_mark_conversation_read", detail: getErrorMessage(error) },
-      { status: 500 },
-    );
+    console.error("[api/conversations/read] mark failed:", getErrorMessage(error));
+    return Response.json({ error: "failed_to_mark_conversation_read" }, { status: 500 });
   }
 }

@@ -7,6 +7,8 @@ import { evaluateMoveOutcome, validateMoveSubmission } from "@/lib/matches/move-
 import { isActiveParticipantForUser } from "@/lib/matches/participant-access";
 import { publishGameUpdate } from "@/lib/matches/realtime-publisher";
 import { prisma } from "@/lib/prisma";
+import { consumeRateLimit, rateLimitResponse } from "@/lib/rate-limit";
+import { enforceMutationRequest } from "@/lib/request-security";
 import { syncUserGameStatsForUser } from "@/lib/stats/result-sync";
 
 function getErrorMessage(error: unknown): string {
@@ -50,6 +52,12 @@ function getHumanPlayerUserIds(
 }
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  const requestGuardResponse = enforceMutationRequest(request, { requireJson: true });
+
+  if (requestGuardResponse) {
+    return requestGuardResponse;
+  }
+
   const context = await getCurrentSession();
 
   if (!context) {
@@ -69,6 +77,16 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     const position = validation.data.position;
     const requestId = validation.data.requestId ?? null;
     const baseVersion = validation.data.baseVersion ?? null;
+    const rateLimit = consumeRateLimit(request.headers, {
+      key: "matches:move",
+      max: 120,
+      subject: `user:${context.user.id}`,
+      windowSeconds: 60,
+    });
+
+    if (!rateLimit.allowed) {
+      return rateLimitResponse(rateLimit);
+    }
 
     const result = await prisma.$transaction(async (tx) => {
       const match = await tx.match.findUnique({
@@ -265,19 +283,19 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     });
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+      console.error("[api/matches/moves] unique constraint failed:", getErrorMessage(error));
       return Response.json(
         {
           error: mapUniqueConstraintError(error),
-          detail: getErrorMessage(error),
         },
         { status: 409 },
       );
     }
 
+    console.error("[api/matches/moves] submit failed:", getErrorMessage(error));
     return Response.json(
       {
         error: "failed_to_submit_move",
-        detail: getErrorMessage(error),
       },
       { status: 500 },
     );

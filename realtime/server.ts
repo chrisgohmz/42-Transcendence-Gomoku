@@ -49,6 +49,11 @@ const hostname = process.env["SOCKET_HOST"] ?? "0.0.0.0";
 const port = Number(process.env["SOCKET_PORT"] || 3001);
 const socketPath = process.env["SOCKET_PATH"] ?? "/socket.io/";
 const realtimeInternalSecret = readRealtimeInternalSecret(process.env);
+
+if (!realtimeInternalSecret && process.env["NODE_ENV"] === "production") {
+  throw new Error("REALTIME_INTERNAL_SECRET is required in production.");
+}
+
 const socketHeartbeatIntervalMs = readPositiveIntegerEnv(
   process.env,
   "SOCKET_HEARTBEAT_INTERVAL_MS",

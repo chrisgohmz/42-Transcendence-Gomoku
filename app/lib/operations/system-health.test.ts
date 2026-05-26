@@ -132,12 +132,12 @@ describe("getSystemHealth", () => {
     expect(payload.checks).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
-          detail: "connection refused",
+          detail: "PostgreSQL health check failed.",
           id: "database",
           status: "unreachable",
         }),
         expect.objectContaining({
-          detail: "fetch failed",
+          detail: "Realtime health check failed.",
           id: "realtime",
           status: "unreachable",
         }),

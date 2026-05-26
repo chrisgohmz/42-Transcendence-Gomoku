@@ -57,6 +57,49 @@ function getAllowedDevOrigins(): string[] {
 }
 
 const allowedDevOrigins = getAllowedDevOrigins();
+const scriptSrc =
+  process.env["NODE_ENV"] === "production"
+    ? "script-src 'self' 'unsafe-inline'"
+    : "script-src 'self' 'unsafe-inline' 'unsafe-eval'";
+const contentSecurityPolicy = [
+  "default-src 'self'",
+  "base-uri 'self'",
+  "object-src 'none'",
+  "frame-ancestors 'none'",
+  "form-action 'self'",
+  "img-src 'self' data: blob: https:",
+  "font-src 'self' data:",
+  "style-src 'self' 'unsafe-inline'",
+  scriptSrc,
+  "connect-src 'self' ws: wss:",
+].join("; ");
+
+const securityHeaders = [
+  {
+    key: "Content-Security-Policy",
+    value: contentSecurityPolicy,
+  },
+  {
+    key: "X-Content-Type-Options",
+    value: "nosniff",
+  },
+  {
+    key: "X-Frame-Options",
+    value: "DENY",
+  },
+  {
+    key: "Referrer-Policy",
+    value: "strict-origin-when-cross-origin",
+  },
+  {
+    key: "Permissions-Policy",
+    value: "camera=(), microphone=(), geolocation=(), payment=(), usb=()",
+  },
+  {
+    key: "X-DNS-Prefetch-Control",
+    value: "off",
+  },
+];
 
 const nextConfig: NextConfig = {
   allowedDevOrigins: allowedDevOrigins.length > 0 ? allowedDevOrigins : undefined,
@@ -66,6 +109,14 @@ const nextConfig: NextConfig = {
   },
   turbopack: {
     root: currentDirectory,
+  },
+  async headers() {
+    return [
+      {
+        headers: securityHeaders,
+        source: "/:path*",
+      },
+    ];
   },
   transpilePackages: ["@prisma/client", "@prisma/adapter-pg", "pg"],
 };

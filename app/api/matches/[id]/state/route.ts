@@ -78,10 +78,10 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
       board,
     });
   } catch (error) {
+    console.error("[api/matches/state] load failed:", getErrorMessage(error));
     return Response.json(
       {
         error: "failed_to_load_state",
-        detail: getErrorMessage(error),
       },
       { status: 500 },
     );

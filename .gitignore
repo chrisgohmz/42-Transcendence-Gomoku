@@ -17,3 +17,4 @@ test-results
 output/playwright
 .next
 .docker-data
+security-audit/
