@@ -71,14 +71,42 @@ jobs:
         run: bun run build
 
       - name: Install Playwright browsers
-        run: bun run pw:install --with-deps chromium
+        run: bun run pw:install --with-deps
 
       - name: Run Playwright E2E tests
         env:
           BETTER_AUTH_SECRET: ci_better_auth_secret_change_me_32_chars
           BETTER_AUTH_URL: http://localhost:3000
           PLAYWRIGHT_WEB_SERVER_COMMAND: bun run start
-        run: bun run test:e2e
+          REALTIME_INTERNAL_URL: http://127.0.0.1:3001/internal/game-update
+          SOCKET_CORS_ORIGIN: http://localhost:3000
+        run: |
+          bun run start:realtime > /tmp/realtime.log 2>&1 &
+          REALTIME_PID=$!
+
+          cleanup() {
+            kill "$REALTIME_PID" 2>/dev/null || true
+            wait "$REALTIME_PID" 2>/dev/null || true
+          }
+
+          trap cleanup EXIT
+
+          for attempt in {1..20}; do
+            if curl --fail --silent http://127.0.0.1:3001/health > /tmp/realtime-health.json; then
+              cat /tmp/realtime-health.json
+              bun run test:e2e
+              exit $?
+            fi
+
+            if ! kill -0 "$REALTIME_PID" 2>/dev/null; then
+              break
+            fi
+
+            sleep 1
+          done
+
+          cat /tmp/realtime.log
+          exit 1
 
       - name: Upload Playwright report
         if: failure()

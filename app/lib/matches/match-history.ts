@@ -1,5 +1,10 @@
 import type { Prisma } from "../../../generated/prisma/client";
 import { MatchStatus } from "../../../generated/prisma/enums";
+import {
+  buildMatchHistoryFilterWhere,
+  type MatchHistorySearchQuery,
+  type MatchHistorySort,
+} from "../advanced-search";
 import { buildBoard } from "../game/state-builder";
 import { prisma } from "../prisma";
 
@@ -149,27 +154,55 @@ export function buildMatchHistoryWhere(userId: string) {
   } satisfies Prisma.MatchWhereInput;
 }
 
+function mergeMatchHistoryWhere(
+  baseWhere: Prisma.MatchWhereInput,
+  filterWhere: Prisma.MatchWhereInput,
+): Prisma.MatchWhereInput {
+  if (Object.keys(filterWhere).length === 0) {
+    return baseWhere;
+  }
+
+  return {
+    AND: [baseWhere, filterWhere],
+  };
+}
+
+function getMatchHistoryOrderBy(sort: MatchHistorySort): Prisma.MatchOrderByWithRelationInput[] {
+  if (sort === "moves_asc" || sort === "moves_desc") {
+    return [
+      { moves: { _count: sort === "moves_desc" ? "desc" : "asc" } },
+      { finishedAt: "desc" },
+      { updatedAt: "desc" },
+    ];
+  }
+
+  if (sort === "oldest") {
+    return [{ finishedAt: "asc" }, { updatedAt: "asc" }];
+  }
+
+  return [{ finishedAt: "desc" }, { updatedAt: "desc" }];
+}
+
 export function buildMatchHistoryQuery(
   userId: string,
   limit = MATCH_HISTORY_DEFAULT_LIMIT,
   page = 1,
+  query?: Pick<
+    MatchHistorySearchQuery,
+    "opponent" | "result" | "matchType" | "dateFrom" | "dateTo" | "sort"
+  >,
 ) {
   const normalizedLimit = normalizeMatchHistoryLimit(limit);
   const normalizedPage = normalizeMatchHistoryPage(page);
+  const filterWhere = query ? buildMatchHistoryFilterWhere(userId, query) : {};
+  const where = mergeMatchHistoryWhere(buildMatchHistoryWhere(userId), filterWhere);
 
   return {
-    orderBy: [
-      {
-        finishedAt: "desc",
-      },
-      {
-        updatedAt: "desc",
-      },
-    ],
+    orderBy: getMatchHistoryOrderBy(query?.sort ?? "newest"),
     select: matchHistorySelect,
     skip: (normalizedPage - 1) * normalizedLimit,
     take: normalizedLimit,
-    where: buildMatchHistoryWhere(userId),
+    where,
   } satisfies Prisma.MatchFindManyArgs;
 }
 
@@ -262,6 +295,7 @@ export async function getMatchHistoryPageForUser(
   userId: string,
   page = 1,
   limit = MATCH_HISTORY_DEFAULT_LIMIT,
+  query?: MatchHistorySearchQuery,
 ): Promise<{
   entries: MatchHistoryEntry[];
   page: number;
@@ -271,12 +305,13 @@ export async function getMatchHistoryPageForUser(
 }> {
   const normalizedPage = normalizeMatchHistoryPage(page);
   const normalizedLimit = normalizeMatchHistoryLimit(limit);
-  const where = buildMatchHistoryWhere(userId);
+  const filterWhere = query ? buildMatchHistoryFilterWhere(userId, query) : {};
+  const where = mergeMatchHistoryWhere(buildMatchHistoryWhere(userId), filterWhere);
   const totalMatches = await prisma.match.count({ where });
   const totalPages = Math.max(1, Math.ceil(totalMatches / normalizedLimit));
   const currentPage = Math.min(normalizedPage, totalPages);
   const matches = await prisma.match.findMany(
-    buildMatchHistoryQuery(userId, normalizedLimit, currentPage),
+    buildMatchHistoryQuery(userId, normalizedLimit, currentPage, query),
   );
 
   return {

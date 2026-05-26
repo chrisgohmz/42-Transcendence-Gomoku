@@ -22,11 +22,9 @@ const PresenceContext = createContext<PresenceContextType>({
 export function PresenceProvider({
   children,
   currentUsername,
-  socketUrl,
 }: {
   children: ReactNode;
   currentUsername?: string;
-  socketUrl?: string;
 }) {
   const [onlineUsers, setOnlineUsers] = useState<string[]>([]);
   const [activeUsername, setCurrentUsername] = useState(currentUsername);
@@ -43,7 +41,7 @@ export function PresenceProvider({
       return;
     }
 
-    const nextSocket = createSocket(socketUrl);
+    const nextSocket = createSocket();
 
     setSocket(nextSocket);
 
@@ -75,7 +73,7 @@ export function PresenceProvider({
       nextSocket.disconnect();
       setSocket(null);
     };
-  }, [activeUsername, socketUrl]);
+  }, [activeUsername]);
 
   return (
     <PresenceContext.Provider

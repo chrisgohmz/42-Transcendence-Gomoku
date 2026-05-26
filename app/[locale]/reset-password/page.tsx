@@ -1,5 +1,6 @@
 import { AlertTriangle, KeyRound } from "lucide-react";
 import { getTranslations, setRequestLocale } from "next-intl/server";
+import { connection } from "next/server";
 import { Suspense } from "react";
 
 import { BoardShowpiece, PageShell } from "@/components/gomoku-ui";
@@ -30,6 +31,7 @@ export default function ResetPasswordPage({ params, searchParams }: ResetPasswor
 }
 
 async function ResetPasswordPageContent({ params, searchParams }: ResetPasswordPageProps) {
+  await connection();
   const { locale } = await params;
   const query = (await searchParams) ?? {};
   const token = firstSearchValue(query.token);

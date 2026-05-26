@@ -1,3 +1,4 @@
+import { parseMatchHistorySearchParams } from "@/lib/advanced-search";
 import { getCurrentSession } from "@/lib/auth";
 import { getProfileStatsForUser } from "@/lib/stats/profile-stats";
 
@@ -20,10 +21,16 @@ export async function GET(request: Request = new Request("http://localhost/api/p
     const rawLimit = parseInt(searchParams.get("limit") ?? "10", 10);
     const page = Number.isNaN(rawPage) || rawPage < 1 ? 1 : rawPage;
     const limit = Number.isNaN(rawLimit) || rawLimit < 1 ? 10 : Math.min(rawLimit, 50);
+    const recentMatchesSearch = parseMatchHistorySearchParams(searchParams);
 
     const snapshot = await getProfileStatsForUser(context.user.id, {
       recentMatchesLimit: limit,
       recentMatchesPage: page,
+      recentMatchesSearch: {
+        ...recentMatchesSearch,
+        limit,
+        page,
+      },
     });
 
     return Response.json(snapshot);

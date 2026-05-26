@@ -156,8 +156,6 @@ export function useHumanLobby({
         setListError(null);
         setJoinError(null);
       } catch (error) {
-        console.error("Error loading matches:", error);
-
         setListError(error instanceof Error ? error.message : humanT("networkLoadError"));
 
         setMatches([]);

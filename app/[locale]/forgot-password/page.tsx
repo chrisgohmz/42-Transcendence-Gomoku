@@ -1,5 +1,6 @@
 import { KeyRound } from "lucide-react";
 import { getTranslations, setRequestLocale } from "next-intl/server";
+import { connection } from "next/server";
 import { Suspense } from "react";
 
 import { BoardShowpiece, PageShell } from "@/components/gomoku-ui";
@@ -21,6 +22,7 @@ export default function ForgotPasswordPage({ params }: ForgotPasswordPageProps) 
 }
 
 async function ForgotPasswordPageContent({ params }: ForgotPasswordPageProps) {
+  await connection();
   const { locale } = await params;
   setRequestLocale(locale);
 

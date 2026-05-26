@@ -1,12 +1,19 @@
 import { randomUUID } from "node:crypto";
 
 import { createId } from "@paralleldrive/cuid2";
-import { expect, type Page, type TestInfo, test } from "@playwright/test";
 import { hashPassword } from "better-auth/crypto";
 
 import { prisma } from "../../app/lib/prisma";
+import { expect, type Page, type TestInfo, test } from "./fixtures";
 
-const routes = ["/", "/game", "/human", "/leaderboard", "/login", "/signup"] as const;
+const routes = [
+  { heading: "Master the board.", path: "/" },
+  { heading: "Choose your opponent.", path: "/ai" },
+  { heading: "Play Online", path: "/human" },
+  { heading: "Leaderboard", path: "/leaderboard" },
+  { heading: "Welcome back.", path: "/login" },
+  { heading: "Create your account.", path: "/signup" },
+] as const;
 
 test.setTimeout(90_000);
 
@@ -27,7 +34,7 @@ test("home page renders the redesigned command center", async ({ page }) => {
 });
 
 test("primary game routes render their new page shells", async ({ page }) => {
-  await gotoAppRoute(page, "/game");
+  await gotoAppRoute(page, "/ai");
   await expect(
     page.getByRole("heading", { level: 1, name: "Choose your opponent." }),
   ).toBeVisible();
@@ -63,16 +70,21 @@ test("auth pages expose usable sign-in and sign-up forms", async ({ page }) => {
 
 test("localized shell avoids horizontal overflow on public routes", async ({ page }) => {
   for (const route of routes) {
-    await gotoAppRoute(page, route);
+    await gotoAppRoute(page, route.path);
+    await expect(
+      page.getByRole("heading", { exact: true, name: route.heading }),
+      `${route.path} should finish rendering before the next route navigation`,
+    ).toBeVisible();
 
     const dimensions = await page.evaluate(() => ({
       clientWidth: document.documentElement.clientWidth,
       scrollWidth: document.documentElement.scrollWidth,
     }));
 
-    expect(dimensions.scrollWidth, `${route} should not horizontally overflow`).toBeLessThanOrEqual(
-      dimensions.clientWidth + 1,
-    );
+    expect(
+      dimensions.scrollWidth,
+      `${route.path} should not horizontally overflow`,
+    ).toBeLessThanOrEqual(dimensions.clientWidth + 1);
   }
 });
 
@@ -120,7 +132,7 @@ test("selector and popup surfaces stay opaque and readable", async ({ page }) =>
 test("authenticated redesigned pages render at desktop and mobile widths", async ({
   page,
 }, testInfo) => {
-  const user = await createAndSignInTestUser(page, testInfo);
+  const user = await createAndSignInTestUser(page, testInfo, getStatusOperatorUsername(testInfo));
   const friend = await createAcceptedFriend(user.id, user.token);
 
   try {
@@ -153,6 +165,17 @@ test("authenticated redesigned pages render at desktop and mobile widths", async
     await gotoAppRoute(page, "/messages");
     await expect(page.getByRole("heading", { level: 1, name: "Messages" })).toBeVisible();
     await expectNoDocumentOverflow(page, "/messages");
+
+    await gotoAppRoute(page, "/status");
+    await expect(page.getByRole("heading", { level: 1, name: "System status" })).toBeVisible();
+    await expect(page.getByRole("heading", { exact: true, name: "PostgreSQL" })).toBeVisible();
+    await expect(
+      page.getByRole("heading", { exact: true, name: "Realtime Service" }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("heading", { exact: true, name: "PostgreSQL artifacts" }),
+    ).toBeVisible();
+    await expectNoDocumentOverflow(page, "/status");
   } finally {
     await cleanupTestUsers([user.username, friend.username]);
   }
@@ -181,17 +204,31 @@ type TestUser = {
   username: string;
 };
 
-async function createAndSignInTestUser(page: Page, testInfo: TestInfo): Promise<TestUser> {
+function getStatusOperatorUsername(testInfo: TestInfo) {
+  const project = testInfo.project.name.replace(/[^a-z0-9]/gi, "").toLowerCase();
+
+  return `e2e_status_operator_${project}`;
+}
+
+async function createAndSignInTestUser(
+  page: Page,
+  testInfo: TestInfo,
+  usernameOverride?: string,
+): Promise<TestUser> {
   const project = testInfo.project.name
     .replace(/[^a-z0-9]/gi, "")
     .toLowerCase()
     .slice(0, 6);
   const token = `${project}${testInfo.workerIndex}${randomUUID().slice(0, 8)}`;
-  const username = `e2e_${token}`;
+  const username = usernameOverride ?? `e2e_${token}`;
   const email = `gomoku.${token}@example.com`;
   const displayName = `E2E Player ${token.slice(-4)}`;
   const userId = createId();
   const hashedPassword = await hashPassword("password123");
+
+  if (usernameOverride) {
+    await cleanupTestUsers([usernameOverride]);
+  }
 
   const dbUser = await prisma.user.create({
     data: {

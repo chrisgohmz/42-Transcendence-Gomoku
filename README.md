@@ -119,7 +119,7 @@ data you need to keep.
 docker compose up --build
 ```
 
-This runs the Next app, Bun realtime service, Caddy HTTPS reverse proxy, and PostgreSQL in a production-style local container mode. Open the app at `https://localhost:8443`.
+This runs the Next app, Bun realtime service, Caddy HTTPS reverse proxy, PostgreSQL, and the PostgreSQL backup sidecar in a production-style local container mode. Open the app at `https://localhost:8443`.
 
 ### Run the full stack in Docker dev mode
 
@@ -143,6 +143,24 @@ Then import `./caddy-local-root.crt` into your OS/browser trust store.
 bun run lint
 bun run lint:fix
 ```
+
+### Health, backups, and recovery
+
+The internal status page is available to signed-in operations users at `/status`, for example `https://localhost:8443/en/status` in Docker/Caddy mode. Allow browser access with `OPERATIONS_STATUS_USER_IDS` or `OPERATIONS_STATUS_USERNAMES`. The aggregate machine-readable endpoint is `/api/status`; internal monitors can call it with `x-operations-status-token` when `OPERATIONS_STATUS_TOKEN` is configured.
+
+The `database-backup` Compose service writes scheduled PostgreSQL custom-format dumps into the separate `postgres_backups` named volume. Run a manual backup with:
+
+```bash
+docker compose run --rm database-backup /usr/local/bin/postgres-backup
+```
+
+Run an isolated restore drill against the latest backup artifact with:
+
+```bash
+./scripts/postgres-restore-drill.sh
+```
+
+See `docs/operations/health-backup-disaster-recovery.md` for the full runbook and `docs/operations/restore-drill-log.md` for drill records.
 
 ### Authentication quickstart
 
@@ -226,6 +244,16 @@ Do not regenerate lockfiles with npm. Commit the Bun lockfiles instead.
 
 1. Users can play against each other in real-time, with a live chat feature to communicate during the game
 2. The gameplay takes place on separate computers and takes place in real-time
+
+## Advanced Search Minor Module
+
+The leaderboard and signed-in profile match-history views expose evaluation-ready advanced search.
+
+- Leaderboard controls are visible on `/leaderboard` and are reflected in URL/API params: `q`, `scope`, `band`, `minRating`, `maxRating`, `minMatches`, `sort`, `page`, and `limit`.
+- Match-history controls are visible on `/profile` and are reflected in `/api/profile/stats` params: `opponent`, `result`, `matchType`, `dateFrom`, `dateTo`, `sort`, `page`, and `limit`.
+- Shared parsing and Prisma filter helpers live in `app/lib/advanced-search.ts`; leaderboard query composition lives in `app/lib/leaderboard.ts`, and match-history query composition lives in `app/lib/matches/match-history.ts`.
+- Pagination is server-backed and clamps to valid pages after filters or sort changes, so combined search/filter/sort/page flows do not reuse stale rows.
+- E2E coverage for a combined leaderboard search + rank-band filter + minimum-match filter + custom sort + pagination flow is in `tests/e2e/pagination.e2e.ts`.
 
 ## DevOps
 

@@ -24,11 +24,11 @@
     "lint:css": "bunx --bun stylelint \"app/**/*.css\" --cache",
     "lint:css:fix": "bunx --bun stylelint \"app/**/*.css\" --fix --cache",
     "test": "bun test",
-    "test:e2e": "PLAYWRIGHT_BROWSERS_PATH=.playwright-browsers playwright test",
-    "test:e2e:debug": "PLAYWRIGHT_BROWSERS_PATH=.playwright-browsers PLAYWRIGHT_HTML_OPEN=never playwright test --debug=cli",
-    "test:e2e:ui": "PLAYWRIGHT_BROWSERS_PATH=.playwright-browsers playwright test --ui",
+    "test:e2e": "env -u NO_COLOR PLAYWRIGHT_BROWSERS_PATH=.playwright-browsers playwright test",
+    "test:e2e:debug": "env -u NO_COLOR PLAYWRIGHT_BROWSERS_PATH=.playwright-browsers PLAYWRIGHT_HTML_OPEN=never playwright test --debug=cli",
+    "test:e2e:ui": "env -u NO_COLOR PLAYWRIGHT_BROWSERS_PATH=.playwright-browsers playwright test --ui",
     "pw:cli": "bunx --bun @playwright/cli",
-    "pw:install": "PLAYWRIGHT_BROWSERS_PATH=.playwright-browsers playwright install"
+    "pw:install": "env -u NO_COLOR PLAYWRIGHT_BROWSERS_PATH=.playwright-browsers playwright install chromium firefox msedge"
   },
   "dependencies": {
     "@better-auth/prisma-adapter": "^1.6.11",

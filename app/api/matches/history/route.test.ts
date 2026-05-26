@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, mock, test } from "bun:test";
 import { createAuthModuleMock } from "@/test-utils/auth-module-mock";
 
 const getCurrentSession = mock();
-const getMatchHistoryForUser = mock();
+const getMatchHistoryPageForUser = mock();
 
 await mock.module("@/lib/auth", () =>
   createAuthModuleMock({
@@ -13,7 +13,7 @@ await mock.module("@/lib/auth", () =>
 
 await mock.module("@/lib/matches/match-history", () => ({
   MATCH_HISTORY_MAX_LIMIT: 100,
-  getMatchHistoryForUser,
+  getMatchHistoryPageForUser,
   normalizeMatchHistoryLimit: (limit: number | null | undefined) => limit ?? 20,
 }));
 
@@ -30,19 +30,25 @@ function request(limit?: string) {
 
 beforeEach(() => {
   getCurrentSession.mockReset();
-  getMatchHistoryForUser.mockReset();
+  getMatchHistoryPageForUser.mockReset();
 
   getCurrentSession.mockResolvedValue({
     user: {
       id: "user-ada",
     },
   });
-  getMatchHistoryForUser.mockResolvedValue([
-    {
-      matchId: "match-1",
-      opponentUserIds: ["user-grace"],
-    },
-  ]);
+  getMatchHistoryPageForUser.mockResolvedValue({
+    entries: [
+      {
+        matchId: "match-1",
+        opponentUserIds: ["user-grace"],
+      },
+    ],
+    limit: 5,
+    page: 1,
+    totalMatches: 1,
+    totalPages: 1,
+  });
 });
 
 describe("GET /api/matches/history", () => {
@@ -54,7 +60,7 @@ describe("GET /api/matches/history", () => {
 
     expect(response.status).toBe(401);
     expect(payload).toMatchObject({ error: "unauthorized" });
-    expect(getMatchHistoryForUser).not.toHaveBeenCalled();
+    expect(getMatchHistoryPageForUser).not.toHaveBeenCalled();
   });
 
   test("loads bounded history for the current user", async () => {
@@ -62,7 +68,15 @@ describe("GET /api/matches/history", () => {
     const payload = await response.json();
 
     expect(response.status).toBe(200);
-    expect(getMatchHistoryForUser).toHaveBeenCalledWith("user-ada", 5);
+    expect(getMatchHistoryPageForUser).toHaveBeenCalledWith(
+      "user-ada",
+      1,
+      5,
+      expect.objectContaining({
+        limit: 5,
+        page: 1,
+      }),
+    );
     expect(payload).toEqual({
       count: 1,
       limit: 5,
@@ -72,15 +86,34 @@ describe("GET /api/matches/history", () => {
           opponentUserIds: ["user-grace"],
         },
       ],
+      page: 1,
+      totalMatches: 1,
+      totalPages: 1,
     });
   });
 
   test("uses the default history limit when omitted", async () => {
+    getMatchHistoryPageForUser.mockResolvedValueOnce({
+      entries: [],
+      limit: 20,
+      page: 1,
+      totalMatches: 0,
+      totalPages: 1,
+    });
+
     const response = await route.GET(request());
     const payload = await response.json();
 
     expect(response.status).toBe(200);
-    expect(getMatchHistoryForUser).toHaveBeenCalledWith("user-ada", 20);
+    expect(getMatchHistoryPageForUser).toHaveBeenCalledWith(
+      "user-ada",
+      1,
+      20,
+      expect.objectContaining({
+        limit: 20,
+        page: 1,
+      }),
+    );
     expect(payload["limit"]).toBe(20);
   });
 
@@ -90,6 +123,6 @@ describe("GET /api/matches/history", () => {
 
     expect(response.status).toBe(400);
     expect(payload).toMatchObject({ error: "invalid_limit" });
-    expect(getMatchHistoryForUser).not.toHaveBeenCalled();
+    expect(getMatchHistoryPageForUser).not.toHaveBeenCalled();
   });
 });

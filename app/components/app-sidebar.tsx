@@ -13,7 +13,7 @@ import { prisma } from "@/lib/prisma";
 
 const productLinkMeta = [
   { href: "/", icon: "home", labelKey: "home" },
-  { href: "/game", icon: "game", labelKey: "vsAi" },
+  { href: "/ai", icon: "game", labelKey: "vsAi" },
   { href: "/human", icon: "human", labelKey: "vsHuman" },
   { href: "/leaderboard", icon: "leaderboard", labelKey: "leaderboard" },
 ] as const satisfies ReadonlyArray<Omit<SidebarNavItem, "label"> & { labelKey: string }>;
