@@ -72,6 +72,13 @@ For production or shared Redis, set `REDIS_PASSWORD` and include the password in
 `REDIS_URL`; app-owned rate limits fail closed on Redis errors unless
 `RATE_LIMIT_REDIS_FAIL_OPEN=true` is set explicitly.
 
+Run the Redis integration smoke against a password-protected Redis when you need
+to verify the real Lua rate-limit script and presence commands:
+
+```bash
+REDIS_SMOKE_URL=redis://:change_me_please@127.0.0.1:6379/0 bun run test:redis:smoke
+```
+
 ### Prisma workflow
 
 ```bash

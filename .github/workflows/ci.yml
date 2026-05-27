@@ -64,6 +64,30 @@ jobs:
       - name: Run tests
         run: bun test
 
+      - name: Start Redis smoke service
+        run: |
+          docker run -d \
+            --name redis-smoke \
+            -p 6379:6379 \
+            redis:8-alpine \
+            redis-server --appendonly yes --requirepass ci-redis-password
+
+          for attempt in {1..20}; do
+            if docker exec redis-smoke redis-cli -a ci-redis-password --no-auth-warning ping | grep -q PONG; then
+              exit 0
+            fi
+
+            sleep 1
+          done
+
+          docker logs redis-smoke
+          exit 1
+
+      - name: Run Redis integration smoke
+        env:
+          REDIS_SMOKE_URL: redis://:ci-redis-password@127.0.0.1:6379/0
+        run: bun run test:redis:smoke
+
       - name: Build app
         env:
           BETTER_AUTH_SECRET: ci_better_auth_secret_change_me_32_chars
