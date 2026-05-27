@@ -7,12 +7,20 @@ import {
   generateCspNonce,
 } from "./content-security-policy";
 
+function directiveSources(policy: string, directiveName: string): string[] {
+  const directive = policy.split("; ").find((entry) => entry.startsWith(`${directiveName} `));
+
+  return directive?.split(" ").slice(1) ?? [];
+}
+
 describe("content security policy", () => {
   test("builds a production nonce policy without inline script or dynamic eval escapes", () => {
     const policy = createContentSecurityPolicy("test-nonce", {
+      BETTER_AUTH_URL: "https://app.example.test",
       NODE_ENV: "production",
       SOCKET_PUBLIC_URL: "https://socket.example.test/realtime",
     });
+    const connectSources = directiveSources(policy, "connect-src");
 
     expect(policy).toContain("default-src 'self'");
     expect(policy).toContain("script-src 'nonce-test-nonce' 'strict-dynamic'");
@@ -24,7 +32,15 @@ describe("content security policy", () => {
     expect(policy).toContain("'sha256-zlqnbDt84zf1iSefLU/ImC54isoprH/MRiVZGskwexk='");
     expect(policy).toContain("'sha256-ZDrxqUOB4m/L0JWL/+gS52g1CRH0l/qwMhjTw5Z/Fsc='");
     expect(policy).toContain("'sha256-fFiwGJFfGZ3i0Vt+xXYQgf88NKsgAfBwvY2aBowdoj4='");
-    expect(policy).toContain("connect-src 'self' https://socket.example.test ws: wss:");
+    expect(connectSources).toContain("'self'");
+    expect(connectSources).toContain("https://app.example.test");
+    expect(connectSources).toContain("wss://app.example.test");
+    expect(connectSources).toContain("https://socket.example.test");
+    expect(connectSources).toContain("wss://socket.example.test");
+    expect(connectSources).not.toContain("ws:");
+    expect(connectSources).not.toContain("wss:");
+    expect(connectSources).not.toContain("http://localhost:3001");
+    expect(connectSources).not.toContain("ws://localhost:3001");
     expect(policy).toContain("upgrade-insecure-requests");
     expect(policy).not.toContain("'unsafe-inline'");
     expect(policy).not.toContain("'unsafe-eval'");
@@ -38,8 +54,27 @@ describe("content security policy", () => {
     expect(policy).toContain("'unsafe-eval'");
     expect(policy).toContain("'unsafe-inline'");
     expect(policy).toContain("http://localhost:3001");
+    expect(policy).toContain("ws://localhost:3001");
     expect(policy).toContain("http://127.0.0.1:3001");
+    expect(policy).toContain("ws://127.0.0.1:3001");
     expect(policy).not.toContain("upgrade-insecure-requests");
+  });
+
+  test("derives exact connect sources from comma-separated deployment origins", () => {
+    const policy = createContentSecurityPolicy("test-nonce", {
+      BETTER_AUTH_TRUSTED_ORIGINS: "https://app.example.test, https://lan.example.test:8443",
+      NODE_ENV: "production",
+      SOCKET_PUBLIC_URL: "wss://socket.example.test/socket.io",
+    });
+    const connectSources = directiveSources(policy, "connect-src");
+
+    expect(connectSources).toContain("https://app.example.test");
+    expect(connectSources).toContain("wss://app.example.test");
+    expect(connectSources).toContain("https://lan.example.test:8443");
+    expect(connectSources).toContain("wss://lan.example.test:8443");
+    expect(connectSources).toContain("wss://socket.example.test");
+    expect(connectSources).not.toContain("ws:");
+    expect(connectSources).not.toContain("wss:");
   });
 
   test("generates unique base64 nonces for proxy responses", () => {

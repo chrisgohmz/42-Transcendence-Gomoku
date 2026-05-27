@@ -2,6 +2,14 @@ export const CSP_HEADER = "Content-Security-Policy";
 export const CSP_NONCE_HEADER = "x-nonce";
 
 const localRealtimeConnectSources = ["http://localhost:3001", "http://127.0.0.1:3001"];
+const appOriginEnvKeys = [
+  "BETTER_AUTH_URL",
+  "BETTER_AUTH_TRUSTED_ORIGINS",
+  "CADDY_SITE_ADDRESS",
+  "NEXT_PUBLIC_APP_URL",
+  "SOCKET_CORS_ORIGIN",
+] as const;
+const socketOriginEnvKeys = ["SOCKET_PUBLIC_URL", "NEXT_PUBLIC_SOCKET_URL"] as const;
 const nextRouteAnnouncerStyleHashes = [
   "'sha256-/3kWSXHts8LrwfemLzY9W0tOv5I4eLIhrf0pT8cU0WI='",
   "'sha256-hCCaQPgMPt3yNJOfQ3ewN+1KFcGT2iwCHVykLMb9VvE='",
@@ -13,33 +21,67 @@ const nextImageStyleHashes = [
 ];
 
 type CspEnvironment = Partial<
-  Record<"CI" | "NEXT_PUBLIC_SOCKET_URL" | "NODE_ENV" | "SOCKET_PUBLIC_URL", string | undefined>
+  Record<
+    | "BETTER_AUTH_TRUSTED_ORIGINS"
+    | "BETTER_AUTH_URL"
+    | "CADDY_SITE_ADDRESS"
+    | "CI"
+    | "NEXT_PUBLIC_APP_URL"
+    | "NEXT_PUBLIC_SOCKET_URL"
+    | "NODE_ENV"
+    | "SOCKET_CORS_ORIGIN"
+    | "SOCKET_PUBLIC_URL",
+    string | undefined
+  >
 >;
 
-function normalizeOrigin(value: string): string | null {
+function getUrl(value: string): URL | null {
   try {
-    return new URL(value.trim()).origin;
+    return new URL(value.trim());
   } catch {
     return null;
+  }
+}
+
+function addConnectSource(sources: Set<string>, value: string) {
+  const url = getUrl(value);
+
+  if (!url) {
+    return;
+  }
+
+  sources.add(url.origin);
+
+  if (url.protocol === "http:") {
+    sources.add(`ws://${url.host}`);
+  }
+
+  if (url.protocol === "https:") {
+    sources.add(`wss://${url.host}`);
+  }
+}
+
+function addEnvConnectSources(
+  sources: Set<string>,
+  env: CspEnvironment,
+  keys: ReadonlyArray<keyof CspEnvironment>,
+) {
+  for (const key of keys) {
+    for (const entry of env[key]?.split(",") ?? []) {
+      addConnectSource(sources, entry);
+    }
   }
 }
 
 function getSocketConnectSources(env: CspEnvironment): string[] {
   const sources = new Set<string>();
 
-  for (const key of ["SOCKET_PUBLIC_URL", "NEXT_PUBLIC_SOCKET_URL"] as const) {
-    for (const entry of env[key]?.split(",") ?? []) {
-      const origin = normalizeOrigin(entry);
-
-      if (origin) {
-        sources.add(origin);
-      }
-    }
-  }
+  addEnvConnectSources(sources, env, appOriginEnvKeys);
+  addEnvConnectSources(sources, env, socketOriginEnvKeys);
 
   if (env.CI === "true" || env.NODE_ENV !== "production") {
     for (const source of localRealtimeConnectSources) {
-      sources.add(source);
+      addConnectSource(sources, source);
     }
   }
 
@@ -88,7 +130,7 @@ export function createContentSecurityPolicy(
       ...nextRouteAnnouncerStyleHashes,
       ...nextImageStyleHashes,
     ],
-    ["connect-src", "'self'", ...getSocketConnectSources(env), "ws:", "wss:"],
+    ["connect-src", "'self'", ...getSocketConnectSources(env)],
     ["manifest-src", "'self'"],
   ];
 

@@ -11,6 +11,22 @@ import {
 
 const intlMiddleware = createMiddleware(routing);
 
+function copyRequestOverrideHeaders(source: NextResponse, target: NextResponse) {
+  // NextResponse.next({ request: { headers } }) forwards upstream request
+  // overrides through these middleware transport headers. Keep the framework
+  // contract isolated so nonce propagation is easy to audit if Next changes it.
+  for (const [header, value] of source.headers) {
+    const normalizedHeader = header.toLowerCase();
+
+    if (
+      normalizedHeader === "x-middleware-override-headers" ||
+      normalizedHeader.startsWith("x-middleware-request-")
+    ) {
+      target.headers.set(header, value);
+    }
+  }
+}
+
 export function proxy(request: NextRequest) {
   const nonce = generateCspNonce();
   const policy = createContentSecurityPolicy(nonce);
@@ -26,12 +42,7 @@ export function proxy(request: NextRequest) {
   });
   const response = intlMiddleware(request);
 
-  for (const [header, value] of requestOverrideResponse.headers) {
-    if (header === "x-middleware-override-headers" || header.startsWith("x-middleware-request-")) {
-      response.headers.set(header, value);
-    }
-  }
-
+  copyRequestOverrideHeaders(requestOverrideResponse, response);
   response.headers.set(CSP_HEADER, policy);
 
   return response;
