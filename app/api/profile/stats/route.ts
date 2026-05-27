@@ -2,7 +2,7 @@ import { parseMatchHistorySearchParams } from "@/lib/advanced-search";
 import { getCurrentSession } from "@/lib/auth";
 import { getProfileStatsForUser } from "@/lib/stats/profile-stats";
 
-export async function GET(request: Request = new Request("http://localhost/api/profile/stats")) {
+export async function GET(request: Request) {
   const context = await getCurrentSession();
 
   if (!context) {

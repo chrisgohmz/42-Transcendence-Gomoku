@@ -1,5 +1,6 @@
 import type { LucideIcon } from "lucide-react";
 import { ChevronRight } from "lucide-react";
+import Image from "next/image";
 import type { ReactNode } from "react";
 
 import GomokuBoard from "@/components/gomoku-board";
@@ -200,6 +201,11 @@ export function AvatarToken({
     md: "size-12 text-lg",
     sm: "size-10 text-sm",
   }[size];
+  const imageSize = {
+    lg: "96px",
+    md: "48px",
+    sm: "40px",
+  }[size];
 
   return (
     <span
@@ -209,11 +215,12 @@ export function AvatarToken({
       )}
     >
       {image ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
+        <Image
           src={image}
           alt={name}
-          className="absolute inset-0 h-full w-full rounded-full object-cover"
+          fill
+          sizes={imageSize}
+          className="rounded-full object-cover"
         />
       ) : (
         name.charAt(0)
@@ -235,10 +242,7 @@ export function AvatarToken({
 export function MiniTable({ columns, rows }: { columns: string[]; rows: ReactNode[][] }) {
   return (
     <div className="overflow-hidden rounded-md border border-[var(--panel-border-soft)] bg-white/[0.025]">
-      <div
-        className="grid gap-3 border-b border-[var(--panel-border-soft)] bg-black/20 px-4 py-3 text-xs font-black tracking-[0.12em] text-[var(--muted-text)] uppercase"
-        style={{ gridTemplateColumns: `repeat(${columns.length}, minmax(0, 1fr))` }}
-      >
+      <div className="grid auto-cols-fr grid-flow-col gap-3 border-b border-[var(--panel-border-soft)] bg-black/20 px-4 py-3 text-xs font-black tracking-[0.12em] text-[var(--muted-text)] uppercase">
         {columns.map((column) => (
           <span key={column}>{column}</span>
         ))}
@@ -246,8 +250,7 @@ export function MiniTable({ columns, rows }: { columns: string[]; rows: ReactNod
       {rows.map((row, index) => (
         <div
           key={index}
-          className="grid min-h-14 items-center gap-3 border-b border-[var(--panel-border-soft)] px-4 py-3 text-sm last:border-b-0 hover:bg-white/[0.045]"
-          style={{ gridTemplateColumns: `repeat(${columns.length}, minmax(0, 1fr))` }}
+          className="grid min-h-14 auto-cols-fr grid-flow-col items-center gap-3 border-b border-[var(--panel-border-soft)] px-4 py-3 text-sm last:border-b-0 hover:bg-white/[0.045]"
         >
           {row.map((cell, cellIndex) => (
             <span key={cellIndex} className="min-w-0 truncate">

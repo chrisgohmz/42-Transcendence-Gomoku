@@ -1,4 +1,3 @@
-/* eslint-disable @next/next/no-img-element */
 import {
   Activity,
   Award,
@@ -37,6 +36,20 @@ type ProfilePageProps = {
 };
 
 const achievements = ["sharpOpening", "calmEndgame", "fastRematch"] as const;
+const trendBarClasses = [
+  "profile-trend-bar-34",
+  "profile-trend-bar-42",
+  "profile-trend-bar-38",
+  "profile-trend-bar-56",
+  "profile-trend-bar-62",
+  "profile-trend-bar-58",
+  "profile-trend-bar-76",
+  "profile-trend-bar-72",
+  "profile-trend-bar-81",
+  "profile-trend-bar-88",
+  "profile-trend-bar-84",
+  "profile-trend-bar-92",
+] as const;
 
 export async function generateMetadata({ params }: ProfilePageProps) {
   const { locale, username } = await params;
@@ -241,12 +254,9 @@ async function PublicProfilePageContent({ params, searchParams }: ProfilePagePro
           >
             <div className="grid h-64 items-end gap-3 rounded-md border border-[var(--panel-border-soft)] bg-black/20 p-4">
               <div className="flex h-full items-end gap-2">
-                {[34, 42, 38, 56, 62, 58, 76, 72, 81, 88, 84, 92].map((height, index) => (
+                {trendBarClasses.map((heightClass, index) => (
                   <span key={index} className="flex flex-1 items-end">
-                    <span
-                      className="block w-full rounded-t-sm bg-[linear-gradient(180deg,var(--mint),var(--brass))]"
-                      style={{ height: `${height}%` }}
-                    />
+                    <span className={`profile-trend-bar ${heightClass}`} aria-hidden="true" />
                   </span>
                 ))}
               </div>

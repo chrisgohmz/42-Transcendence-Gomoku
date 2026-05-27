@@ -128,19 +128,16 @@ async function LeaderBoardContent({ params, searchParams }: LeaderBoardProps) {
             key: "dan",
             label: t("page.distribution.labels.dan"),
             count: bandCounts.dan,
-            color: "bg-[var(--brass)]",
           },
           {
             key: "kyu",
             label: t("page.distribution.labels.kyu"),
             count: bandCounts.kyu,
-            color: "bg-[var(--mint)]",
           },
           {
             key: "unranked",
             label: t("page.distribution.labels.unranked"),
             count: bandCounts.unranked,
-            color: "bg-[var(--danger)]",
           },
         ].map((band) => ({ ...band, share: `${Math.round((band.count / entries.length) * 100)}%` }))
       : [];
@@ -244,12 +241,14 @@ async function LeaderBoardContent({ params, searchParams }: LeaderBoardProps) {
                       <span>{band.label}</span>
                       <span className="text-[var(--muted-text)] tabular-nums">{band.share}</span>
                     </div>
-                    <span className="block h-2 overflow-hidden rounded-full bg-white/[0.08]">
-                      <span
-                        className={`block h-full rounded-full ${band.color}`}
-                        style={{ width: band.share }}
-                      />
-                    </span>
+                    <progress
+                      aria-label={`${band.label}: ${band.share}`}
+                      className={`csp-progress csp-progress-${band.key}`}
+                      max={entries.length}
+                      value={band.count}
+                    >
+                      {band.share}
+                    </progress>
                   </div>
                 ))}
               </div>

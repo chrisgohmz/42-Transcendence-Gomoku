@@ -57,60 +57,8 @@ function getAllowedDevOrigins(): string[] {
 }
 
 const allowedDevOrigins = getAllowedDevOrigins();
-const scriptSrc =
-  process.env["NODE_ENV"] === "production"
-    ? "script-src 'self' 'unsafe-inline'"
-    : "script-src 'self' 'unsafe-inline' 'unsafe-eval'";
-const localRealtimeConnectSources = ["http://localhost:3001", "http://127.0.0.1:3001"];
-
-function normalizeOrigin(value: string): string | null {
-  try {
-    return new URL(value.trim()).origin;
-  } catch {
-    return null;
-  }
-}
-
-function getSocketConnectSources(): string[] {
-  const sources = new Set<string>();
-
-  for (const key of ["SOCKET_PUBLIC_URL", "NEXT_PUBLIC_SOCKET_URL"]) {
-    for (const entry of process.env[key]?.split(",") ?? []) {
-      const origin = normalizeOrigin(entry);
-
-      if (origin) {
-        sources.add(origin);
-      }
-    }
-  }
-
-  if (process.env["CI"] === "true" || process.env["NODE_ENV"] !== "production") {
-    for (const source of localRealtimeConnectSources) {
-      sources.add(source);
-    }
-  }
-
-  return Array.from(sources);
-}
-
-const contentSecurityPolicy = [
-  "default-src 'self'",
-  "base-uri 'self'",
-  "object-src 'none'",
-  "frame-ancestors 'none'",
-  "form-action 'self'",
-  "img-src 'self' data: blob: https:",
-  "font-src 'self' data:",
-  "style-src 'self' 'unsafe-inline'",
-  scriptSrc,
-  ["connect-src 'self'", ...getSocketConnectSources(), "ws:", "wss:"].join(" "),
-].join("; ");
 
 const securityHeaders = [
-  {
-    key: "Content-Security-Policy",
-    value: contentSecurityPolicy,
-  },
   {
     key: "X-Content-Type-Options",
     value: "nosniff",
@@ -135,9 +83,22 @@ const securityHeaders = [
 
 const nextConfig: NextConfig = {
   allowedDevOrigins: allowedDevOrigins.length > 0 ? allowedDevOrigins : undefined,
-  cacheComponents: true,
   experimental: {
     instantNavigationDevToolsToggle: true,
+  },
+  images: {
+    remotePatterns: [
+      {
+        hostname: "avatars.githubusercontent.com",
+        pathname: "/u/**",
+        protocol: "https",
+      },
+      {
+        hostname: "lh3.googleusercontent.com",
+        pathname: "/**",
+        protocol: "https",
+      },
+    ],
   },
   turbopack: {
     root: currentDirectory,
