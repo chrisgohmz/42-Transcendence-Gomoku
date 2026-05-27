@@ -28,14 +28,14 @@ The top remediation themes are:
 
 ## Remediation Status
 
-Implemented on branch `security-audit-remediation`:
+Implemented across `security-audit-remediation` and follow-up avatar hardening:
 
 - Dependency audit: `bun audit` passes after dependency updates and root-level Bun overrides.
 - Rate limiting: shared app limiter added for auth, game, chat, friend, profile, and upload mutation paths.
 - CSRF/origin: mutating custom Route Handlers now enforce trusted origins and JSON content type where applicable.
 - Browser hardening: global security headers and CSP are configured in `next.config.ts`.
 - Error leakage: public API responses no longer include raw exception details.
-- Uploads: avatar storage now uses detected image type extensions and random filenames.
+- Uploads: avatar storage now uses detected image type extensions, random filenames, image re-encoding, metadata stripping, storage outside `public/`, and an explicit avatar serving route.
 - Secret separation: production requires `REALTIME_INTERNAL_SECRET` instead of falling back to `BETTER_AUTH_SECRET`.
 - Container hardening: production runtime now switches to the non-root `node` user.
 
@@ -55,7 +55,7 @@ Remaining design notes:
 - Bun Socket.IO realtime service for match, friendship, chat, queue, and challenge notifications.
 - Caddy reverse proxy exposing HTTPS and routing `/socket.io/*` to realtime.
 - Docker Compose network, volumes, and backup sidecar.
-- Public static upload storage mounted at `/app/public/uploads`.
+- Avatar storage mounted at `/app/storage` and served through `/api/avatars/[filename]`.
 
 ### Current Request Flow
 
@@ -90,16 +90,16 @@ Remaining design notes:
 
 ## Trust Boundaries
 
-| Boundary                       | Trusted Side                     | Untrusted Side                    | Notes                                                      |
-| ------------------------------ | -------------------------------- | --------------------------------- | ---------------------------------------------------------- |
-| Browser to Caddy               | Caddy/app infrastructure         | Internet users and browsers       | All user input starts here.                                |
-| Caddy to Next.js               | Docker network                   | Public internet                   | Caddy is expected to be the only public app ingress.       |
-| Caddy to realtime              | Docker network                   | Public Socket.IO clients          | Browser socket auth still required.                        |
-| Next.js to PostgreSQL          | App server and Prisma            | Route/user input                  | Prisma lowers injection risk but authz is still app-owned. |
-| Next.js to realtime internals  | App server                       | Realtime internal endpoints       | Protected by shared internal secret.                       |
-| Realtime socket rooms          | Authenticated socket handlers    | Client-provided room IDs/payloads | Room joins must remain server-authorized.                  |
-| Uploads to public static files | Server filesystem/static serving | User-supplied files               | File type normalization and headers matter.                |
-| Docker host/volumes            | Operators                        | App container processes           | Root containers raise post-compromise impact.              |
+| Boundary                      | Trusted Side                    | Untrusted Side                    | Notes                                                      |
+| ----------------------------- | ------------------------------- | --------------------------------- | ---------------------------------------------------------- |
+| Browser to Caddy              | Caddy/app infrastructure        | Internet users and browsers       | All user input starts here.                                |
+| Caddy to Next.js              | Docker network                  | Public internet                   | Caddy is expected to be the only public app ingress.       |
+| Caddy to realtime             | Docker network                  | Public Socket.IO clients          | Browser socket auth still required.                        |
+| Next.js to PostgreSQL         | App server and Prisma           | Route/user input                  | Prisma lowers injection risk but authz is still app-owned. |
+| Next.js to realtime internals | App server                      | Realtime internal endpoints       | Protected by shared internal secret.                       |
+| Realtime socket rooms         | Authenticated socket handlers   | Client-provided room IDs/payloads | Room joins must remain server-authorized.                  |
+| Avatar storage and serving    | Server filesystem/Route Handler | User-supplied files               | File type normalization and explicit image headers matter. |
+| Docker host/volumes           | Operators                       | App container processes           | Root containers raise post-compromise impact.              |
 
 ## Attacker Capabilities
 
@@ -119,24 +119,24 @@ Remaining design notes:
 - Profile APIs/actions: public profile pages, stats, history, avatar upload Server Action.
 - Realtime service: browser Socket.IO namespace and internal `/internal/*` publish endpoints.
 - Operations endpoints: `/api/health`, `/api/status`, `/status`.
-- Static assets and uploads under `/uploads`.
+- Static assets under `public/` and avatar files served through `/api/avatars/[filename]`.
 - Docker/Caddy/PostgreSQL/backup scripts and volumes.
 - Dependency installation/build/runtime graph.
 
 ## Top Abuse Paths
 
-| ID  | Abuse Path                                       | Impact                                                              | Existing Controls                                                  | Gaps                                                             | Recommended Mitigations                                         |
-| --- | ------------------------------------------------ | ------------------------------------------------------------------- | ------------------------------------------------------------------ | ---------------------------------------------------------------- | --------------------------------------------------------------- |
-| T1  | Abuse vulnerable dependency path from lockfile   | Runtime or build-time compromise, DoS, memory disclosure            | Bun lockfile, Caddy ingress                                        | `bun audit` has high/moderate findings                           | Update dependencies, move tooling to dev deps, CI audit gate    |
-| T2  | Credential stuffing or signup abuse              | Account takeover attempts, user enumeration pressure, DB/email load | Input validation, Better Auth credential handling                  | No repo-visible rate limits                                      | Add IP/account rate limits and generic auth responses           |
-| T3  | Browser-driven CSRF against custom mutation APIs | Queue/match/chat/logout side effects                                | SameSite cookies, JSON APIs, Better Auth guards for auth endpoints | Custom mutation handlers lack shared origin/CSRF guard           | Add shared same-origin guard and JSON content-type enforcement  |
-| T4  | Authenticated request flooding                   | DB/realtime exhaustion, queue churn, match spam, chat spam          | Auth checks, some idempotency in moves                             | No app-owned throttles                                           | Per-user/IP quotas for game, chat, queue, upload, friend flows  |
-| T5  | Raw error leakage                                | Internal schema/service detail disclosure                           | Production mode configured                                         | Many handlers return `error.message`                             | Generic client errors plus server-side structured logs          |
-| T6  | Upload content confusion                         | Stored public malicious/polyglot file, metadata leakage             | 5 MB limit and magic-byte checks                                   | Original extension retained, no re-encode, public static serving | Canonical extension, re-encode, explicit content headers        |
-| T7  | Realtime internal secret reuse                   | Wider blast radius if auth secret leaks                             | Caddy does not proxy internals                                     | Internal secret falls back to Better Auth secret                 | Require distinct `REALTIME_INTERNAL_SECRET` in production       |
-| T8  | Missing browser security headers                 | Weaker XSS/clickjacking/MIME-sniffing defense                       | React escaping, no dangerous sinks found                           | No CSP/security headers in Next/Caddy config                     | Add CSP, nosniff, frame-ancestors, referrer, permissions policy |
-| T9  | Container post-compromise privilege              | Larger container blast radius                                       | Docker isolation                                                   | App/realtime run as root                                         | Add non-root production user and narrow writable paths          |
-| T10 | Sensitive code knowledge concentrated            | Slower review/incident response                                     | 17 contributors in history                                         | Auth ownership concentrated                                      | CODEOWNERS and secondary reviewer requirements                  |
+| ID  | Abuse Path                                       | Impact                                                              | Existing Controls                                                            | Gaps                                                          | Recommended Mitigations                                               |
+| --- | ------------------------------------------------ | ------------------------------------------------------------------- | ---------------------------------------------------------------------------- | ------------------------------------------------------------- | --------------------------------------------------------------------- |
+| T1  | Abuse vulnerable dependency path from lockfile   | Runtime or build-time compromise, DoS, memory disclosure            | Bun lockfile, Caddy ingress                                                  | `bun audit` has high/moderate findings                        | Update dependencies, move tooling to dev deps, CI audit gate          |
+| T2  | Credential stuffing or signup abuse              | Account takeover attempts, user enumeration pressure, DB/email load | Input validation, Better Auth credential handling                            | No repo-visible rate limits                                   | Add IP/account rate limits and generic auth responses                 |
+| T3  | Browser-driven CSRF against custom mutation APIs | Queue/match/chat/logout side effects                                | SameSite cookies, JSON APIs, Better Auth guards for auth endpoints           | Custom mutation handlers lack shared origin/CSRF guard        | Add shared same-origin guard and JSON content-type enforcement        |
+| T4  | Authenticated request flooding                   | DB/realtime exhaustion, queue churn, match spam, chat spam          | Auth checks, some idempotency in moves                                       | No app-owned throttles                                        | Per-user/IP quotas for game, chat, queue, upload, friend flows        |
+| T5  | Raw error leakage                                | Internal schema/service detail disclosure                           | Production mode configured                                                   | Many handlers return `error.message`                          | Generic client errors plus server-side structured logs                |
+| T6  | Upload content confusion                         | Stored malicious/polyglot file, metadata leakage, storage growth    | 5 MB limit, magic-byte checks, canonical extension, re-encode, route headers | Multi-instance storage and quota strategy remains future work | Shared object storage or volume quotas for multi-instance deployments |
+| T7  | Realtime internal secret reuse                   | Wider blast radius if auth secret leaks                             | Caddy does not proxy internals                                               | Internal secret falls back to Better Auth secret              | Require distinct `REALTIME_INTERNAL_SECRET` in production             |
+| T8  | Missing browser security headers                 | Weaker XSS/clickjacking/MIME-sniffing defense                       | React escaping, no dangerous sinks found                                     | No CSP/security headers in Next/Caddy config                  | Add CSP, nosniff, frame-ancestors, referrer, permissions policy       |
+| T9  | Container post-compromise privilege              | Larger container blast radius                                       | Docker isolation                                                             | App/realtime run as root                                      | Add non-root production user and narrow writable paths                |
+| T10 | Sensitive code knowledge concentrated            | Slower review/incident response                                     | 17 contributors in history                                                   | Auth ownership concentrated                                   | CODEOWNERS and secondary reviewer requirements                        |
 
 ## Focus Paths
 

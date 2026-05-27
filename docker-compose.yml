@@ -70,7 +70,7 @@ services:
       database:
         condition: service_healthy
     volumes:
-      - app_uploads:/app/public/uploads
+      - app_storage:/app/storage
     networks:
       - transcendence
     healthcheck:
@@ -146,7 +146,7 @@ networks:
     driver: bridge
 
 volumes:
-  app_uploads:
+  app_storage:
   caddy_config:
   caddy_data:
   postgres_backups:
