@@ -11,6 +11,8 @@ const headers = mock();
 const getCurrentSession = mock();
 const updateUser = mock();
 
+await mock.module("server-only", () => ({}));
+
 await mock.module("fs/promises", () => ({
   mkdir,
   writeFile,
@@ -110,7 +112,7 @@ describe("uploadProfilePicture", () => {
   });
 
   test("stores supported image uploads and updates the user's avatar URL", async () => {
-    const result = await uploadProfilePicture(formDataWithFile(pngFile()));
+    const result = await uploadProfilePicture(formDataWithFile(pngFile("avatar.txt")));
 
     expect(result).toEqual({ success: true });
     expect(mkdir).toHaveBeenCalledWith(expect.stringContaining("public/uploads"), {
@@ -146,8 +148,17 @@ function formDataWithFile(file: File) {
   return data;
 }
 
-function pngFile() {
-  return new File([new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0, 0, 0, 0, 0])], "avatar.png", {
-    type: "image/png",
-  });
+function pngFile(name = "avatar.png") {
+  return new File(
+    [
+      Buffer.from(
+        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/p9sAAAAASUVORK5CYII=",
+        "base64",
+      ),
+    ],
+    name,
+    {
+      type: "image/png",
+    },
+  );
 }
