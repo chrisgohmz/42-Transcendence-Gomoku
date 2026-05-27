@@ -69,15 +69,21 @@ describe("uploadProfilePicture", () => {
     expect(saveProfileAvatar).not.toHaveBeenCalled();
   });
 
-  test("rejects missing, empty, oversized, and unsupported files", async () => {
+  test("rejects a missing upload file", async () => {
     expect(await uploadProfilePicture(new FormData())).toEqual({
       error: "profile.errors:noFile",
     });
+    expect(saveProfileAvatar).not.toHaveBeenCalled();
+  });
 
+  test("rejects an empty upload file", async () => {
     expect(await uploadProfilePicture(formDataWithFile(new File([], "empty.png")))).toEqual({
       error: "profile.errors:noFile",
     });
+    expect(saveProfileAvatar).not.toHaveBeenCalled();
+  });
 
+  test("rejects an oversized upload file", async () => {
     expect(
       await uploadProfilePicture(
         formDataWithFile(new File([new Uint8Array(5 * 1024 * 1024 + 1)], "big.png")),
@@ -85,7 +91,10 @@ describe("uploadProfilePicture", () => {
     ).toEqual({
       error: "profile.errors:imageTooLarge",
     });
+    expect(saveProfileAvatar).not.toHaveBeenCalled();
+  });
 
+  test("rejects upload bytes that cannot be normalized as an avatar image", async () => {
     saveProfileAvatar.mockResolvedValueOnce(false);
 
     expect(

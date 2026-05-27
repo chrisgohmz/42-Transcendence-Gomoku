@@ -1,9 +1,10 @@
 import "server-only";
 import sharp from "sharp";
 
-type SharpPipeline = sharp.Sharp;
+import type { SupportedProfileAvatarExtension } from "@/lib/profile-avatar-format";
 
-export type SupportedProfileAvatarExtension = "jpg" | "png" | "webp";
+type SharpPipeline = sharp.Sharp;
+export type { SupportedProfileAvatarExtension } from "@/lib/profile-avatar-format";
 
 export type NormalizedProfileAvatarImage = {
   buffer: Buffer;

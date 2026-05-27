@@ -3,19 +3,19 @@ import { randomUUID } from "node:crypto";
 import { mkdir, readFile, unlink, writeFile } from "node:fs/promises";
 import path from "node:path";
 
-import type { SupportedProfileAvatarExtension } from "@/lib/profile-avatar-image";
+import {
+  getProfileAvatarFormat,
+  supportedProfileAvatarExtensions,
+  type ProfileAvatarContentType,
+  type SupportedProfileAvatarExtension,
+} from "@/lib/profile-avatar-format";
 
-export type ProfileAvatarContentType = "image/jpeg" | "image/png" | "image/webp";
-
-const profileAvatarFilenamePattern =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.(jpg|png|webp)$/;
+const profileAvatarExtensionPattern = supportedProfileAvatarExtensions.join("|");
+const profileAvatarFilenamePattern = new RegExp(
+  `^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\\.(${profileAvatarExtensionPattern})$`,
+);
 const profileAvatarRoutePrefix = "/api/avatars/";
 const profileAvatarStorageDirectory = path.join(process.cwd(), "storage", "avatars");
-const profileAvatarContentTypes = {
-  jpg: "image/jpeg",
-  png: "image/png",
-  webp: "image/webp",
-} as const satisfies Record<SupportedProfileAvatarExtension, ProfileAvatarContentType>;
 
 function isNotFoundError(error: unknown) {
   return typeof error === "object" && error !== null && "code" in error && error.code === "ENOENT";
@@ -52,9 +52,10 @@ export function getProfileAvatarContentType(filename: string): ProfileAvatarCont
     return null;
   }
 
-  const extension = filename.split(".").at(-1) as SupportedProfileAvatarExtension;
+  const extension = filename.split(".").at(-1);
+  const format = extension ? getProfileAvatarFormat(extension) : null;
 
-  return profileAvatarContentTypes[extension];
+  return format?.contentType ?? null;
 }
 
 export function getProfileAvatarStoragePath(filename: string) {
