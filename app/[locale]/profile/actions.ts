@@ -1,17 +1,12 @@
 "use server";
 
-import { writeFile, mkdir } from "fs/promises";
-import { randomUUID } from "node:crypto";
-import path from "path";
-
 import { getLocale, getTranslations } from "next-intl/server";
 import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
 import { z } from "zod";
 
 import { getCurrentSession } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
-import { normalizeProfileAvatarImage } from "@/lib/profile-avatar-image";
+import { saveProfileAvatar } from "@/lib/profile-avatar-service";
 import { consumeRateLimit } from "@/lib/rate-limit";
 import { rateLimitRule, userRateLimitSubject } from "@/lib/rate-limit-rules";
 
@@ -52,26 +47,11 @@ export async function uploadProfilePicture(formData: FormData) {
     const file = fileValidation.data;
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
-    const normalizedImage = await normalizeProfileAvatarImage(buffer);
+    const saved = await saveProfileAvatar(sessionData.user.id, buffer);
 
-    if (!normalizedImage) {
+    if (!saved) {
       return { error: t("invalidImage") };
     }
-
-    const filename = `${sessionData.user.id}-${randomUUID()}.${normalizedImage.extension}`;
-    const uploadDir = path.join(process.cwd(), "public", "uploads");
-
-    await mkdir(uploadDir, { recursive: true });
-    const filepath = path.join(uploadDir, filename);
-
-    await writeFile(filepath, normalizedImage.buffer);
-
-    const fileUrl = `/uploads/${filename}`;
-
-    await prisma.user.update({
-      where: { id: sessionData.user.id },
-      data: { avatarUrl: fileUrl },
-    });
 
     revalidatePath("/");
     return { success: true };

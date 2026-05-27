@@ -27,8 +27,8 @@ FROM base AS production
 COPY . .
 RUN bun run build
 RUN chmod +x scripts/start.sh
-RUN mkdir -p /app/.next/cache /app/public/uploads \
-    && chown -R node:node /app/.next/cache /app/public/uploads
+RUN mkdir -p /app/.next/cache /app/storage \
+    && chown -R node:node /app/.next/cache /app/storage
 
 USER node
 
