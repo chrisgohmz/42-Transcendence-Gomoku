@@ -11,7 +11,7 @@ import {
   notifyFriendshipUpdateForUserIdsSafely,
 } from "@/lib/friendships/friendship-mutations";
 import { prisma } from "@/lib/prisma";
-import { consumeRateLimit } from "@/lib/rate-limit";
+import { isRateLimited } from "@/lib/rate-limit";
 import {
   rateLimitRule,
   type RateLimitRuleName,
@@ -28,9 +28,7 @@ async function isFriendActionRateLimited(
   ruleName: FriendRateLimitRuleName,
 ): Promise<boolean> {
   const headerList = await headers();
-  return !(
-    await consumeRateLimit(headerList, rateLimitRule(ruleName, userRateLimitSubject(userId)))
-  ).allowed;
+  return isRateLimited(headerList, rateLimitRule(ruleName, userRateLimitSubject(userId)));
 }
 
 export async function sendFriendRequest(targetUsername: string) {

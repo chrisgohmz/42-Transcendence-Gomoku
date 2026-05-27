@@ -4,7 +4,7 @@ import {
   getMatchmakingQueueStatus,
   joinMatchmakingQueue,
 } from "@/lib/matches/matchmaking";
-import { consumeRateLimit, rateLimitResponse } from "@/lib/rate-limit";
+import { enforceRateLimit } from "@/lib/rate-limit";
 import { rateLimitRule, userRateLimitSubject } from "@/lib/rate-limit-rules";
 import { enforceMutationRequest } from "@/lib/request-security";
 
@@ -56,13 +56,13 @@ export async function POST(request: Request) {
   }
 
   try {
-    const rateLimit = await consumeRateLimit(
+    const rateLimitExceededResponse = await enforceRateLimit(
       request.headers,
       rateLimitRule("matchQueueJoin", userRateLimitSubject(context.user.id)),
     );
 
-    if (!rateLimit.allowed) {
-      return rateLimitResponse(rateLimit);
+    if (rateLimitExceededResponse) {
+      return rateLimitExceededResponse;
     }
 
     return Response.json(await joinMatchmakingQueue(context.user));
@@ -91,13 +91,13 @@ export async function DELETE(request: Request) {
   }
 
   try {
-    const rateLimit = await consumeRateLimit(
+    const rateLimitExceededResponse = await enforceRateLimit(
       request.headers,
       rateLimitRule("matchQueueCancel", userRateLimitSubject(context.user.id)),
     );
 
-    if (!rateLimit.allowed) {
-      return rateLimitResponse(rateLimit);
+    if (rateLimitExceededResponse) {
+      return rateLimitExceededResponse;
     }
 
     return Response.json(await cancelMatchmakingQueue(context.user));

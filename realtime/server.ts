@@ -3,12 +3,10 @@ import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { Server as Engine } from "@socket.io/bun-engine";
-import { createAdapter } from "@socket.io/redis-adapter";
 import { config } from "dotenv";
 import { Server } from "socket.io";
 
 import { prisma } from "@/lib/prisma";
-import { connectRedisClient, createRedisClient, readRedisUrl } from "@/lib/redis";
 
 import {
   challengeDeclinedPath,
@@ -28,13 +26,12 @@ import { handleInternalGameUpdate } from "./lib/internal-game-update";
 import { handleInternalQueueMatched } from "./lib/internal-queue-matched";
 import {
   createMemoryPresenceStore,
-  createRedisPresenceStore,
   refreshPresenceConnection,
   removePresenceConnection,
   subscribeToPresence,
   type ConnectedUsers,
-  type PresenceStore,
 } from "./lib/presence";
+import { createRedisBackedPresenceStore, getRealtimeRedisErrorMessage } from "./lib/redis-presence";
 import { authenticateSocketSession } from "./lib/socket-auth";
 import {
   DEFAULT_SOCKET_HEARTBEAT_INTERVAL_MS,
@@ -121,58 +118,16 @@ io.bind(engine);
 
 io.use(authenticateSocketSession);
 
-async function createRedisBackedPresenceStore(): Promise<PresenceStore | null> {
-  const redisUrl = readRedisUrl(process.env, ["REALTIME_REDIS_URL", "REDIS_URL"]);
-
-  if (!redisUrl) {
-    return null;
-  }
-
-  const pubClient = createRedisClient(redisUrl, {
-    connectionName: "transcendence-realtime-pub",
-  });
-  const subClient = pubClient.duplicate({
-    connectionName: "transcendence-realtime-sub",
-  });
-  const presenceClient = createRedisClient(redisUrl, {
-    connectionName: "transcendence-realtime-presence",
-  });
-
-  try {
-    await Promise.all([
-      connectRedisClient(pubClient),
-      connectRedisClient(subClient),
-      connectRedisClient(presenceClient),
-    ]);
-
-    io.adapter(createAdapter(pubClient, subClient));
-    console.log("[realtime] Redis adapter and presence store enabled.");
-
-    return createRedisPresenceStore(presenceClient, {
-      keyPrefix:
-        process.env["REALTIME_PRESENCE_REDIS_KEY_PREFIX"]?.trim() || "transcendence:presence:",
-      ttlSeconds: realtimePresenceTtlSeconds,
-    });
-  } catch (error) {
-    pubClient.disconnect();
-    subClient.disconnect();
-    presenceClient.disconnect();
-
-    if (process.env["NODE_ENV"] === "production") {
-      throw error;
-    }
-
-    console.warn("[realtime] Redis is unavailable; using in-memory adapter and presence.", error);
-    return null;
-  }
-}
-
 const connectedUsers: ConnectedUsers = new Map();
 const presenceStore =
-  (await createRedisBackedPresenceStore()) ?? createMemoryPresenceStore(connectedUsers);
+  (await createRedisBackedPresenceStore({
+    env: process.env,
+    io,
+    presenceTtlSeconds: realtimePresenceTtlSeconds,
+  })) ?? createMemoryPresenceStore(connectedUsers);
 
 function logPresenceError(action: string, error: unknown) {
-  console.error(`[realtime] Failed to ${action} presence.`, error);
+  console.error(`[realtime] Failed to ${action} presence: ${getRealtimeRedisErrorMessage(error)}`);
 }
 
 function subscribeSocketToPresence(socket: Parameters<typeof subscribeToPresence>[0]) {

@@ -8,7 +8,7 @@ import { getChallengeMatchMetadata } from "@/lib/matches/challenge-metadata";
 import { buildGameUpdatePayload } from "@/lib/matches/game-update";
 import { publishGameUpdate, publishQueueMatched } from "@/lib/matches/realtime-publisher";
 import { prisma } from "@/lib/prisma";
-import { consumeRateLimit, rateLimitResponse } from "@/lib/rate-limit";
+import { enforceRateLimit } from "@/lib/rate-limit";
 import { rateLimitRule, userRateLimitSubject } from "@/lib/rate-limit-rules";
 import { enforceMutationRequest } from "@/lib/request-security";
 
@@ -67,13 +67,13 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     const displayName =
       validation.data.displayName ?? (context.user.displayName || context.user.username);
 
-    const rateLimit = await consumeRateLimit(
+    const rateLimitExceededResponse = await enforceRateLimit(
       request.headers,
       rateLimitRule("matchJoin", userRateLimitSubject(context.user.id)),
     );
 
-    if (!rateLimit.allowed) {
-      return rateLimitResponse(rateLimit);
+    if (rateLimitExceededResponse) {
+      return rateLimitExceededResponse;
     }
 
     const match = await prisma.match.findUnique({

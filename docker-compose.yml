@@ -43,13 +43,24 @@ services:
 
   redis:
     image: redis:8-alpine
-    command: ["redis-server", "--appendonly", "yes"]
+    command:
+      [
+        "sh",
+        "-c",
+        'if [ -n "$$REDIS_PASSWORD" ]; then exec redis-server --appendonly yes --requirepass "$$REDIS_PASSWORD"; else exec redis-server --appendonly yes; fi',
+      ]
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-}
     volumes:
       - redis_data:/data
     networks:
       - transcendence
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test:
+        [
+          "CMD-SHELL",
+          'if [ -n "$$REDIS_PASSWORD" ]; then redis-cli -a "$$REDIS_PASSWORD" --no-auth-warning ping; else redis-cli ping; fi',
+        ]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -79,6 +90,7 @@ services:
       REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
       RATE_LIMIT_REDIS_URL: ${RATE_LIMIT_REDIS_URL:-${REDIS_URL:-redis://redis:6379/0}}
       RATE_LIMIT_REDIS_KEY_PREFIX: ${RATE_LIMIT_REDIS_KEY_PREFIX:-transcendence:rate-limit:}
+      RATE_LIMIT_REDIS_FAIL_OPEN: ${RATE_LIMIT_REDIS_FAIL_OPEN:-false}
       BETTER_AUTH_REDIS_URL: ${BETTER_AUTH_REDIS_URL:-${REDIS_URL:-redis://redis:6379/0}}
       BETTER_AUTH_REDIS_KEY_PREFIX: ${BETTER_AUTH_REDIS_KEY_PREFIX:-better-auth:}
       REALTIME_INTERNAL_URL: http://realtime:3001/internal/game-update

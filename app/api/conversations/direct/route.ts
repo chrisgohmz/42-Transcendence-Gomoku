@@ -14,7 +14,7 @@ import { getErrorMessage } from "@/lib/api-errors";
 import { getCurrentSession } from "@/lib/auth";
 import { isAcceptedFriend } from "@/lib/chat/access";
 import { prisma } from "@/lib/prisma";
-import { consumeRateLimit, rateLimitResponse } from "@/lib/rate-limit";
+import { enforceRateLimit } from "@/lib/rate-limit";
 import { rateLimitRule, userRateLimitSubject } from "@/lib/rate-limit-rules";
 import { enforceMutationRequest } from "@/lib/request-security";
 
@@ -71,13 +71,13 @@ export async function POST(request: Request) {
   }
 
   try {
-    const rateLimit = await consumeRateLimit(
+    const rateLimitExceededResponse = await enforceRateLimit(
       request.headers,
       rateLimitRule("conversationDirect", userRateLimitSubject(session.user.id)),
     );
 
-    if (!rateLimit.allowed) {
-      return rateLimitResponse(rateLimit);
+    if (rateLimitExceededResponse) {
+      return rateLimitExceededResponse;
     }
 
     // 6. Build the directKey — sort the two IDs so the key is always identical

@@ -18,7 +18,7 @@ import {
   hasDuplicateSignupFields,
 } from "./lib/auth-duplicate-fields";
 import { getLocalizedAuthAppUrl } from "./lib/auth-urls";
-import { consumeRateLimit } from "./lib/rate-limit";
+import { isRateLimited } from "./lib/rate-limit";
 import { rateLimitRule, type RateLimitRuleName } from "./lib/rate-limit-rules";
 import {
   fieldIssuesToMap,
@@ -93,7 +93,7 @@ async function isActionRateLimited(
   headerList: Pick<Headers, "get">,
   ruleName: RateLimitRuleName,
 ): Promise<boolean> {
-  return !(await consumeRateLimit(headerList, rateLimitRule(ruleName))).allowed;
+  return isRateLimited(headerList, rateLimitRule(ruleName));
 }
 
 export async function loginAction(

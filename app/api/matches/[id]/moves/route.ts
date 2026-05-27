@@ -7,7 +7,7 @@ import { evaluateMoveOutcome, validateMoveSubmission } from "@/lib/matches/move-
 import { isActiveParticipantForUser } from "@/lib/matches/participant-access";
 import { publishGameUpdate } from "@/lib/matches/realtime-publisher";
 import { prisma } from "@/lib/prisma";
-import { consumeRateLimit, rateLimitResponse } from "@/lib/rate-limit";
+import { enforceRateLimit } from "@/lib/rate-limit";
 import { rateLimitRule, userRateLimitSubject } from "@/lib/rate-limit-rules";
 import { enforceMutationRequest } from "@/lib/request-security";
 import { syncUserGameStatsForUser } from "@/lib/stats/result-sync";
@@ -78,13 +78,13 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     const position = validation.data.position;
     const requestId = validation.data.requestId ?? null;
     const baseVersion = validation.data.baseVersion ?? null;
-    const rateLimit = await consumeRateLimit(
+    const rateLimitExceededResponse = await enforceRateLimit(
       request.headers,
       rateLimitRule("matchMove", userRateLimitSubject(context.user.id)),
     );
 
-    if (!rateLimit.allowed) {
-      return rateLimitResponse(rateLimit);
+    if (rateLimitExceededResponse) {
+      return rateLimitExceededResponse;
     }
 
     const result = await prisma.$transaction(async (tx) => {

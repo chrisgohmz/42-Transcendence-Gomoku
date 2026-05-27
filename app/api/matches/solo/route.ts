@@ -7,7 +7,7 @@ import { buildGameUpdatePayload } from "@/lib/matches/game-update";
 import { evaluateMoveOutcome, standardGomokuBoardSize } from "@/lib/matches/move-rules";
 import { publishGameUpdate } from "@/lib/matches/realtime-publisher";
 import { prisma } from "@/lib/prisma";
-import { consumeRateLimit, rateLimitResponse } from "@/lib/rate-limit";
+import { enforceRateLimit } from "@/lib/rate-limit";
 import { rateLimitRule, userRateLimitSubject } from "@/lib/rate-limit-rules";
 import { enforceMutationRequest } from "@/lib/request-security";
 
@@ -53,13 +53,13 @@ export async function POST(request: Request) {
   }
 
   try {
-    const rateLimit = await consumeRateLimit(
+    const rateLimitExceededResponse = await enforceRateLimit(
       request.headers,
       rateLimitRule("matchSolo", userRateLimitSubject(context.user.id)),
     );
 
-    if (!rateLimit.allowed) {
-      return rateLimitResponse(rateLimit);
+    if (rateLimitExceededResponse) {
+      return rateLimitExceededResponse;
     }
 
     const body = await readBody(request);

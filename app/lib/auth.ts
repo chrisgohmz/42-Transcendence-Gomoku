@@ -8,6 +8,7 @@ import { headers } from "next/headers";
 import { z } from "zod";
 
 import type { User } from "../../generated/prisma/client";
+import { getSharedRedisClient, readRedisUrl } from "../../shared/server/redis";
 import { defaultLocale } from "../i18n/config";
 import type { DuplicateSignupFields } from "./auth-duplicate-fields";
 import {
@@ -25,7 +26,6 @@ import {
 } from "./auth-session-access";
 import { oauthProviderIds, type OAuthProviderId } from "./oauth-providers";
 import { prisma } from "./prisma";
-import { getSharedRedisClient, readRedisUrl } from "./redis";
 import { authValidationLimits } from "./validation/auth-profile-limits";
 
 const SESSION_TTL_SECONDS = 7 * 24 * 60 * 60;

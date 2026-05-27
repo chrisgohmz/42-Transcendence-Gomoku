@@ -7,7 +7,7 @@ import { headers } from "next/headers";
 
 import { auth, getCurrentSession, hasCredentialPassword } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { consumeRateLimit } from "@/lib/rate-limit";
+import { isRateLimited } from "@/lib/rate-limit";
 import {
   rateLimitRule,
   type RateLimitRuleName,
@@ -44,9 +44,7 @@ async function isProfileSettingsRateLimited(
   userId: string,
   ruleName: ProfileSettingsRateLimitRuleName,
 ): Promise<boolean> {
-  return !(
-    await consumeRateLimit(await headers(), rateLimitRule(ruleName, userRateLimitSubject(userId)))
-  ).allowed;
+  return isRateLimited(await headers(), rateLimitRule(ruleName, userRateLimitSubject(userId)));
 }
 
 export async function saveDisplayName(

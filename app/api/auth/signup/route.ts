@@ -14,7 +14,7 @@ import {
 import { getLocalizedAuthAppUrl } from "../../../lib/auth-urls";
 import { resolveApiLocale } from "../../../lib/i18n/api";
 import { prisma } from "../../../lib/prisma";
-import { consumeRateLimit, rateLimitResponse } from "../../../lib/rate-limit";
+import { enforceRateLimit } from "../../../lib/rate-limit";
 import { rateLimitRule } from "../../../lib/rate-limit-rules";
 import { enforceMutationRequest } from "../../../lib/request-security";
 import { fieldIssuesToMap, validateSignupInput } from "../../../lib/validation/auth-profile";
@@ -41,10 +41,13 @@ export async function POST(request: Request) {
     return requestGuardResponse;
   }
 
-  const rateLimit = await consumeRateLimit(request.headers, rateLimitRule("authSignup"));
+  const rateLimitExceededResponse = await enforceRateLimit(
+    request.headers,
+    rateLimitRule("authSignup"),
+  );
 
-  if (!rateLimit.allowed) {
-    return rateLimitResponse(rateLimit);
+  if (rateLimitExceededResponse) {
+    return rateLimitExceededResponse;
   }
 
   const body = (await request.json().catch(() => null)) as SignupBody | null;

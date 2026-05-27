@@ -13,7 +13,7 @@ import { evaluateMoveOutcome } from "@/lib/matches/move-rules";
 import { isActiveParticipantForUser } from "@/lib/matches/participant-access";
 import { publishGameUpdate } from "@/lib/matches/realtime-publisher";
 import { prisma } from "@/lib/prisma";
-import { consumeRateLimit, rateLimitResponse } from "@/lib/rate-limit";
+import { enforceRateLimit } from "@/lib/rate-limit";
 import { rateLimitRule, userRateLimitSubject } from "@/lib/rate-limit-rules";
 import { enforceMutationRequest } from "@/lib/request-security";
 import { syncUserGameStatsForUser } from "@/lib/stats/result-sync";
@@ -89,13 +89,13 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       return Response.json({ error: "missing_participant_id" }, { status: 400 });
     }
 
-    const rateLimit = await consumeRateLimit(
+    const rateLimitExceededResponse = await enforceRateLimit(
       request.headers,
       rateLimitRule("matchAiTurn", userRateLimitSubject(context.user.id)),
     );
 
-    if (!rateLimit.allowed) {
-      return rateLimitResponse(rateLimit);
+    if (rateLimitExceededResponse) {
+      return rateLimitExceededResponse;
     }
 
     const previewMatch = await prisma.match.findUnique({

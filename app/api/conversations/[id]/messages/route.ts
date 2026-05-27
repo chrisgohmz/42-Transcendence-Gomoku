@@ -11,7 +11,7 @@ import { canAccessDirectConversation } from "@/lib/chat/access";
 import { markDirectConversationRead } from "@/lib/chat/read-state";
 import { publishChatMessage } from "@/lib/chat/realtime-publisher";
 import { prisma } from "@/lib/prisma";
-import { consumeRateLimit, rateLimitResponse } from "@/lib/rate-limit";
+import { enforceRateLimit } from "@/lib/rate-limit";
 import { rateLimitRule, userRateLimitSubject } from "@/lib/rate-limit-rules";
 import { enforceMutationRequest } from "@/lib/request-security";
 
@@ -97,13 +97,13 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     return deniedResponse(access.reason);
   }
 
-  const rateLimit = await consumeRateLimit(
+  const rateLimitExceededResponse = await enforceRateLimit(
     request.headers,
     rateLimitRule("conversationMessage", userRateLimitSubject(session.user.id)),
   );
 
-  if (!rateLimit.allowed) {
-    return rateLimitResponse(rateLimit);
+  if (rateLimitExceededResponse) {
+    return rateLimitExceededResponse;
   }
 
   // Parse and validate the request body

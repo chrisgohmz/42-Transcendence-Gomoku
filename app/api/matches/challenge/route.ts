@@ -16,7 +16,7 @@ import { buildGameUpdatePayload } from "@/lib/matches/game-update";
 import { standardGomokuBoardSize } from "@/lib/matches/move-rules";
 import { publishChallengeReceived, publishGameUpdate } from "@/lib/matches/realtime-publisher";
 import { prisma } from "@/lib/prisma";
-import { consumeRateLimit, rateLimitResponse } from "@/lib/rate-limit";
+import { enforceRateLimit } from "@/lib/rate-limit";
 import { rateLimitRule, userRateLimitSubject } from "@/lib/rate-limit-rules";
 import { enforceMutationRequest } from "@/lib/request-security";
 
@@ -103,13 +103,13 @@ export async function POST(request: Request) {
       return Response.json({ error: "challenge_name_too_long" }, { status: 400 });
     }
 
-    const rateLimit = await consumeRateLimit(
+    const rateLimitExceededResponse = await enforceRateLimit(
       request.headers,
       rateLimitRule("matchChallengeCreate", userRateLimitSubject(context.user.id)),
     );
 
-    if (!rateLimit.allowed) {
-      return rateLimitResponse(rateLimit);
+    if (rateLimitExceededResponse) {
+      return rateLimitExceededResponse;
     }
 
     const target = await prisma.user.findUnique({

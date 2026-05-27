@@ -7,7 +7,7 @@ import { z } from "zod";
 
 import { getCurrentSession } from "@/lib/auth";
 import { saveProfileAvatar } from "@/lib/profile-avatar-service";
-import { consumeRateLimit } from "@/lib/rate-limit";
+import { isRateLimited } from "@/lib/rate-limit";
 import { rateLimitRule, userRateLimitSubject } from "@/lib/rate-limit-rules";
 
 const maxProfilePictureBytes = 5 * 1024 * 1024;
@@ -27,12 +27,12 @@ export async function uploadProfilePicture(formData: FormData) {
     return { error: t("loginRequired") };
   }
 
-  const rateLimit = await consumeRateLimit(
+  const rateLimitExceeded = await isRateLimited(
     await headers(),
     rateLimitRule("profileAvatarUpload", userRateLimitSubject(sessionData.user.id)),
   );
 
-  if (!rateLimit.allowed) {
+  if (rateLimitExceeded) {
     return { error: t("pictureSaveFailed") };
   }
 

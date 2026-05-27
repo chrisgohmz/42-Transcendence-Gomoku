@@ -1,5 +1,5 @@
 import { auth } from "../../../lib/auth";
-import { consumeRateLimit, rateLimitResponse } from "../../../lib/rate-limit";
+import { enforceRateLimit } from "../../../lib/rate-limit";
 import { rateLimitRule } from "../../../lib/rate-limit-rules";
 import { enforceMutationRequest } from "../../../lib/request-security";
 
@@ -66,10 +66,13 @@ export async function POST(request: Request) {
     return requestGuardResponse;
   }
 
-  const rateLimit = await consumeRateLimit(request.headers, rateLimitRule("authLogout"));
+  const rateLimitExceededResponse = await enforceRateLimit(
+    request.headers,
+    rateLimitRule("authLogout"),
+  );
 
-  if (!rateLimit.allowed) {
-    return rateLimitResponse(rateLimit);
+  if (rateLimitExceededResponse) {
+    return rateLimitExceededResponse;
   }
 
   const authResponse = await auth.api

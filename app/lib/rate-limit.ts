@@ -1,5 +1,5 @@
 import "server-only";
-import { connectRedisClient, getSharedRedisClient, readRedisUrl } from "./redis";
+import { connectRedisClient, getSharedRedisClient, readRedisUrl } from "../../shared/server/redis";
 
 type HeaderReader = Pick<Headers, "get">;
 
@@ -108,8 +108,22 @@ function getRateLimitRedisClient(env: NodeJS.ProcessEnv = process.env): RateLimi
     connectTimeoutEnvName: "RATE_LIMIT_REDIS_CONNECT_TIMEOUT_MS",
     env,
     url: redisUrl,
-    warningMessage: "[rate-limit] Redis is unavailable; falling back to in-memory counters.",
+    warningMessage: "[rate-limit] Redis is unavailable.",
   });
+}
+
+function isRedisFailOpenEnabled(env: NodeJS.ProcessEnv = process.env): boolean {
+  const value = env["RATE_LIMIT_REDIS_FAIL_OPEN"]?.trim().toLowerCase();
+
+  if (value === "true" || value === "1" || value === "yes") {
+    return true;
+  }
+
+  if (value === "false" || value === "0" || value === "no") {
+    return false;
+  }
+
+  return env["NODE_ENV"] !== "production";
 }
 
 function pruneExpiredBuckets(now: number, store: Map<string, RateLimitBucket>) {
@@ -237,13 +251,13 @@ async function consumeRedisRateLimit(
   return toRateLimitResult(rule, count, now + ttlMs, now);
 }
 
-function warnRedisFallback() {
+function warnRedisFailure(message: string) {
   if (globalRateLimitStore.__transcendenceRateLimitRedisWarned) {
     return;
   }
 
   globalRateLimitStore.__transcendenceRateLimitRedisWarned = true;
-  console.warn("[rate-limit] Redis command failed; falling back to in-memory counters.");
+  console.warn(message);
 }
 
 function getRateLimitStorageKey(headers: HeaderReader | null | undefined, rule: RateLimitRule) {
@@ -288,7 +302,12 @@ export async function consumeRateLimit(
         windowMs,
       );
     } catch {
-      warnRedisFallback();
+      if (!isRedisFailOpenEnabled(options.env)) {
+        warnRedisFailure("[rate-limit] Redis command failed; failing closed.");
+        return toRateLimitResult(rule, rule.max + 1, resetAt, now);
+      }
+
+      warnRedisFailure("[rate-limit] Redis command failed; falling back to in-memory counters.");
     }
   }
 
@@ -306,4 +325,21 @@ export function rateLimitResponse(result: Extract<RateLimitResult, { allowed: fa
       status: 429,
     },
   );
+}
+
+export async function enforceRateLimit(
+  headers: HeaderReader | null | undefined,
+  rule: RateLimitRule,
+  options: RateLimitOptions = {},
+): Promise<Response | null> {
+  const result = await consumeRateLimit(headers, rule, options);
+  return result.allowed ? null : rateLimitResponse(result);
+}
+
+export async function isRateLimited(
+  headers: HeaderReader | null | undefined,
+  rule: RateLimitRule,
+  options: RateLimitOptions = {},
+): Promise<boolean> {
+  return !(await consumeRateLimit(headers, rule, options)).allowed;
 }

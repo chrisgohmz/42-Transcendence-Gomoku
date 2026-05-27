@@ -68,6 +68,9 @@ production this must be distinct from `BETTER_AUTH_SECRET`.
 Redis is optional for single-process host development. When `REDIS_URL` is set,
 the app uses it for shared app rate limits and Better Auth secondary storage,
 and the realtime service uses it for Socket.IO fan-out plus shared presence.
+For production or shared Redis, set `REDIS_PASSWORD` and include the password in
+`REDIS_URL`; app-owned rate limits fail closed on Redis errors unless
+`RATE_LIMIT_REDIS_FAIL_OPEN=true` is set explicitly.
 
 ### Prisma workflow
 
@@ -76,7 +79,7 @@ bun run prisma:generate
 bun run prisma:migrate:dev -- --name <migration-name>
 ```
 
-For host-side Prisma commands, `DATABASE_URL` should point to `localhost:5432`. In containers, Compose still injects a container-only URL that uses `database:5432`. For host-side Redis-backed auth, rate-limit, and realtime testing, set `REDIS_URL=redis://localhost:6379/0`; in containers, Compose injects `redis://redis:6379/0`.
+For host-side Prisma commands, `DATABASE_URL` should point to `localhost:5432`. In containers, Compose still injects a container-only URL that uses `database:5432`. For host-side Redis-backed auth, rate-limit, and realtime testing, set `REDIS_URL=redis://localhost:6379/0`; in containers, Compose injects `redis://redis:6379/0`. If you set `REDIS_PASSWORD`, include it in the URL, for example `redis://:change_me_please@localhost:6379/0`.
 
 When `schema.prisma` changes, create a migration locally with `prisma migrate dev`,
 verify it, and commit the generated `prisma/migrations/` files.

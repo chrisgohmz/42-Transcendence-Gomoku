@@ -10,7 +10,7 @@ import {
   notifyFriendshipUpdateForUserIdsSafely,
 } from "@/lib/friendships/friendship-mutations";
 import { prisma } from "@/lib/prisma";
-import { consumeRateLimit } from "@/lib/rate-limit";
+import { isRateLimited } from "@/lib/rate-limit";
 import { rateLimitRule, userRateLimitSubject } from "@/lib/rate-limit-rules";
 
 export async function processFriendAction(
@@ -24,12 +24,12 @@ export async function processFriendAction(
     return { error: "Unauthorized" };
   }
 
-  const rateLimit = await consumeRateLimit(
+  const rateLimitExceeded = await isRateLimited(
     await headers(),
     rateLimitRule("profileFriendAction", userRateLimitSubject(loggedInUserId)),
   );
 
-  if (!rateLimit.allowed) {
+  if (rateLimitExceeded) {
     return { error: "Too many requests. Please try again later." };
   }
 

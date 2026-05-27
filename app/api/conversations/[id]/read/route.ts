@@ -6,7 +6,7 @@ import { getErrorMessage } from "@/lib/api-errors";
 import { getCurrentSession } from "@/lib/auth";
 import { canAccessDirectConversation } from "@/lib/chat/access";
 import { markDirectConversationRead } from "@/lib/chat/read-state";
-import { consumeRateLimit, rateLimitResponse } from "@/lib/rate-limit";
+import { enforceRateLimit } from "@/lib/rate-limit";
 import { rateLimitRule, userRateLimitSubject } from "@/lib/rate-limit-rules";
 import { enforceMutationRequest } from "@/lib/request-security";
 
@@ -36,13 +36,13 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     return deniedResponse(access.reason);
   }
 
-  const rateLimit = await consumeRateLimit(
+  const rateLimitExceededResponse = await enforceRateLimit(
     request.headers,
     rateLimitRule("conversationRead", userRateLimitSubject(session.user.id)),
   );
 
-  if (!rateLimit.allowed) {
-    return rateLimitResponse(rateLimit);
+  if (rateLimitExceededResponse) {
+    return rateLimitExceededResponse;
   }
 
   try {

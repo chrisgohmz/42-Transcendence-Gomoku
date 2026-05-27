@@ -2,7 +2,8 @@ import { describe, expect, mock, test } from "bun:test";
 
 await mock.module("server-only", () => ({}));
 
-const { consumeRateLimit, getClientIp, rateLimitResponse } = await import("./rate-limit");
+const { consumeRateLimit, enforceRateLimit, getClientIp, isRateLimited, rateLimitResponse } =
+  await import("./rate-limit");
 
 const productionEnv = { NODE_ENV: "production" } as NodeJS.ProcessEnv;
 
@@ -159,6 +160,68 @@ describe("rate limiting", () => {
     expect(second.retryAfterSeconds).toBe(59);
   });
 
+  test("fails closed in production when Redis rate-limit storage errors", async () => {
+    const now = 1_700_000_000_000;
+    const headers = new Headers({ "X-Forwarded-For": "198.51.100.7" });
+    const rule = { key: "test:redis-down", max: 3, windowSeconds: 60 };
+    const originalWarn = console.warn;
+    const redis = {
+      eval: mock(async () => {
+        throw new Error("redis down");
+      }),
+    };
+
+    console.warn = mock() as unknown as typeof console.warn;
+
+    try {
+      const result = await consumeRateLimit(headers, rule, {
+        env: productionEnv,
+        now,
+        redis,
+      });
+
+      expect(result.allowed).toBe(false);
+
+      if (result.allowed) {
+        throw new Error("expected Redis failure to fail closed");
+      }
+
+      expect(result.retryAfterSeconds).toBe(60);
+      expect(redis.eval).toHaveBeenCalledTimes(1);
+    } finally {
+      console.warn = originalWarn;
+    }
+  });
+
+  test("can explicitly fail open to local memory counters when Redis errors", async () => {
+    const now = 1_700_000_000_000;
+    const headers = new Headers({ "X-Forwarded-For": "198.51.100.7" });
+    const rule = { key: "test:redis-fail-open", max: 1, windowSeconds: 60 };
+    const env = {
+      NODE_ENV: "production",
+      RATE_LIMIT_REDIS_FAIL_OPEN: "true",
+    } as NodeJS.ProcessEnv;
+    const originalWarn = console.warn;
+    const redis = {
+      eval: mock(async () => {
+        throw new Error("redis down");
+      }),
+    };
+
+    console.warn = mock() as unknown as typeof console.warn;
+
+    try {
+      const first = await consumeRateLimit(headers, rule, { env, now, redis });
+      const second = await consumeRateLimit(headers, rule, { env, now, redis });
+
+      expect(first.allowed).toBe(true);
+      expect(second.allowed).toBe(false);
+      expect(redis.eval).toHaveBeenCalledTimes(2);
+    } finally {
+      console.warn = originalWarn;
+    }
+  });
+
   test("builds a 429 JSON response with rate-limit headers", async () => {
     const now = 1_700_000_000_000;
     const store = new Map();
@@ -180,5 +243,29 @@ describe("rate limiting", () => {
       error: "rate_limited",
       message: "Too many requests. Try again later.",
     });
+  });
+
+  test("enforces a route-style rate limit response", async () => {
+    const now = 1_700_000_000_000;
+    const store = new Map();
+    const headers = new Headers({ "X-Forwarded-For": "198.51.100.7" });
+    const rule = { key: "test:enforce", max: 1, windowSeconds: 60 };
+
+    expect(await enforceRateLimit(headers, rule, productionOptions(now, store))).toBeNull();
+
+    const response = await enforceRateLimit(headers, rule, productionOptions(now, store));
+
+    expect(response?.status).toBe(429);
+    expect(response?.headers.get("Retry-After")).toBe("60");
+  });
+
+  test("reports action-style rate limit state", async () => {
+    const now = 1_700_000_000_000;
+    const store = new Map();
+    const headers = new Headers({ "X-Forwarded-For": "198.51.100.7" });
+    const rule = { key: "test:is-rate-limited", max: 1, windowSeconds: 60 };
+
+    expect(await isRateLimited(headers, rule, productionOptions(now, store))).toBe(false);
+    expect(await isRateLimited(headers, rule, productionOptions(now, store))).toBe(true);
   });
 });
