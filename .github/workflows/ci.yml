@@ -49,14 +49,14 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
+      - name: Generate Prisma client
+        run: bun run prisma:generate
+
       - name: Check formatting
         run: bun run format:check
 
       - name: Lint code
         run: bun run lint
-
-      - name: Generate Prisma client
-        run: bun run prisma:generate
 
       - name: Apply database migrations
         run: bun run prisma:migrate:deploy
@@ -88,11 +88,20 @@ jobs:
           REDIS_SMOKE_URL: redis://:ci-redis-password@127.0.0.1:6379/0
         run: bun run test:redis:smoke
 
+      - name: Cache Next.js build output
+        uses: actions/cache@v4
+        with:
+          path: ${{ github.workspace }}/.next/cache
+          key: >-
+            ${{ runner.os }}-nextjs-${{ hashFiles('bun.lock') }}-${{ hashFiles('package.json', 'next.config.ts', 'tsconfig.json', 'postcss.config.mjs', 'components.json', 'app/**', 'public/**', 'shared/**', 'realtime/**', 'prisma/**', 'proxy.ts') }}
+          restore-keys: |
+            ${{ runner.os }}-nextjs-${{ hashFiles('bun.lock') }}-
+
       - name: Build app
         env:
           BETTER_AUTH_SECRET: ci_better_auth_secret_change_me_32_chars
           BETTER_AUTH_URL: http://localhost:3000
-        run: bun run build
+        run: bun run build:next
 
       - name: Install Playwright browsers
         run: bun run pw:install --with-deps
