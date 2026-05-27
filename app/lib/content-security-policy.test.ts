@@ -15,7 +15,7 @@ describe("content security policy", () => {
     });
 
     expect(policy).toContain("default-src 'self'");
-    expect(policy).toContain("script-src 'self' 'nonce-test-nonce' 'strict-dynamic'");
+    expect(policy).toContain("script-src 'nonce-test-nonce' 'strict-dynamic'");
     expect(policy).toContain("script-src-attr 'none'");
     expect(policy).toContain("style-src 'self' 'nonce-test-nonce'");
     expect(policy).toContain("style-src-elem 'self' 'nonce-test-nonce'");

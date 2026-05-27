@@ -61,7 +61,7 @@ export function createContentSecurityPolicy(
   const isDevelopment = env.NODE_ENV === "development";
   const isProduction = env.NODE_ENV === "production";
   const nonceSource = `'nonce-${nonce}'`;
-  const scriptSources = ["'self'", nonceSource, "'strict-dynamic'"];
+  const scriptSources = [nonceSource, "'strict-dynamic'"];
   const styleSources = ["'self'", nonceSource];
 
   if (isDevelopment) {

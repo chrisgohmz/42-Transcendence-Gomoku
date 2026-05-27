@@ -16,7 +16,7 @@ describe("proxy CSP", () => {
     }
 
     expect(policy).not.toContain("'unsafe-inline'");
-    expect(policy).toContain("script-src 'self' 'nonce-");
+    expect(policy).toContain("script-src 'nonce-");
     expect(policy).toContain("style-src 'self' 'nonce-");
     expect(response.headers.get(`x-middleware-request-${CSP_NONCE_HEADER}`)).toBe(nonce);
     expect(response.headers.get(`x-middleware-request-${CSP_HEADER.toLowerCase()}`)).toBe(policy);

@@ -564,9 +564,7 @@ a.command-panel {
 }
 
 .oauth-social-button {
-  display: inline-grid;
-  grid-template-columns: auto minmax(0, auto);
-  gap: 0.65rem;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   width: 100%;
@@ -584,6 +582,15 @@ a.command-panel {
     box-shadow 140ms ease,
     opacity 140ms ease,
     transform 140ms ease;
+}
+
+.oauth-social-button-row {
+  display: inline-flex;
+  gap: 0.65rem;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .oauth-social-button-compact {

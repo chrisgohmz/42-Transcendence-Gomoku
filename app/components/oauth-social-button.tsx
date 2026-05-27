@@ -43,10 +43,12 @@ export function OAuthSocialButton({
       type="button"
       onClick={onClick}
     >
-      <span className="oauth-provider-icon" aria-hidden="true">
-        {provider === "github" ? <GitHubIcon /> : <GoogleIcon />}
+      <span className="oauth-social-button-row">
+        <span className="oauth-provider-icon" aria-hidden="true">
+          {provider === "github" ? <GitHubIcon /> : <GoogleIcon />}
+        </span>
+        <span className="min-w-0 truncate">{children}</span>
       </span>
-      <span className="min-w-0 truncate">{children}</span>
     </button>
   );
 }
