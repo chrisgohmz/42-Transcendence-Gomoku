@@ -1,3 +1,5 @@
+import { connection } from "next/server";
+
 import { prisma } from "../../lib/prisma";
 
 function getErrorMessage(error: unknown): string {
@@ -5,6 +7,8 @@ function getErrorMessage(error: unknown): string {
 }
 
 export async function GET() {
+  await connection();
+
   try {
     await prisma.$queryRaw`SELECT 1`;
 

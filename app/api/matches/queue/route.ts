@@ -42,9 +42,7 @@ export async function GET() {
   }
 }
 
-export async function POST(
-  request: Request = new Request("http://localhost/api/matches/queue", { method: "POST" }),
-) {
+export async function POST(request: Request) {
   const requestGuardResponse = enforceMutationRequest(request);
 
   if (requestGuardResponse) {
@@ -79,9 +77,7 @@ export async function POST(
   }
 }
 
-export async function DELETE(
-  request: Request = new Request("http://localhost/api/matches/queue", { method: "DELETE" }),
-) {
+export async function DELETE(request: Request) {
   const requestGuardResponse = enforceMutationRequest(request);
 
   if (requestGuardResponse) {

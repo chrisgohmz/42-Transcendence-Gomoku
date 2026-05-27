@@ -19,6 +19,10 @@ await mock.module("@/lib/stats/profile-stats", () => ({
 
 const route = await import("./route");
 
+function request(path = "http://localhost/api/profile/stats") {
+  return new Request(path);
+}
+
 beforeEach(() => {
   getCurrentSession.mockReset();
   getProfileStatsForUser.mockReset();
@@ -88,7 +92,7 @@ describe("GET /api/profile/stats", () => {
   test("requires authentication", async () => {
     getCurrentSession.mockResolvedValueOnce(null);
 
-    const response = await route.GET();
+    const response = await route.GET(request());
     const payload = await response.json();
 
     expect(response.status).toBe(401);
@@ -97,7 +101,7 @@ describe("GET /api/profile/stats", () => {
   });
 
   test("returns profile stats for the current user", async () => {
-    const response = await route.GET();
+    const response = await route.GET(request());
     const payload = await response.json();
 
     expect(response.status).toBe(200);
@@ -123,7 +127,7 @@ describe("GET /api/profile/stats", () => {
 
   test("passes bounded pagination params to profile stats", async () => {
     const response = await route.GET(
-      new Request("http://localhost/api/profile/stats?page=3&limit=500"),
+      request("http://localhost/api/profile/stats?page=3&limit=500"),
     );
 
     expect(response.status).toBe(200);
@@ -138,7 +142,7 @@ describe("GET /api/profile/stats", () => {
 
   test("passes match history advanced search params to profile stats", async () => {
     const response = await route.GET(
-      new Request(
+      request(
         "http://localhost/api/profile/stats?opponent=Grace&result=WIN&matchType=gomoku&dateFrom=2026-05-01&dateTo=2026-05-31&sort=moves_desc&page=2",
       ),
     );
@@ -159,9 +163,7 @@ describe("GET /api/profile/stats", () => {
   });
 
   test("falls back for invalid pagination params", async () => {
-    const response = await route.GET(
-      new Request("http://localhost/api/profile/stats?page=-2&limit=0"),
-    );
+    const response = await route.GET(request("http://localhost/api/profile/stats?page=-2&limit=0"));
 
     expect(response.status).toBe(200);
     expect(getProfileStatsForUser).toHaveBeenCalledWith(
@@ -176,7 +178,7 @@ describe("GET /api/profile/stats", () => {
   test("returns a server error when stats fail to load", async () => {
     getProfileStatsForUser.mockRejectedValueOnce(new Error("boom"));
 
-    const response = await route.GET();
+    const response = await route.GET(request());
     const payload = await response.json();
 
     expect(response.status).toBe(500);

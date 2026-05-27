@@ -291,8 +291,7 @@ export default function FriendsContent({
                   onChange={(e) => setSearchValue(e.target.value)}
                   placeholder={t("searchPlaceholder")}
                   autoComplete="off"
-                  className="text-input h-10 w-full pr-3"
-                  style={{ paddingLeft: "2.5rem" }}
+                  className="text-input text-input-search h-10 w-full pr-3"
                 />
               </Form>
 

@@ -124,12 +124,12 @@ function TrendBar({ rank }: { rank: number }) {
 
   return (
     <div className="hidden items-center gap-2 md:flex">
-      <span className="h-1.5 flex-1 overflow-hidden rounded-full bg-white/[0.08]">
-        <span
-          className="block h-full rounded-full bg-[linear-gradient(90deg,var(--mint),var(--brass))]"
-          style={{ width: `${width}%` }}
-        />
-      </span>
+      <progress
+        aria-hidden="true"
+        className="csp-progress csp-progress-trend"
+        max={100}
+        value={width}
+      />
     </div>
   );
 }

@@ -170,12 +170,9 @@ export default function ProgressionSummary({
               <span>{progressRange}</span>
               <span className="text-[var(--mint)]">{progressPercent}%</span>
             </div>
-            <span className="block h-2 overflow-hidden rounded-full bg-white/[0.08]">
-              <span
-                className="block h-full rounded-full bg-[linear-gradient(90deg,var(--mint),var(--brass))]"
-                style={{ width: `${progressPercent}%` }}
-              />
-            </span>
+            <progress className="csp-progress csp-progress-xp" max={100} value={progressPercent}>
+              {progressPercent}%
+            </progress>
             <div className="mt-3 flex items-center justify-between text-xs font-bold text-[var(--muted-text)]">
               <span>
                 {t("page.progress.xp", {

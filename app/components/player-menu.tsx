@@ -2,9 +2,11 @@
 
 import { LogOut } from "lucide-react";
 import { useTranslations } from "next-intl";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
+import { useState } from "react";
 
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Link } from "@/i18n/navigation";
 import { signOutCurrentSession } from "@/lib/auth-client";
@@ -17,6 +19,8 @@ interface UserProps {
 
 export function PlayerProfile({ username, avatarUrl, className }: UserProps) {
   const t = useTranslations("nav.userMenu");
+  const [failedAvatarUrl, setFailedAvatarUrl] = useState<string | null>(null);
+  const avatarSrc = avatarUrl && failedAvatarUrl !== avatarUrl ? avatarUrl : "/icons/Login.svg";
 
   return (
     <Button
@@ -26,9 +30,19 @@ export function PlayerProfile({ username, avatarUrl, className }: UserProps) {
       className={`flex items-center justify-start gap-2 bg-white/[0.04] px-2 ${className || ""}`}
     >
       <Link href="/profile">
-        <Avatar className="h-6 w-6">
-          <AvatarImage src={avatarUrl || "/icons/Login.svg"} alt={t("avatarAlt")} />
-          <AvatarFallback>{username ? username.charAt(0).toUpperCase() : "U"}</AvatarFallback>
+        <Avatar className="h-6 w-6 overflow-hidden">
+          <Image
+            src={avatarSrc}
+            alt={t("avatarAlt")}
+            fill
+            sizes="24px"
+            className="rounded-full object-cover"
+            onError={() => {
+              if (avatarUrl) {
+                setFailedAvatarUrl(avatarUrl);
+              }
+            }}
+          />
         </Avatar>
         <span className="truncate text-sm font-medium capitalize">{username || t("player")}</span>
       </Link>
