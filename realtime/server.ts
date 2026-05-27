@@ -3,10 +3,12 @@ import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { Server as Engine } from "@socket.io/bun-engine";
+import { createAdapter } from "@socket.io/redis-adapter";
 import { config } from "dotenv";
 import { Server } from "socket.io";
 
 import { prisma } from "@/lib/prisma";
+import { connectRedisClient, createRedisClient, readRedisUrl } from "@/lib/redis";
 
 import {
   challengeDeclinedPath,
@@ -24,7 +26,15 @@ import { handleInternalChatMessage } from "./lib/internal-chat-message";
 import { handleInternalFriendshipUpdate } from "./lib/internal-friendship-update";
 import { handleInternalGameUpdate } from "./lib/internal-game-update";
 import { handleInternalQueueMatched } from "./lib/internal-queue-matched";
-import { removePresenceConnection, subscribeToPresence, type ConnectedUsers } from "./lib/presence";
+import {
+  createMemoryPresenceStore,
+  createRedisPresenceStore,
+  refreshPresenceConnection,
+  removePresenceConnection,
+  subscribeToPresence,
+  type ConnectedUsers,
+  type PresenceStore,
+} from "./lib/presence";
 import { authenticateSocketSession } from "./lib/socket-auth";
 import {
   DEFAULT_SOCKET_HEARTBEAT_INTERVAL_MS,
@@ -69,6 +79,11 @@ const socketPingTimeoutMs = readPositiveIntegerEnv(
   "SOCKET_PING_TIMEOUT_MS",
   DEFAULT_SOCKET_PING_TIMEOUT_MS,
 );
+const realtimePresenceTtlSeconds = readPositiveIntegerEnv(
+  process.env,
+  "REALTIME_PRESENCE_TTL_SECONDS",
+  Math.max(60, Math.ceil(socketHeartbeatIntervalMs / 1000) * 4),
+);
 
 function readCorsOrigins(): string[] {
   const configuredOrigins = process.env["SOCKET_CORS_ORIGIN"];
@@ -106,7 +121,65 @@ io.bind(engine);
 
 io.use(authenticateSocketSession);
 
+async function createRedisBackedPresenceStore(): Promise<PresenceStore | null> {
+  const redisUrl = readRedisUrl(process.env, ["REALTIME_REDIS_URL", "REDIS_URL"]);
+
+  if (!redisUrl) {
+    return null;
+  }
+
+  const pubClient = createRedisClient(redisUrl, {
+    connectionName: "transcendence-realtime-pub",
+  });
+  const subClient = pubClient.duplicate({
+    connectionName: "transcendence-realtime-sub",
+  });
+  const presenceClient = createRedisClient(redisUrl, {
+    connectionName: "transcendence-realtime-presence",
+  });
+
+  try {
+    await Promise.all([
+      connectRedisClient(pubClient),
+      connectRedisClient(subClient),
+      connectRedisClient(presenceClient),
+    ]);
+
+    io.adapter(createAdapter(pubClient, subClient));
+    console.log("[realtime] Redis adapter and presence store enabled.");
+
+    return createRedisPresenceStore(presenceClient, {
+      keyPrefix:
+        process.env["REALTIME_PRESENCE_REDIS_KEY_PREFIX"]?.trim() || "transcendence:presence:",
+      ttlSeconds: realtimePresenceTtlSeconds,
+    });
+  } catch (error) {
+    pubClient.disconnect();
+    subClient.disconnect();
+    presenceClient.disconnect();
+
+    if (process.env["NODE_ENV"] === "production") {
+      throw error;
+    }
+
+    console.warn("[realtime] Redis is unavailable; using in-memory adapter and presence.", error);
+    return null;
+  }
+}
+
 const connectedUsers: ConnectedUsers = new Map();
+const presenceStore =
+  (await createRedisBackedPresenceStore()) ?? createMemoryPresenceStore(connectedUsers);
+
+function logPresenceError(action: string, error: unknown) {
+  console.error(`[realtime] Failed to ${action} presence.`, error);
+}
+
+function subscribeSocketToPresence(socket: Parameters<typeof subscribeToPresence>[0]) {
+  void subscribeToPresence(socket, io, presenceStore).catch((error: unknown) => {
+    logPresenceError("subscribe to", error);
+  });
+}
 
 io.on("connection", (socket) => {
   console.log(`Socket.IO client connected: ${socket.id}`);
@@ -122,15 +195,19 @@ io.on("connection", (socket) => {
 
   const stopSocketLifecycle = startSocketLifecycle(socket, {
     heartbeatIntervalMs: socketHeartbeatIntervalMs,
+    onHeartbeat: () =>
+      refreshPresenceConnection(socket, presenceStore).catch((error: unknown) => {
+        logPresenceError("refresh", error);
+      }),
   });
 
-  subscribeToPresence(socket, io, connectedUsers);
+  subscribeSocketToPresence(socket);
   registerMatchmakingQueue(socket, io);
   registerMatchSubscription(socket);
   registerChatSubscription(socket);
 
   socket.on("presence:subscribe", () => {
-    subscribeToPresence(socket, io, connectedUsers);
+    subscribeSocketToPresence(socket);
   });
 
   socket.on("friendship:notify", async (targetUsername: string) => {
@@ -159,7 +236,9 @@ io.on("connection", (socket) => {
 
     stopSocketLifecycle();
 
-    removePresenceConnection(socket, io, connectedUsers);
+    void removePresenceConnection(socket, io, presenceStore).catch((error: unknown) => {
+      logPresenceError("remove", error);
+    });
   });
 });
 

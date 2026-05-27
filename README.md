@@ -34,6 +34,7 @@ repo stores project-owned container data in Docker named volumes:
 
 - `postgres_data` for PostgreSQL data
 - `app_uploads` for uploaded profile images
+- `redis_data` for shared rate-limit counters
 - `caddy_data` and `caddy_config` for Caddy local CA/cert state
 - `app_node_modules`, `app_next`, and `app_generated` for development caches
 
@@ -43,10 +44,10 @@ the volumes. Use `make db-reset` or `make fclean` when you want to remove them.
 
 ### Run locally without containers
 
-Start PostgreSQL in Docker first so the host-side `DATABASE_URL` in `.env` can reach `localhost:5432`:
+Start PostgreSQL and Redis in Docker first so the host-side `DATABASE_URL` and optional `REDIS_URL` in `.env` can reach localhost:
 
 ```bash
-docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d database
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d database redis
 ```
 
 Then run the Next app and realtime service from separate host shells:
@@ -64,6 +65,10 @@ service. Friendship refreshes are derived from that URL unless you set
 `REALTIME_INTERNAL_SECRET` as the shared service-to-service header secret. In
 production this must be distinct from `BETTER_AUTH_SECRET`.
 
+Redis is optional for single-process host development. When `REDIS_URL` is set,
+the app uses it for shared app rate limits and Better Auth secondary storage,
+and the realtime service uses it for Socket.IO fan-out plus shared presence.
+
 ### Prisma workflow
 
 ```bash
@@ -71,7 +76,7 @@ bun run prisma:generate
 bun run prisma:migrate:dev -- --name <migration-name>
 ```
 
-For host-side Prisma commands, `DATABASE_URL` should point to `localhost:5432`. In containers, Compose still injects a container-only URL that uses `database:5432`.
+For host-side Prisma commands, `DATABASE_URL` should point to `localhost:5432`. In containers, Compose still injects a container-only URL that uses `database:5432`. For host-side Redis-backed auth, rate-limit, and realtime testing, set `REDIS_URL=redis://localhost:6379/0`; in containers, Compose injects `redis://redis:6379/0`.
 
 When `schema.prisma` changes, create a migration locally with `prisma migrate dev`,
 verify it, and commit the generated `prisma/migrations/` files.

@@ -24,7 +24,7 @@ export async function processFriendAction(
     return { error: "Unauthorized" };
   }
 
-  const rateLimit = consumeRateLimit(
+  const rateLimit = await consumeRateLimit(
     await headers(),
     rateLimitRule("profileFriendAction", userRateLimitSubject(loggedInUserId)),
   );

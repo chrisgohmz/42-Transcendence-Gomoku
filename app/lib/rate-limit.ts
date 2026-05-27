@@ -1,4 +1,5 @@
 import "server-only";
+import { connectRedisClient, getSharedRedisClient, readRedisUrl } from "./redis";
 
 type HeaderReader = Pick<Headers, "get">;
 
@@ -7,9 +8,16 @@ type RateLimitBucket = {
   resetAt: number;
 };
 
+type RateLimitRedisStore = {
+  connect?: () => Promise<unknown>;
+  eval: (script: string, keyCount: number, key: string, windowMs: string) => Promise<unknown>;
+  status?: string;
+};
+
 type RateLimitOptions = {
   env?: NodeJS.ProcessEnv;
   now?: number;
+  redis?: RateLimitRedisStore | null;
   store?: Map<string, RateLimitBucket>;
 };
 
@@ -38,9 +46,28 @@ export type RateLimitResult =
     };
 
 const maxBuckets = 10_000;
+const defaultRedisKeyPrefix = "transcendence:rate-limit:";
+const redisRateLimitScript = `
+local count = redis.call("INCR", KEYS[1])
+
+if count == 1 then
+  redis.call("PEXPIRE", KEYS[1], ARGV[1])
+  return { count, ARGV[1] }
+end
+
+local ttl = redis.call("PTTL", KEYS[1])
+
+if ttl < 0 then
+  redis.call("PEXPIRE", KEYS[1], ARGV[1])
+  ttl = ARGV[1]
+end
+
+return { count, ttl }
+`;
 
 const globalRateLimitStore = globalThis as typeof globalThis & {
   __transcendenceRateLimitBuckets?: Map<string, RateLimitBucket>;
+  __transcendenceRateLimitRedisWarned?: boolean;
 };
 
 const buckets = (globalRateLimitStore.__transcendenceRateLimitBuckets ??= new Map());
@@ -59,6 +86,30 @@ function isRateLimitDisabled(env: NodeJS.ProcessEnv = process.env): boolean {
   }
 
   return env["RATE_LIMIT_DISABLED"] === "true" || env["NODE_ENV"] === "test";
+}
+
+function getRedisUrl(env: NodeJS.ProcessEnv = process.env): string | null {
+  return readRedisUrl(env, ["RATE_LIMIT_REDIS_URL", "REDIS_URL"]);
+}
+
+function getRedisKeyPrefix(env: NodeJS.ProcessEnv = process.env): string {
+  return env["RATE_LIMIT_REDIS_KEY_PREFIX"]?.trim() || defaultRedisKeyPrefix;
+}
+
+function getRateLimitRedisClient(env: NodeJS.ProcessEnv = process.env): RateLimitRedisStore | null {
+  const redisUrl = getRedisUrl(env);
+
+  if (!redisUrl) {
+    return null;
+  }
+
+  return getSharedRedisClient({
+    cacheKey: "rate-limit",
+    connectTimeoutEnvName: "RATE_LIMIT_REDIS_CONNECT_TIMEOUT_MS",
+    env,
+    url: redisUrl,
+    warningMessage: "[rate-limit] Redis is unavailable; falling back to in-memory counters.",
+  });
 }
 
 function pruneExpiredBuckets(now: number, store: Map<string, RateLimitBucket>) {
@@ -98,15 +149,116 @@ function buildHeaders({
   return headers;
 }
 
-export function consumeRateLimit(
+function toRateLimitResult(
+  rule: RateLimitRule,
+  count: number,
+  resetAt: number,
+  now: number = Date.now(),
+): RateLimitResult {
+  const remaining = Math.max(0, rule.max - count);
+
+  if (count > rule.max) {
+    const retryAfterSeconds = Math.max(1, Math.ceil((resetAt - now) / 1000));
+
+    return {
+      allowed: false,
+      headers: buildHeaders({
+        limit: rule.max,
+        remaining: 0,
+        resetAt,
+        retryAfterSeconds,
+      }),
+      limit: rule.max,
+      remaining: 0,
+      resetAt,
+      retryAfterSeconds,
+    } satisfies RateLimitResult;
+  }
+
+  return {
+    allowed: true,
+    headers: buildHeaders({ limit: rule.max, remaining, resetAt }),
+    limit: rule.max,
+    remaining,
+    resetAt,
+  } satisfies RateLimitResult;
+}
+
+function consumeMemoryRateLimit(
+  key: string,
+  rule: RateLimitRule,
+  now: number,
+  windowMs: number,
+  store: Map<string, RateLimitBucket>,
+): RateLimitResult {
+  pruneExpiredBuckets(now, store);
+
+  const resetAt = now + windowMs;
+  const current = store.get(key);
+  const bucket = current && current.resetAt > now ? current : { count: 0, resetAt };
+
+  bucket.count += 1;
+  store.set(key, bucket);
+
+  return toRateLimitResult(rule, bucket.count, bucket.resetAt, now);
+}
+
+function parseRedisRateLimitResult(value: unknown) {
+  if (!Array.isArray(value) || value.length < 2) {
+    throw new Error("Unexpected Redis rate-limit response");
+  }
+
+  const count = Number(value[0]);
+  const ttlMs = Number(value[1]);
+
+  if (!Number.isFinite(count) || !Number.isFinite(ttlMs)) {
+    throw new Error("Invalid Redis rate-limit response");
+  }
+
+  return {
+    count,
+    ttlMs: Math.max(0, ttlMs),
+  };
+}
+
+async function consumeRedisRateLimit(
+  redis: RateLimitRedisStore,
+  key: string,
+  rule: RateLimitRule,
+  now: number,
+  windowMs: number,
+): Promise<RateLimitResult> {
+  await connectRedisClient(redis);
+
+  const { count, ttlMs } = parseRedisRateLimitResult(
+    await redis.eval(redisRateLimitScript, 1, key, String(windowMs)),
+  );
+
+  return toRateLimitResult(rule, count, now + ttlMs, now);
+}
+
+function warnRedisFallback() {
+  if (globalRateLimitStore.__transcendenceRateLimitRedisWarned) {
+    return;
+  }
+
+  globalRateLimitStore.__transcendenceRateLimitRedisWarned = true;
+  console.warn("[rate-limit] Redis command failed; falling back to in-memory counters.");
+}
+
+function getRateLimitStorageKey(headers: HeaderReader | null | undefined, rule: RateLimitRule) {
+  const subject = rule.subject?.trim() || `ip:${getClientIp(headers)}`;
+  return `${rule.key}:${subject}`;
+}
+
+export async function consumeRateLimit(
   headers: HeaderReader | null | undefined,
   rule: RateLimitRule,
   options: RateLimitOptions = {},
-) {
+): Promise<RateLimitResult> {
   const now = options.now ?? Date.now();
   const windowMs = Math.max(1, rule.windowSeconds) * 1000;
   const resetAt = now + windowMs;
-  const store = options.store ?? buckets;
 
   if (isRateLimitDisabled(options.env)) {
     return {
@@ -118,43 +270,29 @@ export function consumeRateLimit(
     } satisfies RateLimitResult;
   }
 
-  pruneExpiredBuckets(now, store);
+  const key = getRateLimitStorageKey(headers, rule);
 
-  const subject = rule.subject?.trim() || `ip:${getClientIp(headers)}`;
-  const key = `${rule.key}:${subject}`;
-  const current = store.get(key);
-  const bucket = current && current.resetAt > now ? current : { count: 0, resetAt };
-
-  bucket.count += 1;
-  store.set(key, bucket);
-
-  const remaining = Math.max(0, rule.max - bucket.count);
-
-  if (bucket.count > rule.max) {
-    const retryAfterSeconds = Math.max(1, Math.ceil((bucket.resetAt - now) / 1000));
-
-    return {
-      allowed: false,
-      headers: buildHeaders({
-        limit: rule.max,
-        remaining: 0,
-        resetAt: bucket.resetAt,
-        retryAfterSeconds,
-      }),
-      limit: rule.max,
-      remaining: 0,
-      resetAt: bucket.resetAt,
-      retryAfterSeconds,
-    } satisfies RateLimitResult;
+  if (options.store) {
+    return consumeMemoryRateLimit(key, rule, now, windowMs, options.store);
   }
 
-  return {
-    allowed: true,
-    headers: buildHeaders({ limit: rule.max, remaining, resetAt: bucket.resetAt }),
-    limit: rule.max,
-    remaining,
-    resetAt: bucket.resetAt,
-  } satisfies RateLimitResult;
+  const redis = options.redis === undefined ? getRateLimitRedisClient(options.env) : options.redis;
+
+  if (redis) {
+    try {
+      return await consumeRedisRateLimit(
+        redis,
+        `${getRedisKeyPrefix(options.env)}${key}`,
+        rule,
+        now,
+        windowMs,
+      );
+    } catch {
+      warnRedisFallback();
+    }
+  }
+
+  return consumeMemoryRateLimit(key, rule, now, windowMs, buckets);
 }
 
 export function rateLimitResponse(result: Extract<RateLimitResult, { allowed: false }>) {

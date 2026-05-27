@@ -44,8 +44,9 @@ async function isProfileSettingsRateLimited(
   userId: string,
   ruleName: ProfileSettingsRateLimitRuleName,
 ): Promise<boolean> {
-  return !consumeRateLimit(await headers(), rateLimitRule(ruleName, userRateLimitSubject(userId)))
-    .allowed;
+  return !(
+    await consumeRateLimit(await headers(), rateLimitRule(ruleName, userRateLimitSubject(userId)))
+  ).allowed;
 }
 
 export async function saveDisplayName(

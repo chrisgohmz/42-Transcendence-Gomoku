@@ -53,7 +53,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    const rateLimit = consumeRateLimit(
+    const rateLimit = await consumeRateLimit(
       request.headers,
       rateLimitRule("matchSolo", userRateLimitSubject(context.user.id)),
     );

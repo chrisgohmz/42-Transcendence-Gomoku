@@ -89,7 +89,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       return Response.json({ error: "missing_participant_id" }, { status: 400 });
     }
 
-    const rateLimit = consumeRateLimit(
+    const rateLimit = await consumeRateLimit(
       request.headers,
       rateLimitRule("matchAiTurn", userRateLimitSubject(context.user.id)),
     );

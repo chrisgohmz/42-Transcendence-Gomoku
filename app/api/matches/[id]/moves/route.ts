@@ -78,7 +78,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     const position = validation.data.position;
     const requestId = validation.data.requestId ?? null;
     const baseVersion = validation.data.baseVersion ?? null;
-    const rateLimit = consumeRateLimit(
+    const rateLimit = await consumeRateLimit(
       request.headers,
       rateLimitRule("matchMove", userRateLimitSubject(context.user.id)),
     );

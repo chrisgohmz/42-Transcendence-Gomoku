@@ -28,8 +28,9 @@ async function isFriendActionRateLimited(
   ruleName: FriendRateLimitRuleName,
 ): Promise<boolean> {
   const headerList = await headers();
-  return !consumeRateLimit(headerList, rateLimitRule(ruleName, userRateLimitSubject(userId)))
-    .allowed;
+  return !(
+    await consumeRateLimit(headerList, rateLimitRule(ruleName, userRateLimitSubject(userId)))
+  ).allowed;
 }
 
 export async function sendFriendRequest(targetUsername: string) {

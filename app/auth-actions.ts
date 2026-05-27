@@ -89,11 +89,11 @@ function isEmailNotVerifiedError(error: unknown): boolean {
   );
 }
 
-function isActionRateLimited(
+async function isActionRateLimited(
   headerList: Pick<Headers, "get">,
   ruleName: RateLimitRuleName,
-): boolean {
-  return !consumeRateLimit(headerList, rateLimitRule(ruleName)).allowed;
+): Promise<boolean> {
+  return !(await consumeRateLimit(headerList, rateLimitRule(ruleName))).allowed;
 }
 
 export async function loginAction(
@@ -119,7 +119,7 @@ export async function loginAction(
   try {
     const headerList = await headers();
 
-    if (isActionRateLimited(headerList, "authActionLogin")) {
+    if (await isActionRateLimited(headerList, "authActionLogin")) {
       return {
         email: rawEmail,
         fields: {},
@@ -184,7 +184,7 @@ export async function requestPasswordResetAction(
   try {
     const headerList = await headers();
 
-    if (isActionRateLimited(headerList, "authActionPasswordResetRequest")) {
+    if (await isActionRateLimited(headerList, "authActionPasswordResetRequest")) {
       return {
         email,
         fields: {},
@@ -248,7 +248,7 @@ export async function resetPasswordAction(
   try {
     const headerList = await headers();
 
-    if (isActionRateLimited(headerList, "authActionPasswordResetConfirm")) {
+    if (await isActionRateLimited(headerList, "authActionPasswordResetConfirm")) {
       return {
         fields: {},
         message: t("passwordResetUnavailable"),
@@ -307,7 +307,7 @@ export async function signupAction(
   try {
     const headerList = await headers();
 
-    if (isActionRateLimited(headerList, "authActionSignup")) {
+    if (await isActionRateLimited(headerList, "authActionSignup")) {
       return {
         displayName,
         email,

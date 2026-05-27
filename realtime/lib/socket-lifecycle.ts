@@ -27,6 +27,7 @@ type SocketLifecycleOptions = {
   clearIntervalFn?: (handle: IntervalHandle) => void;
   heartbeatIntervalMs?: number;
   now?: () => Date;
+  onHeartbeat?: () => Promise<void> | void;
   setIntervalFn?: (callback: () => void, intervalMs: number) => IntervalHandle;
 };
 
@@ -58,6 +59,7 @@ export function startSocketLifecycle(
     clearIntervalFn = clearInterval,
     heartbeatIntervalMs = DEFAULT_SOCKET_HEARTBEAT_INTERVAL_MS,
     now = () => new Date(),
+    onHeartbeat,
     setIntervalFn = setInterval,
   }: SocketLifecycleOptions = {},
 ) {
@@ -68,7 +70,10 @@ export function startSocketLifecycle(
     ...(username ? { username } : {}),
   });
 
-  const heartbeatTimer = setIntervalFn(() => emitHeartbeat(socket, now), heartbeatIntervalMs);
+  const heartbeatTimer = setIntervalFn(() => {
+    emitHeartbeat(socket, now);
+    void onHeartbeat?.();
+  }, heartbeatIntervalMs);
 
   return () => {
     clearIntervalFn(heartbeatTimer);

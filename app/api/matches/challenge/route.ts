@@ -103,7 +103,7 @@ export async function POST(request: Request) {
       return Response.json({ error: "challenge_name_too_long" }, { status: 400 });
     }
 
-    const rateLimit = consumeRateLimit(
+    const rateLimit = await consumeRateLimit(
       request.headers,
       rateLimitRule("matchChallengeCreate", userRateLimitSubject(context.user.id)),
     );

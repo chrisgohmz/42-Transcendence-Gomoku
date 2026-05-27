@@ -36,7 +36,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     return deniedResponse(access.reason);
   }
 
-  const rateLimit = consumeRateLimit(
+  const rateLimit = await consumeRateLimit(
     request.headers,
     rateLimitRule("conversationRead", userRateLimitSubject(session.user.id)),
   );

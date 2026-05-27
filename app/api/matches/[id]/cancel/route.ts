@@ -40,7 +40,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
 
     const participantId = requestValidation.data.participantId;
     const baseVersion = requestValidation.data.baseVersion ?? null;
-    const rateLimit = consumeRateLimit(
+    const rateLimit = await consumeRateLimit(
       request.headers,
       rateLimitRule("matchCancel", userRateLimitSubject(context.user.id)),
     );

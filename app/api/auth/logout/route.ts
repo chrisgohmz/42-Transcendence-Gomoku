@@ -66,7 +66,7 @@ export async function POST(request: Request) {
     return requestGuardResponse;
   }
 
-  const rateLimit = consumeRateLimit(request.headers, rateLimitRule("authLogout"));
+  const rateLimit = await consumeRateLimit(request.headers, rateLimitRule("authLogout"));
 
   if (!rateLimit.allowed) {
     return rateLimitResponse(rateLimit);

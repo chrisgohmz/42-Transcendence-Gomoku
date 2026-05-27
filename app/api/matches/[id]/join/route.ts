@@ -67,7 +67,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     const displayName =
       validation.data.displayName ?? (context.user.displayName || context.user.username);
 
-    const rateLimit = consumeRateLimit(
+    const rateLimit = await consumeRateLimit(
       request.headers,
       rateLimitRule("matchJoin", userRateLimitSubject(context.user.id)),
     );

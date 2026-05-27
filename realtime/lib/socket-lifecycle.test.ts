@@ -36,6 +36,7 @@ describe("startSocketLifecycle", () => {
   test("sends welcome immediately and schedules heartbeat payloads", () => {
     const intervalHandle = 7 as unknown as ReturnType<typeof setInterval>;
     const emit = mock();
+    const onHeartbeat = mock();
     const clearIntervalFn = mock();
     const scheduledCallbacks: Array<() => void> = [];
     const setIntervalFn = mock((callback: () => void, intervalMs: number) => {
@@ -53,6 +54,7 @@ describe("startSocketLifecycle", () => {
         clearIntervalFn,
         heartbeatIntervalMs: 5000,
         now: () => new Date("2026-05-10T12:30:00.000Z"),
+        onHeartbeat,
         setIntervalFn,
       },
     );
@@ -68,6 +70,7 @@ describe("startSocketLifecycle", () => {
     expect(emit).toHaveBeenCalledWith("heartbeat", {
       timestamp: "2026-05-10T12:30:00.000Z",
     });
+    expect(onHeartbeat).toHaveBeenCalledTimes(1);
 
     stop();
 

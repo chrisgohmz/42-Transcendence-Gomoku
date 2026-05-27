@@ -27,7 +27,7 @@ export async function uploadProfilePicture(formData: FormData) {
     return { error: t("loginRequired") };
   }
 
-  const rateLimit = consumeRateLimit(
+  const rateLimit = await consumeRateLimit(
     await headers(),
     rateLimitRule("profileAvatarUpload", userRateLimitSubject(sessionData.user.id)),
   );

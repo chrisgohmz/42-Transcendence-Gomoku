@@ -51,7 +51,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       return Response.json({ error: "missing_decline_token" }, { status: 400 });
     }
 
-    const rateLimit = consumeRateLimit(
+    const rateLimit = await consumeRateLimit(
       request.headers,
       rateLimitRule("matchChallengeDecline", userRateLimitSubject(context.user.id)),
     );
