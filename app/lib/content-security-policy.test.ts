@@ -50,9 +50,12 @@ describe("content security policy", () => {
     const policy = createContentSecurityPolicy("test-nonce", {
       NODE_ENV: "development",
     });
+    const styleElementSources = directiveSources(policy, "style-src-elem");
 
     expect(policy).toContain("'unsafe-eval'");
     expect(policy).toContain("'unsafe-inline'");
+    expect(styleElementSources).toContain("'unsafe-inline'");
+    expect(styleElementSources).not.toContain("'nonce-test-nonce'");
     expect(policy).toContain("http://localhost:3001");
     expect(policy).toContain("ws://localhost:3001");
     expect(policy).toContain("http://127.0.0.1:3001");

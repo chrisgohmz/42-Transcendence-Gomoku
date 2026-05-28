@@ -104,11 +104,10 @@ export function createContentSecurityPolicy(
   const isProduction = env.NODE_ENV === "production";
   const nonceSource = `'nonce-${nonce}'`;
   const scriptSources = [nonceSource, "'strict-dynamic'"];
-  const styleSources = ["'self'", nonceSource];
+  const styleSources = isDevelopment ? ["'self'", "'unsafe-inline'"] : ["'self'", nonceSource];
 
   if (isDevelopment) {
     scriptSources.push("'unsafe-eval'");
-    styleSources.push("'unsafe-inline'");
   }
 
   const directives = [
