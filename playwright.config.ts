@@ -65,7 +65,7 @@ export default defineConfig({
           command: realtimeServerCommand,
           env: webServerEnv,
           name: "realtime",
-          reuseExistingServer: !process.env["CI"],
+          reuseExistingServer: true,
           stderr: "pipe",
           stdout: "pipe",
           timeout: 120_000,
