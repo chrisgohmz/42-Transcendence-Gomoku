@@ -59,6 +59,10 @@ export function getConsoleDiagnostic({
     return null;
   }
 
+  if (isNextChunkLoadTeardownWarning(text)) {
+    return null;
+  }
+
   return {
     location,
     text,
@@ -134,6 +138,24 @@ function isSocketIoUrl(url: string | undefined) {
 
   try {
     return new URL(url).pathname.replace(/\/$/, "") === "/socket.io";
+  } catch {
+    return false;
+  }
+}
+
+function isNextChunkLoadTeardownWarning(text: string) {
+  if (!text.includes("Loading failed for the <script> with source")) {
+    return false;
+  }
+
+  const source = /source [“"]([^”"]+)[”"]/.exec(text)?.[1];
+  if (!source) {
+    return false;
+  }
+
+  try {
+    const url = new URL(source);
+    return url.pathname.startsWith("/_next/static/chunks/") && url.pathname.endsWith(".js");
   } catch {
     return false;
   }

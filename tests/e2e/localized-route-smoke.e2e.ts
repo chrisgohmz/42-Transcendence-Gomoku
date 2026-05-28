@@ -167,7 +167,11 @@ test("localized human match room renders active match state", async ({ page }) =
     await expect(
       page.getByRole("grid", { name: messages.human.match.board.ariaLabel }),
     ).toBeVisible();
-    await expect(page.getByText(messages.human.match.statusLine.yourMove)).toBeVisible();
+    await expect(page.getByText(messages.human.match.seat.black, { exact: true })).toBeVisible();
+    await expect(page.getByText(messages.human.match.seat.white, { exact: true })).toBeVisible();
+    await expect(page.getByText("Localized Player", { exact: true })).toBeVisible();
+    await expect(page.getByText("Localized Opponent", { exact: true })).toBeVisible();
+    await expect(page.getByText(messages.human.match.timer.label, { exact: true })).toBeVisible();
     await expectNoTranslationArtifacts(page, `${locale}/human active match`);
     verifyNoRuntimeErrors(`${locale}/human active match`);
   }

@@ -571,6 +571,9 @@ export const messages = {
         title: "Notation",
         empty: "No moves yet.",
       },
+      timer: {
+        label: "Timer",
+      },
       seat: {
         black: "Black",
         white: "White",

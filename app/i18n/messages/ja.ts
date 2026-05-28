@@ -573,6 +573,9 @@ export const messages = {
         title: "棋譜",
         empty: "まだ着手はありません。",
       },
+      timer: {
+        label: "タイマー",
+      },
       seat: {
         black: "黒",
         white: "白",

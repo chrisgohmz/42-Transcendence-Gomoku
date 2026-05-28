@@ -270,8 +270,9 @@ export default function HumanMatchRoom({
 
   const formattedTime = `${Math.floor(timeLeft / 60)}:${(timeLeft % 60).toString().padStart(2, "0")}`;
 
-  const blackName = participantBySeat.BLACK?.displayName ?? "Waiting...";
-  const whiteName = participantBySeat.WHITE?.displayName ?? "Waiting...";
+  const openSeatName = t("seat.openSeat");
+  const blackName = participantBySeat.BLACK?.displayName ?? openSeatName;
+  const whiteName = participantBySeat.WHITE?.displayName ?? openSeatName;
 
   async function handleCellSelect(x: number, y: number) {
     if (!effectiveUpdate || !mySeat || effectiveUpdate.status !== "IN_PROGRESS") {
@@ -497,6 +498,7 @@ export default function HumanMatchRoom({
             blackLabel={t("seat.black")}
             blackName={blackName}
             timer={formattedTime}
+            timerLabel={t("timer.label")}
             whiteLabel={t("seat.white")}
             whiteName={whiteName}
           />

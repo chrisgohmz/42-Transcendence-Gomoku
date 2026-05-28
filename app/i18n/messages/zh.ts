@@ -566,6 +566,9 @@ export const messages = {
         title: "记谱",
         empty: "还没有落子。",
       },
+      timer: {
+        label: "计时器",
+      },
       seat: {
         black: "黑方",
         white: "白方",
