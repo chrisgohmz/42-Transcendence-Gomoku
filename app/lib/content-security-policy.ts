@@ -19,6 +19,7 @@ const nextImageStyleHashes = [
   "'sha256-ZDrxqUOB4m/L0JWL/+gS52g1CRH0l/qwMhjTw5Z/Fsc='",
   "'sha256-fFiwGJFfGZ3i0Vt+xXYQgf88NKsgAfBwvY2aBowdoj4='",
 ];
+const nextStyleElementHashes = ["'sha256-Wwucq8eX2r0YFymkQhDXm5hN0+FfSvI3s4JSSaqa4iw='"];
 
 type CspEnvironment = Partial<
   Record<
@@ -122,7 +123,7 @@ export function createContentSecurityPolicy(
     ["script-src", ...scriptSources],
     ["script-src-attr", "'none'"],
     ["style-src", ...styleSources],
-    ["style-src-elem", ...styleSources],
+    ["style-src-elem", ...styleSources, ...nextStyleElementHashes],
     [
       "style-src-attr",
       "'unsafe-hashes'",

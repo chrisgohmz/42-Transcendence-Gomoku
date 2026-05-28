@@ -25,6 +25,7 @@ webServerEnv["REALTIME_FRIENDSHIP_INTERNAL_URL"] ||=
 webServerEnv["REALTIME_INTERNAL_SECRET"] ||= "playwright_realtime_internal_secret";
 webServerEnv["REALTIME_INTERNAL_URL"] ||= "http://localhost:3001/internal/game-update";
 webServerEnv["REALTIME_QUEUE_MATCHED_URL"] ||= "http://localhost:3001/internal/queue-matched";
+webServerEnv["NEXT_PUBLIC_SOCKET_URL"] ||= "http://localhost:3001";
 webServerEnv["SOCKET_CORS_ORIGIN"] ||= baseURL;
 webServerEnv["OPERATIONS_STATUS_USERNAMES"] ||= [
   "e2e_status_operator_chrome",

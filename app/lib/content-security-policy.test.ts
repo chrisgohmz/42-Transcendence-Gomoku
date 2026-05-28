@@ -27,6 +27,7 @@ describe("content security policy", () => {
     expect(policy).toContain("script-src-attr 'none'");
     expect(policy).toContain("style-src 'self' 'nonce-test-nonce'");
     expect(policy).toContain("style-src-elem 'self' 'nonce-test-nonce'");
+    expect(policy).toContain("'sha256-Wwucq8eX2r0YFymkQhDXm5hN0+FfSvI3s4JSSaqa4iw='");
     expect(policy).toContain("style-src-attr 'unsafe-hashes'");
     expect(policy).toContain("'sha256-/3kWSXHts8LrwfemLzY9W0tOv5I4eLIhrf0pT8cU0WI='");
     expect(policy).toContain("'sha256-zlqnbDt84zf1iSefLU/ImC54isoprH/MRiVZGskwexk='");
