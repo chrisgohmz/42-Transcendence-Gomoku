@@ -204,6 +204,32 @@ prismaSeedSmokeTest("seeds the evaluation dataset and preserves core invariants"
       expect(
         await queryScalar<number>(
           seededClient,
+          `SELECT COUNT(*)::int AS value
+             FROM "MatchParticipant" participant
+             JOIN "Match" seeded_match ON seeded_match.id = participant."matchId"
+            WHERE seeded_match.status = 'FINISHED'
+              AND participant.role = 'SPECTATOR'
+              AND participant.result IS NOT NULL`,
+        ),
+      ).toBe(0);
+      expect(
+        await queryScalar<number>(
+          seededClient,
+          `SELECT COUNT(*)::int AS value
+             FROM "MatchParticipant" participant
+             JOIN "Match" seeded_match ON seeded_match.id = participant."matchId"
+            WHERE seeded_match.status = 'FINISHED'
+              AND participant.role = 'PLAYER'
+              AND participant.seat IN ('BLACK', 'WHITE')
+              AND (
+                participant.result IS NULL
+                OR participant.result NOT IN ('WIN', 'LOSS', 'DRAW')
+              )`,
+        ),
+      ).toBe(0);
+      expect(
+        await queryScalar<number>(
+          seededClient,
           `SELECT COUNT(*)::int AS value FROM "User" WHERE "avatarUrl" IS NOT NULL AND "avatarUrl" !~ '^/seed-avatars/[^/]+\\.svg$'`,
         ),
       ).toBe(0);

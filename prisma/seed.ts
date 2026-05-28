@@ -956,7 +956,7 @@ const matchSeeds = [
     participants: [
       { userKey: "alice", role: Role.PLAYER, seat: Seat.BLACK, result: MatchResult.WIN },
       { userKey: "bob", role: Role.PLAYER, seat: Seat.WHITE, result: MatchResult.LOSS },
-      { userKey: "carol", role: Role.SPECTATOR, result: MatchResult.CANCELLED },
+      { userKey: "carol", role: Role.SPECTATOR },
     ],
     moves: aliceBobMoves,
     conversationMessages: [
@@ -985,8 +985,8 @@ const matchSeeds = [
         seat: Seat.WHITE,
         result: MatchResult.WIN,
       },
-      { userKey: "kuroishi", role: Role.SPECTATOR, result: MatchResult.CANCELLED },
-      { userKey: "tenkei", role: Role.SPECTATOR, result: MatchResult.CANCELLED },
+      { userKey: "kuroishi", role: Role.SPECTATOR },
+      { userKey: "tenkei", role: Role.SPECTATOR },
     ],
     moves: renjuClinicMoves,
     conversationMessages: [
@@ -1009,7 +1009,7 @@ const matchSeeds = [
     participants: [
       { userKey: "carol", role: Role.PLAYER, seat: Seat.BLACK, result: MatchResult.DRAW },
       { userKey: "mei", role: Role.PLAYER, seat: Seat.WHITE, result: MatchResult.DRAW },
-      { userKey: "lina", role: Role.SPECTATOR, result: MatchResult.CANCELLED },
+      { userKey: "lina", role: Role.SPECTATOR },
     ],
     moves: drawMoves,
     conversationMessages: [
