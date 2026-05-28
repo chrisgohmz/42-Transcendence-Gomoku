@@ -221,6 +221,16 @@ export const messages = {
     oauth: {
       continueWithProvider: "Sign in with {provider}",
       startError: "Unable to start {provider} sign-in right now.",
+      callbackErrors: {
+        accountAlreadyLinked: "That OAuth account is already connected to another player.",
+        accountNotLinked:
+          "OAuth sign-in was blocked because this email belongs to an existing account. Sign in with email and password first, then connect the matching provider.",
+        emailMismatch:
+          "OAuth sign-in was blocked because the provider email does not match this account.",
+        generic: "OAuth sign-in could not be completed. Try again or choose another account.",
+        unableToLink:
+          "OAuth sign-in could not be linked to this account. Try again or choose another provider account.",
+      },
     },
     login: {
       title: "Welcome back.",
@@ -390,6 +400,17 @@ export const messages = {
           connectError: "Unable to connect {provider} right now.",
           disconnectError: "Unable to disconnect {provider} right now.",
           lastAccount: "Add another sign-in method before disconnecting this one.",
+          callbackErrors: {
+            accountAlreadyLinked: "That OAuth account is already connected to another player.",
+            accountNotLinked:
+              "OAuth connection was blocked because this provider account cannot be linked automatically.",
+            emailMismatch:
+              "OAuth connection blocked: the provider email does not match this account.",
+            generic:
+              "OAuth connection could not be completed. Try again or choose another provider account.",
+            unableToLink:
+              "OAuth connection could not be linked to this account. Try again or choose another provider account.",
+          },
         },
         language: {
           eyebrow: "Language",

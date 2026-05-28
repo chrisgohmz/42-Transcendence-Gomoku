@@ -219,6 +219,14 @@ export const messages = {
     oauth: {
       continueWithProvider: "使用 {provider} 登录",
       startError: "现在无法开始 {provider} 登录。",
+      callbackErrors: {
+        accountAlreadyLinked: "该 OAuth 账户已连接到另一位玩家。",
+        accountNotLinked:
+          "由于该邮箱属于现有账户，OAuth 登录已被阻止。请先使用邮箱和密码登录，然后连接邮箱一致的提供商。",
+        emailMismatch: "由于提供商邮箱与此账户不一致，OAuth 登录已被阻止。",
+        generic: "无法完成 OAuth 登录。请重试或选择另一个账户。",
+        unableToLink: "无法将 OAuth 登录连接到此账户。请重试或选择另一个提供商账户。",
+      },
     },
     login: {
       title: "欢迎回来。",
@@ -387,6 +395,13 @@ export const messages = {
           connectError: "现在无法连接 {provider}。",
           disconnectError: "现在无法断开 {provider}。",
           lastAccount: "断开前请先添加另一种登录方式。",
+          callbackErrors: {
+            accountAlreadyLinked: "该 OAuth 账户已连接到另一位玩家。",
+            accountNotLinked: "由于无法自动连接此提供商账户，OAuth 连接已被阻止。",
+            emailMismatch: "OAuth 连接已被阻止：提供商邮箱与此账户不一致。",
+            generic: "无法完成 OAuth 连接。请重试或选择另一个提供商账户。",
+            unableToLink: "无法将 OAuth 连接保存到此账户。请重试或选择另一个提供商账户。",
+          },
         },
         language: {
           eyebrow: "语言",

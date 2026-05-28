@@ -219,6 +219,17 @@ export const messages = {
     oauth: {
       continueWithProvider: "{provider} でログイン",
       startError: "{provider} ログインを開始できません。",
+      callbackErrors: {
+        accountAlreadyLinked: "その OAuth アカウントは別のプレイヤーに連携済みです。",
+        accountNotLinked:
+          "このメールは既存アカウントに属しているため OAuth ログインを停止しました。先にメールとパスワードでログインし、同じメールのプロバイダーを連携してください。",
+        emailMismatch:
+          "プロバイダーのメールがこのアカウントと一致しないため OAuth ログインを停止しました。",
+        generic:
+          "OAuth ログインを完了できませんでした。もう一度試すか、別のアカウントを選んでください。",
+        unableToLink:
+          "OAuth ログインをこのアカウントに連携できませんでした。もう一度試すか、別のプロバイダーアカウントを選んでください。",
+      },
     },
     login: {
       title: "おかえりなさい。",
@@ -391,6 +402,17 @@ export const messages = {
           connectError: "{provider} を連携できません。",
           disconnectError: "{provider} の連携を解除できません。",
           lastAccount: "解除する前に別のログイン方法を追加してください。",
+          callbackErrors: {
+            accountAlreadyLinked: "その OAuth アカウントは別のプレイヤーに連携済みです。",
+            accountNotLinked:
+              "このプロバイダーアカウントは自動連携できないため OAuth 連携を停止しました。",
+            emailMismatch:
+              "OAuth 連携を停止しました。プロバイダーのメールがこのアカウントと一致しません。",
+            generic:
+              "OAuth 連携を完了できませんでした。もう一度試すか、別のプロバイダーアカウントを選んでください。",
+            unableToLink:
+              "OAuth 連携をこのアカウントに保存できませんでした。もう一度試すか、別のプロバイダーアカウントを選んでください。",
+          },
         },
         language: {
           eyebrow: "言語",

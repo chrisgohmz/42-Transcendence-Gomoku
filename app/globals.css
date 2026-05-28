@@ -563,6 +563,21 @@ a.command-panel {
   color: var(--danger);
 }
 
+.oauth-feedback-alert {
+  display: flex;
+  gap: 0.55rem;
+  align-items: flex-start;
+  padding: 0.85rem 0.95rem;
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 800;
+  line-height: 1.45;
+  color: var(--danger);
+  background: rgb(216 60 52 / 14%);
+  border: 1px solid rgb(216 60 52 / 36%);
+  border-radius: 0.5rem;
+}
+
 .oauth-social-button {
   display: inline-flex;
   align-items: center;

@@ -13,7 +13,12 @@ import { authValidationLimits } from "@/lib/validation/auth-profile-limits";
 import { initialLoginActionState } from "../auth-action-state";
 import { loginAction } from "../auth-actions";
 
-export function LoginForm({ oauthProviders }: { oauthProviders: OAuthProviderId[] }) {
+type LoginFormProps = {
+  oauthErrorMessage?: string | null;
+  oauthProviders: OAuthProviderId[];
+};
+
+export function LoginForm({ oauthErrorMessage = null, oauthProviders }: LoginFormProps) {
   const locale = useLocale();
   const shared = useTranslations("auth.shared");
   const login = useTranslations("auth.login");
@@ -98,6 +103,7 @@ export function LoginForm({ oauthProviders }: { oauthProviders: OAuthProviderId[
       <OAuthProviderButtons
         callbackPath={`/${locale}/account`}
         errorPath={`/${locale}/login`}
+        initialErrorMessage={oauthErrorMessage}
         providers={oauthProviders}
       />
 

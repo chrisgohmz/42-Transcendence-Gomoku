@@ -13,7 +13,12 @@ import { authValidationLimits } from "@/lib/validation/auth-profile-limits";
 import { initialSignupActionState } from "../auth-action-state";
 import { signupAction } from "../auth-actions";
 
-export function SignupForm({ oauthProviders }: { oauthProviders: OAuthProviderId[] }) {
+type SignupFormProps = {
+  oauthErrorMessage?: string | null;
+  oauthProviders: OAuthProviderId[];
+};
+
+export function SignupForm({ oauthErrorMessage = null, oauthProviders }: SignupFormProps) {
   const locale = useLocale();
   const shared = useTranslations("auth.shared");
   const signup = useTranslations("auth.signup");
@@ -141,6 +146,7 @@ export function SignupForm({ oauthProviders }: { oauthProviders: OAuthProviderId
       <OAuthProviderButtons
         callbackPath={`/${locale}/account`}
         errorPath={`/${locale}/signup`}
+        initialErrorMessage={oauthErrorMessage}
         providers={oauthProviders}
       />
 
