@@ -4,6 +4,7 @@ import { existsSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { verifyPassword } from "better-auth/crypto";
 import pg from "pg";
 
 import { getSoloMatchMetadata } from "../../app/lib/matches/ai-solo";
@@ -139,6 +140,60 @@ prismaSeedSmokeTest("seeds the evaluation dataset and preserves core invariants"
       expect(await countRows(seededClient, "UserGameStats")).toBe(16);
       expect(await countRows(seededClient, "UserAchievement")).toBe(21);
       expect(await countRows(seededClient, "AnalyticsEvent")).toBe(12);
+      expect(
+        await queryScalar<number>(
+          seededClient,
+          `SELECT COUNT(*)::int AS value FROM "User" WHERE kind = 'HUMAN'`,
+        ),
+      ).toBe(13);
+      expect(
+        await queryScalar<number>(
+          seededClient,
+          `SELECT COUNT(*)::int AS value FROM "User" WHERE kind = 'BOT'`,
+        ),
+      ).toBe(2);
+      expect(
+        await queryScalar<number>(
+          seededClient,
+          `SELECT COUNT(*)::int AS value
+             FROM "Account" account
+             JOIN "User" app_user ON app_user.id = account."userId"
+            WHERE app_user.kind = 'HUMAN'
+              AND account."providerId" = 'credential'
+              AND account.password IS NOT NULL
+              AND account."accountId" = app_user.id`,
+        ),
+      ).toBe(13);
+      expect(
+        await queryScalar<number>(
+          seededClient,
+          `SELECT COUNT(*)::int AS value
+             FROM "Account" account
+             JOIN "User" app_user ON app_user.id = account."userId"
+            WHERE app_user.kind = 'BOT'`,
+        ),
+      ).toBe(0);
+
+      const credentialResult = await seededClient.query<{ password: string }>(
+        `SELECT account.password
+           FROM "Account" account
+          JOIN "User" app_user ON app_user.id = account."userId"
+          WHERE app_user.username = $1
+            AND account."providerId" = 'credential'
+            AND account.password IS NOT NULL`,
+        ["alice"],
+      );
+      const alicePasswordHash = credentialResult.rows[0]?.password;
+
+      expect(credentialResult.rows).toHaveLength(1);
+      expect(alicePasswordHash).toEqual(expect.any(String));
+      expect(alicePasswordHash).not.toBe("password123");
+
+      if (!alicePasswordHash) {
+        throw new Error("Seeded Alice credential account must include a password hash.");
+      }
+
+      expect(await verifyPassword({ hash: alicePasswordHash, password: "password123" })).toBe(true);
 
       expect(
         await queryScalar<number>(
