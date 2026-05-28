@@ -7,7 +7,7 @@ import { LoginForm } from "@/components/login-form";
 import { PageLoadingShell } from "@/components/page-loading-shell";
 import { redirect } from "@/i18n/navigation";
 import { getConfiguredOAuthProviders, getCurrentSessionIdentity } from "@/lib/auth";
-import { getOAuthCallbackErrorKey, type OAuthCallbackErrorKey } from "@/lib/oauth-callback-errors";
+import { getOAuthCallbackErrorMessage } from "@/lib/oauth-callback-messages";
 import { createPageMetadata } from "@/lib/page-metadata";
 
 type LoginPageProps = {
@@ -29,13 +29,6 @@ export default function LoginPage({ params, searchParams }: LoginPageProps) {
   );
 }
 
-function getOAuthErrorMessage(
-  t: Awaited<ReturnType<typeof getTranslations>>,
-  errorKey: OAuthCallbackErrorKey,
-) {
-  return t(`callbackErrors.${errorKey}`);
-}
-
 async function LoginPageContent({ params, searchParams }: LoginPageProps) {
   const { locale } = await params;
   setRequestLocale(locale);
@@ -46,13 +39,12 @@ async function LoginPageContent({ params, searchParams }: LoginPageProps) {
     redirect({ href: "/account", locale });
   }
 
-  const shared = await getTranslations({ locale, namespace: "auth.shared" });
-  const login = await getTranslations({ locale, namespace: "auth.login" });
-  const oauth = await getTranslations({ locale, namespace: "auth.oauth" });
+  const [shared, login, oauthErrorMessage] = await Promise.all([
+    getTranslations({ locale, namespace: "auth.shared" }),
+    getTranslations({ locale, namespace: "auth.login" }),
+    getOAuthCallbackErrorMessage({ locale, namespace: "auth.oauth", searchParams }),
+  ]);
   const oauthProviders = getConfiguredOAuthProviders();
-  const query = (await searchParams) ?? {};
-  const oauthErrorKey = getOAuthCallbackErrorKey(query.error);
-  const oauthErrorMessage = oauthErrorKey ? getOAuthErrorMessage(oauth, oauthErrorKey) : null;
 
   return (
     <PageShell wide={false}>

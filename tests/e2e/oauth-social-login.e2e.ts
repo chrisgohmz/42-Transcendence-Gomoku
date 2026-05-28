@@ -21,7 +21,11 @@ test("configured OAuth providers render branded buttons on auth pages", async ({
       await expect(button).toBeEnabled();
       await expectCenteredButtonContent(button);
     }
+  }
+});
 
+test("auth pages show OAuth callback errors", async ({ page }) => {
+  for (const route of ["/login", "/signup"]) {
     await gotoAppRoute(page, `${route}?error=account_not_linked`);
     await expect(
       page.getByRole("alert").filter({ hasText: "OAuth sign-in was blocked", visible: true }),
@@ -48,11 +52,6 @@ test("account connections show connect, connected, and disconnect OAuth states",
     await expect(googleConnect).toBeEnabled();
     await expect(page.getByRole("button", { name: "Disconnect" })).toHaveCount(0);
 
-    await gotoAppRoute(page, "/account?error=email_doesn%27t_match");
-    await expect(
-      page.getByRole("alert").filter({ hasText: "provider email does not match", visible: true }),
-    ).toBeVisible();
-
     await prisma.account.create({
       data: {
         accountId: `mock-google-${user.token}`,
@@ -78,6 +77,21 @@ test("account connections show connect, connected, and disconnect OAuth states",
     await expect(disconnect).toHaveCount(1);
     await expect(disconnect).toBeEnabled();
     await expectNoDocumentOverflow(page, "/account");
+  } finally {
+    await cleanupTestUsers([user.username]);
+  }
+});
+
+test("account pages show OAuth callback errors", async ({ page }, testInfo) => {
+  const user = await createAndSignInTestUser(page, testInfo);
+
+  try {
+    for (const route of ["/account", "/profile/edit"]) {
+      await gotoAppRoute(page, `${route}?error=email_doesn%27t_match`);
+      await expect(
+        page.getByRole("alert").filter({ hasText: "provider email does not match", visible: true }),
+      ).toBeVisible();
+    }
   } finally {
     await cleanupTestUsers([user.username]);
   }

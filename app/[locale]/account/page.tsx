@@ -18,7 +18,7 @@ import {
   getCurrentSession,
   serializeUserForResponse,
 } from "@/lib/auth";
-import { getOAuthCallbackErrorKey, type OAuthCallbackErrorKey } from "@/lib/oauth-callback-errors";
+import { getOAuthCallbackErrorMessage } from "@/lib/oauth-callback-messages";
 import { oauthProviderIds, type OAuthProviderId } from "@/lib/oauth-providers";
 import { createPageMetadata } from "@/lib/page-metadata";
 
@@ -96,19 +96,20 @@ export default function AccountPage({ params, searchParams }: AccountPageProps) 
   );
 }
 
-function getConnectionOAuthErrorMessage(
-  t: Awaited<ReturnType<typeof getTranslations>>,
-  errorKey: OAuthCallbackErrorKey,
-) {
-  return t(`settings.sections.connections.callbackErrors.${errorKey}`);
-}
-
 async function AccountPageContent({ params, searchParams }: AccountPageProps) {
   const { locale } = await params;
   setRequestLocale(locale);
 
-  const t = await getTranslations({ locale, namespace: "account" });
-  const format = await getFormatter({ locale });
+  const [t, format, oauthErrorMessage] = await Promise.all([
+    getTranslations({ locale, namespace: "account" }),
+    getFormatter({ locale }),
+    getOAuthCallbackErrorMessage({
+      keyPrefix: "settings.sections.connections.callbackErrors",
+      locale,
+      namespace: "account",
+      searchParams,
+    }),
+  ]);
   const settingsNavItems = [
     { id: "profile", label: t("settings.sidebar.profile") },
     { id: "security", label: t("settings.sidebar.security") },
@@ -130,10 +131,6 @@ async function AccountPageContent({ params, searchParams }: AccountPageProps) {
   if (!session && !loadError) {
     redirect({ href: "/login", locale });
   }
-
-  const query = (await searchParams) ?? {};
-  const oauthErrorKey = getOAuthCallbackErrorKey(query.error);
-  const oauthErrorMessage = oauthErrorKey ? getConnectionOAuthErrorMessage(t, oauthErrorKey) : null;
 
   return (
     <PageShell>

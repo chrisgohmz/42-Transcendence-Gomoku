@@ -16,7 +16,7 @@ import {
   getCurrentSession,
   hasCredentialPassword,
 } from "@/lib/auth";
-import { getOAuthCallbackErrorKey, type OAuthCallbackErrorKey } from "@/lib/oauth-callback-errors";
+import { getOAuthCallbackErrorMessage } from "@/lib/oauth-callback-messages";
 import { oauthProviderIds, type OAuthProviderId } from "@/lib/oauth-providers";
 import { createPageMetadata } from "@/lib/page-metadata";
 
@@ -66,13 +66,6 @@ export default function EditProfilePage({ params, searchParams }: EditProfilePag
   );
 }
 
-function getConnectionOAuthErrorMessage(
-  t: Awaited<ReturnType<typeof getTranslations>>,
-  errorKey: OAuthCallbackErrorKey,
-) {
-  return t(`settings.sections.connections.callbackErrors.${errorKey}`);
-}
-
 async function EditProfilePageContent({ params, searchParams }: EditProfilePageProps) {
   const { locale } = await params;
   setRequestLocale(locale);
@@ -84,17 +77,18 @@ async function EditProfilePageContent({ params, searchParams }: EditProfilePageP
     return null;
   }
 
-  const [accountT, oauthProviders, t, hasPassword] = await Promise.all([
+  const [accountT, oauthProviders, t, hasPassword, oauthErrorMessage] = await Promise.all([
     getTranslations({ locale, namespace: "account" }),
     loadOAuthProviders(),
     getTranslations({ locale, namespace: "profile.edit" }),
     hasCredentialPassword(sessionData.user.id),
+    getOAuthCallbackErrorMessage({
+      keyPrefix: "settings.sections.connections.callbackErrors",
+      locale,
+      namespace: "account",
+      searchParams,
+    }),
   ]);
-  const query = (await searchParams) ?? {};
-  const oauthErrorKey = getOAuthCallbackErrorKey(query.error);
-  const oauthErrorMessage = oauthErrorKey
-    ? getConnectionOAuthErrorMessage(accountT, oauthErrorKey)
-    : null;
 
   return (
     <PageShell>
