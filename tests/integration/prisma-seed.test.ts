@@ -1,6 +1,7 @@
 import { expect, test } from "bun:test";
 import { randomUUID } from "node:crypto";
-import { dirname, resolve } from "node:path";
+import { existsSync } from "node:fs";
+import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import pg from "pg";
@@ -145,6 +146,26 @@ prismaSeedSmokeTest("seeds the evaluation dataset and preserves core invariants"
           'SELECT COUNT(*)::int AS value FROM "UserGameStats" WHERE "currentStreak" < 0',
         ),
       ).toBe(0);
+      expect(
+        await queryScalar<number>(
+          seededClient,
+          `SELECT COUNT(*)::int AS value FROM "User" WHERE "avatarUrl" IS NOT NULL AND "avatarUrl" !~ '^/seed-avatars/[^/]+\\.svg$'`,
+        ),
+      ).toBe(0);
+      expect(
+        await queryScalar<number>(
+          seededClient,
+          `SELECT COUNT(*)::int AS value FROM "AvatarMedia" WHERE url !~ '^/seed-avatars/[^/]+\\.svg$' OR provider <> 'seed-local'`,
+        ),
+      ).toBe(0);
+
+      const avatarResult = await seededClient.query<{ avatarUrl: string }>(
+        'SELECT "avatarUrl" FROM "User" WHERE "avatarUrl" IS NOT NULL ORDER BY username',
+      );
+
+      for (const row of avatarResult.rows) {
+        expect(existsSync(join(repoRoot, "public", row.avatarUrl.slice(1)))).toBe(true);
+      }
 
       const metadataResult = await seededClient.query<{
         metadata: unknown;

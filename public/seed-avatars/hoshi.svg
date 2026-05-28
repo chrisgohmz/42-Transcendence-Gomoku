@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-label="Hoshi avatar">
+  <rect width="256" height="256" rx="128" fill="#171717"/>
+  <circle cx="128" cy="128" r="102" fill="#d4af37" opacity=".24"/>
+  <circle cx="78" cy="74" r="56" fill="#f2d492" opacity=".78"/>
+  <circle cx="178" cy="182" r="72" fill="#4ecdc4" opacity=".58"/>
+  <text x="128" y="152" text-anchor="middle" font-family="Arial, sans-serif" font-size="90" font-weight="800" fill="#fff4d0">H</text>
+</svg>

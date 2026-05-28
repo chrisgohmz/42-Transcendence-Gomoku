@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-label="Kata Reader bot avatar">
+  <rect width="256" height="256" rx="128" fill="#101827"/>
+  <circle cx="128" cy="128" r="92" fill="#38bdf8" opacity=".22"/>
+  <rect x="58" y="72" width="140" height="112" rx="32" fill="#0f766e"/>
+  <circle cx="100" cy="126" r="14" fill="#ecfeff"/>
+  <circle cx="156" cy="126" r="14" fill="#ecfeff"/>
+  <path d="M94 158h68" stroke="#ecfeff" stroke-width="12" stroke-linecap="round"/>
+</svg>

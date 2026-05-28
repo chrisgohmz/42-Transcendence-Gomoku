@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-label="Lina Park avatar">
+  <rect width="256" height="256" rx="128" fill="#1f2937"/>
+  <circle cx="198" cy="56" r="82" fill="#c084fc" opacity=".78"/>
+  <circle cx="56" cy="196" r="92" fill="#34d399" opacity=".7"/>
+  <path d="M28 112h200v48H28z" fill="#111827" opacity=".42"/>
+  <text x="128" y="151" text-anchor="middle" font-family="Arial, sans-serif" font-size="82" font-weight="800" fill="#f8fafc">LP</text>
+</svg>

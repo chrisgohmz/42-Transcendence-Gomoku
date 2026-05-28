@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-label="Ladder Bot avatar">
+  <rect width="256" height="256" rx="128" fill="#111827"/>
+  <circle cx="74" cy="74" r="76" fill="#f97316" opacity=".72"/>
+  <circle cx="186" cy="190" r="86" fill="#22c55e" opacity=".62"/>
+  <path d="M82 64v128M174 64v128M82 96h92M82 128h92M82 160h92" stroke="#fff7ed" stroke-width="14" stroke-linecap="round"/>
+</svg>

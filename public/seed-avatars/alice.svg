@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-label="Alice Demo avatar">
+  <rect width="256" height="256" rx="128" fill="#12372f"/>
+  <circle cx="194" cy="54" r="78" fill="#f6c85f" opacity=".85"/>
+  <circle cx="60" cy="202" r="92" fill="#3fb8af" opacity=".75"/>
+  <path d="M42 150c40-52 120-52 172 0v66H42z" fill="#0b1f1a" opacity=".42"/>
+  <text x="128" y="150" text-anchor="middle" font-family="Arial, sans-serif" font-size="82" font-weight="800" fill="#fff7df">AD</text>
+</svg>

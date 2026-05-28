@@ -81,14 +81,15 @@ type DemoUserSeed = {
   username: string;
 };
 
+const seedAvatarUrl = (slug: string) => `/seed-avatars/${slug}.svg`;
+
 const userSeeds = [
   {
     key: "alice",
     username: "alice",
     displayName: "Alice Demo",
     email: "alice@example.com",
-    avatarUrl:
-      "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=256&q=80",
+    avatarUrl: seedAvatarUrl("alice"),
     bio: "Warm-up specialist who likes balanced openings and short post-game reviews.",
     statusMessage: "Ready for ranked matches",
     lastSeenMinutesAgo: 3,
@@ -109,8 +110,7 @@ const userSeeds = [
     username: "bob",
     displayName: "Bob Demo",
     email: "bob@example.com",
-    avatarUrl:
-      "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=256&q=80",
+    avatarUrl: seedAvatarUrl("bob"),
     bio: "Fast-player with a weakness for risky center fights.",
     statusMessage: "Send me a challenge",
     lastSeenMinutesAgo: 18,
@@ -131,8 +131,7 @@ const userSeeds = [
     username: "carol",
     displayName: "Carol Demo",
     email: "carol@example.com",
-    avatarUrl:
-      "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=256&q=80",
+    avatarUrl: seedAvatarUrl("carol"),
     bio: "Spectator, annotator, and occasional endgame trap enjoyer.",
     statusMessage: "Spectating and learning",
     lastSeenMinutesAgo: 45,
@@ -152,8 +151,7 @@ const userSeeds = [
     username: "Hoshi",
     displayName: "Hoshi",
     email: "hoshi@example.com",
-    avatarUrl:
-      "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=256&q=80",
+    avatarUrl: seedAvatarUrl("hoshi"),
     bio: "Current ladder leader. Prefers quiet pressure over flashy captures.",
     statusMessage: "Reading the whole board",
     lastSeenMinutesAgo: 2,
@@ -174,8 +172,7 @@ const userSeeds = [
     username: "RenjuMaster",
     displayName: "RenjuMaster",
     email: "renjumaster@example.com",
-    avatarUrl:
-      "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=256&q=80",
+    avatarUrl: seedAvatarUrl("renju-master"),
     bio: "Renju rules advocate who teaches forbidden-move patterns.",
     statusMessage: "Review room open",
     lastSeenMinutesAgo: 7,
@@ -196,8 +193,7 @@ const userSeeds = [
     username: "Kuroishi",
     displayName: "Kuroishi",
     email: "kuroishi@example.com",
-    avatarUrl:
-      "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=256&q=80",
+    avatarUrl: seedAvatarUrl("kuroishi"),
     bio: "Defensive specialist with a taste for long forcing ladders.",
     statusMessage: "Testing Renju defenses",
     lastSeenMinutesAgo: 24,
@@ -217,8 +213,7 @@ const userSeeds = [
     username: "Shirotora",
     displayName: "Shirotora",
     email: "shirotora@example.com",
-    avatarUrl:
-      "https://images.unsplash.com/photo-1531123897727-8f129e1688ce?auto=format&fit=crop&w=256&q=80",
+    avatarUrl: seedAvatarUrl("shirotora"),
     bio: "Aggressive player who rematches quickly and learns loudly.",
     statusMessage: "Looking for a rematch",
     lastSeenMinutesAgo: 31,
@@ -238,8 +233,7 @@ const userSeeds = [
     username: "Tenkei",
     displayName: "Tenkei",
     email: "tenkei@example.com",
-    avatarUrl:
-      "https://images.unsplash.com/photo-1527980965255-d3b416303d12?auto=format&fit=crop&w=256&q=80",
+    avatarUrl: seedAvatarUrl("tenkei"),
     bio: "Calm endgame player who likes private study rooms.",
     statusMessage: "Accepted rematch",
     lastSeenMinutesAgo: 33,
@@ -259,8 +253,7 @@ const userSeeds = [
     username: "mei",
     displayName: "Mei Tan",
     email: "mei@example.com",
-    avatarUrl:
-      "https://images.unsplash.com/photo-1489424731084-a5d8b219a5bb?auto=format&fit=crop&w=256&q=80",
+    avatarUrl: seedAvatarUrl("mei"),
     bio: "Newcomer grinding puzzles before entering ranked rooms.",
     statusMessage: "Practicing double-threes",
     lastSeenMinutesAgo: 65,
@@ -299,8 +292,7 @@ const userSeeds = [
     username: "lina",
     displayName: "Lina Park",
     email: "lina@example.com",
-    avatarUrl:
-      "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=256&q=80",
+    avatarUrl: seedAvatarUrl("lina"),
     bio: "Methodical ladder climber with a soft spot for draw offers.",
     statusMessage: "Reviewing losses",
     lastSeenMinutesAgo: 240,
@@ -320,8 +312,7 @@ const userSeeds = [
     username: "arun",
     displayName: "Arun Rao",
     email: "arun@example.com",
-    avatarUrl:
-      "https://images.unsplash.com/photo-1547425260-76bcadfb4f2c?auto=format&fit=crop&w=256&q=80",
+    avatarUrl: seedAvatarUrl("arun"),
     bio: "Enjoys long games, patient reads, and polite rematches.",
     statusMessage: "Studying joseki",
     lastSeenMinutesAgo: 360,
@@ -341,8 +332,7 @@ const userSeeds = [
     username: "mika",
     displayName: "Mika Ito",
     email: "mika@example.com",
-    avatarUrl:
-      "https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=256&q=80",
+    avatarUrl: seedAvatarUrl("mika"),
     bio: "Occasional player who mostly follows friends' match rooms.",
     statusMessage: "Watching study games",
     lastSeenMinutesAgo: 720,
@@ -362,7 +352,7 @@ const userSeeds = [
     username: "kata_reader",
     displayName: "Kata Reader",
     kind: UserKind.BOT,
-    avatarUrl: "https://api.dicebear.com/9.x/bottts/svg?seed=kata-reader",
+    avatarUrl: seedAvatarUrl("kata-reader"),
     bio: "Seeded AI persona used by solo match demonstrations.",
     statusMessage: "Calculating candidate moves",
     lastSeenMinutesAgo: 1,
@@ -382,7 +372,7 @@ const userSeeds = [
     username: "ladder_bot",
     displayName: "Ladder Bot",
     kind: UserKind.BOT,
-    avatarUrl: "https://api.dicebear.com/9.x/bottts/svg?seed=ladder-bot",
+    avatarUrl: seedAvatarUrl("ladder-bot"),
     bio: "Background bot account for moderation and queue examples.",
     statusMessage: "Monitoring open rooms",
     lastSeenMinutesAgo: 4,
@@ -435,16 +425,27 @@ function plusMs(date: Date, milliseconds: number): Date {
 }
 
 function providerForAvatar(url: string): string {
-  return url.includes("dicebear.com") ? "dicebear" : "unsplash";
+  return url.startsWith("/seed-avatars/") ? "seed-local" : "local";
 }
 
 function contentTypeForAvatar(url: string): string {
-  return url.includes("dicebear.com") ? "image/svg+xml" : "image/jpeg";
+  if (url.endsWith(".svg")) {
+    return "image/svg+xml";
+  }
+
+  if (url.endsWith(".png")) {
+    return "image/png";
+  }
+
+  if (url.endsWith(".webp")) {
+    return "image/webp";
+  }
+
+  return "image/jpeg";
 }
 
 function storageKeyForAvatar(username: string, url: string): string {
-  const extension = url.includes("dicebear.com") ? "svg" : "jpg";
-  return `demo/${username}.${extension}`;
+  return url.startsWith("/") ? url.slice(1) : `demo/${username}`;
 }
 
 function getLowHighIds(id1: string, id2: string) {

@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-label="RenjuMaster avatar">
+  <rect width="256" height="256" rx="128" fill="#2b233a"/>
+  <circle cx="54" cy="192" r="88" fill="#b8f2e6" opacity=".6"/>
+  <circle cx="202" cy="60" r="76" fill="#ff9f1c" opacity=".78"/>
+  <path d="M48 88h160v24H48zm0 56h160v24H48z" fill="#120f1c" opacity=".42"/>
+  <text x="128" y="153" text-anchor="middle" font-family="Arial, sans-serif" font-size="72" font-weight="800" fill="#fffaf0">RM</text>
+</svg>
