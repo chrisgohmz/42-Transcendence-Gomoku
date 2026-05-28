@@ -25,6 +25,7 @@
     "lint:css": "bunx --bun stylelint \"app/**/*.css\" --cache",
     "lint:css:fix": "bunx --bun stylelint \"app/**/*.css\" --fix --cache",
     "test": "bun test",
+    "test:prisma:seed": "RUN_PRISMA_SEED_SMOKE=true bun test tests/integration/prisma-seed.test.ts",
     "test:redis:smoke": "RUN_REDIS_SMOKE=true bun test tests/integration/redis-smoke.test.ts",
     "test:e2e": "env -u NO_COLOR PLAYWRIGHT_BROWSERS_PATH=.playwright-browsers playwright test",
     "test:e2e:debug": "env -u NO_COLOR PLAYWRIGHT_BROWSERS_PATH=.playwright-browsers PLAYWRIGHT_HTML_OPEN=never playwright test --debug=cli",

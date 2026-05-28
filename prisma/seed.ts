@@ -1,6 +1,8 @@
 import { createId } from "@paralleldrive/cuid2";
 import { hashPassword } from "better-auth/crypto";
 
+import { createSoloMatchMetadata } from "../app/lib/matches/ai-solo";
+import { createChallengeMatchMetadata } from "../app/lib/matches/challenge-metadata";
 import { prisma } from "../app/lib/prisma";
 import {
   ConversationKind,
@@ -1028,8 +1030,7 @@ const matchSeeds = [
     endReason: "five_in_a_row",
     metadata: () =>
       ({
-        aiDifficulty: "expert",
-        mode: "ai",
+        ...createSoloMatchMetadata("expert"),
       }) satisfies Prisma.JsonObject,
     participants: [
       { userKey: "alice", role: Role.PLAYER, seat: Seat.BLACK, result: MatchResult.WIN },
@@ -1114,10 +1115,11 @@ const matchSeeds = [
     passwordHash: (hashes) => hashes.challengeRoomPassword,
     metadata: (users, hashes) =>
       ({
-        declineTokenHash: hashes.challengeDeclineToken,
-        kind: "human-challenge",
-        targetUserId: users.tenkei.id,
-        targetUsername: users.tenkei.username,
+        ...createChallengeMatchMetadata({
+          declineTokenHash: hashes.challengeDeclineToken,
+          targetUserId: users.tenkei.id,
+          targetUsername: users.tenkei.username,
+        }),
       }) satisfies Prisma.JsonObject,
     participants: [{ userKey: "alice", role: Role.PLAYER, seat: Seat.BLACK }],
   },
@@ -1403,7 +1405,7 @@ const statSeeds = [
     draws: 2,
     botMatchesPlayed: 1,
     botWins: 1,
-    currentStreak: -1,
+    currentStreak: 0,
     bestStreak: 8,
     rating: 1898,
     averageMoveTimeMs: 740,
@@ -1488,7 +1490,7 @@ const statSeeds = [
     draws: 1,
     botMatchesPlayed: 3,
     botWins: 2,
-    currentStreak: -1,
+    currentStreak: 0,
     bestStreak: 3,
     rating: 1475,
     averageMoveTimeMs: 860,
@@ -1556,7 +1558,7 @@ const statSeeds = [
     draws: 0,
     botMatchesPlayed: 0,
     botWins: 0,
-    currentStreak: -2,
+    currentStreak: 0,
     bestStreak: 1,
     rating: 980,
     averageMoveTimeMs: 1010,
@@ -1590,7 +1592,7 @@ const statSeeds = [
     draws: 1,
     botMatchesPlayed: 0,
     botWins: 0,
-    currentStreak: -1,
+    currentStreak: 0,
     bestStreak: 6,
     rating: 1984,
     averageMoveTimeMs: 1040,
