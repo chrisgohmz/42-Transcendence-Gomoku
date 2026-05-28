@@ -109,9 +109,9 @@ export default function EditProfileForm({
             </div>
 
             {displayNameState.successMessage ? (
-              <p className="m-0 text-sm font-bold text-[var(--mint)]" role="status">
+              <output className="m-0 block text-sm font-bold text-[var(--mint)]">
                 {displayNameState.successMessage}
-              </p>
+              </output>
             ) : null}
           </div>
         ) : (
@@ -128,6 +128,7 @@ export default function EditProfileForm({
                   defaultValue={currentUsername}
                   autoComplete="username"
                   className="text-input cursor-not-allowed opacity-70"
+                  aria-label={t("usernameReadonly")}
                   readOnly
                 />
               </div>
@@ -143,6 +144,7 @@ export default function EditProfileForm({
                   defaultValue={accountEmail}
                   autoComplete="email"
                   className="text-input cursor-not-allowed opacity-70"
+                  aria-label={t("linkedEmailReadonly")}
                   readOnly
                 />
               </div>
@@ -159,6 +161,7 @@ export default function EditProfileForm({
                   maxLength={authValidationLimits.displayNameMaxLength}
                   autoComplete="name"
                   className="text-input"
+                  aria-label={t("displayName")}
                   aria-describedby={
                     displayNameState.fields.displayName ? displayNameErrorId : undefined
                   }
@@ -230,9 +233,9 @@ export default function EditProfileForm({
             </div>
 
             {passwordSuccessMessage ? (
-              <p className="m-0 text-sm font-bold text-[var(--mint)]" role="status">
+              <output className="m-0 block text-sm font-bold text-[var(--mint)]">
                 {passwordSuccessMessage}
-              </p>
+              </output>
             ) : null}
           </div>
         ) : (
@@ -331,6 +334,7 @@ function PasswordField({
         minLength={authValidationLimits.passwordMinLength}
         maxLength={authValidationLimits.passwordMaxLength}
         className="text-input"
+        aria-label={label}
         aria-describedby={errors ? errorId : undefined}
         aria-invalid={Boolean(errors)}
       />

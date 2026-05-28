@@ -45,6 +45,7 @@ export function LoginForm({ oauthErrorMessage = null, oauthProviders }: LoginFor
             className="text-input field-input"
             defaultValue={state.email}
             maxLength={authValidationLimits.emailMaxLength}
+            aria-label={shared("email")}
             aria-describedby={state.fields.email ? emailErrorId : undefined}
             aria-invalid={Boolean(state.fields.email)}
             required
@@ -68,6 +69,7 @@ export function LoginForm({ oauthErrorMessage = null, oauthProviders }: LoginFor
             required
             minLength={authValidationLimits.passwordMinLength}
             maxLength={authValidationLimits.passwordMaxLength}
+            aria-label={shared("password")}
             aria-describedby={state.fields.password ? passwordErrorId : undefined}
             aria-invalid={Boolean(state.fields.password)}
           />
@@ -81,6 +83,7 @@ export function LoginForm({ oauthErrorMessage = null, oauthProviders }: LoginFor
           <input
             type="checkbox"
             name="remember"
+            aria-label={login("rememberThisTable")}
             className="size-4 rounded border border-[var(--panel-border-soft)] bg-[var(--panel-solid)]"
           />
           {login("rememberThisTable")}

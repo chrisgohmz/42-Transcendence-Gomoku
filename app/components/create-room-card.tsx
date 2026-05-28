@@ -78,6 +78,8 @@ export default function CreateRoomCard({
             <input
               id={roomNameId}
               name="roomName"
+              aria-label={t("roomNameLabel")}
+              autoComplete="off"
               placeholder={t("roomNamePlaceholder")}
               className="text-input"
             />
@@ -97,6 +99,7 @@ export default function CreateRoomCard({
                 name="roomPassword"
                 type="password"
                 autoComplete="new-password"
+                aria-label={t("password")}
                 placeholder={t("optionalPassword")}
                 className="text-input field-input disabled:cursor-not-allowed"
                 disabled={!isPrivate}

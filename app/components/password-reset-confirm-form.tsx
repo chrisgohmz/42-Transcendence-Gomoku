@@ -102,6 +102,7 @@ function PasswordField({
           className="text-input field-input"
           minLength={authValidationLimits.passwordMinLength}
           maxLength={authValidationLimits.passwordMaxLength}
+          aria-label={label}
           aria-describedby={errors ? errorId : undefined}
           aria-invalid={Boolean(errors)}
           required

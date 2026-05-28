@@ -57,6 +57,7 @@ export function OAuthProviderButtons({
         return (
           <OAuthSocialButton
             key={provider}
+            ariaLabel={t("continueWithProvider", { provider: oauthProviderLabels[provider] })}
             busy={isPending}
             disabled={Boolean(pendingProvider)}
             muted={Boolean(pendingProvider && !isPending)}

@@ -317,9 +317,9 @@ function toUrlSearchParams(input: Awaited<LeaderBoardProps["searchParams"]>): UR
 
 function LeaderboardUnavailable({ description, title }: { description: string; title: string }) {
   return (
-    <div
+    <section
       className="grid min-h-[340px] place-items-center rounded-md border border-[var(--danger)]/35 bg-[rgb(216_60_52_/_0.14)] p-8 text-center"
-      role="status"
+      aria-live="polite"
     >
       <div className="max-w-md">
         <span className="mx-auto mb-4 grid size-12 place-items-center rounded-md border border-[var(--danger)]/35 bg-[rgb(216_60_52_/_0.18)]">
@@ -328,6 +328,6 @@ function LeaderboardUnavailable({ description, title }: { description: string; t
         <h2 className="m-0 font-serif text-3xl leading-none font-black">{title}</h2>
         <p className="mt-3 mb-0 text-sm leading-6 text-[var(--muted-text)]">{description}</p>
       </div>
-    </div>
+    </section>
   );
 }

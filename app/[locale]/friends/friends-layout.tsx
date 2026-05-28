@@ -281,13 +281,14 @@ export default function FriendsContent({
             <div className="relative w-full max-w-sm">
               <Form action="" scroll={false} className="relative">
                 <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-                  <Search className="size-4 text-(--muted-text)" />
+                  <Search aria-hidden="true" className="size-4 text-(--muted-text)" />
                 </div>
                 <input
                   id="friend-search"
                   name="query"
                   type="text"
                   value={searchValue}
+                  aria-label={t("search")}
                   onChange={(e) => setSearchValue(e.target.value)}
                   placeholder={t("searchPlaceholder")}
                   autoComplete="off"
@@ -391,13 +392,17 @@ export default function FriendsContent({
 
       {friendToRemove ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4 backdrop-blur-sm">
-          <div
-            className="w-full max-w-sm overflow-hidden rounded-xl border border-(--panel-border-soft) bg-[#0e0e11] shadow-2xl"
-            role="dialog"
+          <dialog
+            open
+            className="m-0 w-full max-w-sm overflow-hidden rounded-xl border border-(--panel-border-soft) bg-[#0e0e11] p-0 text-left text-inherit shadow-2xl"
             aria-modal="true"
+            aria-labelledby="remove-friend-dialog-title"
           >
             <div className="flex items-center justify-between border-b border-(--panel-border-soft) bg-white/2 px-5 py-4">
-              <h3 className="flex items-center gap-2 font-black text-white">
+              <h3
+                id="remove-friend-dialog-title"
+                className="flex items-center gap-2 font-black text-white"
+              >
                 <UserMinus aria-hidden="true" className="size-4 text-(--danger)" />
                 {t("actions.removeFriend", { name: friendToRemove.displayName })}
               </h3>
@@ -438,7 +443,7 @@ export default function FriendsContent({
                 </button>
               </div>
             </div>
-          </div>
+          </dialog>
         </div>
       ) : null}
     </PageShell>

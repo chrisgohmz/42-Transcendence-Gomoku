@@ -280,6 +280,7 @@ export default function MessagesContent({ currentUserId }: Props) {
                 name="messageSearch"
                 autoComplete="off"
                 value={query}
+                aria-label={t("search")}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder={t("searchPlaceholder")}
                 className="text-input field-input"

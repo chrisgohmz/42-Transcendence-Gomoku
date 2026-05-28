@@ -133,13 +133,17 @@ export function ChallengeListener() {
       {/* The Pop-up Modal when someone invites you */}
       {incoming && (
         <div className="animate-in fade-in fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4 backdrop-blur-sm duration-200">
-          <div
-            className="animate-in zoom-in-95 w-full max-w-sm overflow-hidden rounded-xl border border-[var(--panel-border-soft)] bg-[#0e0e11] shadow-2xl duration-200"
-            role="dialog"
+          <dialog
+            open
+            className="animate-in zoom-in-95 m-0 w-full max-w-sm overflow-hidden rounded-xl border border-[var(--panel-border-soft)] bg-[#0e0e11] p-0 text-left text-inherit shadow-2xl duration-200"
             aria-modal="true"
+            aria-labelledby="challenge-dialog-title"
           >
             <div className="flex items-center justify-between border-b border-[var(--panel-border-soft)] bg-[var(--mint)]/10 px-5 py-4">
-              <h3 className="flex items-center gap-2 font-black text-[var(--mint)]">
+              <h3
+                id="challenge-dialog-title"
+                className="flex items-center gap-2 font-black text-[var(--mint)]"
+              >
                 <Swords aria-hidden="true" className="size-5" />
                 {t("title")}
               </h3>
@@ -172,7 +176,7 @@ export function ChallengeListener() {
                 </button>
               </div>
             </div>
-          </div>
+          </dialog>
         </div>
       )}
     </>

@@ -62,7 +62,7 @@ export default function GomokuBoard({
   stones = defaultStones,
 }: GomokuBoardProps) {
   const [activeCell, setActiveCell] = useState(BOARD_SIZE * 7 + 7);
-  const cellRefs = useRef<Array<HTMLButtonElement | null>>([]);
+  const cellRefs = useRef<Array<HTMLTableCellElement | null>>([]);
   const stoneByPosition = new Map(stones.map((stone) => [`${stone.x}-${stone.y}`, stone]));
   const moveFocus = (index: number) => {
     const boundedIndex = Math.max(0, Math.min(index, BOARD_SIZE * BOARD_SIZE - 1));
@@ -70,7 +70,7 @@ export default function GomokuBoard({
     cellRefs.current[boundedIndex]?.focus();
   };
 
-  const handleGridKeyDown = (event: KeyboardEvent<HTMLButtonElement>, index: number) => {
+  const handleGridKeyDown = (event: KeyboardEvent<HTMLTableCellElement>, index: number) => {
     const row = Math.floor(index / BOARD_SIZE);
     const column = index % BOARD_SIZE;
 
@@ -99,6 +99,10 @@ export default function GomokuBoard({
         event.preventDefault();
         moveFocus(row * BOARD_SIZE);
         break;
+      case " ":
+      case "Enter":
+        event.preventDefault();
+        break;
       default:
         break;
     }
@@ -123,12 +127,11 @@ export default function GomokuBoard({
 
     if (interactive) {
       return (
-        <button
+        <td
           key={`${x}-${y}`}
           ref={(element) => {
             cellRefs.current[index] = element;
           }}
-          type="button"
           aria-label={cellLabel}
           aria-rowindex={y}
           aria-colindex={x}
@@ -136,23 +139,22 @@ export default function GomokuBoard({
           data-board-cell={`${x}-${y}`}
           onFocus={() => setActiveCell(index)}
           onKeyDown={(event) => handleGridKeyDown(event, index)}
-          role="gridcell"
           tabIndex={activeCell === index ? 0 : -1}
-          className="relative flex items-center justify-center border border-[#6c3d1d]/35 transition-[background-color,box-shadow] hover:bg-white/12 focus-visible:z-10 focus-visible:ring-2 focus-visible:ring-[var(--mint)] focus-visible:outline-none"
+          className="relative border border-[#6c3d1d]/35 p-0 text-center align-middle transition-[background-color,box-shadow] outline-none hover:bg-white/12 focus-visible:z-10 focus-visible:ring-2 focus-visible:ring-[var(--mint)]"
         >
-          {cellContent}
-        </button>
+          <span className="flex size-full items-center justify-center">{cellContent}</span>
+        </td>
       );
     }
 
     return (
-      <span
+      <td
         key={`${x}-${y}`}
         aria-hidden="true"
-        className="relative flex items-center justify-center border border-[#6c3d1d]/30"
+        className="relative border border-[#6c3d1d]/30 p-0 text-center align-middle"
       >
-        {cellContent}
-      </span>
+        <span className="flex size-full items-center justify-center">{cellContent}</span>
+      </td>
     );
   });
   const rows = Array.from({ length: BOARD_SIZE }, (_, rowIndex) =>
@@ -171,24 +173,20 @@ export default function GomokuBoard({
           Use arrow keys to move across the Gomoku board. Press Tab to leave the board.
         </p>
       ) : null}
-      <div
+      <table
         aria-colcount={interactive ? BOARD_SIZE : undefined}
         aria-describedby={interactive ? "gomoku-board-instructions" : undefined}
         aria-label={interactive ? "Gomoku board" : undefined}
         aria-rowcount={interactive ? BOARD_SIZE : undefined}
-        className="grid size-full grid-rows-[repeat(15,minmax(0,1fr))] border border-[#5f3417]/60"
+        className="size-full table-fixed border-separate border-spacing-0 border border-[#5f3417]/60"
         role={interactive ? "grid" : undefined}
       >
-        {rows.map((row, rowIndex) => (
-          <div
-            key={rowIndex}
-            className="grid grid-cols-[repeat(15,minmax(0,1fr))]"
-            role={interactive ? "row" : undefined}
-          >
-            {row}
-          </div>
-        ))}
-      </div>
+        <tbody>
+          {rows.map((row, rowIndex) => (
+            <tr key={rowIndex}>{row}</tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 }

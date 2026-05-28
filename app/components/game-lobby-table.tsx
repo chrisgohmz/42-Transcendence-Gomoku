@@ -137,17 +137,22 @@ export default function GameLobbyTable({
 
       {passwordPrompt && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4 backdrop-blur-sm">
-          <div
-            className="w-full max-w-sm overflow-hidden rounded-xl border border-(--panel-border-soft) bg-[#0e0e11] shadow-2xl"
-            role="dialog"
+          <dialog
+            open
+            className="m-0 w-full max-w-sm overflow-hidden rounded-xl border border-(--panel-border-soft) bg-[#0e0e11] p-0 text-left text-inherit shadow-2xl"
             aria-modal="true"
+            aria-labelledby="private-room-dialog-title"
           >
             <div className="flex items-center justify-between border-b border-(--panel-border-soft) bg-white/2 px-5 py-4">
-              <h3 className="flex items-center gap-2 font-black text-white">
+              <h3
+                id="private-room-dialog-title"
+                className="flex items-center gap-2 font-black text-white"
+              >
                 <LockKeyhole aria-hidden="true" className="size-4 text-(--brass)" />
                 {t("privateRoomTitle")}
               </h3>
               <button
+                type="button"
                 onClick={() => setPasswordPrompt(null)}
                 className="rounded-md text-(--muted-text) transition-colors hover:text-white"
                 aria-label={t("close")}
@@ -182,6 +187,8 @@ export default function GameLobbyTable({
               <input
                 type="password"
                 autoFocus
+                aria-label={t("password")}
+                autoComplete="current-password"
                 placeholder={t("passwordPlaceholder")}
                 value={passwordInput}
                 onChange={(e) => setPasswordInput(e.target.value)}
@@ -206,7 +213,7 @@ export default function GameLobbyTable({
                 </button>
               </div>
             </form>
-          </div>
+          </dialog>
         </div>
       )}
     </>

@@ -101,6 +101,13 @@ export function OAuthAccountConnections({
                 }
               >
                 <OAuthSocialButton
+                  ariaLabel={
+                    isConnecting
+                      ? t("connecting")
+                      : provider.linked
+                        ? t("connectedWithProvider", { provider: oauthProviderLabels[provider.id] })
+                        : t("connectWithProvider", { provider: oauthProviderLabels[provider.id] })
+                  }
                   busy={isConnecting}
                   disabled={Boolean(pendingProvider) || provider.linked || !provider.configured}
                   muted={provider.linked || Boolean(pendingProvider && !isPending)}
@@ -115,9 +122,9 @@ export function OAuthAccountConnections({
                       : t("connectWithProvider", { provider: oauthProviderLabels[provider.id] })}
                 </OAuthSocialButton>
                 {isConnecting ? (
-                  <span className="sr-only" role="status" aria-live="polite">
+                  <output className="sr-only" aria-live="polite">
                     {t("connecting")}
-                  </span>
+                  </output>
                 ) : null}
               </div>
 

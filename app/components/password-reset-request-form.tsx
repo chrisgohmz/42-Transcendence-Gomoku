@@ -39,6 +39,7 @@ export function PasswordResetRequestForm() {
             className="text-input field-input"
             defaultValue={state.email}
             maxLength={authValidationLimits.emailMaxLength}
+            aria-label={shared("email")}
             aria-describedby={state.fields.email ? emailErrorId : undefined}
             aria-invalid={Boolean(state.fields.email)}
             required

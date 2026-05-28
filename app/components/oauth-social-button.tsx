@@ -11,6 +11,7 @@ const providerButtonClasses = {
 } satisfies Record<OAuthProviderId, string>;
 
 type OAuthSocialButtonProps = {
+  ariaLabel: string;
   busy?: boolean;
   children: ReactNode;
   disabled?: boolean;
@@ -21,6 +22,7 @@ type OAuthSocialButtonProps = {
 };
 
 export function OAuthSocialButton({
+  ariaLabel,
   busy = false,
   children,
   disabled = false,
@@ -31,6 +33,7 @@ export function OAuthSocialButton({
 }: OAuthSocialButtonProps) {
   return (
     <button
+      aria-label={ariaLabel}
       aria-busy={busy || undefined}
       className={cn(
         "oauth-social-button",

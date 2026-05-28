@@ -225,6 +225,7 @@ function LeaderboardControls({
               id={searchId}
               name="q"
               defaultValue={query.q}
+              aria-label={t("page.search.player")}
               placeholder={t("page.search.playerPlaceholder")}
               className="h-10 w-full rounded-md border border-[var(--panel-border-soft)] bg-black/20 pr-3 pl-9 text-sm font-bold outline-none focus:border-[var(--mint)]"
             />
@@ -250,6 +251,7 @@ function LeaderboardControls({
             name="minRating"
             type="number"
             defaultValue={query.minRating ?? ""}
+            aria-label={t("page.search.minRating")}
             className="h-10 w-full rounded-md border border-[var(--panel-border-soft)] bg-black/20 px-3 text-sm font-bold outline-none focus:border-[var(--mint)]"
           />
         </Field>
@@ -260,6 +262,7 @@ function LeaderboardControls({
             name="maxRating"
             type="number"
             defaultValue={query.maxRating ?? ""}
+            aria-label={t("page.search.maxRating")}
             className="h-10 w-full rounded-md border border-[var(--panel-border-soft)] bg-black/20 px-3 text-sm font-bold outline-none focus:border-[var(--mint)]"
           />
         </Field>
@@ -271,6 +274,7 @@ function LeaderboardControls({
             type="number"
             min="0"
             defaultValue={query.minMatches ?? ""}
+            aria-label={t("page.search.minMatches")}
             className="h-10 w-full rounded-md border border-[var(--panel-border-soft)] bg-black/20 px-3 text-sm font-bold outline-none focus:border-[var(--mint)]"
           />
         </Field>

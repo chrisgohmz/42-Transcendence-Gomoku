@@ -119,6 +119,7 @@ export default function MatchHistoryList({
                   id={opponentId}
                   name="opponent"
                   defaultValue={activeQuery.get("opponent") ?? ""}
+                  aria-label={t("page.recentMatches.search.opponent")}
                   placeholder={t("page.recentMatches.search.opponentPlaceholder")}
                   className="h-10 w-full rounded-md border border-[var(--panel-border-soft)] bg-black/20 pr-3 pl-9 text-sm font-bold outline-none focus:border-[var(--mint)]"
                 />
@@ -352,6 +353,7 @@ function InputField({
         name={name}
         type={type}
         defaultValue={value}
+        aria-label={label}
         className="h-10 w-full rounded-md border border-[var(--panel-border-soft)] bg-black/20 px-3 text-sm font-bold outline-none focus:border-[var(--mint)]"
       />
     </label>
