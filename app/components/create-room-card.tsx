@@ -9,7 +9,7 @@ import { Badge, Surface } from "@/components/gomoku-ui";
 type CreateRoomCardProps = {
   error?: string | null;
   isCreating?: boolean;
-  onCreateRoomAction?: (data: {
+  onCreateRoomAction: (data: {
     name?: string;
     password?: string;
     visibility: "PUBLIC" | "PRIVATE";
@@ -68,7 +68,7 @@ export default function CreateRoomCard({
               return;
             }
 
-            onCreateRoomAction?.({ name, password, visibility });
+            onCreateRoomAction({ name, password, visibility });
           }}
         >
           <div className="field">

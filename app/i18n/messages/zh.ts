@@ -72,10 +72,6 @@ export const messages = {
         title: "服务条款",
         description: "阅读账户访问、公平对局和规则执行相关条款。",
       },
-      test: {
-        title: "UI 测试",
-        description: "用于本地开发时检查界面组件的路由。",
-      },
     },
   },
   brand: {
@@ -633,12 +629,6 @@ export const messages = {
       eyebrow: "AI 练习大厅",
       title: "选择你的对手。",
       lede: "在落下第一子之前，先调整挑战内容。",
-      rulesButton: "练习规则",
-    },
-    tabs: {
-      setup: "设置",
-      analysis: "分析",
-      history: "历史",
     },
     setup: {
       eyebrow: "对局设置",
@@ -992,12 +982,6 @@ export const messages = {
         eyebrow: "成就",
         title: "已解锁徽章",
       },
-      safety: {
-        eyebrow: "安全",
-        title: "玩家操作",
-        reportPlayer: "举报玩家",
-        blockPlayer: "拉黑玩家",
-      },
     },
     page: {
       hero: {
@@ -1289,9 +1273,5 @@ export const messages = {
         },
       },
     },
-  },
-  test: {
-    title: "Tailwind 练习",
-    body: "用于本地开发时检查样式的小路由。",
   },
 };

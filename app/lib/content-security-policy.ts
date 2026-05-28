@@ -106,6 +106,9 @@ export function createContentSecurityPolicy(
   const nonceSource = `'nonce-${nonce}'`;
   const scriptSources = [nonceSource, "'strict-dynamic'"];
   const styleSources = isDevelopment ? ["'self'", "'unsafe-inline'"] : ["'self'", nonceSource];
+  const styleElementSources = isDevelopment
+    ? styleSources
+    : [...styleSources, ...nextStyleElementHashes];
 
   if (isDevelopment) {
     scriptSources.push("'unsafe-eval'");
@@ -123,7 +126,7 @@ export function createContentSecurityPolicy(
     ["script-src", ...scriptSources],
     ["script-src-attr", "'none'"],
     ["style-src", ...styleSources],
-    ["style-src-elem", ...styleSources, ...nextStyleElementHashes],
+    ["style-src-elem", ...styleElementSources],
     [
       "style-src-attr",
       "'unsafe-hashes'",

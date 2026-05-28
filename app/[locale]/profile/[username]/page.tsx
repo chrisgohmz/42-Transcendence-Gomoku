@@ -1,4 +1,4 @@
-import { Activity, Award, Flag, Swords, Trophy, TrendingUp, TrendingDown } from "lucide-react";
+import { Activity, Award, Swords, Trophy, TrendingUp, TrendingDown } from "lucide-react";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
@@ -301,21 +301,6 @@ async function PublicProfilePageContent({ params, searchParams }: ProfilePagePro
             ) : (
               <p className="m-0 text-sm text-[var(--muted-text)]">{t("page.achievements.empty")}</p>
             )}
-          </Surface>
-
-          <Surface
-            eyebrow={t("publicPage.safety.eyebrow")}
-            icon={Flag}
-            title={t("publicPage.safety.title")}
-          >
-            <div className="grid gap-2">
-              <button type="button" className="btn btn-subtle m-0 justify-start">
-                {t("publicPage.safety.reportPlayer")}
-              </button>
-              <button type="button" className="btn btn-danger m-0 justify-start">
-                {t("publicPage.safety.blockPlayer")}
-              </button>
-            </div>
           </Surface>
         </aside>
       </section>

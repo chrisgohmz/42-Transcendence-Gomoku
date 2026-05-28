@@ -104,23 +104,27 @@ export default function GameLobbyTable({
                   )}
                   {row.privacy}
                 </Badge>
-                <button
-                  type="button"
-                  className="grid size-10 place-items-center rounded-md border border-(--panel-border-soft) bg-white/3.5 text-(--muted-strong) hover:bg-white/7"
-                  aria-label={t("joinAria", { name: row.name })}
-                  onClick={() => {
-                    if (row.entry.requiresPassword) {
-                      setPasswordPrompt(row.entry);
-                      setPasswordInput("");
-                    } else {
-                      onJoin?.(row.entry);
-                    }
-                  }}
-                  disabled={Boolean(joiningMatchId) || isLoading}
-                  aria-busy={joiningMatchId === row.id}
-                >
-                  <ChevronRight aria-hidden="true" className="size-4" />
-                </button>
+                {onJoin ? (
+                  <button
+                    type="button"
+                    className="grid size-10 place-items-center rounded-md border border-(--panel-border-soft) bg-white/3.5 text-(--muted-strong) hover:bg-white/7"
+                    aria-label={t("joinAria", { name: row.name })}
+                    onClick={() => {
+                      if (row.entry.requiresPassword) {
+                        setPasswordPrompt(row.entry);
+                        setPasswordInput("");
+                      } else {
+                        onJoin(row.entry);
+                      }
+                    }}
+                    disabled={Boolean(joiningMatchId) || isLoading}
+                    aria-busy={joiningMatchId === row.id}
+                  >
+                    <ChevronRight aria-hidden="true" className="size-4" />
+                  </button>
+                ) : (
+                  <span aria-hidden="true" />
+                )}
               </article>
             ))
           ) : (
@@ -135,7 +139,7 @@ export default function GameLobbyTable({
         </div>
       </div>
 
-      {passwordPrompt && (
+      {passwordPrompt && onJoin ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4 backdrop-blur-sm">
           <dialog
             open
@@ -166,7 +170,7 @@ export default function GameLobbyTable({
               onSubmit={(e) => {
                 e.preventDefault();
                 if (passwordInput) {
-                  onJoin?.(passwordPrompt, passwordInput);
+                  onJoin(passwordPrompt, passwordInput);
                 }
               }}
               className="p-5"
@@ -215,7 +219,7 @@ export default function GameLobbyTable({
             </form>
           </dialog>
         </div>
-      )}
+      ) : null}
     </>
   );
 }

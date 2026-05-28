@@ -1,6 +1,6 @@
 "use client";
 
-/* oxlint-disable jsx-a11y/no-noninteractive-element-to-interactive-role */
+/* oxlint-disable jsx-a11y/prefer-tag-over-role */
 
 import { useRef, useState, type KeyboardEvent } from "react";
 
@@ -8,7 +8,23 @@ import { cn } from "@/lib/utils";
 
 import type { Cell, Seat } from "../../shared/match-events";
 
-const coordinateLabels = "ABCDEFGHJKLMNO".split("");
+const coordinateLabels = [
+  "A",
+  "B",
+  "C",
+  "D",
+  "E",
+  "F",
+  "G",
+  "H",
+  "J",
+  "K",
+  "L",
+  "M",
+  "N",
+  "O",
+  "P",
+];
 
 export function formatBoardPoint(position: { x: number; y: number }) {
   return `${coordinateLabels[position.x] ?? position.x + 1}${position.y + 1}`;
@@ -45,7 +61,7 @@ export default function MatchBoard({
   const labels = coordinateLabels.slice(0, boardSize);
   const centerIndex = Math.floor(boardSize / 2) * boardSize + Math.floor(boardSize / 2);
   const [activeCell, setActiveCell] = useState(centerIndex);
-  const cellRefs = useRef<Array<HTMLTableCellElement | null>>([]);
+  const cellRefs = useRef<Array<HTMLButtonElement | null>>([]);
 
   const moveFocus = (index: number) => {
     const boundedIndex = clampCellIndex(index, boardSize);
@@ -53,7 +69,7 @@ export default function MatchBoard({
     cellRefs.current[boundedIndex]?.focus();
   };
 
-  const handleGridKeyDown = (event: KeyboardEvent<HTMLTableCellElement>, index: number) => {
+  const handleGridKeyDown = (event: KeyboardEvent<HTMLButtonElement>, index: number) => {
     const row = Math.floor(index / boardSize);
     const column = index % boardSize;
 
@@ -115,98 +131,85 @@ export default function MatchBoard({
             </span>
           ))}
         </div>
-        <table
+        <div
           aria-colcount={boardSize}
           aria-describedby={`${testId}-instructions`}
           aria-label={label}
           aria-rowcount={boardSize}
-          className="aspect-square w-full table-fixed border-separate border-spacing-0 overflow-hidden rounded-md border border-[#5f3417] bg-[linear-gradient(135deg,#f2c77f,#ca843e_58%,#8c4e1d)] p-2 shadow-[0_24px_70px_rgba(0,0,0,0.44)]"
+          className="grid aspect-square auto-rows-fr overflow-hidden rounded-md border border-[#5f3417] bg-[linear-gradient(135deg,#f2c77f,#ca843e_58%,#8c4e1d)] p-2 shadow-[0_24px_70px_rgba(0,0,0,0.44)]"
           role="grid"
         >
-          <tbody>
-            {board.map((row, y) => (
-              <tr key={y}>
-                {row.map((cell, x) => {
-                  const index = y * boardSize + x;
-                  const isLastMove = lastMove?.x === x && lastMove.y === y;
-                  const canPlay =
-                    !disabled &&
-                    !cell.occupied &&
-                    playerSeat !== null &&
-                    nextTurnSeat !== null &&
-                    playerSeat === nextTurnSeat;
-                  const cellLabel = cell.occupied
-                    ? `${cell.seat} stone at ${formatBoardPoint({ x, y })}`
-                    : `Empty intersection ${formatBoardPoint({ x, y })}`;
+          {board.map((row, y) => (
+            <div key={y} className="grid min-h-0 auto-cols-fr grid-flow-col" role="row">
+              {row.map((cell, x) => {
+                const index = y * boardSize + x;
+                const isLastMove = lastMove?.x === x && lastMove.y === y;
+                const canPlay =
+                  !disabled &&
+                  !cell.occupied &&
+                  playerSeat !== null &&
+                  nextTurnSeat !== null &&
+                  playerSeat === nextTurnSeat;
+                const cellLabel = cell.occupied
+                  ? `${cell.seat} stone at ${formatBoardPoint({ x, y })}`
+                  : `Empty intersection ${formatBoardPoint({ x, y })}`;
 
-                  return (
-                    <td
-                      key={`${x}-${y}`}
-                      ref={(element) => {
-                        cellRefs.current[index] = element;
-                      }}
-                      aria-colindex={x + 1}
-                      aria-current={isLastMove ? "step" : undefined}
-                      aria-disabled={!canPlay}
-                      aria-label={cellLabel}
-                      aria-rowindex={y + 1}
-                      className={cn(
-                        "group relative p-0 text-center align-middle outline-none transition-[background-color,box-shadow]",
-                        "border border-[#6c3d1d]/35",
-                        canPlay
-                          ? "cursor-pointer hover:bg-white/16 focus-visible:z-10 focus-visible:ring-2 focus-visible:ring-[var(--mint)]"
-                          : "cursor-default focus-visible:z-10 focus-visible:ring-2 focus-visible:ring-[var(--brass)]/75",
-                      )}
-                      onClick={() => {
-                        if (canPlay) {
-                          onCellSelect(x, y);
-                        }
-                      }}
-                      onFocus={() => setActiveCell(index)}
-                      onKeyDown={(event) => {
-                        if (event.key === " " || event.key === "Enter") {
-                          event.preventDefault();
-                          if (canPlay) {
-                            onCellSelect(x, y);
-                          }
-                          return;
-                        }
-
-                        handleGridKeyDown(event, index);
-                      }}
-                      tabIndex={activeCell === index ? 0 : -1}
-                    >
-                      <span className="grid size-full place-items-center">
-                        {cell.occupied ? (
-                          <span
-                            className={cn(
-                              "stone grid size-[72%] place-items-center text-[0.55rem] font-black tabular-nums sm:text-[0.65rem]",
-                              cell.seat === "BLACK"
-                                ? "stone-black text-white/70"
-                                : "stone-white text-black/60",
-                              isLastMove &&
-                                "ring-2 ring-[var(--mint)] ring-offset-2 ring-offset-[var(--wood-dark)]",
-                            )}
-                          >
-                            {cell.moveNumber}
-                          </span>
-                        ) : (
-                          <span
-                            aria-hidden="true"
-                            className={cn(
-                              "size-[22%] rounded-full bg-[var(--mint)] opacity-0 shadow-[0_0_14px_var(--mint)] transition-opacity",
-                              canPlay && "group-hover:opacity-70 group-focus-visible:opacity-90",
-                            )}
-                          />
+                return (
+                  <button
+                    key={`${x}-${y}`}
+                    ref={(element) => {
+                      cellRefs.current[index] = element;
+                    }}
+                    type="button"
+                    aria-colindex={x + 1}
+                    aria-current={isLastMove ? "step" : undefined}
+                    aria-disabled={!canPlay}
+                    aria-label={cellLabel}
+                    aria-rowindex={y + 1}
+                    className={cn(
+                      "group relative grid min-h-0 place-items-center border border-[#6c3d1d]/35 outline-none transition-[background-color,box-shadow]",
+                      canPlay
+                        ? "cursor-pointer hover:bg-white/16 focus-visible:z-10 focus-visible:ring-2 focus-visible:ring-[var(--mint)]"
+                        : "cursor-default focus-visible:z-10 focus-visible:ring-2 focus-visible:ring-[var(--brass)]/75",
+                    )}
+                    onClick={() => {
+                      if (canPlay) {
+                        onCellSelect(x, y);
+                      }
+                    }}
+                    onFocus={() => setActiveCell(index)}
+                    onKeyDown={(event) => handleGridKeyDown(event, index)}
+                    role="gridcell"
+                    tabIndex={activeCell === index ? 0 : -1}
+                  >
+                    {cell.occupied ? (
+                      <span
+                        className={cn(
+                          "stone grid size-[72%] place-items-center text-[0.55rem] font-black tabular-nums sm:text-[0.65rem]",
+                          cell.seat === "BLACK"
+                            ? "stone-black text-white/70"
+                            : "stone-white text-black/60",
+                          isLastMove &&
+                            "ring-2 ring-[var(--mint)] ring-offset-2 ring-offset-[var(--wood-dark)]",
                         )}
+                      >
+                        {cell.moveNumber}
                       </span>
-                    </td>
-                  );
-                })}
-              </tr>
-            ))}
-          </tbody>
-        </table>
+                    ) : (
+                      <span
+                        aria-hidden="true"
+                        className={cn(
+                          "size-[22%] rounded-full bg-[var(--mint)] opacity-0 shadow-[0_0_14px_var(--mint)] transition-opacity",
+                          canPlay && "group-hover:opacity-70 group-focus-visible:opacity-90",
+                        )}
+                      />
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );

@@ -72,10 +72,6 @@ export const messages = {
         title: "利用規約",
         description: "アカウント利用、フェアプレイ、運用ルールを確認します。",
       },
-      test: {
-        title: "UI テスト",
-        description: "ローカル開発用にインターフェース部品を確認するルートです。",
-      },
     },
   },
   brand: {
@@ -640,12 +636,6 @@ export const messages = {
       eyebrow: "AI 練習ロビー",
       title: "対戦相手を選んでください。",
       lede: "最初の石を置く前に、挑戦内容を調整しましょう。",
-      rulesButton: "練習ルール",
-    },
-    tabs: {
-      setup: "セットアップ",
-      analysis: "分析",
-      history: "履歴",
     },
     setup: {
       eyebrow: "対局設定",
@@ -1001,12 +991,6 @@ export const messages = {
         eyebrow: "実績",
         title: "解除済みバッジ",
       },
-      safety: {
-        eyebrow: "安全",
-        title: "プレイヤー操作",
-        reportPlayer: "プレイヤーを通報",
-        blockPlayer: "プレイヤーをブロック",
-      },
     },
     page: {
       hero: {
@@ -1306,9 +1290,5 @@ export const messages = {
         },
       },
     },
-  },
-  test: {
-    title: "Tailwind 練習",
-    body: "ローカル開発中にスタイルを確認するための小さなルートです。",
   },
 };

@@ -31,7 +31,6 @@ const staticPagePaths = {
   signup: "/signup",
   status: "/status",
   terms: "/terms",
-  test: "/test",
 } as const satisfies Record<StaticMetadataPageKey, `/${string}`>;
 
 const noIndexPages = new Set<MetadataPageKey>([
@@ -42,7 +41,6 @@ const noIndexPages = new Set<MetadataPageKey>([
   "profile",
   "resetPassword",
   "status",
-  "test",
 ]);
 
 const openGraphLocales = {

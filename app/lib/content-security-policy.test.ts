@@ -57,6 +57,9 @@ describe("content security policy", () => {
     expect(policy).toContain("'unsafe-inline'");
     expect(styleElementSources).toContain("'unsafe-inline'");
     expect(styleElementSources).not.toContain("'nonce-test-nonce'");
+    expect(styleElementSources).not.toContain(
+      "'sha256-Wwucq8eX2r0YFymkQhDXm5hN0+FfSvI3s4JSSaqa4iw='",
+    );
     expect(policy).toContain("http://localhost:3001");
     expect(policy).toContain("ws://localhost:3001");
     expect(policy).toContain("http://127.0.0.1:3001");

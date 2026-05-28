@@ -1,11 +1,9 @@
 "use client";
 
 import {
-  BookOpen,
   Bot,
   BrainCircuit,
   Check,
-  ChevronDown,
   Circle,
   Clock3,
   Crosshair,
@@ -274,7 +272,7 @@ export default function AiLobbyClient() {
   return (
     <PageShell className="py-3 xl:py-4">
       <section className="command-panel mb-4 px-5 py-3 xl:px-6">
-        <div className="relative z-10 grid gap-5 xl:grid-cols-[minmax(0,1fr)_auto_auto] xl:items-start">
+        <div className="relative z-10 grid gap-5 xl:items-start">
           <div className="min-w-0">
             <p className="eyebrow">{t("hero.eyebrow")}</p>
             <h1 className="page-title !max-w-none text-[3.15rem] xl:text-[3.55rem]">
@@ -282,28 +280,6 @@ export default function AiLobbyClient() {
             </h1>
             <p className="lede mt-2 max-w-3xl">{t("hero.lede")}</p>
           </div>
-
-          <div className="inline-flex w-fit max-w-full overflow-x-auto rounded-md border border-[var(--panel-border-soft)] bg-[var(--panel-solid)] p-1">
-            {[t("tabs.setup"), t("tabs.analysis"), t("tabs.history")].map((item, index) => (
-              <button
-                key={item}
-                type="button"
-                className={cn(
-                  "min-h-10 min-w-32 rounded-sm px-4 text-sm font-black",
-                  index === 0
-                    ? "bg-[var(--mint-soft)] text-[var(--mint)]"
-                    : "text-[var(--muted-text)] hover:bg-white/[0.05] hover:text-[var(--text)]",
-                )}
-              >
-                {item}
-              </button>
-            ))}
-          </div>
-
-          <button type="button" className="btn btn-subtle m-0 min-h-11 px-4">
-            <BookOpen aria-hidden="true" className="size-4" />
-            {t("hero.rulesButton")}
-          </button>
         </div>
       </section>
 
@@ -359,7 +335,7 @@ export default function AiLobbyClient() {
               </div>
             </div>
 
-            <SetupSelect label={t("setup.rulesLabel")} value={t("setup.rulesValue")} />
+            <SetupReadout label={t("setup.rulesLabel")} value={t("setup.rulesValue")} />
 
             <div>
               <p className="label">{t("setup.playerColorLabel")}</p>
@@ -390,7 +366,7 @@ export default function AiLobbyClient() {
               </div>
             </div>
 
-            <SetupSelect
+            <SetupReadout
               icon={Clock3}
               label={t("setup.timeControlLabel")}
               value={t("setup.timeControlValue")}
@@ -590,7 +566,7 @@ export default function AiLobbyClient() {
   );
 }
 
-function SetupSelect({
+function SetupReadout({
   icon: Icon,
   label,
   value,
@@ -602,14 +578,15 @@ function SetupSelect({
   return (
     <div>
       <p className="label">{label}</p>
-      <button
-        type="button"
-        className="grid min-h-11 w-full grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 rounded-md border border-[var(--panel-border-soft)] bg-[var(--panel-solid)] px-3 text-left font-black hover:bg-[var(--panel-hover)]"
+      <div
+        className={cn(
+          "grid min-h-11 w-full items-center gap-3 rounded-md border border-[var(--panel-border-soft)] bg-[var(--panel-solid)] px-3 font-black",
+          Icon ? "grid-cols-[auto_minmax(0,1fr)]" : "grid-cols-[minmax(0,1fr)]",
+        )}
       >
         {Icon ? <Icon aria-hidden="true" className="size-4 text-[var(--muted-text)]" /> : null}
         <span className="truncate">{value}</span>
-        <ChevronDown aria-hidden="true" className="size-4 text-[var(--muted-text)]" />
-      </button>
+      </div>
     </div>
   );
 }

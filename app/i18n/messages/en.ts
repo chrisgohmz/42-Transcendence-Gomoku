@@ -70,10 +70,6 @@ export const messages = {
         title: "Terms of Service",
         description: "Read the Gomoku Heroes terms for account access, fair play, and enforcement.",
       },
-      test: {
-        title: "UI Test",
-        description: "A local development route for checking Gomoku Heroes interface pieces.",
-      },
     },
   },
   brand: {
@@ -638,12 +634,6 @@ export const messages = {
       eyebrow: "AI Training Lobby",
       title: "Choose your opponent.",
       lede: "Tune the challenge before the first stone is placed.",
-      rulesButton: "Training Rules",
-    },
-    tabs: {
-      setup: "Setup",
-      analysis: "Analysis",
-      history: "History",
     },
     setup: {
       eyebrow: "Match setup",
@@ -998,12 +988,6 @@ export const messages = {
         eyebrow: "Achievements",
         title: "Unlocked badges",
       },
-      safety: {
-        eyebrow: "Safety",
-        title: "Player controls",
-        reportPlayer: "Report player",
-        blockPlayer: "Block player",
-      },
     },
     page: {
       hero: {
@@ -1302,9 +1286,5 @@ export const messages = {
         },
       },
     },
-  },
-  test: {
-    title: "Tailwind Practice",
-    body: "A small route for checking styling during local development.",
   },
 };
