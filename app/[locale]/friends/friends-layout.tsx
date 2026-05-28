@@ -481,11 +481,14 @@ function FriendsTable({
         </div>
 
         {friends.map((friend) => {
-          const wins = friend.stats?.wins ?? 0;
-          const losses = friend.stats?.losses ?? 0;
-          const played = friend.stats?.matchesPlayed ?? 0;
-
-          const winRate = played > 0 ? Math.round((wins / played) * 100) : 0;
+          const wins = friend.stats?.wins ?? "-";
+          const losses = friend.stats?.losses ?? "-";
+          const rating = friend.stats?.rating ?? "-";
+          const played = friend.stats?.matchesPlayed;
+          const winRate =
+            friend.stats && played && played > 0
+              ? `${Math.round((friend.stats.wins / played) * 100)}%`
+              : "-";
 
           const isRevealed = activeTab === "friends";
           const online = isRevealed && onlineUsers.includes(friend.username);
@@ -502,11 +505,9 @@ function FriendsTable({
                 <UserName user={friend} />
               </div>
 
-              <span className="font-black text-(--brass) tabular-nums">
-                {friend.stats?.rating ?? 0}
-              </span>
+              <span className="font-black text-(--brass) tabular-nums">{rating}</span>
 
-              <span className="font-black text-(--mint) tabular-nums">{winRate}%</span>
+              <span className="font-black text-(--mint) tabular-nums">{winRate}</span>
 
               <span className="font-black text-(--muted-strong) tabular-nums">{wins}</span>
 

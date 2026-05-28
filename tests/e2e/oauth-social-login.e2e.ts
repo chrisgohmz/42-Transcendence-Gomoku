@@ -33,13 +33,13 @@ test("auth pages show OAuth callback errors", async ({ page }) => {
   }
 });
 
-test("account connections show connect, connected, and disconnect OAuth states", async ({
+test("profile connections show connect, connected, and disconnect OAuth states", async ({
   page,
 }, testInfo) => {
   const user = await createAndSignInTestUser(page, testInfo);
 
   try {
-    await gotoAppRoute(page, "/account");
+    await gotoAppRoute(page, "/profile/edit");
 
     const githubConnect = page
       .getByRole("button", { name: "Connect GitHub" })
@@ -61,7 +61,7 @@ test("account connections show connect, connected, and disconnect OAuth states",
       },
     });
 
-    await gotoAppRoute(page, "/account");
+    await gotoAppRoute(page, "/profile/edit");
 
     const googleConnected = page
       .getByRole("button", { name: "Google connected" })
@@ -76,22 +76,20 @@ test("account connections show connect, connected, and disconnect OAuth states",
 
     await expect(disconnect).toHaveCount(1);
     await expect(disconnect).toBeEnabled();
-    await expectNoDocumentOverflow(page, "/account");
+    await expectNoDocumentOverflow(page, "/profile/edit");
   } finally {
     await cleanupTestUsers([user.username]);
   }
 });
 
-test("account pages show OAuth callback errors", async ({ page }, testInfo) => {
+test("profile settings show OAuth callback errors", async ({ page }, testInfo) => {
   const user = await createAndSignInTestUser(page, testInfo);
 
   try {
-    for (const route of ["/account", "/profile/edit"]) {
-      await gotoAppRoute(page, `${route}?error=email_doesn%27t_match`);
-      await expect(
-        page.getByRole("alert").filter({ hasText: "provider email does not match", visible: true }),
-      ).toBeVisible();
-    }
+    await gotoAppRoute(page, "/profile/edit?error=email_doesn%27t_match");
+    await expect(
+      page.getByRole("alert").filter({ hasText: "provider email does not match", visible: true }),
+    ).toBeVisible();
   } finally {
     await cleanupTestUsers([user.username]);
   }

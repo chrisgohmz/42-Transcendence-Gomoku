@@ -545,7 +545,7 @@ export default function HumanMatchRoom({
               <DetailRow label={t("connection.socket")} value={socketStatusText} />
               <DetailRow
                 label={t("connection.version")}
-                value={effectiveUpdate?.stateVersion ?? state?.stateVersion ?? 0}
+                value={effectiveUpdate?.stateVersion ?? state?.stateVersion ?? "-"}
               />
               <DetailRow
                 label={t("connection.you")}

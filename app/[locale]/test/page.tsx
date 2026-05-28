@@ -4,19 +4,6 @@ import { createPageMetadata } from "@/lib/page-metadata";
 
 export const generateMetadata = createPageMetadata("test");
 
-const entries = [
-  {
-    roomId: 1,
-    player: "Mintan",
-    requiresPassword: true,
-  },
-  {
-    roomId: 2,
-    player: "Aiko",
-    requiresPassword: false,
-  },
-];
-
 export default function TestPage() {
   return (
     <main className="min-h-screen bg-slate-950 px-6 py-10 text-white">
@@ -24,7 +11,7 @@ export default function TestPage() {
         <div className="mx-auto max-w-xl">
           <CreateRoomCard />
         </div>
-        <GameLobbyTableClient entries={entries} />
+        <GameLobbyTableClient entries={[]} />
       </section>
     </main>
   );

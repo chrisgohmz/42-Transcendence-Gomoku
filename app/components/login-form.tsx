@@ -101,7 +101,7 @@ export function LoginForm({ oauthErrorMessage = null, oauthProviders }: LoginFor
       </button>
 
       <OAuthProviderButtons
-        callbackPath={`/${locale}/account`}
+        callbackPath={`/${locale}/profile`}
         errorPath={`/${locale}/login`}
         initialErrorMessage={oauthErrorMessage}
         providers={oauthProviders}

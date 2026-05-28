@@ -3,7 +3,6 @@
 import {
   ArrowLeft,
   Bot,
-  BrainCircuit,
   CircleDot,
   Flag,
   LoaderCircle,
@@ -448,7 +447,7 @@ export default function AiMatchRoom({
               <DetailRow label={t("connection.socket")} value={socketStatus} />
               <DetailRow
                 label={t("connection.version")}
-                value={effectiveUpdate?.stateVersion ?? state?.stateVersion ?? 0}
+                value={effectiveUpdate?.stateVersion ?? state?.stateVersion ?? "-"}
               />
               <DetailRow
                 label={t("connection.you")}
@@ -520,20 +519,6 @@ export default function AiMatchRoom({
         </section>
 
         <aside className="grid content-start gap-5">
-          <Surface eyebrow={t("model.eyebrow")} icon={BrainCircuit} title={difficultyName}>
-            <div className="grid gap-3 text-sm">
-              <DetailRow
-                label={t("model.depth")}
-                value={t("model.depthValue", { plies: difficulty.engine.searchDepth })}
-              />
-              <DetailRow label={t("model.candidates")} value={difficulty.engine.candidateLimit} />
-              <DetailRow
-                label={t("model.randomness")}
-                value={`${Math.round(difficulty.engine.mistakeChance * 100)}%`}
-              />
-            </div>
-          </Surface>
-
           <Surface eyebrow={t("match.eyebrow")} icon={Trophy} title={t("match.title")}>
             <div className="grid gap-3 text-sm">
               <DetailRow label={t("match.match")} value={session.matchId.slice(0, 8)} />

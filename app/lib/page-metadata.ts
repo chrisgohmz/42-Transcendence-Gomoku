@@ -16,7 +16,6 @@ export type PageMetadataProps = {
 };
 
 const staticPagePaths = {
-  account: "/account",
   ai: "/ai",
   editProfile: "/profile/edit",
   forgotPassword: "/forgot-password",
@@ -36,7 +35,6 @@ const staticPagePaths = {
 } as const satisfies Record<StaticMetadataPageKey, `/${string}`>;
 
 const noIndexPages = new Set<MetadataPageKey>([
-  "account",
   "editProfile",
   "forgotPassword",
   "friends",

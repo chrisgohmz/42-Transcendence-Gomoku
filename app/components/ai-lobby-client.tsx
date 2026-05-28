@@ -12,7 +12,6 @@ import {
   Gauge,
   Info,
   Lightbulb,
-  Play,
   Radio,
   ShieldCheck,
   Sparkles,
@@ -84,30 +83,6 @@ const toneClasses = {
   },
 } as const satisfies Record<AiDifficultyTone, { border: string; icon: string }>;
 
-const trainingRows = [
-  {
-    dateKey: "training.dates.may14_2026",
-    difficultyId: "expert",
-    moves: "162",
-    notesKey: "training.notes.blackPrivate",
-    resultKey: "training.results.win",
-  },
-  {
-    dateKey: "training.dates.may13_2026",
-    difficultyId: "apprentice",
-    moves: "128",
-    notesKey: "training.notes.whitePrivate",
-    resultKey: "training.results.win",
-  },
-  {
-    dateKey: "training.dates.may12_2026",
-    difficultyId: "beginner",
-    moves: "96",
-    notesKey: "training.notes.blackPrivate",
-    resultKey: "training.results.win",
-  },
-] as const;
-
 function getErrorMessage(payload: ErrorResponse | null, fallback: string) {
   return payload?.message ?? payload?.detail ?? payload?.error ?? fallback;
 }
@@ -140,16 +115,11 @@ export default function AiLobbyClient() {
     return {
       ...selectedDifficulty,
       name: t(`difficulty.names.${id}`),
-      range: t(`difficulty.ranges.${id}`),
       summary: t(`difficulty.summaries.${id}`),
       description: t(`difficulty.descriptions.${id}`),
       strengths: selectedDifficulty.strengthIds.map((strengthId) =>
         t(`difficulty.strengths.${id}.${strengthId}`),
       ),
-      stats: selectedDifficulty.stats.map((stat) => ({
-        ...stat,
-        label: t(`difficulty.statLabels.${stat.id}`),
-      })),
       traits: selectedDifficulty.traits.map((trait) => ({
         ...trait,
         label: t(`difficulty.traitLabels.${trait.labelId}`),
@@ -376,8 +346,7 @@ export default function AiLobbyClient() {
                           {t(`difficulty.summaries.${difficulty.id}`)}
                         </span>
                       </span>
-                      <span className="flex items-center gap-2 text-xs font-black text-[var(--muted-strong)] tabular-nums">
-                        {t(`difficulty.ranges.${difficulty.id}`)}
+                      <span className="flex items-center justify-end gap-2 text-xs font-black text-[var(--muted-strong)]">
                         {selected ? (
                           <span className="grid size-5 place-items-center rounded-full bg-[var(--text)] text-[var(--panel-solid)]">
                             <Check aria-hidden="true" className="size-3" />
@@ -494,9 +463,6 @@ export default function AiLobbyClient() {
                         aria-hidden="true"
                       />
                     </div>
-                    <p className="m-0 text-sm font-bold text-[var(--muted-strong)]">
-                      {translatedSelectedDifficulty.range}
-                    </p>
                     <Badge tone="brass">
                       <Gauge aria-hidden="true" className="size-3.5" />
                       {t("preview.difficultyBadge", {
@@ -521,33 +487,6 @@ export default function AiLobbyClient() {
                       </p>
                     ))}
                   </div>
-                </div>
-
-                <div className="grid gap-2">
-                  {translatedSelectedDifficulty.stats.map((stat) => (
-                    <div
-                      key={stat.id}
-                      className="grid grid-cols-[88px_minmax(0,1fr)_42px] items-center gap-3"
-                    >
-                      <span className="text-sm font-bold text-[var(--muted-text)]">
-                        {stat.label}
-                      </span>
-                      <span className="grid grid-cols-8 gap-1">
-                        {Array.from({ length: 8 }, (_, index) => (
-                          <span
-                            key={index}
-                            className={cn(
-                              "h-3 rounded-sm",
-                              index < stat.bars ? "bg-[var(--mint)]/80" : "bg-white/[0.09]",
-                            )}
-                          />
-                        ))}
-                      </span>
-                      <span className="text-right text-sm font-black tabular-nums">
-                        {stat.value}
-                      </span>
-                    </div>
-                  ))}
                 </div>
 
                 <blockquote className="m-0 rounded-md border border-[var(--panel-border-soft)] bg-white/[0.035] p-2.5 text-sm leading-6 font-bold text-[var(--muted-strong)]">
@@ -576,45 +515,6 @@ export default function AiLobbyClient() {
               })}
             </div>
           </Surface>
-
-          <Surface className="!gap-2 !p-3" eyebrow={t("training.eyebrow")}>
-            <div className="overflow-x-auto rounded-md border border-[var(--panel-border-soft)] bg-white/[0.025]">
-              <div className="min-w-[680px]">
-                <div className="grid grid-cols-[1.2fr_0.6fr_0.6fr_0.9fr_1fr_auto] gap-3 border-b border-[var(--panel-border-soft)] bg-black/20 px-4 py-2 text-xs font-black tracking-[0.12em] text-[var(--muted-text)] uppercase">
-                  <span>{t("training.headers.level")}</span>
-                  <span>{t("training.headers.result")}</span>
-                  <span>{t("training.headers.moves")}</span>
-                  <span>{t("training.headers.date")}</span>
-                  <span>{t("training.headers.notes")}</span>
-                  <span />
-                </div>
-                {trainingRows.map((row) => (
-                  <div
-                    key={`${row.difficultyId}-${row.dateKey}`}
-                    className="grid min-h-10 grid-cols-[1.2fr_0.6fr_0.6fr_0.9fr_1fr_auto] items-center gap-3 border-b border-[var(--panel-border-soft)] px-4 py-1.5 text-sm last:border-b-0 hover:bg-white/[0.045]"
-                  >
-                    <span className="font-black">{t(`training.rows.${row.difficultyId}`)}</span>
-                    <span className="font-black text-[var(--mint)]">{t(row.resultKey)}</span>
-                    <span className="font-bold text-[var(--muted-strong)] tabular-nums">
-                      {row.moves}
-                    </span>
-                    <span className="font-bold text-[var(--muted-text)]">{t(row.dateKey)}</span>
-                    <span className="font-bold text-[var(--muted-strong)]">{t(row.notesKey)}</span>
-                    <button
-                      type="button"
-                      className="grid size-8 place-items-center rounded-full border border-[var(--brass)]/40 text-[var(--brass)] hover:bg-[var(--brass-soft)]"
-                      aria-label={t("training.reviewAria", {
-                        date: t(row.dateKey),
-                        level: t(`training.rows.${row.difficultyId}`),
-                      })}
-                    >
-                      <Play aria-hidden="true" className="size-3.5 fill-current" />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </Surface>
         </div>
 
         <aside className="grid content-start gap-5 xl:grid-cols-2 2xl:grid-cols-1">
@@ -626,7 +526,7 @@ export default function AiLobbyClient() {
                   <article
                     key={difficulty.id}
                     className={cn(
-                      "grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 rounded-md border bg-white/[0.025] p-2.5",
+                      "grid grid-cols-[auto_minmax(0,1fr)] items-center gap-3 rounded-md border bg-white/[0.025] p-2.5",
                       difficulty.id === selectedDifficultyId
                         ? colors.border
                         : "border-[var(--panel-border-soft)]",
@@ -647,9 +547,6 @@ export default function AiLobbyClient() {
                       <span className="block text-sm leading-5 text-[var(--muted-text)]">
                         {t(`difficulty.descriptions.${difficulty.id}`)}
                       </span>
-                    </span>
-                    <span className="text-sm font-black text-[var(--muted-strong)] tabular-nums">
-                      {t(`difficulty.ranges.${difficulty.id}`)}
                     </span>
                   </article>
                 );

@@ -66,7 +66,6 @@ export default async function AppSidebar() {
       notificationCount: unreadMessagesCount,
     },
     { href: "/profile", icon: "profile", label: nav("userMenu.profile") },
-    // { href: "/account", icon: "account", label: "Settings" },
   ];
 
   return (

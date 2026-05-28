@@ -86,11 +86,11 @@ describe("buildPageMetadata", () => {
   test("marks private utility routes noindex", async () => {
     const metadata = await buildPageMetadata({
       locale: "en",
-      page: "account",
-      path: "/account",
+      page: "editProfile",
+      path: "/profile/edit",
     });
 
-    expect(metadata.title).toBe("Account Settings | Gomoku Heroes");
+    expect(metadata.title).toBe("Edit Profile | Gomoku Heroes");
     expect(metadata.robots).toEqual({ follow: false, index: false });
   });
 

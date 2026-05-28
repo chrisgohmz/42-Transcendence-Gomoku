@@ -6,10 +6,6 @@ export const messages = {
     description:
       "Train against AI, challenge friends, and track your Gomoku ladder in Gomoku Heroes.",
     pages: {
-      account: {
-        title: "Account Settings",
-        description: "Manage your Gomoku Heroes account, profile, security, and connections.",
-      },
       ai: {
         title: "vs AI",
         description: "Practice Gomoku against adjustable AI opponents and review your training.",
@@ -132,22 +128,15 @@ export const messages = {
     auth: {
       label: "Authentication",
       description:
-        "Sign up to create a session cookie, then visit the protected account page to verify guards, server-side session checks, and logout flows.",
+        "Sign up to create a session cookie, then visit your profile to verify guards, server-side session checks, and logout flows.",
       createAccount: "Create account",
       signIn: "Sign in",
-      accountPage: "Account page",
+      profilePage: "Profile page",
     },
     dashboard: {
-      status: {
-        onlinePlayers: "{count} players online",
-      },
       hero: {
         title: "Master the board.",
         lede: "Choose a drill, challenge a human, or scan the live ladder before committing your next five-stone line.",
-      },
-      stats: {
-        playersOnline: "Players Online",
-        openRooms: "Open Rooms",
       },
       board: {
         label: "Live ranked board",
@@ -162,20 +151,6 @@ export const messages = {
           title: "Challenge Human",
           cta: "Challenge Human",
           body: "Create a room, join a waiting table, or send a direct challenge to a rival.",
-        },
-      },
-      snapshot: {
-        eyebrow: "Ranked Snapshot",
-        title: "Top movement",
-      },
-      activity: {
-        eyebrow: "Recent Activity",
-        title: "The room is moving",
-        items: {
-          wonByOpenFour: "won by open four",
-          openedPrivateStudyRoom: "opened a private study room",
-          crossed1900Rating: "crossed 1,900 rating",
-          acceptedRematch: "accepted a rematch",
         },
       },
     },
@@ -339,107 +314,6 @@ export const messages = {
       duplicateAccount: "An account with that email or username already exists.",
       signupVerificationEmailSent: "Check your email to verify your account before signing in.",
       signupUnavailable: "Unable to create your account right now.",
-    },
-  },
-  account: {
-    eyebrow: "Private area",
-    fallbackTitle: "Account",
-    loadError: "Unable to load your session.",
-    signedInLede: "You are signed in. Use this page to verify session state and exit securely.",
-    signedOutLede: "Sign in to access your account details and protected pages.",
-    signedInUser: "Signed-in user",
-    displayName: "Display name:",
-    username: "Username:",
-    email: "Email:",
-    emailMissing: "Not provided",
-    sessionExpires: "Session expires:",
-    backHome: "Back to home",
-    settings: {
-      eyebrow: "Settings",
-      title: "Account Settings",
-      emailVerified: "Email verified",
-      emailPending: "Email pending",
-      preferences: "Preferences",
-      sidebar: {
-        profile: "Profile",
-        security: "Security",
-        connections: "Connections",
-        language: "Language",
-        privacy: "Privacy",
-        notifications: "Notifications",
-        danger: "Danger Zone",
-      },
-      sections: {
-        profile: {
-          eyebrow: "Profile",
-          title: "Profile Information",
-          saveChanges: "Save Changes",
-        },
-        security: {
-          eyebrow: "Security",
-          title: "Email and Password",
-          password: "Password",
-          updatedRecently: "Updated recently",
-          sessionCreated: "Session created",
-        },
-        connections: {
-          eyebrow: "OAuth",
-          title: "Connected Providers",
-          description:
-            "Link GitHub or Google so you can sign in through OAuth without changing your local password flow.",
-          connected: "Connected",
-          notConnected: "Not connected",
-          ready: "Ready for OAuth",
-          notConfigured: "OAuth credentials are not configured for this provider.",
-          connect: "Connect",
-          connectWithProvider: "Connect {provider}",
-          connectedWithProvider: "{provider} connected",
-          connecting: "Connecting...",
-          disconnect: "Disconnect",
-          disconnecting: "Disconnecting...",
-          connectError: "Unable to connect {provider} right now.",
-          disconnectError: "Unable to disconnect {provider} right now.",
-          lastAccount: "Add another sign-in method before disconnecting this one.",
-          callbackErrors: {
-            accountAlreadyLinked: "That OAuth account is already connected to another player.",
-            accountNotLinked:
-              "OAuth connection was blocked because this provider account cannot be linked automatically.",
-            emailMismatch:
-              "OAuth connection blocked: the provider email does not match this account.",
-            generic:
-              "OAuth connection could not be completed. Try again or choose another provider account.",
-            unableToLink:
-              "OAuth connection could not be linked to this account. Try again or choose another provider account.",
-          },
-        },
-        language: {
-          eyebrow: "Language",
-          title: "Region",
-          interfaceLanguage: "Interface language",
-          timeZone: "Time zone",
-        },
-        privacy: {
-          eyebrow: "Privacy",
-          title: "Visibility",
-          showOnlineStatus: "Show online status",
-          allowMatchInvites: "Allow match invites",
-          hideRatingFromStrangers: "Hide rating from strangers",
-        },
-        notifications: {
-          eyebrow: "Notifications",
-          title: "Alerts",
-          friendRequests: "Friend requests",
-          matchReminders: "Match reminders",
-          marketingEmail: "Marketing email",
-        },
-        danger: {
-          eyebrow: "Danger Zone",
-          title: "Account Removal",
-          description:
-            "Deleting an account removes profile access and disconnects active sessions. Match records may remain in aggregate ranking history.",
-          deleteAccount: "Delete Account",
-        },
-      },
     },
   },
   friends: {
@@ -627,7 +501,6 @@ export const messages = {
         rules: "Rules",
         players: "Players",
         privacy: "Privacy",
-        ping: "Ping",
       },
       empty: "No rooms yet.",
       roomName: "{player}'s room",
@@ -808,22 +681,11 @@ export const messages = {
         expert: "Expert",
         master: "Master",
       },
-      ranges: {
-        beginner: "Level 1 - 800",
-        apprentice: "Level 2 - 1100",
-        expert: "Level 5 - 1700",
-        master: "Level 8 - 2300",
-      },
       summaries: {
         beginner: "Calm openings",
         apprentice: "Balanced reading",
         expert: "Sharp tactics",
         master: "Tournament strength",
-      },
-      statLabels: {
-        accuracy: "Accuracy",
-        aggression: "Aggression",
-        defense: "Defense",
       },
       descriptions: {
         beginner: "Learns local shapes, misses some forcing lines, and favors readable moves.",
@@ -875,34 +737,6 @@ export const messages = {
           defendsForcingLadders: "Defends forcing ladders",
           convertsWinningRaces: "Converts winning races",
         },
-      },
-    },
-    training: {
-      eyebrow: "Recent AI training",
-      headers: {
-        level: "Level",
-        result: "Result",
-        moves: "Moves",
-        date: "Date",
-        notes: "Notes",
-      },
-      reviewAria: "Review {level} training from {date}",
-      results: {
-        win: "Win",
-      },
-      rows: {
-        beginner: "Beginner (800)",
-        apprentice: "Apprentice (1100)",
-        expert: "Expert (1700)",
-      },
-      dates: {
-        may12_2026: "May 12, 2026",
-        may13_2026: "May 13, 2026",
-        may14_2026: "May 14, 2026",
-      },
-      notes: {
-        blackPrivate: "Black - private",
-        whitePrivate: "White - private",
       },
     },
     summary: {
@@ -970,13 +804,6 @@ export const messages = {
         title: "Notation",
         empty: "No moves yet.",
       },
-      model: {
-        eyebrow: "AI model",
-        depth: "Depth",
-        depthValue: "{plies} plies",
-        candidates: "Candidates",
-        randomness: "Randomness",
-      },
       status: {
         badge: {
           loading: "Loading",
@@ -1018,53 +845,6 @@ export const messages = {
       },
     },
   },
-  game: {
-    pageTitle: "Active game vs AI",
-    ai: {
-      eyebrow: "AI Opponent",
-      title: "Kata Reader",
-      description: "Depth 6 reads the center fight and recommends quiet threats before overplays.",
-      metrics: {
-        positionConfidence: "Position Confidence",
-        initiativeSwing: "Initiative Swing",
-      },
-      suggestionLabel: "Suggestion",
-      suggestion: "Extend at D7 to connect the lower diagonal and force white to defend.",
-    },
-    controls: {
-      undo: "Undo",
-      restart: "Restart",
-      rules: "Rules",
-      resign: "Resign",
-    },
-    match: {
-      roomEyebrow: "Room 1024",
-      roomTitle: "Ranked Match",
-      turn: "Black to Move",
-      details: {
-        rulesLabel: "Rules",
-        rulesValue: "15 x 15 / Standard",
-        captureLabel: "Capture",
-        captureValue: "Disabled",
-        spectatorsLabel: "Spectators",
-        spectatorsValue: "3",
-        openingLabel: "Opening",
-        openingValue: "Free",
-      },
-    },
-    history: {
-      eyebrow: "Move History",
-      title: "Last sequence",
-      lastBadge: "last",
-    },
-    status: {
-      eyebrow: "Game Status",
-      title: "Threat map",
-      openThree: "Open three on lower diagonal",
-      whiteMustBlockD7: "White must block D7",
-      blackTempoRetained: "Black tempo retained",
-    },
-  },
   leaderboard: {
     eyebrow: "Rankings",
     title: "Leaderboard",
@@ -1080,7 +860,7 @@ export const messages = {
       },
       overview: {
         eyebrow: "Ranked Table",
-        title: "Top 100",
+        title: "Live standings",
       },
       spotlight: {
         rankLabel: "Your Rank",
@@ -1112,7 +892,7 @@ export const messages = {
       },
       season: {
         eyebrow: "Season",
-        title: "Spring Ladder",
+        title: "Current ladder",
         daysLeft: "Days Left",
         ratedMatches: "Rated Matches",
       },
@@ -1127,11 +907,7 @@ export const messages = {
       },
       topPlayers: {
         eyebrow: "Top Players",
-        title: "This Week",
-        badges: {
-          mvp: "MVP",
-          boost: "+7",
-        },
+        title: "Current leaders",
       },
       unavailable: {
         title: "Leaderboard unavailable",
@@ -1152,8 +928,6 @@ export const messages = {
         description: "Play rated matches to appear on the leaderboard.",
       },
       preview: "Preview standings are shown until completed matches report results.",
-      trend: "Trend",
-      active: "Active",
     },
   },
   messagesPage: {
@@ -1205,10 +979,6 @@ export const messages = {
       badge: "Public profile",
       challenge: "Challenge",
       goBack: "Go Back",
-      progress: {
-        eyebrow: "Rating Progress",
-        title: "Season curve",
-      },
       recentMatches: {
         eyebrow: "Recent Matches",
         title: "Scouting sample",
@@ -1216,26 +986,17 @@ export const messages = {
           won: "Won",
           lost: "Lost",
         },
-        items: {
-          wonAgainstTenkei: "Won against Tenkei",
-          lostAgainstHoshi: "Lost against Hoshi",
-          wonAgainstMokuren: "Won against Mokuren",
-        },
       },
       headToHead: {
         eyebrow: "Head to Head",
         title: "Against you",
         wins: "Wins",
         losses: "Losses",
+        unavailable: "Head-to-head stats appear after you sign in and view another player.",
       },
       achievements: {
         eyebrow: "Achievements",
-        title: "Known marks",
-        items: {
-          sharpOpening: "Sharp Opening",
-          calmEndgame: "Calm Endgame",
-          fastRematch: "Fast Rematch",
-        },
+        title: "Unlocked badges",
       },
       safety: {
         eyebrow: "Safety",
@@ -1380,7 +1141,36 @@ export const messages = {
         preview: {
           eyebrow: "Preview",
           title: "Public card",
-          rank: "5-dan",
+        },
+      },
+      connections: {
+        eyebrow: "OAuth",
+        title: "Connected Providers",
+        description:
+          "Link GitHub or Google so you can sign in through OAuth without changing your local password flow.",
+        connected: "Connected",
+        notConnected: "Not connected",
+        ready: "Ready for OAuth",
+        notConfigured: "OAuth credentials are not configured for this provider.",
+        connect: "Connect",
+        connectWithProvider: "Connect {provider}",
+        connectedWithProvider: "{provider} connected",
+        connecting: "Connecting...",
+        disconnect: "Disconnect",
+        disconnecting: "Disconnecting...",
+        connectError: "Unable to connect {provider} right now.",
+        disconnectError: "Unable to disconnect {provider} right now.",
+        lastAccount: "Add another sign-in method before disconnecting this one.",
+        callbackErrors: {
+          accountAlreadyLinked: "That OAuth account is already connected to another player.",
+          accountNotLinked:
+            "OAuth connection was blocked because this provider account cannot be linked automatically.",
+          emailMismatch:
+            "OAuth connection blocked: the provider email does not match this account.",
+          generic:
+            "OAuth connection could not be completed. Try again or choose another provider account.",
+          unableToLink:
+            "OAuth connection could not be linked to this account. Try again or choose another provider account.",
         },
       },
       basicInformation: "Basic Information",
@@ -1488,9 +1278,6 @@ export const messages = {
       contents: {
         eyebrow: "Contents",
         title: "On this page",
-      },
-      metrics: {
-        documentSections: "Document Sections",
       },
       document: {
         eyebrow: "Privacy Document",

@@ -1,6 +1,6 @@
 "use client";
 
-import { Bot, Home, MessageSquare, Settings, Swords, Trophy, UserRound, Users } from "lucide-react";
+import { Bot, Home, MessageSquare, Swords, Trophy, UserRound, Users } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 
@@ -8,7 +8,6 @@ import { usePresence } from "@/components/presence-provider";
 import { Link, usePathname } from "@/i18n/navigation";
 
 const icons = {
-  account: Settings,
   friends: Users,
   game: Bot,
   home: Home,

@@ -67,9 +67,6 @@ async function ProfilePageContent({ params }: ProfilePageProps) {
               <Pencil aria-hidden="true" className="size-4" />
               {t("editProfile")}
             </Link>
-            {/* <Link href="/account" className="btn btn-subtle m-0">
-              Account Settings
-            </Link> */}
           </div>
         </div>
       </section>

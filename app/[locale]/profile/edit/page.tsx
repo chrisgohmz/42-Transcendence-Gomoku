@@ -3,7 +3,7 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import { headers } from "next/headers";
 import { Suspense } from "react";
 
-import { AvatarToken, Badge, PageHeader, PageShell, Surface } from "@/components/gomoku-ui";
+import { AvatarToken, PageHeader, PageShell, Surface } from "@/components/gomoku-ui";
 import {
   OAuthAccountConnections,
   type OAuthProviderConnection,
@@ -77,15 +77,14 @@ async function EditProfilePageContent({ params, searchParams }: EditProfilePageP
     return null;
   }
 
-  const [accountT, oauthProviders, t, hasPassword, oauthErrorMessage] = await Promise.all([
-    getTranslations({ locale, namespace: "account" }),
+  const [oauthProviders, t, hasPassword, oauthErrorMessage] = await Promise.all([
     loadOAuthProviders(),
     getTranslations({ locale, namespace: "profile.edit" }),
     hasCredentialPassword(sessionData.user.id),
     getOAuthCallbackErrorMessage({
-      keyPrefix: "settings.sections.connections.callbackErrors",
+      keyPrefix: "connections.callbackErrors",
       locale,
-      namespace: "account",
+      namespace: "profile.edit",
       searchParams,
     }),
   ]);
@@ -123,7 +122,6 @@ async function EditProfilePageContent({ params, searchParams }: EditProfilePageP
                   @{sessionData.user.username}
                 </p>
               </div>
-              <Badge tone="brass">{t("page.preview.rank")}</Badge>
             </div>
           </Surface>
         </aside>
@@ -135,9 +133,9 @@ async function EditProfilePageContent({ params, searchParams }: EditProfilePageP
             hasPassword={hasPassword}
           />
           <Surface
-            eyebrow={accountT("settings.sections.connections.eyebrow")}
+            eyebrow={t("connections.eyebrow")}
             icon={KeyRound}
-            title={accountT("settings.sections.connections.title")}
+            title={t("connections.title")}
           >
             <OAuthAccountConnections
               callbackPath="/profile/edit"

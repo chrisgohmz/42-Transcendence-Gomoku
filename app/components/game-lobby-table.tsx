@@ -44,13 +44,7 @@ export default function GameLobbyTable({
       id,
       entry,
       name: entry.name || t("roomName", { player: entry.player }),
-      ping: entry.roomId && entry.roomId % 2 === 0 ? "28ms" : "45ms",
-      players:
-        typeof entry.playerCount === "number"
-          ? `${entry.playerCount}/2`
-          : entry.requiresPassword
-            ? "1/2"
-            : "2/2",
+      players: typeof entry.playerCount === "number" ? `${entry.playerCount}/2` : "-",
       privacy: isPublic ? t("privacy.public") : t("privacy.private"),
       isLive,
       isPublic,
@@ -66,12 +60,11 @@ export default function GameLobbyTable({
         aria-busy={isLoading}
       >
         <div className="min-w-[760px]">
-          <div className="grid grid-cols-[minmax(180px,1.25fr)_90px_88px_98px_78px_72px] gap-3 border-b border-(--panel-border-soft) bg-black/20 px-4 py-3 text-xs font-black tracking-[0.12em] text-(--muted-text) uppercase">
+          <div className="grid grid-cols-[minmax(180px,1.25fr)_90px_88px_98px_72px] gap-3 border-b border-(--panel-border-soft) bg-black/20 px-4 py-3 text-xs font-black tracking-[0.12em] text-(--muted-text) uppercase">
             <span>{t("headers.room")}</span>
             <span>{t("headers.rules")}</span>
             <span>{t("headers.players")}</span>
             <span>{t("headers.privacy")}</span>
-            <span>{t("headers.ping")}</span>
             <span />
           </div>
           {error && !passwordPrompt ? (
@@ -86,7 +79,7 @@ export default function GameLobbyTable({
             rows.map((row) => (
               <article
                 key={row.id}
-                className="grid min-h-16 grid-cols-[minmax(180px,1.25fr)_90px_88px_98px_78px_72px] items-center gap-3 border-b border-(--panel-border-soft) px-4 py-3 last:border-b-0 hover:bg-white/5"
+                className="grid min-h-16 grid-cols-[minmax(180px,1.25fr)_90px_88px_98px_72px] items-center gap-3 border-b border-(--panel-border-soft) px-4 py-3 last:border-b-0 hover:bg-white/5"
               >
                 <div className="flex min-w-0 items-center gap-3">
                   <span
@@ -111,7 +104,6 @@ export default function GameLobbyTable({
                   )}
                   {row.privacy}
                 </Badge>
-                <span className="text-sm font-black text-(--brass) tabular-nums">{row.ping}</span>
                 <button
                   type="button"
                   className="grid size-10 place-items-center rounded-md border border-(--panel-border-soft) bg-white/3.5 text-(--muted-strong) hover:bg-white/7"

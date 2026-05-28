@@ -8,10 +8,6 @@ export const messages = {
     titleTemplate: "{pageTitle} | {appName}",
     description: "AI 練習、フレンドとの対局、ランキング管理を楽しめる五目並べヒーローズです。",
     pages: {
-      account: {
-        title: "アカウント設定",
-        description: "五目並べヒーローズのプロフィール、セキュリティ、連携を管理します。",
-      },
       ai: {
         title: "AI 戦",
         description: "強さを調整できる AI と五目並べを練習し、対局を振り返ります。",
@@ -132,22 +128,15 @@ export const messages = {
     auth: {
       label: "認証",
       description:
-        "アカウントを作成してセッション Cookie を発行し、保護されたアカウントページでガード、サーバー側セッション確認、ログアウトを検証できます。",
+        "アカウントを作成してセッション Cookie を発行し、プロフィールでガード、サーバー側セッション確認、ログアウトを検証できます。",
       createAccount: "アカウント作成",
       signIn: "ログイン",
-      accountPage: "アカウントページ",
+      profilePage: "プロフィールページ",
     },
     dashboard: {
-      status: {
-        onlinePlayers: "{count} 人がオンライン",
-      },
       hero: {
         title: "盤面を極める。",
         lede: "練習、対人戦、ライブランキングの確認をひとつの画面から始められます。次の五目を打つ前に、必要な情報をすばやく見渡しましょう。",
-      },
-      stats: {
-        playersOnline: "オンライン中のプレイヤー",
-        openRooms: "公開中のルーム",
       },
       board: {
         label: "ライブ対局盤面",
@@ -162,20 +151,6 @@ export const messages = {
           title: "対人戦に挑戦",
           cta: "対人戦に挑戦",
           body: "ルームを作成し、空席の卓に参加するか、ライバルへ直接対局を申し込みましょう。",
-        },
-      },
-      snapshot: {
-        eyebrow: "ランキング概況",
-        title: "順位変動",
-      },
-      activity: {
-        eyebrow: "最近の動き",
-        title: "ルームがにぎわっています",
-        items: {
-          wonByOpenFour: "オープンフォーで勝利",
-          openedPrivateStudyRoom: "プライベート研究ルームを開きました",
-          crossed1900Rating: "レーティングが 1,900 を超えました",
-          acceptedRematch: "再戦に応じました",
         },
       },
     },
@@ -341,107 +316,6 @@ export const messages = {
       signupVerificationEmailSent:
         "ログインする前に、メール内のリンクからアカウントを確認してください。",
       signupUnavailable: "現在アカウントを作成できません。",
-    },
-  },
-  account: {
-    eyebrow: "プライベートエリア",
-    fallbackTitle: "アカウント",
-    loadError: "セッションを読み込めません。",
-    signedInLede: "ログイン済みです。このページでセッション状態の確認と安全な終了ができます。",
-    signedOutLede: "アカウント詳細と保護ページにアクセスするにはログインしてください。",
-    signedInUser: "ログイン中のユーザー",
-    displayName: "表示名:",
-    username: "ユーザー名:",
-    email: "メール:",
-    emailMissing: "未設定",
-    sessionExpires: "セッション期限:",
-    backHome: "ホームへ戻る",
-    settings: {
-      eyebrow: "設定",
-      title: "アカウント設定",
-      emailVerified: "メール確認済み",
-      emailPending: "メール未確認",
-      preferences: "設定メニュー",
-      sidebar: {
-        profile: "プロフィール",
-        security: "セキュリティ",
-        connections: "連携",
-        language: "言語",
-        privacy: "プライバシー",
-        notifications: "通知",
-        danger: "危険ゾーン",
-      },
-      sections: {
-        profile: {
-          eyebrow: "プロフィール",
-          title: "プロフィール情報",
-          saveChanges: "変更を保存",
-        },
-        security: {
-          eyebrow: "セキュリティ",
-          title: "メールとパスワード",
-          password: "パスワード",
-          updatedRecently: "最近更新済み",
-          sessionCreated: "セッション作成日時",
-        },
-        connections: {
-          eyebrow: "OAuth",
-          title: "連携プロバイダー",
-          description:
-            "GitHub または Google を連携すると、ローカルのパスワード認証を残したまま OAuth でログインできます。",
-          connected: "連携済み",
-          notConnected: "未連携",
-          ready: "OAuth 利用可能",
-          notConfigured: "このプロバイダーの OAuth 認証情報が未設定です。",
-          connect: "連携",
-          connectWithProvider: "{provider} を連携",
-          connectedWithProvider: "{provider} 連携済み",
-          connecting: "連携中...",
-          disconnect: "解除",
-          disconnecting: "解除中...",
-          connectError: "{provider} を連携できません。",
-          disconnectError: "{provider} の連携を解除できません。",
-          lastAccount: "解除する前に別のログイン方法を追加してください。",
-          callbackErrors: {
-            accountAlreadyLinked: "その OAuth アカウントは別のプレイヤーに連携済みです。",
-            accountNotLinked:
-              "このプロバイダーアカウントは自動連携できないため OAuth 連携を停止しました。",
-            emailMismatch:
-              "OAuth 連携を停止しました。プロバイダーのメールがこのアカウントと一致しません。",
-            generic:
-              "OAuth 連携を完了できませんでした。もう一度試すか、別のプロバイダーアカウントを選んでください。",
-            unableToLink:
-              "OAuth 連携をこのアカウントに保存できませんでした。もう一度試すか、別のプロバイダーアカウントを選んでください。",
-          },
-        },
-        language: {
-          eyebrow: "言語",
-          title: "言語と地域",
-          interfaceLanguage: "表示言語",
-          timeZone: "タイムゾーン",
-        },
-        privacy: {
-          eyebrow: "プライバシー",
-          title: "公開設定",
-          showOnlineStatus: "オンライン状態を表示",
-          allowMatchInvites: "対局招待を許可",
-          hideRatingFromStrangers: "見知らぬ相手にはレーティングを非表示",
-        },
-        notifications: {
-          eyebrow: "通知",
-          title: "通知設定",
-          friendRequests: "フレンド申請",
-          matchReminders: "対局リマインダー",
-          marketingEmail: "案内メール",
-        },
-        danger: {
-          eyebrow: "危険ゾーン",
-          title: "アカウント削除",
-          description:
-            "アカウントを削除するとプロフィールにアクセスできなくなり、現在のセッションは切断されます。対局記録は集計されたランキング履歴に残る場合があります。",
-          deleteAccount: "アカウントを削除",
-        },
-      },
     },
   },
   friends: {
@@ -628,7 +502,6 @@ export const messages = {
         rules: "ルール",
         players: "人数",
         privacy: "公開範囲",
-        ping: "Ping",
       },
       empty: "まだルームはありません。",
       roomName: "{player} のルーム",
@@ -800,34 +673,6 @@ export const messages = {
       difficultyBadge: "{difficulty} AI",
       openingPreview: "開局プレビューのみです。まだ対局は始まっていません。",
     },
-    training: {
-      eyebrow: "最近の AI 練習",
-      headers: {
-        level: "レベル",
-        result: "結果",
-        moves: "手数",
-        date: "日付",
-        notes: "メモ",
-      },
-      reviewAria: "{date} の {level} 練習を確認",
-      results: {
-        win: "勝ち",
-      },
-      rows: {
-        beginner: "初心者 (800)",
-        apprentice: "見習い (1100)",
-        expert: "上級 (1700)",
-      },
-      dates: {
-        may12_2026: "2026年5月12日",
-        may13_2026: "2026年5月13日",
-        may14_2026: "2026年5月14日",
-      },
-      notes: {
-        blackPrivate: "黒 - 非公開",
-        whitePrivate: "白 - 非公開",
-      },
-    },
     difficultyGuide: {
       eyebrow: "難易度ガイド",
     },
@@ -838,22 +683,11 @@ export const messages = {
         expert: "上級",
         master: "マスター",
       },
-      ranges: {
-        beginner: "レベル 1 - 800",
-        apprentice: "レベル 2 - 1100",
-        expert: "レベル 5 - 1700",
-        master: "レベル 8 - 2300",
-      },
       summaries: {
         beginner: "穏やかな序盤",
         apprentice: "バランスの取れた読み",
         expert: "鋭い戦術",
         master: "大会レベルの強さ",
-      },
-      statLabels: {
-        accuracy: "正確性",
-        aggression: "攻撃性",
-        defense: "防御",
       },
       traitLabels: {
         openingStyle: "序盤スタイル",
@@ -972,13 +806,6 @@ export const messages = {
         title: "棋譜",
         empty: "まだ着手はありません。",
       },
-      model: {
-        eyebrow: "AI モデル",
-        depth: "深さ",
-        depthValue: "{plies} 手読み",
-        candidates: "候補数",
-        randomness: "ランダム性",
-      },
       status: {
         badge: {
           loading: "読み込み中",
@@ -1020,53 +847,6 @@ export const messages = {
       },
     },
   },
-  game: {
-    pageTitle: "AIとの対局中",
-    ai: {
-      eyebrow: "AI対戦相手",
-      title: "定石読解AI",
-      description: "深さ6で中央の攻防を読み、強引な踏み込みよりも静かな脅威を提案します。",
-      metrics: {
-        positionConfidence: "局面信頼度",
-        initiativeSwing: "主導権変化",
-      },
-      suggestionLabel: "提案",
-      suggestion: "D7 に伸びて下側の斜め筋をつなぎ、白に受けを強います。",
-    },
-    controls: {
-      undo: "戻す",
-      restart: "再開",
-      rules: "ルール",
-      resign: "投了",
-    },
-    match: {
-      roomEyebrow: "ルーム 1024",
-      roomTitle: "ランク戦",
-      turn: "黒番",
-      details: {
-        rulesLabel: "ルール",
-        rulesValue: "15 x 15 / 標準",
-        captureLabel: "取り",
-        captureValue: "無効",
-        spectatorsLabel: "観戦者",
-        spectatorsValue: "3",
-        openingLabel: "開始方式",
-        openingValue: "自由",
-      },
-    },
-    history: {
-      eyebrow: "着手履歴",
-      title: "直近の手順",
-      lastBadge: "最新",
-    },
-    status: {
-      eyebrow: "対局状況",
-      title: "脅威マップ",
-      openThree: "下側の斜め筋で三連ができています",
-      whiteMustBlockD7: "白は D7 を止める必要があります",
-      blackTempoRetained: "黒のテンポを維持",
-    },
-  },
   leaderboard: {
     eyebrow: "ランキング",
     title: "ランキング表",
@@ -1082,7 +862,7 @@ export const messages = {
       },
       overview: {
         eyebrow: "ランキング表",
-        title: "上位100名",
+        title: "ライブ順位",
       },
       spotlight: {
         rankLabel: "あなたの順位",
@@ -1114,7 +894,7 @@ export const messages = {
       },
       season: {
         eyebrow: "シーズン",
-        title: "春のラダー",
+        title: "現在のラダー",
         daysLeft: "残り日数",
         ratedMatches: "レート戦数",
       },
@@ -1129,11 +909,7 @@ export const messages = {
       },
       topPlayers: {
         eyebrow: "注目プレイヤー",
-        title: "今週",
-        badges: {
-          mvp: "MVP",
-          boost: "+7",
-        },
+        title: "現在の上位",
       },
       unavailable: {
         title: "ランキングを読み込めません",
@@ -1154,8 +930,6 @@ export const messages = {
         description: "レート戦をプレイするとランキングに表示されます。",
       },
       preview: "完了した対局の結果が届くまで、プレビュー順位を表示しています。",
-      trend: "推移",
-      active: "活動中",
     },
   },
   messagesPage: {
@@ -1208,10 +982,6 @@ export const messages = {
       badge: "公開プロフィール",
       challenge: "対局を申し込む",
       goBack: "戻る",
-      progress: {
-        eyebrow: "レーティング推移",
-        title: "シーズン曲線",
-      },
       recentMatches: {
         eyebrow: "最近の対局",
         title: "対局サンプル",
@@ -1219,26 +989,17 @@ export const messages = {
           won: "勝利",
           lost: "敗北",
         },
-        items: {
-          wonAgainstTenkei: "Tenkei に勝利",
-          lostAgainstHoshi: "Hoshi に敗北",
-          wonAgainstMokuren: "Mokuren に勝利",
-        },
       },
       headToHead: {
         eyebrow: "対戦成績",
         title: "あなたとの対戦",
         wins: "勝利",
         losses: "敗北",
+        unavailable: "ログインして他のプレイヤーを表示すると、直接対戦成績が表示されます。",
       },
       achievements: {
         eyebrow: "実績",
-        title: "称号",
-        items: {
-          sharpOpening: "鋭い序盤",
-          calmEndgame: "落ち着いた終盤",
-          fastRematch: "素早い再戦",
-        },
+        title: "解除済みバッジ",
       },
       safety: {
         eyebrow: "安全",
@@ -1383,7 +1144,36 @@ export const messages = {
         preview: {
           eyebrow: "プレビュー",
           title: "公開プロフィールカード",
-          rank: "5段",
+        },
+      },
+      connections: {
+        eyebrow: "OAuth",
+        title: "連携プロバイダー",
+        description:
+          "GitHub または Google を連携すると、ローカルのパスワード認証を残したまま OAuth でログインできます。",
+        connected: "連携済み",
+        notConnected: "未連携",
+        ready: "OAuth 利用可能",
+        notConfigured: "このプロバイダーの OAuth 認証情報が未設定です。",
+        connect: "連携",
+        connectWithProvider: "{provider} を連携",
+        connectedWithProvider: "{provider} 連携済み",
+        connecting: "連携中...",
+        disconnect: "解除",
+        disconnecting: "解除中...",
+        connectError: "{provider} を連携できません。",
+        disconnectError: "{provider} の連携を解除できません。",
+        lastAccount: "解除する前に別のログイン方法を追加してください。",
+        callbackErrors: {
+          accountAlreadyLinked: "その OAuth アカウントは別のプレイヤーに連携済みです。",
+          accountNotLinked:
+            "このプロバイダーアカウントは自動連携できないため OAuth 連携を停止しました。",
+          emailMismatch:
+            "OAuth 連携を停止しました。プロバイダーのメールがこのアカウントと一致しません。",
+          generic:
+            "OAuth 連携を完了できませんでした。もう一度試すか、別のプロバイダーアカウントを選んでください。",
+          unableToLink:
+            "OAuth 連携をこのアカウントに保存できませんでした。もう一度試すか、別のプロバイダーアカウントを選んでください。",
         },
       },
       basicInformation: "基本情報",
@@ -1492,9 +1282,6 @@ export const messages = {
       contents: {
         eyebrow: "目次",
         title: "このページの内容",
-      },
-      metrics: {
-        documentSections: "文書セクション",
       },
       document: {
         eyebrow: "プライバシー文書",

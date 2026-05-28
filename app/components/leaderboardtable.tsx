@@ -1,4 +1,4 @@
-import { Medal, TrendingUp } from "lucide-react";
+import { Medal } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 type LeaderboardEntry = {
@@ -41,7 +41,7 @@ export default function LeaderboardTable({ entries }: LeaderboardTableProps) {
         data-testid="leaderboard-table"
         className="overflow-hidden rounded-md border border-[var(--panel-border-soft)] bg-white/[0.025]"
       >
-        <div className="hidden grid-cols-[64px_minmax(150px,1fr)_86px_82px_64px_72px_82px_86px] gap-3 border-b border-[var(--panel-border-soft)] bg-black/20 px-4 py-3 text-xs font-black tracking-[0.12em] text-[var(--muted-text)] uppercase md:grid">
+        <div className="hidden grid-cols-[64px_minmax(150px,1fr)_86px_82px_64px_72px_82px] gap-3 border-b border-[var(--panel-border-soft)] bg-black/20 px-4 py-3 text-xs font-black tracking-[0.12em] text-[var(--muted-text)] uppercase md:grid">
           <span>{t("rank")}</span>
           <span>{t("player")}</span>
           <span>{t("rating")}</span>
@@ -49,13 +49,12 @@ export default function LeaderboardTable({ entries }: LeaderboardTableProps) {
           <span>{t("wins")}</span>
           <span>{t("losses")}</span>
           <span>{t("winRate")}</span>
-          <span>{t("trend")}</span>
         </div>
 
         {rows.map((entry) => (
           <article
             key={entry.playerId}
-            className="grid gap-3 border-b border-[var(--panel-border-soft)] px-4 py-3 transition-[background-color] last:border-b-0 hover:bg-white/[0.055] md:grid-cols-[64px_minmax(150px,1fr)_86px_82px_64px_72px_82px_86px] md:items-center"
+            className="grid gap-3 border-b border-[var(--panel-border-soft)] px-4 py-3 transition-[background-color] last:border-b-0 hover:bg-white/[0.055] md:grid-cols-[64px_minmax(150px,1fr)_86px_82px_64px_72px_82px] md:items-center"
           >
             <div className="flex items-center gap-3">
               <span
@@ -76,11 +75,6 @@ export default function LeaderboardTable({ entries }: LeaderboardTableProps) {
               <div className="min-w-0">
                 <p className="m-0 flex min-w-0 items-center gap-2 font-black">
                   <span className="truncate">{entry.player}</span>
-                  <span className="size-2 rounded-full bg-[var(--mint)]" />
-                </p>
-                <p className="m-0 flex items-center gap-1 truncate text-xs text-[var(--muted-text)]">
-                  <TrendingUp aria-hidden="true" className="size-3 text-[var(--mint)]" />
-                  {t("active")}
                 </p>
               </div>
             </div>
@@ -90,7 +84,6 @@ export default function LeaderboardTable({ entries }: LeaderboardTableProps) {
             <Metric label={t("wins")} value={entry.wins} />
             <Metric label={t("losses")} value={entry.losses} />
             <Metric label={t("winRate")} value={entry.winRate} accent />
-            <TrendBar rank={entry.rank} />
           </article>
         ))}
       </div>
@@ -115,21 +108,6 @@ function Metric({
       >
         {value}
       </p>
-    </div>
-  );
-}
-
-function TrendBar({ rank }: { rank: number }) {
-  const width = Math.max(38, 92 - rank * 5);
-
-  return (
-    <div className="hidden items-center gap-2 md:flex">
-      <progress
-        aria-hidden="true"
-        className="csp-progress csp-progress-trend"
-        max={100}
-        value={width}
-      />
     </div>
   );
 }

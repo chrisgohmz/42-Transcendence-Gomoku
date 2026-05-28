@@ -36,7 +36,7 @@ async function LoginPageContent({ params, searchParams }: LoginPageProps) {
   const session = await getCurrentSessionIdentity();
 
   if (session) {
-    redirect({ href: "/account", locale });
+    redirect({ href: "/profile", locale });
   }
 
   const [shared, login, oauthErrorMessage] = await Promise.all([

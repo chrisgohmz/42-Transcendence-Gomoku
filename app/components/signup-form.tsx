@@ -144,7 +144,7 @@ export function SignupForm({ oauthErrorMessage = null, oauthProviders }: SignupF
       </button>
 
       <OAuthProviderButtons
-        callbackPath={`/${locale}/account`}
+        callbackPath={`/${locale}/profile`}
         errorPath={`/${locale}/signup`}
         initialErrorMessage={oauthErrorMessage}
         providers={oauthProviders}

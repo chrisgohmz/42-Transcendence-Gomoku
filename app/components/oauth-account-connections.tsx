@@ -26,13 +26,13 @@ type OAuthAccountConnectionsProps = {
 };
 
 export function OAuthAccountConnections({
-  callbackPath = "/account",
+  callbackPath = "/profile/edit",
   initialMessage = null,
   locale,
   providers,
 }: OAuthAccountConnectionsProps) {
   const router = useRouter();
-  const t = useTranslations("account.settings.sections.connections");
+  const t = useTranslations("profile.edit.connections");
   const [pendingProvider, setPendingProvider] = useState<OAuthProviderId | null>(null);
   const [message, setMessage] = useState<string | null>(initialMessage);
 

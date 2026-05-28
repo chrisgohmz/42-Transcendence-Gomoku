@@ -8,10 +8,6 @@ export const messages = {
     titleTemplate: "{pageTitle} | {appName}",
     description: "在五子棋英雄中练习 AI、挑战好友，并追踪你的五子棋天梯。",
     pages: {
-      account: {
-        title: "账户设置",
-        description: "管理五子棋英雄账户、资料、安全设置和登录连接。",
-      },
       ai: {
         title: "对战 AI",
         description: "与可调难度的 AI 练习五子棋，并回顾训练对局。",
@@ -132,22 +128,15 @@ export const messages = {
     auth: {
       label: "认证",
       description:
-        "注册后会创建会话 Cookie，然后访问受保护的账户页面来验证守卫、服务端会话检查和退出流程。",
+        "注册后会创建会话 Cookie，然后访问个人资料来验证守卫、服务端会话检查和退出流程。",
       createAccount: "创建账户",
       signIn: "登录",
-      accountPage: "账户页面",
+      profilePage: "个人资料页面",
     },
     dashboard: {
-      status: {
-        onlinePlayers: "{count} 名玩家在线",
-      },
       hero: {
         title: "掌控棋盘。",
         lede: "从练习、真人对战到实时排行榜，一屏即可开始。下下一手之前，先快速看清局面。",
-      },
-      stats: {
-        playersOnline: "在线玩家",
-        openRooms: "开放房间",
       },
       board: {
         label: "实时排位棋盘",
@@ -162,20 +151,6 @@ export const messages = {
           title: "发起真人对战",
           cta: "发起真人对战",
           body: "创建房间、加入等待中的桌位，或者直接向对手发起挑战。",
-        },
-      },
-      snapshot: {
-        eyebrow: "排位概览",
-        title: "排名变动",
-      },
-      activity: {
-        eyebrow: "最近动态",
-        title: "房间正在活跃",
-        items: {
-          wonByOpenFour: "以活四取胜",
-          openedPrivateStudyRoom: "开启了私人研究房间",
-          crossed1900Rating: "等级分突破 1,900",
-          acceptedRematch: "接受了重赛",
         },
       },
     },
@@ -335,102 +310,6 @@ export const messages = {
       duplicateAccount: "该邮箱或用户名已被使用。",
       signupVerificationEmailSent: "请先查看邮件并验证账户，然后再登录。",
       signupUnavailable: "现在无法创建账户。",
-    },
-  },
-  account: {
-    eyebrow: "私人区域",
-    fallbackTitle: "账户",
-    loadError: "无法加载你的会话。",
-    signedInLede: "你已登录。可在此页面验证会话状态并安全退出。",
-    signedOutLede: "请登录以访问账户详情和受保护页面。",
-    signedInUser: "已登录用户",
-    displayName: "显示名称:",
-    username: "用户名:",
-    email: "邮箱:",
-    emailMissing: "未提供",
-    sessionExpires: "会话过期时间:",
-    backHome: "返回首页",
-    settings: {
-      eyebrow: "设置",
-      title: "账户设置",
-      emailVerified: "邮箱已验证",
-      emailPending: "邮箱待验证",
-      preferences: "设置菜单",
-      sidebar: {
-        profile: "资料",
-        security: "安全",
-        connections: "连接",
-        language: "语言",
-        privacy: "隐私",
-        notifications: "通知",
-        danger: "危险区域",
-      },
-      sections: {
-        profile: {
-          eyebrow: "资料",
-          title: "资料信息",
-          saveChanges: "保存更改",
-        },
-        security: {
-          eyebrow: "安全",
-          title: "邮箱与密码",
-          password: "密码",
-          updatedRecently: "最近更新",
-          sessionCreated: "会话创建时间",
-        },
-        connections: {
-          eyebrow: "OAuth",
-          title: "已连接提供商",
-          description: "连接 GitHub 或 Google 后，可在保留本地密码登录的同时使用 OAuth 登录。",
-          connected: "已连接",
-          notConnected: "未连接",
-          ready: "OAuth 可用",
-          notConfigured: "该提供商尚未配置 OAuth 凭据。",
-          connect: "连接",
-          connectWithProvider: "连接 {provider}",
-          connectedWithProvider: "{provider} 已连接",
-          connecting: "连接中...",
-          disconnect: "断开",
-          disconnecting: "断开中...",
-          connectError: "现在无法连接 {provider}。",
-          disconnectError: "现在无法断开 {provider}。",
-          lastAccount: "断开前请先添加另一种登录方式。",
-          callbackErrors: {
-            accountAlreadyLinked: "该 OAuth 账户已连接到另一位玩家。",
-            accountNotLinked: "由于无法自动连接此提供商账户，OAuth 连接已被阻止。",
-            emailMismatch: "OAuth 连接已被阻止：提供商邮箱与此账户不一致。",
-            generic: "无法完成 OAuth 连接。请重试或选择另一个提供商账户。",
-            unableToLink: "无法将 OAuth 连接保存到此账户。请重试或选择另一个提供商账户。",
-          },
-        },
-        language: {
-          eyebrow: "语言",
-          title: "语言和地区",
-          interfaceLanguage: "界面语言",
-          timeZone: "时区",
-        },
-        privacy: {
-          eyebrow: "隐私",
-          title: "可见性",
-          showOnlineStatus: "显示在线状态",
-          allowMatchInvites: "允许对局邀请",
-          hideRatingFromStrangers: "向陌生人隐藏等级分",
-        },
-        notifications: {
-          eyebrow: "通知",
-          title: "通知设置",
-          friendRequests: "好友请求",
-          matchReminders: "对局提醒",
-          marketingEmail: "营销邮件",
-        },
-        danger: {
-          eyebrow: "危险区域",
-          title: "账户删除",
-          description:
-            "删除账户后，资料访问将被移除，当前会话也会断开。对局记录可能仍会保留在汇总的排名历史中。",
-          deleteAccount: "删除账户",
-        },
-      },
     },
   },
   friends: {
@@ -617,7 +496,6 @@ export const messages = {
         rules: "规则",
         players: "人数",
         privacy: "可见性",
-        ping: "Ping",
       },
       empty: "还没有房间。",
       roomName: "{player} 的房间",
@@ -798,22 +676,11 @@ export const messages = {
         expert: "专家",
         master: "大师",
       },
-      ranges: {
-        beginner: "等级 1 - 800",
-        apprentice: "等级 2 - 1100",
-        expert: "等级 5 - 1700",
-        master: "等级 8 - 2300",
-      },
       summaries: {
         beginner: "稳健的开局",
         apprentice: "平衡的阅读",
         expert: "敏锐的战术",
         master: "锦标赛实力",
-      },
-      statLabels: {
-        accuracy: "准确率",
-        aggression: "进攻性",
-        defense: "防守",
       },
       traitLabels: {
         openingStyle: "开局风格",
@@ -865,34 +732,6 @@ export const messages = {
           defendsForcingLadders: "防守强制梯形",
           convertsWinningRaces: "赢得竞速",
         },
-      },
-    },
-    training: {
-      eyebrow: "最近的 AI 练习",
-      headers: {
-        level: "等级",
-        result: "结果",
-        moves: "手数",
-        date: "日期",
-        notes: "备注",
-      },
-      reviewAria: "查看 {date} 的 {level} 练习",
-      results: {
-        win: "胜利",
-      },
-      rows: {
-        beginner: "初学者 (800)",
-        apprentice: "见习 (1100)",
-        expert: "专家 (1700)",
-      },
-      dates: {
-        may12_2026: "2026年5月12日",
-        may13_2026: "2026年5月13日",
-        may14_2026: "2026年5月14日",
-      },
-      notes: {
-        blackPrivate: "黑 - 私密",
-        whitePrivate: "白 - 私密",
       },
     },
     summary: {
@@ -960,13 +799,6 @@ export const messages = {
         title: "棋谱",
         empty: "还没有落子。",
       },
-      model: {
-        eyebrow: "AI 模型",
-        depth: "深度",
-        depthValue: "{plies} 手读",
-        candidates: "候选数",
-        randomness: "随机性",
-      },
       status: {
         badge: {
           loading: "加载中",
@@ -1008,53 +840,6 @@ export const messages = {
       },
     },
   },
-  game: {
-    pageTitle: "与 AI 对局中",
-    ai: {
-      eyebrow: "AI 对手",
-      title: "定石读解 AI",
-      description: "深度 6 会读取中腹攻防，并在过度进攻前推荐更稳健的威胁。",
-      metrics: {
-        positionConfidence: "局面信心",
-        initiativeSwing: "主导权变化",
-      },
-      suggestionLabel: "建议",
-      suggestion: "向 D7 延伸，连接下方斜线并迫使白方防守。",
-    },
-    controls: {
-      undo: "悔棋",
-      restart: "重新开始",
-      rules: "规则",
-      resign: "认输",
-    },
-    match: {
-      roomEyebrow: "房间 1024",
-      roomTitle: "排位赛",
-      turn: "黑方落子",
-      details: {
-        rulesLabel: "规则",
-        rulesValue: "15 x 15 / 标准",
-        captureLabel: "提子",
-        captureValue: "禁用",
-        spectatorsLabel: "观众",
-        spectatorsValue: "3",
-        openingLabel: "开局方式",
-        openingValue: "自由",
-      },
-    },
-    history: {
-      eyebrow: "落子记录",
-      title: "最近一段",
-      lastBadge: "最新",
-    },
-    status: {
-      eyebrow: "对局状态",
-      title: "威胁图",
-      openThree: "下方斜线已形成活三",
-      whiteMustBlockD7: "白方必须挡住 D7",
-      blackTempoRetained: "黑方保留节奏",
-    },
-  },
   leaderboard: {
     eyebrow: "排名",
     title: "排行榜",
@@ -1070,7 +855,7 @@ export const messages = {
       },
       overview: {
         eyebrow: "排名表",
-        title: "前 100 名",
+        title: "实时排名",
       },
       spotlight: {
         rankLabel: "你的排名",
@@ -1102,7 +887,7 @@ export const messages = {
       },
       season: {
         eyebrow: "赛季",
-        title: "春季天梯",
+        title: "当前天梯",
         daysLeft: "剩余天数",
         ratedMatches: "计分对局",
       },
@@ -1117,11 +902,7 @@ export const messages = {
       },
       topPlayers: {
         eyebrow: "热门玩家",
-        title: "本周",
-        badges: {
-          mvp: "MVP",
-          boost: "+7",
-        },
+        title: "当前领先者",
       },
       unavailable: {
         title: "排行榜暂不可用",
@@ -1141,8 +922,6 @@ export const messages = {
         description: "进行计分对局后即可出现在排行榜中。",
       },
       preview: "在已完成对局结果到达之前，将显示预览排名。",
-      trend: "趋势",
-      active: "活跃",
     },
   },
   messagesPage: {
@@ -1194,10 +973,6 @@ export const messages = {
       badge: "公开资料",
       challenge: "发起对战",
       goBack: "返回",
-      progress: {
-        eyebrow: "等级分变化",
-        title: "赛季曲线",
-      },
       recentMatches: {
         eyebrow: "最近对局",
         title: "对局样本",
@@ -1205,26 +980,17 @@ export const messages = {
           won: "获胜",
           lost: "失利",
         },
-        items: {
-          wonAgainstTenkei: "战胜 Tenkei",
-          lostAgainstHoshi: "负于 Hoshi",
-          wonAgainstMokuren: "战胜 Mokuren",
-        },
       },
       headToHead: {
         eyebrow: "交手记录",
         title: "与你交手",
         wins: "胜场",
         losses: "负场",
+        unavailable: "登录并查看其他玩家后，会显示你们的交手统计。",
       },
       achievements: {
         eyebrow: "成就",
-        title: "已知标记",
-        items: {
-          sharpOpening: "犀利开局",
-          calmEndgame: "沉着收官",
-          fastRematch: "快速重赛",
-        },
+        title: "已解锁徽章",
       },
       safety: {
         eyebrow: "安全",
@@ -1369,7 +1135,31 @@ export const messages = {
         preview: {
           eyebrow: "预览",
           title: "公开资料卡",
-          rank: "5段",
+        },
+      },
+      connections: {
+        eyebrow: "OAuth",
+        title: "已连接提供商",
+        description: "连接 GitHub 或 Google 后，可在保留本地密码登录的同时使用 OAuth 登录。",
+        connected: "已连接",
+        notConnected: "未连接",
+        ready: "OAuth 可用",
+        notConfigured: "该提供商尚未配置 OAuth 凭据。",
+        connect: "连接",
+        connectWithProvider: "连接 {provider}",
+        connectedWithProvider: "{provider} 已连接",
+        connecting: "连接中...",
+        disconnect: "断开",
+        disconnecting: "断开中...",
+        connectError: "现在无法连接 {provider}。",
+        disconnectError: "现在无法断开 {provider}。",
+        lastAccount: "断开前请先添加另一种登录方式。",
+        callbackErrors: {
+          accountAlreadyLinked: "该 OAuth 账户已连接到另一位玩家。",
+          accountNotLinked: "由于无法自动连接此提供商账户，OAuth 连接已被阻止。",
+          emailMismatch: "OAuth 连接已被阻止：提供商邮箱与此账户不一致。",
+          generic: "无法完成 OAuth 连接。请重试或选择另一个提供商账户。",
+          unableToLink: "无法将 OAuth 连接保存到此账户。请重试或选择另一个提供商账户。",
         },
       },
       basicInformation: "基本信息",
@@ -1475,9 +1265,6 @@ export const messages = {
       contents: {
         eyebrow: "目录",
         title: "本页内容",
-      },
-      metrics: {
-        documentSections: "文档章节",
       },
       document: {
         eyebrow: "隐私文件",

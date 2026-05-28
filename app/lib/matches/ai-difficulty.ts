@@ -3,7 +3,6 @@ import { aiDifficultyIds, type AiDifficultyId } from "../../../shared/ai-difficu
 export { aiDifficultyIds, type AiDifficultyId };
 export type AiDifficultyTone = "blue" | "brass" | "mint" | "purple";
 
-export type AiDifficultyStatId = "accuracy" | "aggression" | "defense";
 export type AiDifficultyTraitLabelId = "openingStyle" | "midgame" | "endgame" | "favoritePattern";
 export type AiDifficultyTraitValueId =
   | "centered"
@@ -39,7 +38,6 @@ export type AiDifficultyOption = {
   id: AiDifficultyId;
   strengthIds: AiDifficultyStrengthId[];
   tone: AiDifficultyTone;
-  stats: Array<{ id: AiDifficultyStatId; value: string; bars: number }>;
   traits: Array<{ labelId: AiDifficultyTraitLabelId; valueId: AiDifficultyTraitValueId }>;
   engine: {
     candidateLimit: number;
@@ -61,11 +59,6 @@ export const aiDifficultyOptions = [
     id: "beginner",
     strengthIds: ["simpleShapeBuilding", "centerFriendlyOpenings", "occasionalLooseDefense"],
     tone: "mint",
-    stats: [
-      { id: "accuracy", value: "54%", bars: 4 },
-      { id: "aggression", value: "38%", bars: 3 },
-      { id: "defense", value: "46%", bars: 4 },
-    ],
     traits: [
       { labelId: "openingStyle", valueId: "centered" },
       { labelId: "midgame", valueId: "local" },
@@ -88,11 +81,6 @@ export const aiDifficultyOptions = [
     id: "apprentice",
     strengthIds: ["blocksOpenFours", "buildsBalancedLanes", "canMissDoubleThreats"],
     tone: "blue",
-    stats: [
-      { id: "accuracy", value: "68%", bars: 5 },
-      { id: "aggression", value: "54%", bars: 4 },
-      { id: "defense", value: "63%", bars: 5 },
-    ],
     traits: [
       { labelId: "openingStyle", valueId: "flexible" },
       { labelId: "midgame", valueId: "balanced" },
@@ -115,11 +103,6 @@ export const aiDifficultyOptions = [
     id: "expert",
     strengthIds: ["readsForcingLines", "punishesOpenThrees", "strongInMidgameFights"],
     tone: "purple",
-    stats: [
-      { id: "accuracy", value: "82%", bars: 7 },
-      { id: "aggression", value: "72%", bars: 6 },
-      { id: "defense", value: "80%", bars: 7 },
-    ],
     traits: [
       { labelId: "openingStyle", valueId: "flexible" },
       { labelId: "midgame", valueId: "tactical" },
@@ -142,11 +125,6 @@ export const aiDifficultyOptions = [
     id: "master",
     strengthIds: ["findsDoubleThreats", "defendsForcingLadders", "convertsWinningRaces"],
     tone: "brass",
-    stats: [
-      { id: "accuracy", value: "91%", bars: 8 },
-      { id: "aggression", value: "84%", bars: 7 },
-      { id: "defense", value: "90%", bars: 8 },
-    ],
     traits: [
       { labelId: "openingStyle", valueId: "pressure" },
       { labelId: "midgame", valueId: "forcing" },

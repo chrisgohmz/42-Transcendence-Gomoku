@@ -31,7 +31,7 @@ const publicRouteCases = [
   {
     path: "/home",
     heading: (messages: AppMessages) => messages.home.dashboard.hero.title,
-    visibleText: (messages: AppMessages) => messages.home.dashboard.snapshot.title,
+    visibleText: (messages: AppMessages) => messages.home.dashboard.cards.ai.title,
   },
   {
     path: "/login",

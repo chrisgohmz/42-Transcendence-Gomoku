@@ -23,7 +23,6 @@ test("home page renders the redesigned command center", async ({ page }) => {
   await expect(page).toHaveTitle(/Home \| Gomoku Heroes/);
   await expect(page).toHaveURL(/\/en$/);
   await expect(page.getByRole("heading", { level: 1, name: "Master the board." })).toBeVisible();
-  await expect(page.getByText("Ranked Snapshot", { exact: true })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Train vs AI" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Challenge Human" })).toBeVisible();
   await expect(
@@ -48,7 +47,7 @@ test("primary game routes render their new page shells", async ({ page }) => {
 
   await gotoAppRoute(page, "/leaderboard");
   await expect(page.getByRole("heading", { level: 1, name: "Leaderboard" })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Top 100" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Live standings" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Rank Bands" })).toBeVisible();
 });
 
@@ -136,13 +135,6 @@ test("authenticated redesigned pages render at desktop and mobile widths", async
   const friend = await createAcceptedFriend(user.id, user.token);
 
   try {
-    await gotoAppRoute(page, "/account");
-    await expect(page.getByRole("heading", { level: 1, name: "Account Settings" })).toBeVisible();
-    await expect(
-      page.getByText(user.email, { exact: true }).filter({ visible: true }),
-    ).toBeVisible();
-    await expectNoDocumentOverflow(page, "/account");
-
     await gotoAppRoute(page, "/profile");
     await expect(page.getByRole("heading", { level: 1, name: user.displayName })).toBeVisible();
     await expect(page.getByRole("link", { name: /Edit Profile/i })).toBeVisible();

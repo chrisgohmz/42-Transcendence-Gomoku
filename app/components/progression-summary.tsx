@@ -76,10 +76,13 @@ export default function ProgressionSummary({
   const locale = useLocale();
 
   const rankText = isLoading ? "..." : rank ? `#${rank}` : t("page.about.unranked");
-  const levelValue = progression?.level ?? 1;
-  const levelText = isLoading ? "..." : t("page.about.levelValue", { level: levelValue });
-  const currentStreak = isLoading ? "..." : (stats?.currentStreak ?? 0);
-  const bestStreak = isLoading ? "..." : (stats?.bestStreak ?? 0);
+  const levelText = isLoading
+    ? "..."
+    : progression
+      ? t("page.about.levelValue", { level: progression.level })
+      : t("page.stats.unavailable");
+  const currentStreak = isLoading ? "..." : (stats?.currentStreak ?? t("page.stats.unavailable"));
+  const bestStreak = isLoading ? "..." : (stats?.bestStreak ?? t("page.stats.unavailable"));
   const lastPlayedText = isLoading
     ? "..."
     : formatDate(stats?.lastPlayedAt ?? null, locale, t("page.about.noActivity"));
@@ -87,13 +90,19 @@ export default function ProgressionSummary({
   const unlocked = sortAchievements(achievements);
   const visibleAchievements = unlocked.slice(0, 3);
   const extraCount = Math.max(0, unlocked.length - visibleAchievements.length);
-  const achievementPoints = progression?.achievementPoints ?? 0;
 
-  const progressPercent = Math.round((progression?.progress ?? 0) * 100);
-  const progressRange = t("page.progress.range", {
-    from: t("page.progress.level", { level: levelValue }),
-    to: t("page.progress.level", { level: levelValue + 1 }),
-  });
+  const progressDetails = progression
+    ? {
+        achievementPoints: progression.achievementPoints,
+        currentXp: progression.currentXp,
+        nextLevelXp: progression.nextLevelXp,
+        percent: Math.round(progression.progress * 100),
+        range: t("page.progress.range", {
+          from: t("page.progress.level", { level: progression.level }),
+          to: t("page.progress.level", { level: progression.level + 1 }),
+        }),
+      }
+    : null;
   const rankValue = (
     <span className="block text-[1.05rem] leading-none whitespace-nowrap sm:text-[1.15rem]">
       {rankText}
@@ -151,8 +160,8 @@ export default function ProgressionSummary({
             </div>
             <p className="m-0 text-xs font-bold text-[var(--muted-text)]">
               {t("page.achievements.summary", { count: unlocked.length })}
-              {progression
-                ? ` · ${t("page.achievements.points", { points: achievementPoints })}`
+              {progressDetails
+                ? ` · ${t("page.achievements.points", { points: progressDetails.achievementPoints })}`
                 : ""}
             </p>
           </div>
@@ -164,23 +173,31 @@ export default function ProgressionSummary({
       <Surface eyebrow={t("page.progress.eyebrow")} title={t("page.progress.title")}>
         {isLoading ? (
           <p className="m-0 text-sm text-[var(--muted-text)]">{t("page.progress.loading")}</p>
-        ) : progression ? (
+        ) : progressDetails ? (
           <div>
             <div className="mb-2 flex items-center justify-between text-sm font-bold">
-              <span>{progressRange}</span>
-              <span className="text-[var(--mint)]">{progressPercent}%</span>
+              <span>{progressDetails.range}</span>
+              <span className="text-[var(--mint)]">{progressDetails.percent}%</span>
             </div>
-            <progress className="csp-progress csp-progress-xp" max={100} value={progressPercent}>
-              {progressPercent}%
+            <progress
+              className="csp-progress csp-progress-xp"
+              max={100}
+              value={progressDetails.percent}
+            >
+              {progressDetails.percent}%
             </progress>
             <div className="mt-3 flex items-center justify-between text-xs font-bold text-[var(--muted-text)]">
               <span>
                 {t("page.progress.xp", {
-                  current: progression.currentXp,
-                  next: progression.nextLevelXp,
+                  current: progressDetails.currentXp,
+                  next: progressDetails.nextLevelXp,
                 })}
               </span>
-              <span>{t("page.progress.achievementPoints", { points: achievementPoints })}</span>
+              <span>
+                {t("page.progress.achievementPoints", {
+                  points: progressDetails.achievementPoints,
+                })}
+              </span>
             </div>
           </div>
         ) : (

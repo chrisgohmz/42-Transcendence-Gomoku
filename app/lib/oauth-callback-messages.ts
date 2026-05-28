@@ -13,7 +13,7 @@ type OAuthCallbackSearchParams = Promise<
 type OAuthCallbackErrorMessageOptions = {
   keyPrefix?: string;
   locale: string;
-  namespace: "account" | "auth.oauth";
+  namespace: "auth.oauth" | "profile.edit";
   searchParams?: OAuthCallbackSearchParams;
 };
 
