@@ -1,4 +1,4 @@
-import { BookOpen, ShieldCheck } from "lucide-react";
+import { BookOpen, LockKeyhole, Scale, ShieldCheck } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import Image from "next/image";
 
@@ -19,10 +19,12 @@ const productLinkMeta = [
 ] as const satisfies ReadonlyArray<Omit<SidebarNavItem, "label"> & { labelKey: string }>;
 
 export default async function AppSidebar() {
-  const [sessionData, brand, nav] = await Promise.all([
+  const [sessionData, brand, nav, footer, legal] = await Promise.all([
     getCurrentSessionIdentity(),
     getTranslations("brand"),
     getTranslations("nav"),
+    getTranslations("footer"),
+    getTranslations("legal"),
   ]);
 
   const isLoggedIn = sessionData !== null;
@@ -96,6 +98,17 @@ export default async function AppSidebar() {
             <BookOpen aria-hidden="true" className="size-4" />
             <span>{nav("rules")}</span>
           </a>
+
+          <nav className="grid gap-1" aria-label={legal("terms.related.title")}>
+            <Link href="/terms" className="sidebar-link sidebar-link-muted">
+              <Scale aria-hidden="true" className="size-4" />
+              <span>{footer("terms")}</span>
+            </Link>
+            <Link href="/privacy" className="sidebar-link sidebar-link-muted">
+              <LockKeyhole aria-hidden="true" className="size-4" />
+              <span>{footer("privacy")}</span>
+            </Link>
+          </nav>
 
           <div className="sidebar-account">
             <div className="flex items-center justify-between gap-2 text-xs font-bold text-[var(--muted-strong)]">
