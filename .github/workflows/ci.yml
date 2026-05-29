@@ -111,6 +111,7 @@ jobs:
           BETTER_AUTH_SECRET: ci_better_auth_secret_change_me_32_chars
           BETTER_AUTH_URL: http://localhost:3000
           PLAYWRIGHT_WEB_SERVER_COMMAND: bun run start
+          REALTIME_INTERNAL_SECRET: ci_realtime_internal_secret_change_me
           REALTIME_INTERNAL_URL: http://127.0.0.1:3001/internal/game-update
           SOCKET_CORS_ORIGIN: http://localhost:3000
         run: |
