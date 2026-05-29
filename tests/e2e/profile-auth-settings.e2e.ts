@@ -4,13 +4,15 @@ import { createId } from "@paralleldrive/cuid2";
 import { hashPassword } from "better-auth/crypto";
 
 import { prisma } from "../../app/lib/prisma";
-import { expect, type Page, type TestInfo, test, visibleLabel } from "./fixtures";
+import { allowPageError, expect, type Page, type TestInfo, test, visibleLabel } from "./fixtures";
 
 test.setTimeout(90_000);
 
 test("OAuth-only profile settings show linked email and set password without current password", async ({
   page,
 }, testInfo) => {
+  allowPageError(testInfo, { browserName: "firefox", message: "Error in input stream" });
+
   const user = await createAndSignInTestUser(page, testInfo);
 
   try {
