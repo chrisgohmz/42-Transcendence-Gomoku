@@ -6,6 +6,11 @@ import { Server as Engine } from "@socket.io/bun-engine";
 import { config } from "dotenv";
 import { Server } from "socket.io";
 
+import {
+  cancelMatchmakingQueue,
+  getGlobalMatchStats,
+  type MatchmakingUser,
+} from "@/lib/matches/matchmaking";
 import { prisma } from "@/lib/prisma";
 
 import {
@@ -32,6 +37,11 @@ import {
   type ConnectedUsers,
 } from "./lib/presence";
 import { createRedisBackedPresenceStore, getRealtimeRedisErrorMessage } from "./lib/redis-presence";
+import {
+  createRemoteMatchConnectionManager,
+  remotePlayReconnectWindowMs,
+} from "./lib/remote-match-connections";
+import { matchRoomId } from "./lib/rooms";
 import { authenticateSocketSession } from "./lib/socket-auth";
 import {
   DEFAULT_SOCKET_HEARTBEAT_INTERVAL_MS,
@@ -81,6 +91,11 @@ const realtimePresenceTtlSeconds = readPositiveIntegerEnv(
   "REALTIME_PRESENCE_TTL_SECONDS",
   Math.max(60, Math.ceil(socketHeartbeatIntervalMs / 1000) * 4),
 );
+const matchReconnectWindowMs = readPositiveIntegerEnv(
+  process.env,
+  "MATCH_RECONNECT_WINDOW_MS",
+  remotePlayReconnectWindowMs,
+);
 
 function readCorsOrigins(): string[] {
   const configuredOrigins = process.env["SOCKET_CORS_ORIGIN"];
@@ -119,12 +134,38 @@ io.bind(engine);
 io.use(authenticateSocketSession);
 
 const connectedUsers: ConnectedUsers = new Map();
+const connectedSocketIdsByUserId = new Map<string, Set<string>>();
 const presenceStore =
   (await createRedisBackedPresenceStore({
     env: process.env,
     io,
     presenceTtlSeconds: realtimePresenceTtlSeconds,
   })) ?? createMemoryPresenceStore(connectedUsers);
+const remoteMatchConnections = createRemoteMatchConnectionManager({
+  broadcastGameUpdate: (payload) => {
+    io.to(matchRoomId(payload.matchId)).emit("game:update", payload);
+  },
+  reconnectWindowMs: matchReconnectWindowMs,
+});
+
+type SocketUser = Partial<MatchmakingUser> & {
+  id?: string;
+};
+
+function getMatchmakingUserFromSocket(socket: Parameters<typeof registerMatchmakingQueue>[0]) {
+  const user = socket.data.user as SocketUser | undefined;
+
+  if (!user?.id) {
+    return null;
+  }
+
+  return {
+    displayName: user.displayName ?? null,
+    id: user.id,
+    name: user.name ?? null,
+    username: user.username ?? null,
+  } satisfies MatchmakingUser;
+}
 
 function logPresenceError(action: string, error: unknown) {
   console.error(`[realtime] Failed to ${action} presence: ${getRealtimeRedisErrorMessage(error)}`);
@@ -136,10 +177,56 @@ function subscribeSocketToPresence(socket: Parameters<typeof subscribeToPresence
   });
 }
 
+function addConnectedUserSocket(userId: string, socketId: string) {
+  const socketIds = connectedSocketIdsByUserId.get(userId) ?? new Set<string>();
+  socketIds.add(socketId);
+  connectedSocketIdsByUserId.set(userId, socketIds);
+}
+
+function removeConnectedUserSocket(userId: string, socketId: string) {
+  const socketIds = connectedSocketIdsByUserId.get(userId);
+  if (!socketIds) {
+    return true;
+  }
+
+  socketIds.delete(socketId);
+
+  if (socketIds.size > 0) {
+    return false;
+  }
+
+  connectedSocketIdsByUserId.delete(userId);
+  return true;
+}
+
+async function broadcastGlobalMatchStats() {
+  const stats = await getGlobalMatchStats();
+  io.emit("stats:update", stats);
+}
+
+async function abandonQueueForDisconnectedUser(user: MatchmakingUser) {
+  try {
+    const result = await cancelMatchmakingQueue(user);
+
+    if (result.kind !== "cancelled") {
+      return;
+    }
+
+    console.log(`[realtime] cancelled abandoned queue match ${result.matchId} for ${user.id}`);
+    await broadcastGlobalMatchStats();
+  } catch (error) {
+    console.error("[realtime] failed to abandon disconnected queue:", error);
+  }
+}
+
 io.on("connection", (socket) => {
   console.log(`Socket.IO client connected: ${socket.id}`);
 
   console.log(`[realtime] connected: ${socket.id}`);
+  const matchmakingUser = getMatchmakingUserFromSocket(socket);
+  if (matchmakingUser) {
+    addConnectedUserSocket(matchmakingUser.id, socket.id);
+  }
 
   socket.on("register", (username: string) => {
     const authUsername = socket.data.user?.username;
@@ -158,7 +245,11 @@ io.on("connection", (socket) => {
 
   subscribeSocketToPresence(socket);
   registerMatchmakingQueue(socket, io);
-  registerMatchSubscription(socket);
+  registerMatchSubscription(socket, prisma, {
+    onSubscribed: (subscription) => {
+      remoteMatchConnections.registerSubscription(subscription);
+    },
+  });
   registerChatSubscription(socket);
 
   socket.on("presence:subscribe", () => {
@@ -190,6 +281,11 @@ io.on("connection", (socket) => {
     console.log(`Socket.IO client disconnected: ${socket.id} (${reason})`);
 
     stopSocketLifecycle();
+    remoteMatchConnections.handleSocketDisconnect(socket.id);
+
+    if (matchmakingUser && removeConnectedUserSocket(matchmakingUser.id, socket.id)) {
+      void abandonQueueForDisconnectedUser(matchmakingUser);
+    }
 
     void removePresenceConnection(socket, io, presenceStore).catch((error: unknown) => {
       logPresenceError("remove", error);

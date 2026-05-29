@@ -11,11 +11,24 @@ type MatchSubscriptionStore = {
   match: Pick<typeof prisma.match, "findFirst">;
 };
 
+type MatchSubscriptionLifecycle = {
+  onSubscribed?: (subscription: {
+    matchId: string;
+    participantId: string;
+    socketId: string;
+    userId: string;
+  }) => Promise<void> | void;
+};
+
 function emitMatchError(socket: Socket, error: string) {
   socket.emit("match:error", { error });
 }
 
-export function registerMatchSubscription(socket: Socket, db: MatchSubscriptionStore = prisma) {
+export function registerMatchSubscription(
+  socket: Socket,
+  db: MatchSubscriptionStore = prisma,
+  lifecycle: MatchSubscriptionLifecycle = {},
+) {
   socket.on("match:subscribe", async (payload: unknown) => {
     if (!isMatchSubscribePayload(payload)) {
       emitMatchError(socket, "invalid_payload");
@@ -59,6 +72,13 @@ export function registerMatchSubscription(socket: Socket, db: MatchSubscriptionS
       await socket.join(room);
 
       console.log(`[realtime] ${socket.id} joined room ${room} as ${participantId}`);
+
+      await lifecycle.onSubscribed?.({
+        matchId,
+        participantId,
+        socketId: socket.id,
+        userId,
+      });
 
       socket.emit("match:subscribed", {
         matchId,

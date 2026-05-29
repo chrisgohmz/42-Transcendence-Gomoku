@@ -44,8 +44,10 @@ export function useSocketGame(
     socketRef.current = socket;
 
     let active = true;
+    let waitingForAuthoritativeSnapshot = true;
 
     socket.on("connect", () => {
+      waitingForAuthoritativeSnapshot = true;
       const lastSeenStateVersion = latestStateVersionRef.current;
       socket.emit("match:subscribe", {
         matchId,
@@ -60,10 +62,14 @@ export function useSocketGame(
 
     socket.on("game:update", (payload: GameUpdatePayload) => {
       if (active && payload.matchId === matchId) {
-        if (payload.stateVersion <= latestStateVersionRef.current) {
+        if (
+          !waitingForAuthoritativeSnapshot &&
+          payload.stateVersion <= latestStateVersionRef.current
+        ) {
           return;
         }
 
+        waitingForAuthoritativeSnapshot = false;
         latestStateVersionRef.current = payload.stateVersion;
         setLastUpdate(payload);
       }

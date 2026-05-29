@@ -8,6 +8,7 @@ const findFirst = mock();
 const join = mock();
 const emit = mock();
 const on = mock();
+const onSubscribed = mock();
 
 const db = {
   match: {
@@ -89,6 +90,7 @@ beforeEach(() => {
   join.mockReset();
   emit.mockReset();
   on.mockReset();
+  onSubscribed.mockReset();
   join.mockResolvedValue(undefined);
 });
 
@@ -137,7 +139,7 @@ describe("registerMatchSubscription", () => {
 
   test("joins authorized participants and sends a current full-state snapshot", async () => {
     const { handlers, socket } = buildSocket();
-    registerMatchSubscription(socket, db);
+    registerMatchSubscription(socket, db, { onSubscribed });
     findFirst.mockResolvedValueOnce(matchRecord());
 
     await handlers.get("match:subscribe")?.({
@@ -147,6 +149,12 @@ describe("registerMatchSubscription", () => {
     });
 
     expect(join).toHaveBeenCalledWith("match: match-1");
+    expect(onSubscribed).toHaveBeenCalledWith({
+      matchId: "match-1",
+      participantId: "black-player",
+      socketId: "socket-1",
+      userId: "user-black",
+    });
     expect(emit).toHaveBeenCalledWith("match:subscribed", {
       matchId: "match-1",
       stateVersion: 1,

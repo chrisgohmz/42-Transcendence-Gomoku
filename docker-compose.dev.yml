@@ -34,6 +34,7 @@ services:
         condition: service_healthy
     environment:
       NODE_ENV: development
+      MATCH_RECONNECT_WINDOW_MS: ${MATCH_RECONNECT_WINDOW_MS:-60000}
       SOCKET_HOST: 0.0.0.0
       SOCKET_PORT: 3001
       SOCKET_CORS_ORIGIN: ${SOCKET_CORS_ORIGIN:-https://localhost:8443}
