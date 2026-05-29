@@ -10,7 +10,7 @@ import type {
   PasswordResetRequestActionState,
   SignupActionState,
 } from "./auth-action-state";
-import { defaultLocale, locales, type Locale } from "./i18n/config";
+import { isLocale, resolveLocale, type Locale } from "./i18n/config";
 import { redirect } from "./i18n/navigation";
 import { auth, getDuplicateSignupFields as findDuplicateSignupFields } from "./lib/auth";
 import {
@@ -38,10 +38,6 @@ function getFormString(formData: FormData, field: string): string {
   return typeof value === "string" ? value : "";
 }
 
-function isLocale(value: string | null | undefined): value is Locale {
-  return locales.some((locale) => locale === value);
-}
-
 async function getActionLocale(formData: FormData): Promise<Locale> {
   const formLocale = getFormString(formData, "locale");
 
@@ -49,8 +45,8 @@ async function getActionLocale(formData: FormData): Promise<Locale> {
     return formLocale;
   }
 
-  const requestLocale = await getLocale().catch(() => defaultLocale);
-  return isLocale(requestLocale) ? requestLocale : defaultLocale;
+  const requestLocale = await getLocale().catch(() => null);
+  return resolveLocale(requestLocale);
 }
 
 function translateAuthIssues(

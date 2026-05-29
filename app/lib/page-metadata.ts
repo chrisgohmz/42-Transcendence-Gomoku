@@ -2,7 +2,7 @@ import "server-only";
 import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
 
-import { defaultLocale, locales, type Locale } from "@/i18n/config";
+import { locales, resolveLocale, type Locale } from "@/i18n/config";
 import type { Messages } from "@/i18n/messages";
 
 type MetadataMessages = Messages["metadata"];
@@ -140,8 +140,4 @@ function getAlternates(path: `/${string}`, locale: Locale) {
 
 function getLocalizedPath(locale: Locale, path: `/${string}`) {
   return `/${locale}${path === "/" ? "" : path}`;
-}
-
-function resolveLocale(locale: string): Locale {
-  return locales.includes(locale as Locale) ? (locale as Locale) : defaultLocale;
 }

@@ -1,9 +1,5 @@
 import "server-only";
-import { defaultLocale, localeCookieName, locales, type Locale } from "@/i18n/config";
-
-function isLocale(value: string | null | undefined): value is Locale {
-  return locales.some((locale) => locale === value);
-}
+import { defaultLocale, isLocale, localeCookieName, type Locale } from "@/i18n/config";
 
 function readCookieValue(cookieHeader: string | null, name: string): string | null {
   if (!cookieHeader) {

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Cormorant_Garamond, Manrope } from "next/font/google";
 import { cookies } from "next/headers";
 
-import { defaultLocale, localeCookieName, locales, type Locale } from "@/i18n/config";
+import { localeCookieName, resolveLocale, type Locale } from "@/i18n/config";
 import { messageLoaders } from "@/i18n/messages";
 
 import "./globals.css";
@@ -20,10 +20,6 @@ const cormorant = Cormorant_Garamond({
   weight: ["600", "700"],
 });
 
-function isLocale(value: string | undefined): value is Locale {
-  return locales.includes(value as Locale);
-}
-
 type NotFoundCopy = {
   title: string;
   description: string;
@@ -34,7 +30,7 @@ async function getNotFoundLocale() {
   const cookieStore = await cookies();
   const cookieLocale = cookieStore.get(localeCookieName)?.value;
 
-  return isLocale(cookieLocale) ? cookieLocale : defaultLocale;
+  return resolveLocale(cookieLocale);
 }
 
 async function getNotFoundPage() {

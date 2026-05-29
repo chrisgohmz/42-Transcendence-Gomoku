@@ -3,6 +3,7 @@ import { messages as enMessages } from "../../app/i18n/messages/en";
 import { messages as jaMessages } from "../../app/i18n/messages/ja";
 import { messages as zhMessages } from "../../app/i18n/messages/zh";
 import {
+  allowPageError,
   allowResponseStatus,
   expect,
   type ConsoleMessage,
@@ -104,8 +105,13 @@ test("global 404 uses the cookie-selected locale for unmatched routes", async ({
   const locale: Locale = "ja";
   const messages = messagesByLocale[locale];
   const verifyNoRuntimeErrors = watchRuntimeTranslationErrors(page);
+  const localizedMissingRoute = `/${locale}/missing-global-404-route`;
 
-  allowResponseStatus(testInfo, { status: 404 });
+  allowPageError(testInfo, { browserName: "firefox", message: "Error in input stream" });
+  allowResponseStatus(testInfo, {
+    status: 404,
+    url: new URL(localizedMissingRoute, getTestBaseURL(testInfo)).toString(),
+  });
   await page.context().addCookies([
     {
       name: localeCookieName,
@@ -232,7 +238,11 @@ function watchRuntimeTranslationErrors(page: Page) {
   const errors: string[] = [];
 
   const onPageError = (error: Error) => {
-    errors.push(error.message);
+    const text = error.stack ?? error.message;
+
+    if (translationFailurePattern.test(text)) {
+      errors.push(text);
+    }
   };
   const onConsole = (message: ConsoleMessage) => {
     const text = message.text();

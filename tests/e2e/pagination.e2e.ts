@@ -12,7 +12,7 @@ import {
   RuleType,
   Seat,
 } from "../../generated/prisma/enums";
-import { expect, type Page, type TestInfo, test } from "./fixtures";
+import { expect, type Page, type TestInfo, test, visibleLabel } from "./fixtures";
 
 test.setTimeout(90_000);
 
@@ -214,10 +214,6 @@ async function createAndSignInTestUser(page: Page, testInfo: TestInfo): Promise<
     token,
     username,
   };
-}
-
-function visibleLabel(page: Page, text: string) {
-  return page.getByLabel(text).filter({ visible: true }).first();
 }
 
 async function createAcceptedFriends(userId: string, token: string, count: number) {

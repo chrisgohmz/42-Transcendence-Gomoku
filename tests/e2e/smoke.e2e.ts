@@ -4,7 +4,7 @@ import { createId } from "@paralleldrive/cuid2";
 import { hashPassword } from "better-auth/crypto";
 
 import { prisma } from "../../app/lib/prisma";
-import { expect, type Page, type TestInfo, test } from "./fixtures";
+import { expect, type Page, type TestInfo, test, visibleLabel } from "./fixtures";
 
 const routes = [
   { heading: "Master the board.", path: "/" },
@@ -259,10 +259,6 @@ async function createAndSignInTestUser(
     token,
     username,
   };
-}
-
-function visibleLabel(page: Page, text: string) {
-  return page.getByLabel(text).filter({ visible: true }).first();
 }
 
 async function createAcceptedFriend(userId: string, token: string) {
