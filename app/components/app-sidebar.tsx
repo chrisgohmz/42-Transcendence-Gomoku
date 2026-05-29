@@ -18,6 +18,11 @@ const productLinkMeta = [
   { href: "/leaderboard", icon: "leaderboard", labelKey: "leaderboard" },
 ] as const satisfies ReadonlyArray<Omit<SidebarNavItem, "label"> & { labelKey: string }>;
 
+const legalLinkMeta = [
+  { href: "/terms", icon: Scale, labelKey: "terms" },
+  { href: "/privacy", icon: LockKeyhole, labelKey: "privacy" },
+] as const;
+
 export default async function AppSidebar() {
   const [sessionData, brand, nav, footer, legal] = await Promise.all([
     getCurrentSessionIdentity(),
@@ -52,6 +57,11 @@ export default async function AppSidebar() {
     href,
     icon,
     label: nav(labelKey),
+  }));
+  const legalLinks = legalLinkMeta.map(({ href, icon: Icon, labelKey }) => ({
+    href,
+    Icon,
+    label: footer(labelKey),
   }));
 
   const socialLinks: SidebarNavItem[] = [
@@ -100,14 +110,12 @@ export default async function AppSidebar() {
           </a>
 
           <nav className="grid gap-1" aria-label={legal("terms.related.title")}>
-            <Link href="/terms" className="sidebar-link sidebar-link-muted">
-              <Scale aria-hidden="true" className="size-4" />
-              <span>{footer("terms")}</span>
-            </Link>
-            <Link href="/privacy" className="sidebar-link sidebar-link-muted">
-              <LockKeyhole aria-hidden="true" className="size-4" />
-              <span>{footer("privacy")}</span>
-            </Link>
+            {legalLinks.map(({ href, Icon, label }) => (
+              <Link key={href} href={href} className="sidebar-link sidebar-link-muted">
+                <Icon aria-hidden="true" className="size-4" />
+                <span>{label}</span>
+              </Link>
+            ))}
           </nav>
 
           <div className="sidebar-account">
@@ -153,10 +161,33 @@ export default async function AppSidebar() {
             {brand("name")}
           </span>
         </Link>
-        <div className="flex items-center gap-2">
+        <div className="flex min-w-0 items-center gap-1.5">
+          <nav
+            className="flex shrink-0 items-center gap-1"
+            aria-label={legal("terms.related.title")}
+          >
+            {legalLinks.map(({ href, Icon, label }) => (
+              <Button
+                key={href}
+                asChild
+                variant="ghost"
+                size="icon-sm"
+                className="text-[var(--muted-strong)]"
+              >
+                <Link href={href} aria-label={label} title={label}>
+                  <Icon aria-hidden="true" className="size-4" />
+                  <span className="sr-only">{label}</span>
+                </Link>
+              </Button>
+            ))}
+          </nav>
           {isLoggedIn ? (
             <>
-              <PlayerProfile username={realUsername} avatarUrl={avatarUrl} />
+              <PlayerProfile
+                username={realUsername}
+                avatarUrl={avatarUrl}
+                className="max-w-28 sm:max-w-40"
+              />
               <LocaleSwitcher />
               <PlayerLogout iconOnly />
             </>

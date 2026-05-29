@@ -93,7 +93,11 @@ export default async function RootLayout({ children, params }: RootLayoutProps) 
   setRequestLocale(locale);
 
   return (
-    <html lang={locale} className={cn("dark font-sans", manrope.variable, cormorant.variable)}>
+    <html
+      lang={locale}
+      data-scroll-behavior="smooth"
+      className={cn("dark font-sans", manrope.variable, cormorant.variable)}
+    >
       <body>
         <NextIntlClientProvider>
           <PresenceProvider>
