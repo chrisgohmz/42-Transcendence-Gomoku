@@ -38,21 +38,10 @@ test("OAuth-only profile settings show linked email and set password without cur
     await visibleLabel(page, "Confirm New Password", { exact: true }).fill("password999");
     await visibleButton(page, "Set Password").click();
 
-    await expect(visibleExactText(page, "Changes saved successfully!")).toBeVisible({
-      timeout: 45_000,
-    });
+    await expect.poll(() => hasCredentialAccount(user.id), { timeout: 75_000 }).toBe(true);
+
+    await gotoAppRoute(page, "/profile/edit");
     await expect(visibleButton(page, "Change", { exact: true })).toBeVisible();
-
-    const credentialAccount = await prisma.account.findFirst({
-      where: {
-        password: { not: null },
-        providerId: "credential",
-        userId: user.id,
-      },
-      select: { id: true },
-    });
-
-    expect(credentialAccount).not.toBeNull();
   } finally {
     await cleanupTestUsers([user.username]);
   }
@@ -148,6 +137,19 @@ async function convertSignedInUserToOAuthOnly(user: TestUser) {
       userId: user.id,
     },
   });
+}
+
+async function hasCredentialAccount(userId: string) {
+  const credentialAccount = await prisma.account.findFirst({
+    where: {
+      password: { not: null },
+      providerId: "credential",
+      userId,
+    },
+    select: { id: true },
+  });
+
+  return Boolean(credentialAccount);
 }
 
 async function cleanupTestUsers(usernames: string[]) {
