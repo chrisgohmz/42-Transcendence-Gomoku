@@ -198,15 +198,7 @@ function isAllowedConsoleStatus(testInfo: TestInfo, message: ConsoleMessage) {
   const sourceUrl = getConsoleSourceUrl(message.text()) ?? message.location().url;
 
   return getAllowedResponseStatuses(testInfo).some((allowed) => {
-    if (allowed.status !== status) {
-      return false;
-    }
-
-    if (allowed.resourceType === "document") {
-      return Boolean(allowed.url && allowed.url === sourceUrl);
-    }
-
-    return !allowed.url || allowed.url === sourceUrl;
+    return allowed.status === status && Boolean(allowed.url && allowed.url === sourceUrl);
   });
 }
 
