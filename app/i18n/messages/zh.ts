@@ -985,6 +985,12 @@ export const messages = {
         eyebrow: "成就",
         title: "已解锁徽章",
       },
+      private: {
+        eyebrow: "资料隐私",
+        title: "统计已设为私密",
+        description: "这名玩家仅向好友或本人展示个人资料详情。",
+        value: "私密",
+      },
     },
     page: {
       hero: {

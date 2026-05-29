@@ -1,14 +1,23 @@
-import { Activity, Award, Swords, Trophy, TrendingUp, TrendingDown } from "lucide-react";
+import {
+  Activity,
+  Award,
+  LockKeyhole,
+  Swords,
+  Trophy,
+  TrendingDown,
+  TrendingUp,
+} from "lucide-react";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 
-import { MatchResult, MatchStatus, Role } from "@/../generated/prisma/enums";
+import { MatchResult, MatchStatus, ProfileVisibility, Role } from "@/../generated/prisma/enums";
 import { Badge, MetricCard, PageShell, Surface } from "@/components/gomoku-ui";
 import { PageLoadingShell } from "@/components/page-loading-shell";
 import { getCurrentSessionIdentity } from "@/lib/auth";
 import { buildPageMetadata } from "@/lib/page-metadata";
 import { prisma } from "@/lib/prisma";
+import { canViewProfileDetails, type ProfileRelationshipState } from "@/lib/profile-visibility";
 import { getProfileStatsForUser } from "@/lib/stats/profile-stats";
 
 import ProfileActions from "./profile-actions";
@@ -143,6 +152,13 @@ async function PublicProfilePageContent({ params, searchParams }: ProfilePagePro
 
   const userProfile = await prisma.user.findUnique({
     where: { username },
+    include: {
+      profile: {
+        select: {
+          visibility: true,
+        },
+      },
+    },
   });
 
   if (!userProfile) {
@@ -152,8 +168,7 @@ async function PublicProfilePageContent({ params, searchParams }: ProfilePagePro
   const session = await getCurrentSessionIdentity();
   const loggedInUserId = session?.user?.id;
 
-  let relationshipState: "NOT_FRIENDS" | "FRIENDS" | "REQUEST_SENT" | "REQUEST_RECEIVED" | "SELF" =
-    "NOT_FRIENDS";
+  let relationshipState: ProfileRelationshipState = "NOT_FRIENDS";
 
   if (loggedInUserId) {
     if (loggedInUserId === userProfile.id) {
@@ -182,25 +197,33 @@ async function PublicProfilePageContent({ params, searchParams }: ProfilePagePro
     }
   }
 
+  const canViewDetails = canViewProfileDetails({
+    relationshipState,
+    visibility: userProfile.profile?.visibility ?? ProfileVisibility.PUBLIC,
+  });
+
   const headToHeadStatsPromise =
-    loggedInUserId && loggedInUserId !== userProfile.id
+    canViewDetails && loggedInUserId && loggedInUserId !== userProfile.id
       ? getHeadToHeadStats(loggedInUserId, userProfile.id)
       : Promise.resolve(null);
-  const [profileStats, headToHead] = await Promise.all([
-    getProfileStatsForUser(userProfile.id, {
-      recentMatchesLimit: 10,
-      recentMatchesPage,
-    }),
-    headToHeadStatsPromise,
-  ]);
+  const [profileStats, headToHead] = canViewDetails
+    ? await Promise.all([
+        getProfileStatsForUser(userProfile.id, {
+          recentMatchesLimit: 10,
+          recentMatchesPage,
+        }),
+        headToHeadStatsPromise,
+      ])
+    : [null, null];
 
-  const rating = profileStats.stats.rating ?? t("page.stats.unrated");
-  const winRate = profileStats.stats.winRate;
-  const wins = profileStats.stats.wins;
-  const losses = profileStats.stats.losses;
-  const unlockedAchievements = profileStats.achievements.filter((achievement) =>
-    Boolean(achievement.completedAt),
-  );
+  const hiddenValue = t("publicPage.private.value");
+  const rating =
+    profileStats?.stats.rating ?? (canViewDetails ? t("page.stats.unrated") : hiddenValue);
+  const winRate = profileStats?.stats.winRate ?? hiddenValue;
+  const wins = profileStats?.stats.wins ?? hiddenValue;
+  const losses = profileStats?.stats.losses ?? hiddenValue;
+  const unlockedAchievements =
+    profileStats?.achievements.filter((achievement) => Boolean(achievement.completedAt)) ?? [];
 
   const isRevealed = relationshipState === "FRIENDS" || relationshipState === "SELF";
 
@@ -251,11 +274,15 @@ async function PublicProfilePageContent({ params, searchParams }: ProfilePagePro
             <MetricCard icon={TrendingDown} label={t("stats.losses")} tone="red" value={losses} />
           </div>
 
-          <PublicMatchHistory
-            matches={profileStats.recentMatches}
-            page={profileStats.recentMatchesPagination.page}
-            totalPages={profileStats.recentMatchesPagination.totalPages}
-          />
+          {profileStats ? (
+            <PublicMatchHistory
+              matches={profileStats.recentMatches}
+              page={profileStats.recentMatchesPagination.page}
+              totalPages={profileStats.recentMatchesPagination.totalPages}
+            />
+          ) : (
+            <ProfilePrivacyNotice t={t} />
+          )}
         </div>
 
         <aside className="grid content-start gap-5">
@@ -289,7 +316,11 @@ async function PublicProfilePageContent({ params, searchParams }: ProfilePagePro
             icon={Award}
             title={t("publicPage.achievements.title")}
           >
-            {unlockedAchievements.length > 0 ? (
+            {!canViewDetails ? (
+              <p className="m-0 text-sm text-[var(--muted-text)]">
+                {t("publicPage.private.description")}
+              </p>
+            ) : unlockedAchievements.length > 0 ? (
               <div className="grid gap-2">
                 {unlockedAchievements.map((achievement) => (
                   <Badge key={achievement.code} tone="brass">
@@ -305,5 +336,17 @@ async function PublicProfilePageContent({ params, searchParams }: ProfilePagePro
         </aside>
       </section>
     </PageShell>
+  );
+}
+
+function ProfilePrivacyNotice({ t }: { t: Translate }) {
+  return (
+    <Surface
+      eyebrow={t("publicPage.private.eyebrow")}
+      icon={LockKeyhole}
+      title={t("publicPage.private.title")}
+    >
+      <p className="m-0 text-sm text-[var(--muted-text)]">{t("publicPage.private.description")}</p>
+    </Surface>
   );
 }

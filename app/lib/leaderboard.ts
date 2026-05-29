@@ -1,5 +1,3 @@
-//import { cacheLife } from "next/cache";
-
 import type { Prisma } from "../../generated/prisma/client";
 import { RuleType } from "../../generated/prisma/enums";
 import {
@@ -8,6 +6,7 @@ import {
   type LeaderboardSort,
 } from "./advanced-search";
 import { getAcceptedFriendIdsForUser } from "./friendships/friendship-queries";
+import type { LeaderboardScope } from "./leaderboard-types";
 import { prisma } from "./prisma";
 
 export const LEADERBOARD_BOARD_SIZE = 15;
@@ -64,11 +63,11 @@ export type LeaderboardSnapshot = {
   };
 };
 
-export type LeaderboardScope = "all" | "friends";
-
 export type LeaderboardSnapshotOptions = {
   scope?: LeaderboardScope;
 };
+
+export type { LeaderboardScope } from "./leaderboard-types";
 
 export type LeaderboardRankInput = {
   rating: number | null;

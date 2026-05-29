@@ -34,6 +34,7 @@ function getPrisma(): PrismaClient {
     "Match",
     "MatchParticipant",
     "MatchMove",
+    "RealtimeOutboxEvent",
     "AvatarMedia",
     "AnalyticsEvent",
   ]);

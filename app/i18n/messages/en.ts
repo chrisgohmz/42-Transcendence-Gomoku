@@ -991,6 +991,12 @@ export const messages = {
         eyebrow: "Achievements",
         title: "Unlocked badges",
       },
+      private: {
+        eyebrow: "Profile privacy",
+        title: "Stats are private",
+        description: "This player has limited profile details to friends or themselves.",
+        value: "Private",
+      },
     },
     page: {
       hero: {

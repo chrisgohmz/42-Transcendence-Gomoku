@@ -2,11 +2,13 @@ import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
 import type { GameUpdatePayload } from "../../../shared/match-events";
 import { internalRealtimeSecretHeader } from "../../../shared/realtime-internal";
+import { realtimeOutboxTopics } from "../realtime-outbox-contract";
 import {
   publishChallengeDeclined,
   publishChallengeReceived,
   publishGameUpdate,
   publishQueueMatched,
+  publishRealtimeOutboxEvent,
   resolveChallengeDeclinedUrl,
   resolveChallengeReceivedUrl,
   resolveGameUpdateUrl,
@@ -181,6 +183,26 @@ describe("publishGameUpdate", () => {
       "Failed to publish game:update(503)",
     );
   });
+
+  test("persists failed game updates to an injected outbox when enabled", async () => {
+    process.env["REALTIME_INTERNAL_SECRET"] = "game-secret";
+    fetchMock.mockResolvedValueOnce(new Response(null, { status: 503 }));
+    const enqueueOutboxEvent = mock(async (_event: unknown) => {});
+
+    await expectRejectsWithMessage(
+      () => publishGameUpdate(payload, 5000, { enqueueOutboxEvent, persistOnFailure: true }),
+      "Failed to publish game:update(503)",
+    );
+
+    const call = enqueueOutboxEvent.mock.calls[0]?.[0];
+
+    expect(enqueueOutboxEvent).toHaveBeenCalledTimes(1);
+    expect(call).toMatchObject({
+      payload,
+      topic: realtimeOutboxTopics.gameUpdate,
+    });
+    expect((call as { error?: unknown } | undefined)?.error).toBeInstanceOf(Error);
+  });
 });
 
 describe("publishChallengeReceived", () => {
@@ -274,6 +296,37 @@ describe("publishQueueMatched", () => {
       () => publishQueueMatched("black", { matchId: "match-1" }),
       "Failed to publish queue:matched (502)",
     );
+  });
+});
+
+describe("publishRealtimeOutboxEvent", () => {
+  test("replays queue match events through the internal queue endpoint", async () => {
+    process.env["REALTIME_INTERNAL_URL"] = "http://localhost:3001/internal/game-update";
+    process.env["REALTIME_INTERNAL_SECRET"] = "queue-secret";
+
+    await publishRealtimeOutboxEvent(
+      {
+        id: "evt-1",
+        payload: {
+          session: { matchId: "match-1" },
+          username: "black",
+        },
+        topic: realtimeOutboxTopics.queueMatched,
+      },
+      5000,
+    );
+
+    const call = fetchMock.mock.calls[0] as [string, RequestInit] | undefined;
+
+    expect(call?.[0]).toBe("http://localhost:3001/internal/queue-matched");
+    expect(call?.[1]).toMatchObject({
+      body: JSON.stringify({
+        username: "black",
+        session: { matchId: "match-1" },
+      }),
+      cache: "no-store",
+      method: "POST",
+    });
   });
 });
 

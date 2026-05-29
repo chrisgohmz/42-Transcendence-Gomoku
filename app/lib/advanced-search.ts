@@ -1,6 +1,6 @@
 import type { Prisma } from "../../generated/prisma/client";
 import { MatchResult, RuleType } from "../../generated/prisma/enums";
-import type { LeaderboardScope } from "./leaderboard";
+import type { LeaderboardScope } from "./leaderboard-types";
 
 export const LEADERBOARD_SEARCH_DEFAULT_LIMIT = 10;
 export const LEADERBOARD_SEARCH_MAX_LIMIT = 50;

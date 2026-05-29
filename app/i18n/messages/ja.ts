@@ -994,6 +994,12 @@ export const messages = {
         eyebrow: "実績",
         title: "解除済みバッジ",
       },
+      private: {
+        eyebrow: "プロフィール公開範囲",
+        title: "統計は非公開です",
+        description: "このプレイヤーはプロフィール詳細をフレンドまたは本人のみに制限しています。",
+        value: "非公開",
+      },
     },
     page: {
       hero: {
