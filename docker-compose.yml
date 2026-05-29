@@ -148,7 +148,13 @@ services:
     networks:
       - transcendence
     healthcheck:
-      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:3001/health"]
+      test:
+        [
+          "CMD",
+          "bun",
+          "-e",
+          "fetch('http://127.0.0.1:3001/health').then((response) => process.exit(response.ok ? 0 : 1)).catch(() => process.exit(1))",
+        ]
       interval: 10s
       timeout: 5s
       retries: 10

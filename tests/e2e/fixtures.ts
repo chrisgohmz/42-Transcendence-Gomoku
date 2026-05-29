@@ -14,9 +14,27 @@ type ConsoleGuardFixtures = {
   consoleDiagnostics: void;
 };
 
+const allowedResponseStatusAnnotation = "allow-response-status";
+
+export function allowResponseStatus(
+  testInfo: TestInfo,
+  {
+    resourceType = "document",
+    status,
+  }: {
+    resourceType?: string;
+    status: number;
+  },
+) {
+  testInfo.annotations.push({
+    description: `${resourceType}:${status}`,
+    type: allowedResponseStatusAnnotation,
+  });
+}
+
 export const test = base.extend<ConsoleGuardFixtures>({
   consoleDiagnostics: [
-    async ({ context }, use) => {
+    async ({ context }, use, testInfo) => {
       const diagnostics: BrowserDiagnostic[] = [];
       const pageHandlers = new Map<
         Page,
@@ -40,7 +58,7 @@ export const test = base.extend<ConsoleGuardFixtures>({
             type: message.type(),
           });
 
-          if (diagnostic) {
+          if (diagnostic && !isAllowedConsoleStatus(testInfo, message.text())) {
             diagnostics.push(diagnostic);
           }
         };
@@ -68,7 +86,10 @@ export const test = base.extend<ConsoleGuardFixtures>({
             url: response.url(),
           });
 
-          if (diagnostic) {
+          if (
+            diagnostic &&
+            !isAllowedResponseStatus(testInfo, response.status(), request.resourceType())
+          ) {
             diagnostics.push(diagnostic);
           }
         };
@@ -106,3 +127,24 @@ export const test = base.extend<ConsoleGuardFixtures>({
 
 export { expect };
 export type { ConsoleMessage, Locator, Page, TestInfo };
+
+function isAllowedResponseStatus(testInfo: TestInfo, status: number, resourceType: string) {
+  const expected = `${resourceType}:${status}`;
+
+  return testInfo.annotations.some(
+    (annotation) =>
+      annotation.type === allowedResponseStatusAnnotation && annotation.description === expected,
+  );
+}
+
+function isAllowedConsoleStatus(testInfo: TestInfo, text: string) {
+  return testInfo.annotations.some((annotation) => {
+    if (annotation.type !== allowedResponseStatusAnnotation) {
+      return false;
+    }
+
+    const status = annotation.description?.split(":")[1];
+
+    return Boolean(status && text.includes(`status of ${status}`));
+  });
+}

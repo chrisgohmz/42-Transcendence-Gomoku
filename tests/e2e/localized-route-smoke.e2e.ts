@@ -1,8 +1,15 @@
-import { locales, type Locale } from "../../app/i18n/config";
+import { localeCookieName, locales, type Locale } from "../../app/i18n/config";
 import { messages as enMessages } from "../../app/i18n/messages/en";
 import { messages as jaMessages } from "../../app/i18n/messages/ja";
 import { messages as zhMessages } from "../../app/i18n/messages/zh";
-import { expect, type ConsoleMessage, type Page, test } from "./fixtures";
+import {
+  allowResponseStatus,
+  expect,
+  type ConsoleMessage,
+  type Page,
+  test,
+  type TestInfo,
+} from "./fixtures";
 
 type AppMessages = typeof enMessages;
 
@@ -90,6 +97,40 @@ for (const locale of locales) {
     }
   });
 }
+
+test("global 404 uses the cookie-selected locale for unmatched routes", async ({
+  page,
+}, testInfo) => {
+  const locale: Locale = "ja";
+  const messages = messagesByLocale[locale];
+  const verifyNoRuntimeErrors = watchRuntimeTranslationErrors(page);
+
+  allowResponseStatus(testInfo, { status: 404 });
+  await page.context().addCookies([
+    {
+      name: localeCookieName,
+      url: getTestBaseURL(testInfo),
+      value: locale,
+    },
+  ]);
+
+  const response = await page.goto("/missing-global-404-route", {
+    waitUntil: "domcontentloaded",
+  });
+
+  expect(response?.status()).toBe(404);
+  await expect(page.locator("html")).toHaveAttribute("lang", locale);
+  await expect(
+    page.getByRole("heading", { level: 1, name: messages.notFound.title }),
+  ).toBeVisible();
+  await expect(page.getByText(messages.notFound.description, { exact: true })).toBeVisible();
+  await expect(page.getByRole("link", { name: messages.notFound.returnHome })).toHaveAttribute(
+    "href",
+    `/${locale}`,
+  );
+  await expectNoTranslationArtifacts(page, "global 404");
+  verifyNoRuntimeErrors("global 404");
+});
 
 for (const locale of locales) {
   test(`localized ${locale} AI route starts an active match`, async ({ page }) => {
@@ -179,6 +220,12 @@ test("localized human match room renders active match state", async ({ page }) =
 
 async function gotoLocalizedRoute(page: Page, locale: Locale, path: string) {
   await page.goto(`/${locale}${path}`, { waitUntil: "domcontentloaded" });
+}
+
+function getTestBaseURL(testInfo: TestInfo) {
+  const baseURL = testInfo.project.use.baseURL;
+
+  return typeof baseURL === "string" ? baseURL : "http://localhost:3000";
 }
 
 function watchRuntimeTranslationErrors(page: Page) {
