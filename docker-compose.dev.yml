@@ -43,6 +43,15 @@ services:
     healthcheck:
       start_period: 5s
 
+  realtime-outbox:
+    build:
+      target: dev
+    environment:
+      NODE_ENV: development
+    volumes:
+      - .:/app
+      - app_node_modules:/app/node_modules
+
 volumes:
   app_generated:
   app_node_modules:

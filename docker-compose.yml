@@ -160,6 +160,29 @@ services:
       retries: 10
       start_period: 5s
 
+  realtime-outbox:
+    build:
+      context: .
+    command: ["bun", "run", "realtime:drain-outbox:loop"]
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://${POSTGRES_USER:-transcendence}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}@database:5432/${POSTGRES_DB:-transcendence}?schema=public
+      REALTIME_INTERNAL_SECRET: ${REALTIME_INTERNAL_SECRET:?REALTIME_INTERNAL_SECRET is required}
+      REALTIME_INTERNAL_URL: http://realtime:3001/internal/game-update
+      REALTIME_OUTBOX_DRAIN_DISABLED: ${REALTIME_OUTBOX_DRAIN_DISABLED:-false}
+      REALTIME_OUTBOX_DRAIN_INTERVAL_SECONDS: ${REALTIME_OUTBOX_DRAIN_INTERVAL_SECONDS:-5}
+      REALTIME_OUTBOX_DRAIN_LIMIT: ${REALTIME_OUTBOX_DRAIN_LIMIT:-25}
+    depends_on:
+      app:
+        condition: service_healthy
+      database:
+        condition: service_healthy
+      realtime:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - transcendence
+
   caddy:
     image: caddy:2.11.2-alpine
     environment:

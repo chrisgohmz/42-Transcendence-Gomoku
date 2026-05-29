@@ -55,6 +55,7 @@ Then run the Next app and realtime service from separate host shells:
 ```bash
 bun run dev
 bun run dev:realtime
+bun run realtime:drain-outbox:loop
 ```
 
 This host-shell path still serves plain HTTP on `http://localhost:3000`. Set
@@ -64,6 +65,12 @@ service. Friendship refreshes are derived from that URL unless you set
 `REALTIME_FRIENDSHIP_INTERNAL_URL` explicitly. Internal friendship publishes use
 `REALTIME_INTERNAL_SECRET` as the shared service-to-service header secret. In
 production this must be distinct from `BETTER_AUTH_SECRET`.
+
+The realtime outbox drain loop is the host-shell worker for retrying durable
+match realtime events after transient publish failures. Tune it with
+`REALTIME_OUTBOX_DRAIN_INTERVAL_SECONDS` and `REALTIME_OUTBOX_DRAIN_LIMIT`; set
+`REALTIME_OUTBOX_DRAIN_DISABLED=true` to keep the worker container alive without
+processing events.
 
 Redis is optional for single-process host development. When `REDIS_URL` is set,
 the app uses it for shared app rate limits and Better Auth secondary storage,
@@ -134,7 +141,7 @@ data you need to keep.
 docker compose up --build
 ```
 
-This runs the Next app, Bun realtime service, Caddy HTTPS reverse proxy, PostgreSQL, and the PostgreSQL backup sidecar in a production-style local container mode. Open the app at `https://localhost:8443`.
+This runs the Next app, Bun realtime service, realtime outbox worker, Caddy HTTPS reverse proxy, PostgreSQL, and the PostgreSQL backup sidecar in a production-style local container mode. Open the app at `https://localhost:8443`.
 
 ### Run the full stack in Docker dev mode
 

@@ -12,6 +12,7 @@
     "start": "next start --hostname 0.0.0.0 --port 3000",
     "start:realtime": "bun realtime/server.ts",
     "realtime:drain-outbox": "bun --bun scripts/drain-realtime-outbox.ts",
+    "realtime:drain-outbox:loop": "sh scripts/realtime-outbox-drain-loop.sh",
     "prisma:generate": "bunx --bun prisma generate",
     "prisma:migrate:dev": "bunx --bun prisma migrate dev",
     "prisma:migrate:deploy": "bunx --bun prisma migrate deploy",
