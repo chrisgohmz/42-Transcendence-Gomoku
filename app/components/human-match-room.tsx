@@ -1,15 +1,6 @@
 "use client";
 
-import {
-  ArrowLeft,
-  CircleDot,
-  Flag,
-  LoaderCircle,
-  Radio,
-  RefreshCcw,
-  Swords,
-  Trophy,
-} from "lucide-react";
+import { ArrowLeft, CircleDot, Flag, LoaderCircle, RefreshCcw, Swords } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
@@ -31,7 +22,7 @@ import {
 import { MoveSubmissionError, submitMove } from "@/lib/matches/submit-move";
 import { cn } from "@/lib/utils";
 
-import type { Cell, GameUpdatePayload, ParticipantSummary, Seat } from "../../shared/match-events";
+import type { Cell, GameUpdatePayload, ParticipantSummary } from "../../shared/match-events";
 
 type HumanMatchRoomProps = {
   initialState: MatchStateResponse | null;
@@ -44,7 +35,6 @@ type HumanMatchRoomProps = {
 
 type MatchMove = MatchStateResponse["moves"][number];
 type MatchStatus = GameUpdatePayload["status"];
-type SocketStatus = ReturnType<typeof useSocketGame>["status"];
 type TranslationFunction = (key: string, values?: Record<string, string | number>) => string;
 
 function emptyBoard(boardSize: number): Cell[][] {
@@ -153,66 +143,6 @@ function matchStatusLabel(status: MatchStatus | undefined, t: TranslationFunctio
   return t("status.loading");
 }
 
-function socketStatusLabel(status: SocketStatus, t: TranslationFunction) {
-  if (status === "connecting") {
-    return t("connection.status.connecting");
-  }
-
-  if (status === "subscribed") {
-    return t("connection.status.connected");
-  }
-
-  if (status === "error") {
-    return t("connection.status.error");
-  }
-
-  return t("connection.status.idle");
-}
-
-function seatLabel(seat: Seat | null | undefined, t: TranslationFunction) {
-  if (seat === "BLACK") {
-    return t("seat.black");
-  }
-
-  if (seat === "WHITE") {
-    return t("seat.white");
-  }
-
-  return t("state.none");
-}
-
-function endReasonLabel(reason: string | null | undefined, t: TranslationFunction) {
-  if (reason === "five_in_a_row") {
-    return t("endReason.fiveInARow");
-  }
-
-  if (reason === "resign") {
-    return t("endReason.resign");
-  }
-
-  if (reason === "draw") {
-    return t("endReason.draw");
-  }
-
-  if (reason === "queue_cancelled") {
-    return t("endReason.queueCancelled");
-  }
-
-  if (reason === "host_cancelled") {
-    return t("endReason.hostCancelled");
-  }
-
-  if (reason === "queue_expired") {
-    return t("endReason.queueExpired");
-  }
-
-  if (reason === "abandoned") {
-    return t("endReason.abandoned");
-  }
-
-  return t("statusLine.resultFallback");
-}
-
 export default function HumanMatchRoom({
   initialState,
   isRestoring = false,
@@ -282,7 +212,7 @@ export default function HumanMatchRoom({
   }, [loadState]);
 
   const initialUpdate = toInitialGameUpdate(state, session);
-  const { status: socketStatus, lastUpdate } = useSocketGame(
+  const { lastUpdate } = useSocketGame(
     session.matchId,
     session.participantId,
     initialUpdate?.stateVersion ?? null,
@@ -313,7 +243,6 @@ export default function HumanMatchRoom({
   const pageHeaderTitle = pageTitle(matchStatus, t);
   const pageHeaderLede = pageLede(matchStatus, t);
   const matchStatusText = matchStatusLabel(matchStatus, t);
-  const socketStatusText = socketStatusLabel(socketStatus, t);
 
   // Visual local timer countdown
   const [timeLeft, setTimeLeft] = useState(600); // 10 minutes in seconds
@@ -341,8 +270,9 @@ export default function HumanMatchRoom({
 
   const formattedTime = `${Math.floor(timeLeft / 60)}:${(timeLeft % 60).toString().padStart(2, "0")}`;
 
-  const blackName = participantBySeat.BLACK?.displayName ?? "Waiting...";
-  const whiteName = participantBySeat.WHITE?.displayName ?? "Waiting...";
+  const openSeatName = t("seat.openSeat");
+  const blackName = participantBySeat.BLACK?.displayName ?? openSeatName;
+  const whiteName = participantBySeat.WHITE?.displayName ?? openSeatName;
 
   async function handleCellSelect(x: number, y: number) {
     if (!effectiveUpdate || !mySeat || effectiveUpdate.status !== "IN_PROGRESS") {
@@ -536,33 +466,9 @@ export default function HumanMatchRoom({
       />
 
       <section
-        className="grid min-w-0 items-start gap-5 xl:grid-cols-[minmax(0,260px)_minmax(0,1fr)_minmax(0,300px)]"
+        className="grid min-w-0 items-start gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(0,300px)]"
         data-testid="human-match-room"
       >
-        <aside className="grid min-w-0 content-start gap-5">
-          <Surface eyebrow="Connection" icon={Radio} title="Realtime">
-            <div className="grid gap-3 text-sm">
-              <DetailRow label={t("connection.socket")} value={socketStatusText} />
-              <DetailRow
-                label={t("connection.version")}
-                value={effectiveUpdate?.stateVersion ?? state?.stateVersion ?? 0}
-              />
-              <DetailRow
-                label={t("connection.you")}
-                value={mySeat ? seatLabel(mySeat, t) : t("connection.spectator")}
-              />
-            </div>
-          </Surface>
-
-          <Surface eyebrow="Match" icon={Trophy} title="State">
-            <div className="grid gap-3 text-sm">
-              <DetailRow label="Match" value={session.matchId.slice(0, 8)} />
-              <DetailRow label="Board" value={`${board.length} x ${board.length}`} />
-              <DetailRow label="Status" value={statusLine(effectiveUpdate, mySeat, t)} />
-            </div>
-          </Surface>
-        </aside>
-
         <section className="board-room min-w-0 place-items-center overflow-hidden p-3 sm:p-5">
           <MatchBoard
             board={board}
@@ -588,7 +494,14 @@ export default function HumanMatchRoom({
         </section>
 
         <aside className="grid min-w-0 content-start gap-5">
-          <PlayerBar blackName={blackName} whiteName={whiteName} timer={formattedTime} />
+          <PlayerBar
+            blackLabel={t("seat.black")}
+            blackName={blackName}
+            timer={formattedTime}
+            timerLabel={t("timer.label")}
+            whiteLabel={t("seat.white")}
+            whiteName={whiteName}
+          />
 
           <Surface eyebrow={t("moves.eyebrow")} title={t("moves.title")}>
             <MoveHistory moves={moveHistory} participants={effectiveUpdate?.participants ?? []} />
@@ -596,15 +509,6 @@ export default function HumanMatchRoom({
         </aside>
       </section>
     </PageShell>
-  );
-}
-
-function DetailRow({ label, value }: { label: string; value: string | number }) {
-  return (
-    <div className="grid min-h-10 min-w-0 grid-cols-[auto_minmax(0,1fr)] items-center gap-3 rounded-md border border-(--panel-border-soft) bg-white/3.5 px-3">
-      <span className="text-(--muted-text)">{label}</span>
-      <span className="min-w-0 truncate text-right font-black">{value}</span>
-    </div>
   );
 }
 
@@ -652,41 +556,4 @@ function MoveHistory({
       })}
     </div>
   );
-}
-
-function statusLine(update: GameUpdatePayload | null, mySeat: Seat | null, t: TranslationFunction) {
-  if (!update) {
-    return t("statusLine.loading");
-  }
-
-  if (update.status === "WAITING") {
-    return t("statusLine.waiting");
-  }
-
-  if (update.status === "FINISHED") {
-    if (update.winningSeat) {
-      if (update.endReason === "resign") {
-        return t("statusLine.winnerByResign", { seat: seatLabel(update.winningSeat, t) });
-      }
-
-      return t("statusLine.winner", {
-        seat: seatLabel(update.winningSeat, t),
-        reason: endReasonLabel(update.endReason, t),
-      });
-    }
-
-    return t("statusLine.draw");
-  }
-
-  if (update.status === "CANCELLED") {
-    return t("statusLine.cancelled", { reason: endReasonLabel(update.endReason, t) });
-  }
-
-  if (mySeat && update.nextTurnSeat === mySeat) {
-    return t("statusLine.yourMove");
-  }
-
-  return t("statusLine.toMove", {
-    seat: seatLabel(update.nextTurnSeat, t),
-  });
 }

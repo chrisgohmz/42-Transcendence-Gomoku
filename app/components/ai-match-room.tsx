@@ -1,23 +1,12 @@
 "use client";
 
-import {
-  ArrowLeft,
-  Bot,
-  BrainCircuit,
-  CircleDot,
-  Flag,
-  LoaderCircle,
-  Radio,
-  RefreshCcw,
-  Swords,
-  Trophy,
-  UserRound,
-} from "lucide-react";
+import { ArrowLeft, CircleDot, Flag, LoaderCircle, RefreshCcw, Swords } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { Badge, PageHeader, PageShell, Surface } from "@/components/gomoku-ui";
 import MatchBoard, { formatBoardPoint } from "@/components/match-board";
+import PlayerBar from "@/components/player-bar";
 import { useSocketGame } from "@/hooks/useSocketGame";
 import { getAiDifficulty } from "@/lib/matches/ai-difficulty";
 import { soloAiDisplayName } from "@/lib/matches/ai-solo";
@@ -76,18 +65,6 @@ function getErrorCode(payload: unknown): string | null {
 
   const errorPayload = payload as { error?: unknown };
   return typeof errorPayload.error === "string" ? errorPayload.error : null;
-}
-
-function seatTone(seat: Seat | null): "brass" | "mint" | "neutral" {
-  if (seat === "BLACK") {
-    return "brass";
-  }
-
-  if (seat === "WHITE") {
-    return "mint";
-  }
-
-  return "neutral";
 }
 
 function oppositeSeat(seat: Seat | null): Seat | null {
@@ -185,7 +162,7 @@ export default function AiMatchRoom({
   }, [loadState]);
 
   const initialUpdate = toInitialGameUpdate(state, session);
-  const { status: socketStatus, lastUpdate } = useSocketGame(
+  const { lastUpdate } = useSocketGame(
     session.matchId,
     session.participantId,
     initialUpdate?.stateVersion ?? null,
@@ -213,6 +190,13 @@ export default function AiMatchRoom({
     session.aiDifficulty ?? effectiveUpdate?.aiDifficulty ?? state?.aiDifficulty,
   );
   const difficultyName = tAiLobby(`difficulty.names.${difficulty.id}`);
+  const playerName = session.displayName || t("seat.you");
+  const blackName =
+    participantBySeat.BLACK?.displayName ??
+    (mySeat === "BLACK" ? playerName : aiSeat === "BLACK" ? aiName : t("seat.openSeat"));
+  const whiteName =
+    participantBySeat.WHITE?.displayName ??
+    (mySeat === "WHITE" ? playerName : aiSeat === "WHITE" ? aiName : t("seat.openSeat"));
   const moveHistory = useMemo(
     () => effectiveUpdate?.moves ?? state?.moves ?? [],
     [effectiveUpdate?.moves, state?.moves],
@@ -423,41 +407,9 @@ export default function AiMatchRoom({
       />
 
       <section
-        className="grid gap-5 xl:grid-cols-[260px_minmax(0,1fr)_300px]"
+        className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_300px]"
         data-testid="ai-match-room"
       >
-        <aside className="grid content-start gap-5">
-          <SeatPanel
-            participant={participantBySeat.BLACK}
-            isAi={aiSeat === "BLACK"}
-            isTurn={effectiveUpdate?.nextTurnSeat === "BLACK"}
-            isYou={mySeat === "BLACK"}
-            seat="BLACK"
-            t={t}
-          />
-          <SeatPanel
-            participant={participantBySeat.WHITE}
-            isAi={aiSeat === "WHITE"}
-            isTurn={effectiveUpdate?.nextTurnSeat === "WHITE"}
-            isYou={mySeat === "WHITE"}
-            seat="WHITE"
-            t={t}
-          />
-          <Surface eyebrow={t("connection.eyebrow")} icon={Radio} title={t("connection.title")}>
-            <div className="grid gap-3 text-sm">
-              <DetailRow label={t("connection.socket")} value={socketStatus} />
-              <DetailRow
-                label={t("connection.version")}
-                value={effectiveUpdate?.stateVersion ?? state?.stateVersion ?? 0}
-              />
-              <DetailRow
-                label={t("connection.you")}
-                value={mySeat ? seatLabel(mySeat, t) : t("connection.spectator")}
-              />
-            </div>
-          </Surface>
-        </aside>
-
         <section className="board-room overflow-hidden p-3 sm:p-5">
           <MatchBoard
             board={board}
@@ -520,35 +472,12 @@ export default function AiMatchRoom({
         </section>
 
         <aside className="grid content-start gap-5">
-          <Surface eyebrow={t("model.eyebrow")} icon={BrainCircuit} title={difficultyName}>
-            <div className="grid gap-3 text-sm">
-              <DetailRow
-                label={t("model.depth")}
-                value={t("model.depthValue", { plies: difficulty.engine.searchDepth })}
-              />
-              <DetailRow label={t("model.candidates")} value={difficulty.engine.candidateLimit} />
-              <DetailRow
-                label={t("model.randomness")}
-                value={`${Math.round(difficulty.engine.mistakeChance * 100)}%`}
-              />
-            </div>
-          </Surface>
-
-          <Surface eyebrow={t("match.eyebrow")} icon={Trophy} title={t("match.title")}>
-            <div className="grid gap-3 text-sm">
-              <DetailRow label={t("match.match")} value={session.matchId.slice(0, 8)} />
-              <DetailRow label={t("match.board")} value={`${board.length} x ${board.length}`} />
-              <DetailRow
-                label={t("match.next")}
-                value={
-                  effectiveUpdate?.nextTurnSeat
-                    ? seatLabel(effectiveUpdate.nextTurnSeat, t)
-                    : t("match.none")
-                }
-              />
-              <DetailRow label={t("match.result")} value={resultLabel(effectiveUpdate, t)} />
-            </div>
-          </Surface>
+          <PlayerBar
+            blackLabel={t("seat.black")}
+            blackName={blackName}
+            whiteLabel={t("seat.white")}
+            whiteName={whiteName}
+          />
 
           <Surface eyebrow={t("moves.eyebrow")} title={t("moves.title")}>
             <MoveHistory
@@ -560,46 +489,6 @@ export default function AiMatchRoom({
         </aside>
       </section>
     </PageShell>
-  );
-}
-
-function SeatPanel({
-  isAi,
-  isTurn,
-  isYou,
-  participant,
-  seat,
-  t,
-}: {
-  isAi: boolean;
-  isTurn: boolean;
-  isYou: boolean;
-  participant: ParticipantSummary | null;
-  seat: Seat;
-  t: Translator;
-}) {
-  return (
-    <Surface
-      eyebrow={seatLabel(seat, t)}
-      icon={isAi ? Bot : UserRound}
-      title={participant?.displayName ?? t("seat.openSeat")}
-    >
-      <div className="flex flex-wrap gap-2">
-        <Badge tone={seatTone(seat)}>
-          {isYou ? t("seat.you") : isAi ? t("seat.ai") : t("seat.opponent")}
-        </Badge>
-        {isTurn ? <Badge tone="mint">{t("seat.turn")}</Badge> : null}
-      </div>
-    </Surface>
-  );
-}
-
-function DetailRow({ label, value }: { label: string; value: string | number }) {
-  return (
-    <div className="grid min-h-10 min-w-0 grid-cols-[auto_minmax(0,1fr)] items-center gap-3 rounded-md border border-[var(--panel-border-soft)] bg-white/[0.035] px-3">
-      <span className="text-[var(--muted-text)]">{label}</span>
-      <span className="min-w-0 truncate text-right font-black">{value}</span>
-    </div>
   );
 }
 
@@ -684,16 +573,6 @@ function statusLine(
   return t("status.toMove", {
     seat: update.nextTurnSeat ? seatLabel(update.nextTurnSeat, t) : t("seat.opponent"),
   });
-}
-
-function resultLabel(update: GameUpdatePayload | null, t: Translator) {
-  if (!update || update.status !== "FINISHED") {
-    return t("result.pending");
-  }
-
-  return update.winningSeat
-    ? t("result.won", { seat: seatLabel(update.winningSeat, t) })
-    : t("result.draw");
 }
 
 function matchStatusLabel(status: GameUpdatePayload["status"], t: Translator) {

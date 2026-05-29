@@ -2,8 +2,13 @@ import { beforeEach, describe, expect, mock, test } from "bun:test";
 
 import { createAuthModuleMock } from "@/test-utils/auth-module-mock";
 
+const connection = mock();
 const getCurrentSessionIdentity = mock();
 const getLeaderboardSearchSnapshot = mock();
+
+await mock.module("next/server", () => ({
+  connection,
+}));
 
 await mock.module("@/lib/auth", () =>
   createAuthModuleMock({
@@ -22,6 +27,8 @@ function request(path = "http://localhost/api/leaderboard") {
 }
 
 beforeEach(() => {
+  connection.mockReset();
+  connection.mockResolvedValue(undefined);
   getCurrentSessionIdentity.mockReset();
   getLeaderboardSearchSnapshot.mockReset();
 

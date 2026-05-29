@@ -13,7 +13,12 @@ import { authValidationLimits } from "@/lib/validation/auth-profile-limits";
 import { initialSignupActionState } from "../auth-action-state";
 import { signupAction } from "../auth-actions";
 
-export function SignupForm({ oauthProviders }: { oauthProviders: OAuthProviderId[] }) {
+type SignupFormProps = {
+  oauthErrorMessage?: string | null;
+  oauthProviders: OAuthProviderId[];
+};
+
+export function SignupForm({ oauthErrorMessage = null, oauthProviders }: SignupFormProps) {
   const locale = useLocale();
   const shared = useTranslations("auth.shared");
   const signup = useTranslations("auth.signup");
@@ -43,6 +48,7 @@ export function SignupForm({ oauthProviders }: { oauthProviders: OAuthProviderId
             minLength={authValidationLimits.usernameMinLength}
             maxLength={authValidationLimits.usernameMaxLength}
             pattern="(?:[A-Za-z0-9_]|-)+"
+            aria-label={signup("username")}
             aria-describedby={state.fields.username ? usernameErrorId : undefined}
             aria-invalid={Boolean(state.fields.username)}
             required
@@ -65,6 +71,7 @@ export function SignupForm({ oauthProviders }: { oauthProviders: OAuthProviderId
             defaultValue={state.displayName}
             maxLength={authValidationLimits.displayNameMaxLength}
             placeholder={signup("displayNamePlaceholder")}
+            aria-label={signup("displayName")}
             aria-describedby={state.fields.displayName ? displayNameErrorId : undefined}
             aria-invalid={Boolean(state.fields.displayName)}
           />
@@ -87,6 +94,7 @@ export function SignupForm({ oauthProviders }: { oauthProviders: OAuthProviderId
             className="text-input field-input"
             defaultValue={state.email}
             maxLength={authValidationLimits.emailMaxLength}
+            aria-label={shared("email")}
             aria-describedby={state.fields.email ? emailErrorId : undefined}
             aria-invalid={Boolean(state.fields.email)}
             required
@@ -110,6 +118,7 @@ export function SignupForm({ oauthProviders }: { oauthProviders: OAuthProviderId
             required
             minLength={authValidationLimits.passwordMinLength}
             maxLength={authValidationLimits.passwordMaxLength}
+            aria-label={shared("password")}
             aria-describedby={state.fields.password ? passwordErrorId : undefined}
             aria-invalid={Boolean(state.fields.password)}
           />
@@ -125,13 +134,12 @@ export function SignupForm({ oauthProviders }: { oauthProviders: OAuthProviderId
       ) : null}
 
       {state.successMessage ? (
-        <p
-          className="m-0 rounded-md border border-[var(--mint)]/35 bg-[var(--mint-soft)] p-3 text-sm font-bold text-[var(--mint)]"
-          role="status"
+        <output
+          className="m-0 block rounded-md border border-[var(--mint)]/35 bg-[var(--mint-soft)] p-3 text-sm font-bold text-[var(--mint)]"
           aria-live="polite"
         >
           {state.successMessage}
-        </p>
+        </output>
       ) : null}
 
       <button className="btn m-0 w-full" type="submit" disabled={pending}>
@@ -139,8 +147,9 @@ export function SignupForm({ oauthProviders }: { oauthProviders: OAuthProviderId
       </button>
 
       <OAuthProviderButtons
-        callbackPath={`/${locale}/account`}
+        callbackPath={`/${locale}/profile`}
         errorPath={`/${locale}/signup`}
+        initialErrorMessage={oauthErrorMessage}
         providers={oauthProviders}
       />
 

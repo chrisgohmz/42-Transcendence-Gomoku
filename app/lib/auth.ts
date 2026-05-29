@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 
+import { redisStorage } from "@better-auth/redis-storage";
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { nextCookies } from "better-auth/next-js";
@@ -7,6 +8,7 @@ import { headers } from "next/headers";
 import { z } from "zod";
 
 import type { User } from "../../generated/prisma/client";
+import { getSharedRedisClient, readRedisUrl } from "../../shared/server/redis";
 import { defaultLocale } from "../i18n/config";
 import type { DuplicateSignupFields } from "./auth-duplicate-fields";
 import {
@@ -156,6 +158,26 @@ function getPasswordResetUrl(url: string, token: string): string {
 const githubCredentials = getOAuthCredentials("github");
 const googleCredentials = getOAuthCredentials("google");
 const trustedOrigins = getTrustedAuthOrigins();
+const betterAuthRateLimitEnabled =
+  process.env["BETTER_AUTH_RATE_LIMIT_ENABLED"] === "true" ||
+  process.env["NODE_ENV"] === "production";
+const betterAuthRedisUrl = readRedisUrl(process.env, ["BETTER_AUTH_REDIS_URL", "REDIS_URL"]);
+const betterAuthRedisClient = betterAuthRedisUrl
+  ? getSharedRedisClient({
+      cacheKey: "better-auth",
+      connectTimeoutEnvName: "BETTER_AUTH_REDIS_CONNECT_TIMEOUT_MS",
+      enableOfflineQueue: true,
+      env: process.env,
+      url: betterAuthRedisUrl,
+      warningMessage: "[auth] Redis secondary storage is unavailable.",
+    })
+  : null;
+const betterAuthSecondaryStorage = betterAuthRedisClient
+  ? redisStorage({
+      client: betterAuthRedisClient,
+      keyPrefix: process.env["BETTER_AUTH_REDIS_KEY_PREFIX"]?.trim() || "better-auth:",
+    })
+  : undefined;
 
 function getBetterAuthBaseUrl() {
   const fallback = getConfiguredAuthBaseUrl() ?? trustedOrigins[0];
@@ -173,10 +195,31 @@ function getBetterAuthBaseUrl() {
 }
 
 export const auth = betterAuth({
-  appName: "42 Transcendence Gomoku",
+  appName: "Gomoku Heroes",
   baseURL: getBetterAuthBaseUrl(),
   secret: process.env["BETTER_AUTH_SECRET"],
   trustedOrigins,
+  secondaryStorage: betterAuthSecondaryStorage,
+  rateLimit: {
+    enabled: betterAuthRateLimitEnabled,
+    storage: betterAuthSecondaryStorage ? "secondary-storage" : "memory",
+    window: 60,
+    max: 100,
+    customRules: {
+      "/request-password-reset": {
+        window: 60,
+        max: 3,
+      },
+      "/sign-in/email": {
+        window: 10,
+        max: 3,
+      },
+      "/sign-up/email": {
+        window: 60,
+        max: 5,
+      },
+    },
+  },
   database: prismaAdapter(prisma, {
     provider: "postgresql",
   }),
@@ -250,6 +293,7 @@ export const auth = betterAuth({
     expiresIn: SESSION_TTL_SECONDS,
     updateAge: SESSION_REFRESH_SECONDS,
     freshAge: 0,
+    storeSessionInDatabase: Boolean(betterAuthSecondaryStorage),
   },
   account: {
     modelName: "Account",
@@ -257,6 +301,7 @@ export const auth = betterAuth({
   },
   verification: {
     modelName: "Verification",
+    storeInDatabase: Boolean(betterAuthSecondaryStorage),
   },
   socialProviders: {
     ...(githubCredentials

@@ -44,13 +44,7 @@ export default function GameLobbyTable({
       id,
       entry,
       name: entry.name || t("roomName", { player: entry.player }),
-      ping: entry.roomId && entry.roomId % 2 === 0 ? "28ms" : "45ms",
-      players:
-        typeof entry.playerCount === "number"
-          ? `${entry.playerCount}/2`
-          : entry.requiresPassword
-            ? "1/2"
-            : "2/2",
+      players: typeof entry.playerCount === "number" ? `${entry.playerCount}/2` : "-",
       privacy: isPublic ? t("privacy.public") : t("privacy.private"),
       isLive,
       isPublic,
@@ -66,12 +60,11 @@ export default function GameLobbyTable({
         aria-busy={isLoading}
       >
         <div className="min-w-[760px]">
-          <div className="grid grid-cols-[minmax(180px,1.25fr)_90px_88px_98px_78px_72px] gap-3 border-b border-(--panel-border-soft) bg-black/20 px-4 py-3 text-xs font-black tracking-[0.12em] text-(--muted-text) uppercase">
+          <div className="grid grid-cols-[minmax(180px,1.25fr)_90px_88px_98px_72px] gap-3 border-b border-(--panel-border-soft) bg-black/20 px-4 py-3 text-xs font-black tracking-[0.12em] text-(--muted-text) uppercase">
             <span>{t("headers.room")}</span>
             <span>{t("headers.rules")}</span>
             <span>{t("headers.players")}</span>
             <span>{t("headers.privacy")}</span>
-            <span>{t("headers.ping")}</span>
             <span />
           </div>
           {error && !passwordPrompt ? (
@@ -86,7 +79,7 @@ export default function GameLobbyTable({
             rows.map((row) => (
               <article
                 key={row.id}
-                className="grid min-h-16 grid-cols-[minmax(180px,1.25fr)_90px_88px_98px_78px_72px] items-center gap-3 border-b border-(--panel-border-soft) px-4 py-3 last:border-b-0 hover:bg-white/5"
+                className="grid min-h-16 grid-cols-[minmax(180px,1.25fr)_90px_88px_98px_72px] items-center gap-3 border-b border-(--panel-border-soft) px-4 py-3 last:border-b-0 hover:bg-white/5"
               >
                 <div className="flex min-w-0 items-center gap-3">
                   <span
@@ -111,24 +104,27 @@ export default function GameLobbyTable({
                   )}
                   {row.privacy}
                 </Badge>
-                <span className="text-sm font-black text-(--brass) tabular-nums">{row.ping}</span>
-                <button
-                  type="button"
-                  className="grid size-10 place-items-center rounded-md border border-(--panel-border-soft) bg-white/3.5 text-(--muted-strong) hover:bg-white/7"
-                  aria-label={t("joinAria", { name: row.name })}
-                  onClick={() => {
-                    if (row.entry.requiresPassword) {
-                      setPasswordPrompt(row.entry);
-                      setPasswordInput("");
-                    } else {
-                      onJoin?.(row.entry);
-                    }
-                  }}
-                  disabled={Boolean(joiningMatchId) || isLoading}
-                  aria-busy={joiningMatchId === row.id}
-                >
-                  <ChevronRight aria-hidden="true" className="size-4" />
-                </button>
+                {onJoin ? (
+                  <button
+                    type="button"
+                    className="grid size-10 place-items-center rounded-md border border-(--panel-border-soft) bg-white/3.5 text-(--muted-strong) hover:bg-white/7"
+                    aria-label={t("joinAria", { name: row.name })}
+                    onClick={() => {
+                      if (row.entry.requiresPassword) {
+                        setPasswordPrompt(row.entry);
+                        setPasswordInput("");
+                      } else {
+                        onJoin(row.entry);
+                      }
+                    }}
+                    disabled={Boolean(joiningMatchId) || isLoading}
+                    aria-busy={joiningMatchId === row.id}
+                  >
+                    <ChevronRight aria-hidden="true" className="size-4" />
+                  </button>
+                ) : (
+                  <span aria-hidden="true" />
+                )}
               </article>
             ))
           ) : (
@@ -143,19 +139,24 @@ export default function GameLobbyTable({
         </div>
       </div>
 
-      {passwordPrompt && (
+      {passwordPrompt && onJoin ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4 backdrop-blur-sm">
-          <div
-            className="w-full max-w-sm overflow-hidden rounded-xl border border-(--panel-border-soft) bg-[#0e0e11] shadow-2xl"
-            role="dialog"
+          <dialog
+            open
+            className="m-0 w-full max-w-sm overflow-hidden rounded-xl border border-(--panel-border-soft) bg-[#0e0e11] p-0 text-left text-inherit shadow-2xl"
             aria-modal="true"
+            aria-labelledby="private-room-dialog-title"
           >
             <div className="flex items-center justify-between border-b border-(--panel-border-soft) bg-white/2 px-5 py-4">
-              <h3 className="flex items-center gap-2 font-black text-white">
+              <h3
+                id="private-room-dialog-title"
+                className="flex items-center gap-2 font-black text-white"
+              >
                 <LockKeyhole aria-hidden="true" className="size-4 text-(--brass)" />
                 {t("privateRoomTitle")}
               </h3>
               <button
+                type="button"
                 onClick={() => setPasswordPrompt(null)}
                 className="rounded-md text-(--muted-text) transition-colors hover:text-white"
                 aria-label={t("close")}
@@ -169,7 +170,7 @@ export default function GameLobbyTable({
               onSubmit={(e) => {
                 e.preventDefault();
                 if (passwordInput) {
-                  onJoin?.(passwordPrompt, passwordInput);
+                  onJoin(passwordPrompt, passwordInput);
                 }
               }}
               className="p-5"
@@ -190,6 +191,8 @@ export default function GameLobbyTable({
               <input
                 type="password"
                 autoFocus
+                aria-label={t("password")}
+                autoComplete="current-password"
                 placeholder={t("passwordPlaceholder")}
                 value={passwordInput}
                 onChange={(e) => setPasswordInput(e.target.value)}
@@ -214,9 +217,9 @@ export default function GameLobbyTable({
                 </button>
               </div>
             </form>
-          </div>
+          </dialog>
         </div>
-      )}
+      ) : null}
     </>
   );
 }

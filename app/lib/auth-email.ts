@@ -205,7 +205,7 @@ export async function sendPasswordResetEmail({
       "<p>If you did not request this, you can ignore this email.</p>",
     ].join("\n"),
     to: email,
-    subject: "Reset your 42 Transcendence Gomoku password",
+    subject: "Reset your Gomoku Heroes password",
     text: [
       "A password reset was requested for your account.",
       "",
@@ -226,15 +226,15 @@ export async function sendEmailVerificationEmail({
 
   await sendAuthEmail({
     html: [
-      "<p>Welcome to 42 Transcendence Gomoku.</p>",
+      "<p>Welcome to Gomoku Heroes.</p>",
       `<p><a href="${escapedVerificationUrl}">Verify your email address</a></p>`,
       "<p>This link expires in 1 hour.</p>",
       "<p>If you did not create this account, you can ignore this email.</p>",
     ].join("\n"),
     to: email,
-    subject: "Verify your 42 Transcendence Gomoku email",
+    subject: "Verify your Gomoku Heroes email",
     text: [
-      "Welcome to 42 Transcendence Gomoku.",
+      "Welcome to Gomoku Heroes.",
       "",
       `Verify your email address here: ${verificationUrl}`,
       "",

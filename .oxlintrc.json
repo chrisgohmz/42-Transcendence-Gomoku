@@ -7,7 +7,21 @@
   "globals": {
     "Bun": "readonly"
   },
-  "plugins": ["unicorn", "typescript", "oxc", "react", "import", "nextjs", "node"],
+  "plugins": [
+    "eslint",
+    "unicorn",
+    "typescript",
+    "oxc",
+    "react",
+    "react-perf",
+    "import",
+    "nextjs",
+    "jsx-a11y",
+    "promise",
+    "node",
+    "jsdoc",
+    "jest"
+  ],
   "ignorePatterns": ["generated/**", ".next/**", "node_modules/**", "next-env.d.ts"],
   "options": {
     "typeAware": true

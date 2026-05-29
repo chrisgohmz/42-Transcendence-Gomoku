@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-label="Mei Tan avatar">
+  <rect width="256" height="256" rx="128" fill="#3d405b"/>
+  <circle cx="56" cy="60" r="80" fill="#f2cc8f" opacity=".82"/>
+  <circle cx="198" cy="196" r="92" fill="#e07a5f" opacity=".68"/>
+  <path d="M48 196c40-82 120-82 160 0z" fill="#1f2238" opacity=".42"/>
+  <text x="128" y="151" text-anchor="middle" font-family="Arial, sans-serif" font-size="82" font-weight="800" fill="#fff8ea">MT</text>
+</svg>

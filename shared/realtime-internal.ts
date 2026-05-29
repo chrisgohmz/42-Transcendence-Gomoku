@@ -128,5 +128,11 @@ export function isChallengeReceivedPayload(payload: unknown): payload is Challen
 }
 
 export function readRealtimeInternalSecret(env: NodeJS.ProcessEnv = process.env) {
-  return env["REALTIME_INTERNAL_SECRET"]?.trim() || env["BETTER_AUTH_SECRET"]?.trim() || null;
+  const explicitSecret = env["REALTIME_INTERNAL_SECRET"]?.trim();
+
+  if (explicitSecret) {
+    return explicitSecret;
+  }
+
+  return env["NODE_ENV"] === "production" ? null : env["BETTER_AUTH_SECRET"]?.trim() || null;
 }

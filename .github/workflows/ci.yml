@@ -49,14 +49,14 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
+      - name: Generate Prisma client
+        run: bun run prisma:generate
+
       - name: Check formatting
         run: bun run format:check
 
       - name: Lint code
         run: bun run lint
-
-      - name: Generate Prisma client
-        run: bun run prisma:generate
 
       - name: Apply database migrations
         run: bun run prisma:migrate:deploy
@@ -64,11 +64,44 @@ jobs:
       - name: Run tests
         run: bun test
 
+      - name: Start Redis smoke service
+        run: |
+          docker run -d \
+            --name redis-smoke \
+            -p 6379:6379 \
+            redis:8-alpine \
+            redis-server --appendonly yes --requirepass ci-redis-password
+
+          for attempt in {1..20}; do
+            if docker exec redis-smoke redis-cli -a ci-redis-password --no-auth-warning ping | grep -q PONG; then
+              exit 0
+            fi
+
+            sleep 1
+          done
+
+          docker logs redis-smoke
+          exit 1
+
+      - name: Run Redis integration smoke
+        env:
+          REDIS_SMOKE_URL: redis://:ci-redis-password@127.0.0.1:6379/0
+        run: bun run test:redis:smoke
+
+      - name: Cache Next.js build output
+        uses: actions/cache@v5
+        with:
+          path: ${{ github.workspace }}/.next/cache
+          key: >-
+            ${{ runner.os }}-nextjs-${{ hashFiles('bun.lock') }}-${{ hashFiles('package.json', 'next.config.ts', 'tsconfig.json', 'postcss.config.mjs', 'components.json', 'app/**', 'public/**', 'shared/**', 'realtime/**', 'prisma/**', 'proxy.ts') }}
+          restore-keys: |
+            ${{ runner.os }}-nextjs-${{ hashFiles('bun.lock') }}-
+
       - name: Build app
         env:
           BETTER_AUTH_SECRET: ci_better_auth_secret_change_me_32_chars
           BETTER_AUTH_URL: http://localhost:3000
-        run: bun run build
+        run: bun run build:next
 
       - name: Install Playwright browsers
         run: bun run pw:install --with-deps
@@ -78,6 +111,7 @@ jobs:
           BETTER_AUTH_SECRET: ci_better_auth_secret_change_me_32_chars
           BETTER_AUTH_URL: http://localhost:3000
           PLAYWRIGHT_WEB_SERVER_COMMAND: bun run start
+          REALTIME_INTERNAL_SECRET: ci_realtime_internal_secret_change_me
           REALTIME_INTERNAL_URL: http://127.0.0.1:3001/internal/game-update
           SOCKET_CORS_ORIGIN: http://localhost:3000
         run: |
@@ -130,6 +164,7 @@ jobs:
         env:
           BETTER_AUTH_SECRET: ci_better_auth_secret_change_me_32_chars
           POSTGRES_PASSWORD: ci-password
+          REALTIME_INTERNAL_SECRET: ci_realtime_internal_secret_change_me
         run: docker compose -f docker-compose.yml -f docker-compose.dev.yml config
 
       - name: Smoke test realtime server

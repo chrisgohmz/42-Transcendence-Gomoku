@@ -41,6 +41,31 @@ services:
     networks:
       - transcendence
 
+  redis:
+    image: redis:8-alpine
+    command:
+      [
+        "sh",
+        "-c",
+        'if [ -n "$$REDIS_PASSWORD" ]; then exec redis-server --appendonly yes --requirepass "$$REDIS_PASSWORD"; else exec redis-server --appendonly yes; fi',
+      ]
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-}
+    volumes:
+      - redis_data:/data
+    networks:
+      - transcendence
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          'if [ -n "$$REDIS_PASSWORD" ]; then redis-cli -a "$$REDIS_PASSWORD" --no-auth-warning ping; else redis-cli ping; fi',
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 5s
+
   app:
     build:
       context: .
@@ -62,15 +87,23 @@ services:
       OPERATIONS_STATUS_TOKEN: ${OPERATIONS_STATUS_TOKEN:-}
       OPERATIONS_STATUS_USER_IDS: ${OPERATIONS_STATUS_USER_IDS:-}
       OPERATIONS_STATUS_USERNAMES: ${OPERATIONS_STATUS_USERNAMES:-}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
+      RATE_LIMIT_REDIS_URL: ${RATE_LIMIT_REDIS_URL:-${REDIS_URL:-redis://redis:6379/0}}
+      RATE_LIMIT_REDIS_KEY_PREFIX: ${RATE_LIMIT_REDIS_KEY_PREFIX:-transcendence:rate-limit:}
+      RATE_LIMIT_REDIS_FAIL_OPEN: ${RATE_LIMIT_REDIS_FAIL_OPEN:-false}
+      BETTER_AUTH_REDIS_URL: ${BETTER_AUTH_REDIS_URL:-${REDIS_URL:-redis://redis:6379/0}}
+      BETTER_AUTH_REDIS_KEY_PREFIX: ${BETTER_AUTH_REDIS_KEY_PREFIX:-better-auth:}
       REALTIME_INTERNAL_URL: http://realtime:3001/internal/game-update
       REALTIME_FRIENDSHIP_INTERNAL_URL: http://realtime:3001/internal/friendship-update
-      REALTIME_INTERNAL_SECRET: ${REALTIME_INTERNAL_SECRET:-}
+      REALTIME_INTERNAL_SECRET: ${REALTIME_INTERNAL_SECRET:?REALTIME_INTERNAL_SECRET is required}
       SOCKET_PUBLIC_URL: ${SOCKET_PUBLIC_URL:-}
     depends_on:
       database:
         condition: service_healthy
+      redis:
+        condition: service_healthy
     volumes:
-      - app_uploads:/app/public/uploads
+      - app_storage:/app/storage
     networks:
       - transcendence
     healthcheck:
@@ -100,12 +133,17 @@ services:
       GITHUB_CLIENT_SECRET: ${GITHUB_CLIENT_SECRET:-}
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
-      REALTIME_INTERNAL_SECRET: ${REALTIME_INTERNAL_SECRET:-}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
+      REALTIME_REDIS_URL: ${REALTIME_REDIS_URL:-${REDIS_URL:-redis://redis:6379/0}}
+      REALTIME_PRESENCE_REDIS_KEY_PREFIX: ${REALTIME_PRESENCE_REDIS_KEY_PREFIX:-transcendence:presence:}
+      REALTIME_INTERNAL_SECRET: ${REALTIME_INTERNAL_SECRET:?REALTIME_INTERNAL_SECRET is required}
       SOCKET_HOST: 0.0.0.0
       SOCKET_PORT: 3001
       SOCKET_CORS_ORIGIN: ${SOCKET_CORS_ORIGIN:-https://localhost:8443}
     depends_on:
       database:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     networks:
       - transcendence
@@ -140,8 +178,9 @@ networks:
     driver: bridge
 
 volumes:
-  app_uploads:
+  app_storage:
   caddy_config:
   caddy_data:
   postgres_backups:
   postgres_data:
+  redis_data:

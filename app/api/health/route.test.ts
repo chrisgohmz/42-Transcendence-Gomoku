@@ -1,6 +1,11 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
 const queryRaw = mock();
+const connection = mock();
+
+await mock.module("next/server", () => ({
+  connection,
+}));
 
 await mock.module("../../lib/prisma", () => ({
   prisma: {
@@ -11,6 +16,8 @@ await mock.module("../../lib/prisma", () => ({
 const route = await import("./route");
 
 beforeEach(() => {
+  connection.mockReset();
+  connection.mockResolvedValue(undefined);
   queryRaw.mockReset();
   queryRaw.mockResolvedValue([{ "?column?": 1 }]);
 });
@@ -38,9 +45,9 @@ describe("GET /api/health", () => {
     expect(response.status).toBe(503);
     expect(payload).toMatchObject({
       database: "unreachable",
-      error: "connection refused",
       service: "app",
       status: "degraded",
     });
+    expect(payload).not.toHaveProperty("error");
   });
 });

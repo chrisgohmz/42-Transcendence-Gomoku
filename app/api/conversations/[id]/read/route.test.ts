@@ -112,7 +112,6 @@ describe("POST /api/conversations/[id]/read", () => {
     expect(response.status).toBe(500);
     expect(await response.json()).toMatchObject({
       error: "failed_to_mark_conversation_read",
-      detail: "db down",
     });
   });
 });

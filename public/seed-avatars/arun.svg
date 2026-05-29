@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-label="Arun Rao avatar">
+  <rect width="256" height="256" rx="128" fill="#14213d"/>
+  <circle cx="64" cy="58" r="84" fill="#fca311" opacity=".82"/>
+  <circle cx="198" cy="196" r="92" fill="#2ec4b6" opacity=".62"/>
+  <path d="M72 42l112 172H72z" fill="#050816" opacity=".36"/>
+  <text x="128" y="151" text-anchor="middle" font-family="Arial, sans-serif" font-size="82" font-weight="800" fill="#ffffff">AR</text>
+</svg>

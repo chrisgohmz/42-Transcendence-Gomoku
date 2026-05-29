@@ -16,6 +16,11 @@ import { buildGameUpdatePayload } from "@/lib/matches/game-update";
 import { standardGomokuBoardSize } from "@/lib/matches/move-rules";
 import { publishChallengeReceived, publishGameUpdate } from "@/lib/matches/realtime-publisher";
 import { prisma } from "@/lib/prisma";
+import { enforceRateLimit } from "@/lib/rate-limit";
+import { rateLimitRule, userRateLimitSubject } from "@/lib/rate-limit-rules";
+import { enforceMutationRequest } from "@/lib/request-security";
+
+const maxChallengeNameLength = 80;
 
 function getErrorMessage(error: unknown): string {
   return error instanceof Error ? error.message : "Unknown error";
@@ -61,6 +66,12 @@ async function cancelUndeliveredChallenge(matchId: string) {
 }
 
 export async function POST(request: Request) {
+  const requestGuardResponse = enforceMutationRequest(request, { requireJson: true });
+
+  if (requestGuardResponse) {
+    return requestGuardResponse;
+  }
+
   const context = await getCurrentSession();
 
   if (!context) {
@@ -86,6 +97,19 @@ export async function POST(request: Request) {
 
     if (!targetUsername) {
       return Response.json({ error: "invalid_payload" }, { status: 400 });
+    }
+
+    if (name.length > maxChallengeNameLength) {
+      return Response.json({ error: "challenge_name_too_long" }, { status: 400 });
+    }
+
+    const rateLimitExceededResponse = await enforceRateLimit(
+      request.headers,
+      rateLimitRule("matchChallengeCreate", userRateLimitSubject(context.user.id)),
+    );
+
+    if (rateLimitExceededResponse) {
+      return rateLimitExceededResponse;
     }
 
     const target = await prisma.user.findUnique({
@@ -184,7 +208,6 @@ export async function POST(request: Request) {
       return Response.json(
         {
           error: "failed_to_deliver_challenge",
-          detail: getErrorMessage(publishError),
         },
         { status: 502 },
       );
@@ -210,10 +233,10 @@ export async function POST(request: Request) {
       createdAt: match.createdAt,
     });
   } catch (error) {
+    console.error("[api/matches/challenge] create failed:", getErrorMessage(error));
     return Response.json(
       {
         error: "failed_to_create_challenge",
-        detail: getErrorMessage(error),
       },
       { status: 500 },
     );

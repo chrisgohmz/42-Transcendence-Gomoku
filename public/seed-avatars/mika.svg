@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-label="Mika Ito avatar">
+  <rect width="256" height="256" rx="128" fill="#2f3e46"/>
+  <circle cx="196" cy="66" r="82" fill="#84a98c" opacity=".78"/>
+  <circle cx="62" cy="196" r="92" fill="#cad2c5" opacity=".72"/>
+  <path d="M40 58h176v142H40z" fill="#0f171a" opacity=".32"/>
+  <text x="128" y="151" text-anchor="middle" font-family="Arial, sans-serif" font-size="82" font-weight="800" fill="#f6fff8">MI</text>
+</svg>

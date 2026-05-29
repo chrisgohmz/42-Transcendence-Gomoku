@@ -58,15 +58,59 @@ function getAllowedDevOrigins(): string[] {
 
 const allowedDevOrigins = getAllowedDevOrigins();
 
+const securityHeaders = [
+  {
+    key: "X-Content-Type-Options",
+    value: "nosniff",
+  },
+  {
+    key: "X-Frame-Options",
+    value: "DENY",
+  },
+  {
+    key: "Referrer-Policy",
+    value: "strict-origin-when-cross-origin",
+  },
+  {
+    key: "Permissions-Policy",
+    value: "camera=(), microphone=(), geolocation=(), payment=(), usb=()",
+  },
+  {
+    key: "X-DNS-Prefetch-Control",
+    value: "off",
+  },
+];
+
 const nextConfig: NextConfig = {
   allowedDevOrigins: allowedDevOrigins.length > 0 ? allowedDevOrigins : undefined,
-  cacheComponents: true,
   experimental: {
     globalNotFound: true,
     instantNavigationDevToolsToggle: true,
   },
+  images: {
+    remotePatterns: [
+      {
+        hostname: "avatars.githubusercontent.com",
+        pathname: "/u/**",
+        protocol: "https",
+      },
+      {
+        hostname: "lh3.googleusercontent.com",
+        pathname: "/**",
+        protocol: "https",
+      },
+    ],
+  },
   turbopack: {
     root: currentDirectory,
+  },
+  async headers() {
+    return [
+      {
+        headers: securityHeaders,
+        source: "/:path*",
+      },
+    ];
   },
   transpilePackages: ["@prisma/client", "@prisma/adapter-pg", "pg"],
 };

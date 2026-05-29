@@ -7,33 +7,43 @@ import { PageLoadingShell } from "@/components/page-loading-shell";
 import { SignupForm } from "@/components/signup-form";
 import { redirect } from "@/i18n/navigation";
 import { getConfiguredOAuthProviders, getCurrentSessionIdentity } from "@/lib/auth";
+import { getOAuthCallbackErrorMessage } from "@/lib/oauth-callback-messages";
+import { createPageMetadata } from "@/lib/page-metadata";
 
 type SignupPageProps = {
   params: Promise<{
     locale: string;
   }>;
+  searchParams?: Promise<{
+    error?: string | string[];
+  }>;
 };
 
-export default function SignupPage({ params }: SignupPageProps) {
+export const generateMetadata = createPageMetadata("signup");
+
+export default function SignupPage({ params, searchParams }: SignupPageProps) {
   return (
     <Suspense fallback={<PageLoadingShell wide={false} />}>
-      <SignupPageContent params={params} />
+      <SignupPageContent params={params} searchParams={searchParams} />
     </Suspense>
   );
 }
 
-async function SignupPageContent({ params }: SignupPageProps) {
+async function SignupPageContent({ params, searchParams }: SignupPageProps) {
   const { locale } = await params;
   setRequestLocale(locale);
 
   const session = await getCurrentSessionIdentity();
 
   if (session) {
-    redirect({ href: "/account", locale });
+    redirect({ href: "/profile", locale });
   }
 
-  const shared = await getTranslations({ locale, namespace: "auth.shared" });
-  const signup = await getTranslations({ locale, namespace: "auth.signup" });
+  const [shared, signup, oauthErrorMessage] = await Promise.all([
+    getTranslations({ locale, namespace: "auth.shared" }),
+    getTranslations({ locale, namespace: "auth.signup" }),
+    getOAuthCallbackErrorMessage({ locale, namespace: "auth.oauth", searchParams }),
+  ]);
   const oauthProviders = getConfiguredOAuthProviders();
 
   return (
@@ -44,7 +54,7 @@ async function SignupPageContent({ params }: SignupPageProps) {
             <p className="eyebrow">{shared("eyebrow")}</p>
             <h1 className="font-serif text-4xl leading-none font-black">{signup("title")}</h1>
             <p className="mt-4 mb-7 leading-7 text-[var(--muted-text)]">{signup("lede")}</p>
-            <SignupForm oauthProviders={oauthProviders} />
+            <SignupForm oauthErrorMessage={oauthErrorMessage} oauthProviders={oauthProviders} />
           </section>
         </div>
 

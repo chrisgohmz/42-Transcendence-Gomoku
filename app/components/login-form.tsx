@@ -13,7 +13,12 @@ import { authValidationLimits } from "@/lib/validation/auth-profile-limits";
 import { initialLoginActionState } from "../auth-action-state";
 import { loginAction } from "../auth-actions";
 
-export function LoginForm({ oauthProviders }: { oauthProviders: OAuthProviderId[] }) {
+type LoginFormProps = {
+  oauthErrorMessage?: string | null;
+  oauthProviders: OAuthProviderId[];
+};
+
+export function LoginForm({ oauthErrorMessage = null, oauthProviders }: LoginFormProps) {
   const locale = useLocale();
   const shared = useTranslations("auth.shared");
   const login = useTranslations("auth.login");
@@ -40,6 +45,7 @@ export function LoginForm({ oauthProviders }: { oauthProviders: OAuthProviderId[
             className="text-input field-input"
             defaultValue={state.email}
             maxLength={authValidationLimits.emailMaxLength}
+            aria-label={shared("email")}
             aria-describedby={state.fields.email ? emailErrorId : undefined}
             aria-invalid={Boolean(state.fields.email)}
             required
@@ -63,6 +69,7 @@ export function LoginForm({ oauthProviders }: { oauthProviders: OAuthProviderId[
             required
             minLength={authValidationLimits.passwordMinLength}
             maxLength={authValidationLimits.passwordMaxLength}
+            aria-label={shared("password")}
             aria-describedby={state.fields.password ? passwordErrorId : undefined}
             aria-invalid={Boolean(state.fields.password)}
           />
@@ -76,6 +83,7 @@ export function LoginForm({ oauthProviders }: { oauthProviders: OAuthProviderId[
           <input
             type="checkbox"
             name="remember"
+            aria-label={login("rememberThisTable")}
             className="size-4 rounded border border-[var(--panel-border-soft)] bg-[var(--panel-solid)]"
           />
           {login("rememberThisTable")}
@@ -96,8 +104,9 @@ export function LoginForm({ oauthProviders }: { oauthProviders: OAuthProviderId[
       </button>
 
       <OAuthProviderButtons
-        callbackPath={`/${locale}/account`}
+        callbackPath={`/${locale}/profile`}
         errorPath={`/${locale}/login`}
+        initialErrorMessage={oauthErrorMessage}
         providers={oauthProviders}
       />
 

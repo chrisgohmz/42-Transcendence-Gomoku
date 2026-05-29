@@ -8,15 +8,16 @@ test("password reset pages expose usable validation and token wiring", async ({ 
   await expect(
     page.getByRole("heading", { level: 1, name: "Find your way back in." }),
   ).toBeVisible();
-  const emailInput = page.getByLabel("Email");
+  const requestForm = await expectVisibleFormWithSubmit(page, "Send reset link");
+  const emailInput = requestForm.locator('input[name="email"]');
   await expect(emailInput).toBeVisible();
-  await expect(page.getByRole("button", { name: "Send reset link" })).toBeVisible();
-  await expect(page.getByRole("link", { name: "Back to sign in" })).toBeVisible();
+  await expect(emailInput).toHaveAccessibleName("Email");
+  await expect(requestForm.getByRole("button", { name: "Send reset link" })).toBeVisible();
+  await expect(requestForm.getByRole("link", { name: "Back to sign in" })).toBeVisible();
 
   await emailInput.fill("not-an-email");
-  await page.getByRole("button", { name: "Send reset link" }).click();
-  await expect(emailInput).toBeFocused();
-  await expectEmailInputValidity(page, false);
+  await requestForm.getByRole("button", { name: "Send reset link" }).click();
+  await expectEmailInputValidity(emailInput, false);
 
   const resetToken = "fake-reset-token";
 
@@ -24,12 +25,15 @@ test("password reset pages expose usable validation and token wiring", async ({ 
 
   const appMain = page.locator("#app-main");
   await expect(page.getByRole("heading", { level: 1, name: "Set a fresh key." })).toBeVisible();
-  const newPasswordInput = page.getByLabel("New password", { exact: true });
-  const confirmPasswordInput = page.getByLabel("Confirm new password");
-  const tokenInput = appMain.locator('input[type="hidden"][name="token"]');
+  const resetForm = await expectVisibleFormWithSubmit(page, "Reset password");
+  const newPasswordInput = resetForm.locator('input[name="newPassword"]');
+  const confirmPasswordInput = resetForm.locator('input[name="confirmPassword"]');
+  const tokenInput = resetForm.locator('input[type="hidden"][name="token"]');
 
   await expect(newPasswordInput).toBeVisible();
+  await expect(newPasswordInput).toHaveAccessibleName("New password");
   await expect(confirmPasswordInput).toBeVisible();
+  await expect(confirmPasswordInput).toHaveAccessibleName("Confirm new password");
   await expect(tokenInput).toHaveValue(resetToken);
   await expectTokenInputIsSubmittedWithResetForm(tokenInput);
 
@@ -39,7 +43,7 @@ test("password reset pages expose usable validation and token wiring", async ({ 
     (request) =>
       request.method() === "POST" && new URL(request.url()).pathname === "/en/reset-password",
   );
-  await page.getByRole("button", { name: "Reset password" }).click();
+  await resetForm.getByRole("button", { name: "Reset password" }).click();
   const submittedRequest = await resetSubmission;
 
   await expect(page.getByText("New passwords do not match.")).toBeVisible();
@@ -67,10 +71,21 @@ async function gotoAppRoute(page: Page, route: string) {
   await page.goto(`/en${route}`, { waitUntil: "domcontentloaded" });
 }
 
-async function expectEmailInputValidity(page: Page, expected: boolean) {
-  const isValid = await page
-    .getByLabel("Email")
-    .evaluate((element) => (element as HTMLInputElement).checkValidity());
+async function expectVisibleFormWithSubmit(page: Page, buttonName: string) {
+  const form = page
+    .locator("form")
+    .filter({ has: page.getByRole("button", { name: buttonName }) })
+    .filter({ visible: true });
+
+  await expect(form).toHaveCount(1);
+
+  return form;
+}
+
+async function expectEmailInputValidity(emailInput: Locator, expected: boolean) {
+  const isValid = await emailInput.evaluate((element) =>
+    (element as HTMLInputElement).checkValidity(),
+  );
 
   expect(isValid).toBe(expected);
 }

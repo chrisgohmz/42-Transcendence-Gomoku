@@ -6,7 +6,11 @@ const getSessionIdentity = mock();
 process.env["BETTER_AUTH_SECRET"] ??= "status_route_test_secret_32_bytes";
 process.env["BETTER_AUTH_URL"] ??= "http://localhost:3000";
 
-const { createStatusHandler } = await import("./route");
+const { createStatusHandler } = await import("./status-handler");
+
+function request(headers?: HeadersInit) {
+  return new Request("http://localhost/api/status", { headers });
+}
 
 beforeEach(() => {
   getSystemHealth.mockReset();
@@ -32,7 +36,7 @@ describe("GET /api/status", () => {
       env: operatorEnv,
       getHealth: getSystemHealth,
       getSessionIdentity,
-    })();
+    })(request());
     const payload = await response.json();
 
     expect(response.status).toBe(200);
@@ -48,7 +52,7 @@ describe("GET /api/status", () => {
       env: operatorEnv,
       getHealth: getSystemHealth,
       getSessionIdentity,
-    })();
+    })(request());
     const payload = await response.json();
 
     expect(response.status).toBe(503);
@@ -62,7 +66,7 @@ describe("GET /api/status", () => {
       env: operatorEnv,
       getHealth: getSystemHealth,
       getSessionIdentity,
-    })();
+    })(request());
     const payload = await response.json();
 
     expect(response.status).toBe(401);
@@ -78,7 +82,7 @@ describe("GET /api/status", () => {
       },
       getHealth: getSystemHealth,
       getSessionIdentity,
-    })();
+    })(request());
     const payload = await response.json();
 
     expect(response.status).toBe(403);
@@ -99,13 +103,7 @@ describe("GET /api/status", () => {
       },
       getHealth: getSystemHealth,
       getSessionIdentity,
-    })(
-      new Request("http://localhost/api/status", {
-        headers: {
-          "x-operations-status-token": "monitor-token",
-        },
-      }),
-    );
+    })(request({ "x-operations-status-token": "monitor-token" }));
 
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({ status: "ok" });

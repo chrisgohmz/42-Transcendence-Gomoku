@@ -3,7 +3,7 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import { headers } from "next/headers";
 import { Suspense } from "react";
 
-import { AvatarToken, Badge, PageHeader, PageShell, Surface } from "@/components/gomoku-ui";
+import { AvatarToken, PageHeader, PageShell, Surface } from "@/components/gomoku-ui";
 import {
   OAuthAccountConnections,
   type OAuthProviderConnection,
@@ -16,7 +16,9 @@ import {
   getCurrentSession,
   hasCredentialPassword,
 } from "@/lib/auth";
+import { getOAuthCallbackErrorMessage } from "@/lib/oauth-callback-messages";
 import { oauthProviderIds, type OAuthProviderId } from "@/lib/oauth-providers";
+import { createPageMetadata } from "@/lib/page-metadata";
 
 import ProfilePicture from "../profile-picture";
 import EditProfileForm from "./edit-form";
@@ -25,7 +27,12 @@ type EditProfilePageProps = {
   params: Promise<{
     locale: string;
   }>;
+  searchParams?: Promise<{
+    error?: string | string[];
+  }>;
 };
+
+export const generateMetadata = createPageMetadata("editProfile");
 
 async function loadOAuthProviders(): Promise<OAuthProviderConnection[]> {
   const accounts = await auth.api.listUserAccounts({
@@ -51,15 +58,15 @@ async function loadOAuthProviders(): Promise<OAuthProviderConnection[]> {
   });
 }
 
-export default function EditProfilePage({ params }: EditProfilePageProps) {
+export default function EditProfilePage({ params, searchParams }: EditProfilePageProps) {
   return (
     <Suspense fallback={<PageLoadingShell />}>
-      <EditProfilePageContent params={params} />
+      <EditProfilePageContent params={params} searchParams={searchParams} />
     </Suspense>
   );
 }
 
-async function EditProfilePageContent({ params }: EditProfilePageProps) {
+async function EditProfilePageContent({ params, searchParams }: EditProfilePageProps) {
   const { locale } = await params;
   setRequestLocale(locale);
 
@@ -70,11 +77,16 @@ async function EditProfilePageContent({ params }: EditProfilePageProps) {
     return null;
   }
 
-  const [accountT, oauthProviders, t, hasPassword] = await Promise.all([
-    getTranslations({ locale, namespace: "account" }),
+  const [oauthProviders, t, hasPassword, oauthErrorMessage] = await Promise.all([
     loadOAuthProviders(),
     getTranslations({ locale, namespace: "profile.edit" }),
     hasCredentialPassword(sessionData.user.id),
+    getOAuthCallbackErrorMessage({
+      keyPrefix: "connections.callbackErrors",
+      locale,
+      namespace: "profile.edit",
+      searchParams,
+    }),
   ]);
 
   return (
@@ -110,7 +122,6 @@ async function EditProfilePageContent({ params }: EditProfilePageProps) {
                   @{sessionData.user.username}
                 </p>
               </div>
-              <Badge tone="brass">{t("page.preview.rank")}</Badge>
             </div>
           </Surface>
         </aside>
@@ -122,12 +133,13 @@ async function EditProfilePageContent({ params }: EditProfilePageProps) {
             hasPassword={hasPassword}
           />
           <Surface
-            eyebrow={accountT("settings.sections.connections.eyebrow")}
+            eyebrow={t("connections.eyebrow")}
             icon={KeyRound}
-            title={accountT("settings.sections.connections.title")}
+            title={t("connections.title")}
           >
             <OAuthAccountConnections
               callbackPath="/profile/edit"
+              initialMessage={oauthErrorMessage}
               locale={locale}
               providers={oauthProviders}
             />

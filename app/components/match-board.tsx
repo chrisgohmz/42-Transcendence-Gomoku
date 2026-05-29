@@ -1,12 +1,30 @@
 "use client";
 
+/* oxlint-disable jsx-a11y/prefer-tag-over-role */
+
 import { useRef, useState, type KeyboardEvent } from "react";
 
 import { cn } from "@/lib/utils";
 
 import type { Cell, Seat } from "../../shared/match-events";
 
-const coordinateLabels = "ABCDEFGHJKLMNO".split("");
+const coordinateLabels = [
+  "A",
+  "B",
+  "C",
+  "D",
+  "E",
+  "F",
+  "G",
+  "H",
+  "J",
+  "K",
+  "L",
+  "M",
+  "N",
+  "O",
+  "P",
+];
 
 export function formatBoardPoint(position: { x: number; y: number }) {
   return `${coordinateLabels[position.x] ?? position.x + 1}${position.y + 1}`;
@@ -95,8 +113,7 @@ export default function MatchBoard({
         <span aria-hidden="true" />
         <div
           aria-hidden="true"
-          className="grid text-center text-[0.62rem] font-black text-[var(--muted-text)] sm:text-xs"
-          style={{ gridTemplateColumns: `repeat(${boardSize}, minmax(0, 1fr))` }}
+          className="grid auto-cols-fr grid-flow-col text-center text-[0.62rem] font-black text-[var(--muted-text)] sm:text-xs"
         >
           {labels.map((columnLabel) => (
             <span key={columnLabel} className="self-center">
@@ -106,8 +123,7 @@ export default function MatchBoard({
         </div>
         <div
           aria-hidden="true"
-          className="grid text-center text-[0.62rem] font-black text-[var(--muted-text)] sm:text-xs"
-          style={{ gridTemplateRows: `repeat(${boardSize}, minmax(0, 1fr))` }}
+          className="grid auto-rows-fr text-center text-[0.62rem] font-black text-[var(--muted-text)] sm:text-xs"
         >
           {board.map((_, index) => (
             <span key={index} className="self-center tabular-nums">
@@ -120,17 +136,11 @@ export default function MatchBoard({
           aria-describedby={`${testId}-instructions`}
           aria-label={label}
           aria-rowcount={boardSize}
-          className="grid aspect-square overflow-hidden rounded-md border border-[#5f3417] bg-[linear-gradient(135deg,#f2c77f,#ca843e_58%,#8c4e1d)] p-2 shadow-[0_24px_70px_rgba(0,0,0,0.44)]"
+          className="grid aspect-square auto-rows-fr overflow-hidden rounded-md border border-[#5f3417] bg-[linear-gradient(135deg,#f2c77f,#ca843e_58%,#8c4e1d)] p-2 shadow-[0_24px_70px_rgba(0,0,0,0.44)]"
           role="grid"
-          style={{ gridTemplateRows: `repeat(${boardSize}, minmax(0, 1fr))` }}
         >
           {board.map((row, y) => (
-            <div
-              key={y}
-              className="grid min-h-0"
-              role="row"
-              style={{ gridTemplateColumns: `repeat(${boardSize}, minmax(0, 1fr))` }}
-            >
+            <div key={y} className="grid min-h-0 auto-cols-fr grid-flow-col" role="row">
               {row.map((cell, x) => {
                 const index = y * boardSize + x;
                 const isLastMove = lastMove?.x === x && lastMove.y === y;

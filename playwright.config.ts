@@ -6,6 +6,9 @@ const shouldStartWebServer =
 const webServerCommand =
   process.env["PLAYWRIGHT_WEB_SERVER_COMMAND"] ??
   (process.env["CI"] ? "bun run build && bun run start" : "bun run dev");
+const realtimeServerCommand =
+  process.env["PLAYWRIGHT_REALTIME_SERVER_COMMAND"] ?? "bun run dev:realtime";
+const realtimeURL = process.env["PLAYWRIGHT_REALTIME_URL"] ?? "http://localhost:3001/health";
 const webServerEnv: Record<string, string> = Object.fromEntries(
   Object.entries(process.env).filter((entry): entry is [string, string] => Boolean(entry[1])),
 );
@@ -16,6 +19,14 @@ webServerEnv["GOOGLE_CLIENT_ID"] ||= "playwright-google-client";
 webServerEnv["GOOGLE_CLIENT_SECRET"] ||= "playwright-google-secret";
 webServerEnv["BETTER_AUTH_SECRET"] ||= "playwright_better_auth_secret_change_me_32_chars";
 webServerEnv["BETTER_AUTH_URL"] ||= baseURL;
+webServerEnv["RATE_LIMIT_DISABLED"] ||= "true";
+webServerEnv["REALTIME_FRIENDSHIP_INTERNAL_URL"] ||=
+  "http://localhost:3001/internal/friendship-update";
+webServerEnv["REALTIME_INTERNAL_SECRET"] ||= "playwright_realtime_internal_secret";
+webServerEnv["REALTIME_INTERNAL_URL"] ||= "http://localhost:3001/internal/game-update";
+webServerEnv["REALTIME_QUEUE_MATCHED_URL"] ||= "http://localhost:3001/internal/queue-matched";
+webServerEnv["NEXT_PUBLIC_SOCKET_URL"] ||= "http://localhost:3001";
+webServerEnv["SOCKET_CORS_ORIGIN"] ||= baseURL;
 webServerEnv["OPERATIONS_STATUS_USERNAMES"] ||= [
   "e2e_status_operator_chrome",
   "e2e_status_operator_firefox",
@@ -40,15 +51,28 @@ export default defineConfig({
     video: "retain-on-failure",
   },
   webServer: shouldStartWebServer
-    ? {
-        command: webServerCommand,
-        env: webServerEnv,
-        reuseExistingServer: !process.env["CI"],
-        stderr: "pipe",
-        stdout: "pipe",
-        timeout: 120_000,
-        url: baseURL,
-      }
+    ? [
+        {
+          command: webServerCommand,
+          env: webServerEnv,
+          name: "next",
+          reuseExistingServer: !process.env["CI"],
+          stderr: "pipe",
+          stdout: "pipe",
+          timeout: 120_000,
+          url: baseURL,
+        },
+        {
+          command: realtimeServerCommand,
+          env: webServerEnv,
+          name: "realtime",
+          reuseExistingServer: true,
+          stderr: "pipe",
+          stdout: "pipe",
+          timeout: 120_000,
+          url: realtimeURL,
+        },
+      ]
     : undefined,
   projects: [
     {

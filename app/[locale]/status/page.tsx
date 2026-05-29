@@ -27,6 +27,7 @@ import {
   type SystemHealthPayload,
   type SystemStatus,
 } from "@/lib/operations/system-health";
+import { createPageMetadata } from "@/lib/page-metadata";
 import { cn } from "@/lib/utils";
 
 type StatusPageProps = {
@@ -34,6 +35,8 @@ type StatusPageProps = {
     locale: string;
   }>;
 };
+
+export const generateMetadata = createPageMetadata("status");
 
 const checkIcons = {
   app: ServerCog,

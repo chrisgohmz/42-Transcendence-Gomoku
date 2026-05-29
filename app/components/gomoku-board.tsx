@@ -1,5 +1,7 @@
 "use client";
 
+/* oxlint-disable jsx-a11y/prefer-tag-over-role */
+
 import { useRef, useState, type KeyboardEvent } from "react";
 
 import { cn } from "@/lib/utils";
@@ -64,12 +66,6 @@ export default function GomokuBoard({
   const [activeCell, setActiveCell] = useState(BOARD_SIZE * 7 + 7);
   const cellRefs = useRef<Array<HTMLButtonElement | null>>([]);
   const stoneByPosition = new Map(stones.map((stone) => [`${stone.x}-${stone.y}`, stone]));
-  const boardBackground =
-    "linear-gradient(90deg, rgb(91 50 20 / 34%) 1px, transparent 1px), linear-gradient(rgb(91 50 20 / 34%) 1px, transparent 1px), linear-gradient(135deg, #efbd75, #cb833c 58%, #92531f)";
-  const stoneBackground = {
-    black: "radial-gradient(circle at 32% 28%, #4a463d 0 8%, #12100d 36%, #030303 100%)",
-    white: "radial-gradient(circle at 34% 28%, #fffdf5 0 18%, #e8dfcf 54%, #a99f90 100%)",
-  } as const;
   const moveFocus = (index: number) => {
     const boundedIndex = Math.max(0, Math.min(index, BOARD_SIZE * BOARD_SIZE - 1));
     setActiveCell(boundedIndex);
@@ -120,18 +116,10 @@ export default function GomokuBoard({
     const cellContent = stone ? (
       <span
         className={cn(
-          "rounded-full shadow-[inset_-8px_-10px_16px_rgba(0,0,0,0.28),inset_5px_5px_10px_rgba(255,255,255,0.22),0_10px_22px_rgba(0,0,0,0.28)]",
+          "stone size-[72%]",
+          stone.color === "black" ? "stone-black" : "stone-white",
           stone.last && "ring-2 ring-[var(--mint)] ring-offset-2 ring-offset-[var(--wood-dark)]",
         )}
-        style={{
-          background: stoneBackground[stone.color],
-          border:
-            stone.color === "black"
-              ? "1px solid rgb(214 173 98 / 30%)"
-              : "1px solid rgb(255 255 255 / 55%)",
-          height: "72%",
-          width: "72%",
-        }}
       />
     ) : null;
 
@@ -176,14 +164,9 @@ export default function GomokuBoard({
   return (
     <div
       className={cn(
-        "aspect-square overflow-hidden rounded-md border border-[#5f3417] p-3 shadow-[0_24px_70px_rgba(0,0,0,0.44)]",
+        "gomoku-board aspect-square overflow-hidden rounded-md border border-[#5f3417] p-3 shadow-[0_24px_70px_rgba(0,0,0,0.44)]",
         className,
       )}
-      style={{
-        background: boardBackground,
-        backgroundSize:
-          "calc(100% / 14) calc(100% / 14), calc(100% / 14) calc(100% / 14), 100% 100%",
-      }}
     >
       {interactive ? (
         <p id="gomoku-board-instructions" className="sr-only">

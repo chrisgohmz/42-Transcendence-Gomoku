@@ -7,33 +7,43 @@ import { LoginForm } from "@/components/login-form";
 import { PageLoadingShell } from "@/components/page-loading-shell";
 import { redirect } from "@/i18n/navigation";
 import { getConfiguredOAuthProviders, getCurrentSessionIdentity } from "@/lib/auth";
+import { getOAuthCallbackErrorMessage } from "@/lib/oauth-callback-messages";
+import { createPageMetadata } from "@/lib/page-metadata";
 
 type LoginPageProps = {
   params: Promise<{
     locale: string;
   }>;
+  searchParams?: Promise<{
+    error?: string | string[];
+  }>;
 };
 
-export default function LoginPage({ params }: LoginPageProps) {
+export const generateMetadata = createPageMetadata("login");
+
+export default function LoginPage({ params, searchParams }: LoginPageProps) {
   return (
     <Suspense fallback={<PageLoadingShell wide={false} />}>
-      <LoginPageContent params={params} />
+      <LoginPageContent params={params} searchParams={searchParams} />
     </Suspense>
   );
 }
 
-async function LoginPageContent({ params }: LoginPageProps) {
+async function LoginPageContent({ params, searchParams }: LoginPageProps) {
   const { locale } = await params;
   setRequestLocale(locale);
 
   const session = await getCurrentSessionIdentity();
 
   if (session) {
-    redirect({ href: "/account", locale });
+    redirect({ href: "/profile", locale });
   }
 
-  const shared = await getTranslations({ locale, namespace: "auth.shared" });
-  const login = await getTranslations({ locale, namespace: "auth.login" });
+  const [shared, login, oauthErrorMessage] = await Promise.all([
+    getTranslations({ locale, namespace: "auth.shared" }),
+    getTranslations({ locale, namespace: "auth.login" }),
+    getOAuthCallbackErrorMessage({ locale, namespace: "auth.oauth", searchParams }),
+  ]);
   const oauthProviders = getConfiguredOAuthProviders();
 
   return (
@@ -85,7 +95,7 @@ async function LoginPageContent({ params }: LoginPageProps) {
             <p className="eyebrow">{shared("eyebrow")}</p>
             <h2 className="font-serif text-4xl leading-none font-black">{login("title")}</h2>
             <p className="mt-4 mb-7 leading-7 text-[var(--muted-text)]">{login("lede")}</p>
-            <LoginForm oauthProviders={oauthProviders} />
+            <LoginForm oauthErrorMessage={oauthErrorMessage} oauthProviders={oauthProviders} />
           </section>
         </div>
       </section>

@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-label="Kuroishi avatar">
+  <rect width="256" height="256" rx="128" fill="#101820"/>
+  <circle cx="72" cy="70" r="78" fill="#5bc0eb" opacity=".66"/>
+  <circle cx="188" cy="194" r="88" fill="#fde74c" opacity=".7"/>
+  <path d="M128 28l86 172H42z" fill="#0b0f14" opacity=".42"/>
+  <text x="128" y="152" text-anchor="middle" font-family="Arial, sans-serif" font-size="88" font-weight="800" fill="#f6f7eb">K</text>
+</svg>

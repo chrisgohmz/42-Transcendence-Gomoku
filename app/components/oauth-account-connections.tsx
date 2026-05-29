@@ -3,8 +3,9 @@
 import { Loader2, Unlink } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
+import { OAuthFeedbackAlert } from "@/components/oauth-feedback-alert";
 import { OAuthSocialButton } from "@/components/oauth-social-button";
 import { authClient } from "@/lib/auth-client";
 import { oauthProviderLabels, type OAuthProviderId } from "@/lib/oauth-providers";
@@ -19,19 +20,25 @@ export type OAuthProviderConnection = {
 
 type OAuthAccountConnectionsProps = {
   callbackPath?: string;
+  initialMessage?: string | null;
   locale: string;
   providers: OAuthProviderConnection[];
 };
 
 export function OAuthAccountConnections({
-  callbackPath = "/account",
+  callbackPath = "/profile/edit",
+  initialMessage = null,
   locale,
   providers,
 }: OAuthAccountConnectionsProps) {
   const router = useRouter();
-  const t = useTranslations("account.settings.sections.connections");
+  const t = useTranslations("profile.edit.connections");
   const [pendingProvider, setPendingProvider] = useState<OAuthProviderId | null>(null);
-  const [message, setMessage] = useState<string | null>(null);
+  const [message, setMessage] = useState<string | null>(initialMessage);
+
+  useEffect(() => {
+    setMessage(initialMessage);
+  }, [initialMessage]);
 
   async function connectProvider(provider: OAuthProviderConnection) {
     setPendingProvider(provider.id);
@@ -94,6 +101,13 @@ export function OAuthAccountConnections({
                 }
               >
                 <OAuthSocialButton
+                  ariaLabel={
+                    isConnecting
+                      ? t("connecting")
+                      : provider.linked
+                        ? t("connectedWithProvider", { provider: oauthProviderLabels[provider.id] })
+                        : t("connectWithProvider", { provider: oauthProviderLabels[provider.id] })
+                  }
                   busy={isConnecting}
                   disabled={Boolean(pendingProvider) || provider.linked || !provider.configured}
                   muted={provider.linked || Boolean(pendingProvider && !isPending)}
@@ -108,9 +122,9 @@ export function OAuthAccountConnections({
                       : t("connectWithProvider", { provider: oauthProviderLabels[provider.id] })}
                 </OAuthSocialButton>
                 {isConnecting ? (
-                  <span className="sr-only" role="status" aria-live="polite">
+                  <output className="sr-only" aria-live="polite">
                     {t("connecting")}
-                  </span>
+                  </output>
                 ) : null}
               </div>
 
@@ -135,11 +149,7 @@ export function OAuthAccountConnections({
         })}
       </div>
 
-      {message ? (
-        <p className="error-text" role="alert" aria-live="polite">
-          {message}
-        </p>
-      ) : null}
+      {message ? <OAuthFeedbackAlert>{message}</OAuthFeedbackAlert> : null}
     </div>
   );
 }

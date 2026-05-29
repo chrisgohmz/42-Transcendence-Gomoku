@@ -101,6 +101,33 @@ describe("browser diagnostics", () => {
     });
   });
 
+  test("ignores Firefox Next chunk load abort warnings while keeping other script warnings", () => {
+    expect(
+      getConsoleDiagnostic({
+        location: {
+          url: "http://localhost:3000/en/home",
+        },
+        text: '[JavaScript Warning: "Loading failed for the <script> with source “http://localhost:3000/_next/static/chunks/app_%5Blocale%5D_home_page_tsx_0t0jtp~._.js”." {file: "http://localhost:3000/en/home" line: 1}]',
+        type: "warning",
+      }),
+    ).toBeNull();
+    expect(
+      getConsoleDiagnostic({
+        location: {
+          url: "http://localhost:3000/en/home",
+        },
+        text: '[JavaScript Warning: "Loading failed for the <script> with source “http://localhost:3000/assets/missing.js”." {file: "http://localhost:3000/en/home" line: 1}]',
+        type: "warning",
+      }),
+    ).toEqual({
+      location: {
+        url: "http://localhost:3000/en/home",
+      },
+      text: '[JavaScript Warning: "Loading failed for the <script> with source “http://localhost:3000/assets/missing.js”." {file: "http://localhost:3000/en/home" line: 1}]',
+      type: "console.warning",
+    });
+  });
+
   test("characterizes page asset requests as guarded while leaving API fetches alone", () => {
     for (const resourceType of ["document", "font", "image", "manifest", "script", "stylesheet"]) {
       expect(

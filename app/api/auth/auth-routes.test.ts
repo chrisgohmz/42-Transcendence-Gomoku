@@ -291,22 +291,18 @@ describe("auth API routes", () => {
     });
   });
 
-  test("login uses the configured app origin for callbacks instead of the request origin", async () => {
+  test("login rejects untrusted request origins", async () => {
     process.env["BETTER_AUTH_URL"] = "https://canonical.test";
 
-    await loginRoute.POST(
+    const response = await loginRoute.POST(
       hostileJsonRequest("/api/auth/login", {
         email: "MAX@example.COM",
         password: "password123",
       }),
     );
-    const call = signInEmail.mock.calls[0]?.[0] as AuthApiCall;
 
-    expect(call.body).toMatchObject({
-      callbackURL: "https://canonical.test/en/profile",
-      email: "max@example.com",
-      password: "password123",
-    });
+    expect(response.status).toBe(403);
+    expect(signInEmail).not.toHaveBeenCalled();
   });
 
   test("login keeps callbacks on the current request origin when it is trusted", async () => {
@@ -390,7 +386,7 @@ describe("auth API routes", () => {
     });
   });
 
-  test("login maps unexpected failures to the public unavailable shape with detail", async () => {
+  test("login maps unexpected failures to the public unavailable shape", async () => {
     signInEmail.mockRejectedValueOnce(new Error("network split"));
 
     const response = await loginRoute.POST(
@@ -403,10 +399,10 @@ describe("auth API routes", () => {
 
     expect(response.status).toBe(500);
     expect(payload).toMatchObject({
-      detail: "network split",
       error: "login_failed",
       message: "loginUnavailable",
     });
+    expect(payload).not.toHaveProperty("detail");
   });
 
   test("signup rejects malformed request bodies before duplicate lookup", async () => {
@@ -504,11 +500,11 @@ describe("auth API routes", () => {
     });
   });
 
-  test("signup uses the configured app origin for callbacks instead of the request origin", async () => {
+  test("signup rejects untrusted request origins", async () => {
     process.env["BETTER_AUTH_URL"] = "https://canonical.test";
     findUnique.mockResolvedValueOnce({ ...user, emailVerified: false });
 
-    await signupRoute.POST(
+    const response = await signupRoute.POST(
       hostileJsonRequest("/api/auth/signup", {
         displayName: "Max",
         email: "MAX@example.COM",
@@ -516,15 +512,9 @@ describe("auth API routes", () => {
         username: "max_player",
       }),
     );
-    const call = signUpEmail.mock.calls[0]?.[0] as AuthApiCall;
 
-    expect(call.body).toMatchObject({
-      callbackURL: "https://canonical.test/en/profile",
-      email: "max@example.com",
-      name: "Max",
-      password: "password123",
-      username: "max_player",
-    });
+    expect(response.status).toBe(403);
+    expect(signUpEmail).not.toHaveBeenCalled();
   });
 
   test("signup fails closed when Better Auth returns a user id that no longer exists", async () => {
@@ -595,7 +585,7 @@ describe("auth API routes", () => {
     });
   });
 
-  test("signup maps unexpected failures to the public unavailable shape with detail", async () => {
+  test("signup maps unexpected failures to the public unavailable shape", async () => {
     signUpEmail.mockRejectedValueOnce(new Error("mail service down"));
 
     const response = await signupRoute.POST(
@@ -610,10 +600,10 @@ describe("auth API routes", () => {
 
     expect(response.status).toBe(500);
     expect(payload).toMatchObject({
-      detail: "mail service down",
       error: "signup_failed",
       message: "signupUnavailable",
     });
+    expect(payload).not.toHaveProperty("detail");
   });
 
   test("session returns the current serialized user and session timestamps", async () => {

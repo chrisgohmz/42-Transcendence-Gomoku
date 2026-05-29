@@ -1,4 +1,7 @@
 import { auth } from "../../../lib/auth";
+import { enforceRateLimit } from "../../../lib/rate-limit";
+import { rateLimitRule } from "../../../lib/rate-limit-rules";
+import { enforceMutationRequest } from "../../../lib/request-security";
 
 const authCookieNames = [
   "better-auth.session_token",
@@ -57,6 +60,21 @@ function appendFallbackAuthCookieExpirations(headers: Headers, request: Request)
 }
 
 export async function POST(request: Request) {
+  const requestGuardResponse = enforceMutationRequest(request);
+
+  if (requestGuardResponse) {
+    return requestGuardResponse;
+  }
+
+  const rateLimitExceededResponse = await enforceRateLimit(
+    request.headers,
+    rateLimitRule("authLogout"),
+  );
+
+  if (rateLimitExceededResponse) {
+    return rateLimitExceededResponse;
+  }
+
   const authResponse = await auth.api
     .signOut({
       headers: request.headers,

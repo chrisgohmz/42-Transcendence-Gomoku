@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-label="Tenkei avatar">
+  <rect width="256" height="256" rx="128" fill="#263238"/>
+  <circle cx="68" cy="72" r="82" fill="#a7c957" opacity=".72"/>
+  <circle cx="194" cy="190" r="92" fill="#bc4749" opacity=".7"/>
+  <path d="M32 128c42-36 150-36 192 0-42 36-150 36-192 0z" fill="#11191c" opacity=".4"/>
+  <text x="128" y="152" text-anchor="middle" font-family="Arial, sans-serif" font-size="86" font-weight="800" fill="#f8ffe5">T</text>
+</svg>

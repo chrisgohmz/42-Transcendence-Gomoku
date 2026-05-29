@@ -2,7 +2,7 @@ FROM node:24-bookworm-slim AS base
 
 WORKDIR /app
 ENV NEXT_TELEMETRY_DISABLED=1
-ENV BUN_INSTALL=/root/.bun
+ENV BUN_INSTALL=/usr/local/bun
 ENV PATH=${BUN_INSTALL}/bin:${PATH}
 
 RUN apt-get update \
@@ -27,6 +27,10 @@ FROM base AS production
 COPY . .
 RUN bun run build
 RUN chmod +x scripts/start.sh
+RUN mkdir -p /app/.next/cache /app/storage \
+    && chown -R node:node /app/.next/cache /app/storage
+
+USER node
 
 EXPOSE 3000
 

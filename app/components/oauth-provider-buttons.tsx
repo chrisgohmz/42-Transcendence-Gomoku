@@ -1,8 +1,9 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
+import { OAuthFeedbackAlert } from "@/components/oauth-feedback-alert";
 import { OAuthSocialButton } from "@/components/oauth-social-button";
 import { authClient } from "@/lib/auth-client";
 import { oauthProviderLabels, type OAuthProviderId } from "@/lib/oauth-providers";
@@ -10,17 +11,23 @@ import { oauthProviderLabels, type OAuthProviderId } from "@/lib/oauth-providers
 type OAuthProviderButtonsProps = {
   callbackPath: string;
   errorPath: string;
+  initialErrorMessage?: string | null;
   providers: OAuthProviderId[];
 };
 
 export function OAuthProviderButtons({
   callbackPath,
   errorPath,
+  initialErrorMessage = null,
   providers,
 }: OAuthProviderButtonsProps) {
   const t = useTranslations("auth.oauth");
   const [pendingProvider, setPendingProvider] = useState<OAuthProviderId | null>(null);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(initialErrorMessage);
+
+  useEffect(() => {
+    setErrorMessage(initialErrorMessage);
+  }, [initialErrorMessage]);
 
   if (!providers.length) {
     return null;
@@ -50,6 +57,7 @@ export function OAuthProviderButtons({
         return (
           <OAuthSocialButton
             key={provider}
+            ariaLabel={t("continueWithProvider", { provider: oauthProviderLabels[provider] })}
             busy={isPending}
             disabled={Boolean(pendingProvider)}
             muted={Boolean(pendingProvider && !isPending)}
@@ -61,11 +69,7 @@ export function OAuthProviderButtons({
         );
       })}
 
-      {errorMessage ? (
-        <p className="error-text" role="alert" aria-live="polite">
-          {errorMessage}
-        </p>
-      ) : null}
+      {errorMessage ? <OAuthFeedbackAlert>{errorMessage}</OAuthFeedbackAlert> : null}
     </div>
   );
 }

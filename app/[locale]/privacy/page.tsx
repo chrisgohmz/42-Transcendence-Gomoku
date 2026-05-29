@@ -1,13 +1,16 @@
-import { Database, FileText, LockKeyhole, ShieldCheck } from "lucide-react";
+import { Database, LockKeyhole, ShieldCheck } from "lucide-react";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 
-import { Badge, MetricCard, PageHeader, PageShell, Surface } from "@/components/gomoku-ui";
+import { Badge, PageHeader, PageShell, Surface } from "@/components/gomoku-ui";
+import { createPageMetadata } from "@/lib/page-metadata";
 
 type PrivacyPageProps = {
   params: Promise<{
     locale: string;
   }>;
 };
+
+export const generateMetadata = createPageMetadata("privacy");
 
 export default async function PrivacyPage({ params }: PrivacyPageProps) {
   const { locale } = await params;
@@ -56,12 +59,6 @@ export default async function PrivacyPage({ params }: PrivacyPageProps) {
               ))}
             </nav>
           </Surface>
-          <MetricCard
-            icon={FileText}
-            label={t("metrics.documentSections")}
-            tone="brass"
-            value={sections.length}
-          />
         </aside>
 
         <Surface eyebrow={t("document.eyebrow")} title={t("document.title")}>

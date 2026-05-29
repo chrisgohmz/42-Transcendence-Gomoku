@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-label="Shirotora avatar">
+  <rect width="256" height="256" rx="128" fill="#22333b"/>
+  <circle cx="196" cy="64" r="88" fill="#e07a5f" opacity=".82"/>
+  <circle cx="64" cy="194" r="88" fill="#81b29a" opacity=".72"/>
+  <path d="M44 74h168v28H44zm0 80h168v28H44z" fill="#0d171b" opacity=".35"/>
+  <text x="128" y="152" text-anchor="middle" font-family="Arial, sans-serif" font-size="86" font-weight="800" fill="#fffaf0">S</text>
+</svg>

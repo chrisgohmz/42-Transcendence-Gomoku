@@ -13,6 +13,9 @@ import { evaluateMoveOutcome } from "@/lib/matches/move-rules";
 import { isActiveParticipantForUser } from "@/lib/matches/participant-access";
 import { publishGameUpdate } from "@/lib/matches/realtime-publisher";
 import { prisma } from "@/lib/prisma";
+import { enforceRateLimit } from "@/lib/rate-limit";
+import { rateLimitRule, userRateLimitSubject } from "@/lib/rate-limit-rules";
+import { enforceMutationRequest } from "@/lib/request-security";
 import { syncUserGameStatsForUser } from "@/lib/stats/result-sync";
 
 type AiTurnRequestBody = {
@@ -64,6 +67,12 @@ async function sleep(ms: number) {
 }
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  const requestGuardResponse = enforceMutationRequest(request, { requireJson: true });
+
+  if (requestGuardResponse) {
+    return requestGuardResponse;
+  }
+
   const context = await getCurrentSession();
 
   if (!context) {
@@ -78,6 +87,15 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
 
     if (!participantId) {
       return Response.json({ error: "missing_participant_id" }, { status: 400 });
+    }
+
+    const rateLimitExceededResponse = await enforceRateLimit(
+      request.headers,
+      rateLimitRule("matchAiTurn", userRateLimitSubject(context.user.id)),
+    );
+
+    if (rateLimitExceededResponse) {
+      return rateLimitExceededResponse;
     }
 
     const previewMatch = await prisma.match.findUnique({
@@ -293,18 +311,18 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     });
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+      console.error("[api/matches/ai-turn] unique constraint failed:", getErrorMessage(error));
       return Response.json(
         {
-          detail: getErrorMessage(error),
           error: "move_conflict",
         },
         { status: 409 },
       );
     }
 
+    console.error("[api/matches/ai-turn] failed:", getErrorMessage(error));
     return Response.json(
       {
-        detail: getErrorMessage(error),
         error: "failed_to_play_ai_turn",
       },
       { status: 500 },

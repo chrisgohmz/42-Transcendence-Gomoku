@@ -11,9 +11,11 @@ tsconfig.tsbuildinfo
 .env
 caddy-local-root.crt
 public/uploads
+storage
 .playwright-browsers
 playwright-report
 test-results
 output/playwright
 .next
 .docker-data
+security-audit/

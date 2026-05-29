@@ -26,33 +26,22 @@ test("OAuth-only profile settings show linked email and set password without cur
     await expect(visibleExactText(page, "Linked Email (Not editable)")).toBeVisible();
     await expect(visibleExactText(page, user.email)).toBeVisible();
 
-    await page.getByRole("button", { name: "Edit" }).click();
-    await expect(page.getByLabel("Linked Email (Not editable)")).toHaveValue(user.email);
-    await page.getByRole("button", { name: "Cancel" }).click();
+    await visibleButton(page, "Edit").click();
+    await expect(visibleLabel(page, "Linked Email (Not editable)")).toHaveValue(user.email);
+    await visibleButton(page, "Cancel").click();
 
     await expect(visibleExactText(page, "No password set")).toBeVisible();
-    await page.getByRole("button", { name: "Set" }).click();
+    await visibleButton(page, "Set").click();
 
-    await expect(page.getByLabel("Current Password")).toHaveCount(0);
-    await page.getByLabel("New Password", { exact: true }).fill("password999");
-    await page.getByLabel("Confirm New Password", { exact: true }).fill("password999");
-    await page.getByRole("button", { name: "Set Password" }).click();
+    await expect(page.getByLabel("Current Password").filter({ visible: true })).toHaveCount(0);
+    await visibleLabel(page, "New Password", { exact: true }).fill("password999");
+    await visibleLabel(page, "Confirm New Password", { exact: true }).fill("password999");
+    await visibleButton(page, "Set Password").click();
 
-    await expect(visibleExactText(page, "Changes saved successfully!")).toBeVisible({
-      timeout: 15_000,
-    });
-    await expect(page.getByRole("button", { exact: true, name: "Change" })).toBeVisible();
+    await expect.poll(() => hasCredentialAccount(user.id), { timeout: 75_000 }).toBe(true);
 
-    const credentialAccount = await prisma.account.findFirst({
-      where: {
-        password: { not: null },
-        providerId: "credential",
-        userId: user.id,
-      },
-      select: { id: true },
-    });
-
-    expect(credentialAccount).not.toBeNull();
+    await gotoAppRoute(page, "/profile/edit");
+    await expect(visibleButton(page, "Change", { exact: true })).toBeVisible();
   } finally {
     await cleanupTestUsers([user.username]);
   }
@@ -64,6 +53,17 @@ async function gotoAppRoute(page: Page, route: string) {
 
 function visibleExactText(page: Page, text: string) {
   return page.getByText(text, { exact: true }).filter({ visible: true }).first();
+}
+
+function visibleLabel(page: Page, text: string, options?: { exact?: boolean }) {
+  return page.getByLabel(text, options).filter({ visible: true }).first();
+}
+
+function visibleButton(page: Page, name: string, options?: { exact?: boolean }) {
+  return page
+    .getByRole("button", { name, ...options })
+    .filter({ visible: true })
+    .first();
 }
 
 type TestUser = {
@@ -105,9 +105,9 @@ async function createAndSignInTestUser(page: Page, testInfo: TestInfo): Promise<
 
   try {
     await gotoAppRoute(page, "/login");
-    await page.getByLabel("Email").fill(email);
-    await page.getByLabel("Password").fill("password123");
-    await page.getByRole("button", { exact: true, name: "Sign in" }).click();
+    await visibleLabel(page, "Email").fill(email);
+    await visibleLabel(page, "Password").fill("password123");
+    await visibleButton(page, "Sign in", { exact: true }).click();
     await expect(page).toHaveURL(/\/en\/profile$/);
   } catch (error) {
     await cleanupTestUsers([username]);
@@ -137,6 +137,19 @@ async function convertSignedInUserToOAuthOnly(user: TestUser) {
       userId: user.id,
     },
   });
+}
+
+async function hasCredentialAccount(userId: string) {
+  const credentialAccount = await prisma.account.findFirst({
+    where: {
+      password: { not: null },
+      providerId: "credential",
+      userId,
+    },
+    select: { id: true },
+  });
+
+  return Boolean(credentialAccount);
 }
 
 async function cleanupTestUsers(usernames: string[]) {

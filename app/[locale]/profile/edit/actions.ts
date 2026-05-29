@@ -7,6 +7,12 @@ import { headers } from "next/headers";
 
 import { auth, getCurrentSession, hasCredentialPassword } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { isRateLimited } from "@/lib/rate-limit";
+import {
+  rateLimitRule,
+  type RateLimitRuleName,
+  userRateLimitSubject,
+} from "@/lib/rate-limit-rules";
 import {
   fieldIssuesToMap,
   type ProfileSettingsField,
@@ -29,6 +35,18 @@ function getApiErrorCode(error: unknown): string | undefined {
   return isAPIError(error) ? (error.body as { code?: string } | undefined)?.code : undefined;
 }
 
+type ProfileSettingsRateLimitRuleName = Extract<
+  RateLimitRuleName,
+  "profileChangePassword" | "profileDisplayName" | "profileSetPassword"
+>;
+
+async function isProfileSettingsRateLimited(
+  userId: string,
+  ruleName: ProfileSettingsRateLimitRuleName,
+): Promise<boolean> {
+  return isRateLimited(await headers(), rateLimitRule(ruleName, userRateLimitSubject(userId)));
+}
+
 export async function saveDisplayName(
   _previousState: ProfileSettingsActionState,
   formData: FormData,
@@ -39,6 +57,10 @@ export async function saveDisplayName(
 
   if (!sessionData) {
     return { fields: {}, message: t("loginRequired"), successMessage: null };
+  }
+
+  if (await isProfileSettingsRateLimited(sessionData.user.id, "profileDisplayName")) {
+    return { fields: {}, message: t("profileSaveFailed"), successMessage: null };
   }
 
   const validation = validateProfileDisplayNameInput({
@@ -78,6 +100,10 @@ export async function changeAccountPassword(
 
   if (!sessionData) {
     return { fields: {}, message: t("loginRequired"), successMessage: null };
+  }
+
+  if (await isProfileSettingsRateLimited(sessionData.user.id, "profileChangePassword")) {
+    return { fields: {}, message: t("profileSaveFailed"), successMessage: null };
   }
 
   const validation = validateProfilePasswordInput({
@@ -129,6 +155,10 @@ export async function setAccountPassword(
 
   if (!sessionData) {
     return { fields: {}, message: t("loginRequired"), successMessage: null };
+  }
+
+  if (await isProfileSettingsRateLimited(sessionData.user.id, "profileSetPassword")) {
+    return { fields: {}, message: t("profileSaveFailed"), successMessage: null };
   }
 
   const validation = validateProfileSetPasswordInput({

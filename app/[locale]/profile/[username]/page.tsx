@@ -1,14 +1,4 @@
-/* eslint-disable @next/next/no-img-element */
-import {
-  Activity,
-  Award,
-  BarChart3,
-  Flag,
-  Swords,
-  Trophy,
-  TrendingUp,
-  TrendingDown,
-} from "lucide-react";
+import { Activity, Award, Swords, Trophy, TrendingUp, TrendingDown } from "lucide-react";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
@@ -17,6 +7,7 @@ import { MatchResult, MatchStatus, Role } from "@/../generated/prisma/enums";
 import { Badge, MetricCard, PageShell, Surface } from "@/components/gomoku-ui";
 import { PageLoadingShell } from "@/components/page-loading-shell";
 import { getCurrentSessionIdentity } from "@/lib/auth";
+import { buildPageMetadata } from "@/lib/page-metadata";
 import { prisma } from "@/lib/prisma";
 import { getProfileStatsForUser } from "@/lib/stats/profile-stats";
 
@@ -35,7 +26,20 @@ type ProfilePageProps = {
   }>;
 };
 
-const achievements = ["sharpOpening", "calmEndgame", "fastRematch"] as const;
+type Translate = (key: string) => string;
+
+export async function generateMetadata({ params }: ProfilePageProps) {
+  const { locale, username } = await params;
+
+  return buildPageMetadata({
+    locale,
+    page: "publicProfile",
+    path: `/profile/${encodeURIComponent(username)}`,
+    values: {
+      username,
+    },
+  });
+}
 
 function getSearchParamNumber(value: string | string[] | undefined) {
   const rawValue = Array.isArray(value) ? value[0] : value;
@@ -44,8 +48,28 @@ function getSearchParamNumber(value: string | string[] | undefined) {
   return Number.isNaN(parsed) || parsed < 1 ? 1 : parsed;
 }
 
-async function getHeadToHeadStats(currentUserId: string | undefined, targetUserId: string) {
-  if (!currentUserId || currentUserId === targetUserId) {
+function humanizeAchievementCode(code: string) {
+  return code
+    .split("_")
+    .map((part) => (part ? part.charAt(0).toUpperCase() + part.slice(1) : ""))
+    .join(" ")
+    .trim();
+}
+
+function formatAchievementLabel(code: string, t: Translate) {
+  const map: Record<string, string> = {
+    ai_win: t("page.achievements.items.ai_win"),
+    first_friend: t("page.achievements.items.first_friend"),
+    first_win: t("page.achievements.items.first_win"),
+    ten_moves: t("page.achievements.items.ten_moves"),
+    win_streak_3: t("page.achievements.items.win_streak_3"),
+  };
+
+  return map[code] ?? humanizeAchievementCode(code);
+}
+
+async function getHeadToHeadStats(currentUserId: string, targetUserId: string) {
+  if (currentUserId === targetUserId) {
     return { wins: 0, losses: 0 };
   }
 
@@ -158,18 +182,25 @@ async function PublicProfilePageContent({ params, searchParams }: ProfilePagePro
     }
   }
 
+  const headToHeadStatsPromise =
+    loggedInUserId && loggedInUserId !== userProfile.id
+      ? getHeadToHeadStats(loggedInUserId, userProfile.id)
+      : Promise.resolve(null);
   const [profileStats, headToHead] = await Promise.all([
     getProfileStatsForUser(userProfile.id, {
       recentMatchesLimit: 10,
       recentMatchesPage,
     }),
-    getHeadToHeadStats(loggedInUserId, userProfile.id),
+    headToHeadStatsPromise,
   ]);
 
   const rating = profileStats.stats.rating ?? t("page.stats.unrated");
   const winRate = profileStats.stats.winRate;
   const wins = profileStats.stats.wins;
   const losses = profileStats.stats.losses;
+  const unlockedAchievements = profileStats.achievements.filter((achievement) =>
+    Boolean(achievement.completedAt),
+  );
 
   const isRevealed = relationshipState === "FRIENDS" || relationshipState === "SELF";
 
@@ -220,25 +251,6 @@ async function PublicProfilePageContent({ params, searchParams }: ProfilePagePro
             <MetricCard icon={TrendingDown} label={t("stats.losses")} tone="red" value={losses} />
           </div>
 
-          <Surface
-            eyebrow={t("publicPage.progress.eyebrow")}
-            icon={BarChart3}
-            title={t("publicPage.progress.title")}
-          >
-            <div className="grid h-64 items-end gap-3 rounded-md border border-[var(--panel-border-soft)] bg-black/20 p-4">
-              <div className="flex h-full items-end gap-2">
-                {[34, 42, 38, 56, 62, 58, 76, 72, 81, 88, 84, 92].map((height, index) => (
-                  <span key={index} className="flex flex-1 items-end">
-                    <span
-                      className="block w-full rounded-t-sm bg-[linear-gradient(180deg,var(--mint),var(--brass))]"
-                      style={{ height: `${height}%` }}
-                    />
-                  </span>
-                ))}
-              </div>
-            </div>
-          </Surface>
-
           <PublicMatchHistory
             matches={profileStats.recentMatches}
             page={profileStats.recentMatchesPagination.page}
@@ -252,18 +264,24 @@ async function PublicProfilePageContent({ params, searchParams }: ProfilePagePro
             icon={Swords}
             title={t("publicPage.headToHead.title")}
           >
-            <div className="grid grid-cols-2 gap-3">
-              <MetricCard
-                label={t("publicPage.headToHead.wins")}
-                tone="mint"
-                value={headToHead.wins}
-              />
-              <MetricCard
-                label={t("publicPage.headToHead.losses")}
-                tone="red"
-                value={headToHead.losses}
-              />
-            </div>
+            {headToHead ? (
+              <div className="grid grid-cols-2 gap-3">
+                <MetricCard
+                  label={t("publicPage.headToHead.wins")}
+                  tone="mint"
+                  value={headToHead.wins}
+                />
+                <MetricCard
+                  label={t("publicPage.headToHead.losses")}
+                  tone="red"
+                  value={headToHead.losses}
+                />
+              </div>
+            ) : (
+              <p className="m-0 text-sm text-[var(--muted-text)]">
+                {t("publicPage.headToHead.unavailable")}
+              </p>
+            )}
           </Surface>
 
           <Surface
@@ -271,29 +289,18 @@ async function PublicProfilePageContent({ params, searchParams }: ProfilePagePro
             icon={Award}
             title={t("publicPage.achievements.title")}
           >
-            <div className="grid gap-2">
-              {achievements.map((item) => (
-                <Badge key={item} tone="brass">
-                  <Award aria-hidden="true" className="size-3.5" />
-                  {t(`publicPage.achievements.items.${item}`)}
-                </Badge>
-              ))}
-            </div>
-          </Surface>
-
-          <Surface
-            eyebrow={t("publicPage.safety.eyebrow")}
-            icon={Flag}
-            title={t("publicPage.safety.title")}
-          >
-            <div className="grid gap-2">
-              <button type="button" className="btn btn-subtle m-0 justify-start">
-                {t("publicPage.safety.reportPlayer")}
-              </button>
-              <button type="button" className="btn btn-danger m-0 justify-start">
-                {t("publicPage.safety.blockPlayer")}
-              </button>
-            </div>
+            {unlockedAchievements.length > 0 ? (
+              <div className="grid gap-2">
+                {unlockedAchievements.map((achievement) => (
+                  <Badge key={achievement.code} tone="brass">
+                    <Award aria-hidden="true" className="size-3.5" />
+                    {formatAchievementLabel(achievement.code, t)}
+                  </Badge>
+                ))}
+              </div>
+            ) : (
+              <p className="m-0 text-sm text-[var(--muted-text)]">{t("page.achievements.empty")}</p>
+            )}
           </Surface>
         </aside>
       </section>

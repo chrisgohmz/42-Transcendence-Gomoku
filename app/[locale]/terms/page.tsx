@@ -3,12 +3,15 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 
 import { Badge, PageHeader, PageShell, Surface } from "@/components/gomoku-ui";
 import { Link } from "@/i18n/navigation";
+import { createPageMetadata } from "@/lib/page-metadata";
 
 type TermsPageProps = {
   params: Promise<{
     locale: string;
   }>;
 };
+
+export const generateMetadata = createPageMetadata("terms");
 
 export default async function TermsPage({ params }: TermsPageProps) {
   const { locale } = await params;

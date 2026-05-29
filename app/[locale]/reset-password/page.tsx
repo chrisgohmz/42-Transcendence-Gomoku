@@ -7,6 +7,7 @@ import { BoardShowpiece, PageShell } from "@/components/gomoku-ui";
 import { PageLoadingShell } from "@/components/page-loading-shell";
 import { PasswordResetConfirmForm } from "@/components/password-reset-confirm-form";
 import { Link } from "@/i18n/navigation";
+import { createPageMetadata } from "@/lib/page-metadata";
 
 type ResetPasswordPageProps = {
   params: Promise<{
@@ -17,6 +18,8 @@ type ResetPasswordPageProps = {
     token?: string | string[];
   }>;
 };
+
+export const generateMetadata = createPageMetadata("resetPassword");
 
 function firstSearchValue(value: string | string[] | undefined) {
   return Array.isArray(value) ? value[0] : value;

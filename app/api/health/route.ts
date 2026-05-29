@@ -1,3 +1,5 @@
+import { connection } from "next/server";
+
 import { prisma } from "../../lib/prisma";
 
 function getErrorMessage(error: unknown): string {
@@ -5,6 +7,8 @@ function getErrorMessage(error: unknown): string {
 }
 
 export async function GET() {
+  await connection();
+
   try {
     await prisma.$queryRaw`SELECT 1`;
 
@@ -15,12 +19,12 @@ export async function GET() {
       checkedAt: new Date().toISOString(),
     });
   } catch (error) {
+    console.error("[api/health] database check failed:", getErrorMessage(error));
     return Response.json(
       {
         service: "app",
         status: "degraded",
         database: "unreachable",
-        error: getErrorMessage(error),
         checkedAt: new Date().toISOString(),
       },
       { status: 503 },
