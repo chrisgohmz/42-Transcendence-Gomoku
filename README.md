@@ -316,8 +316,6 @@ Total documented module value: **23 points**.
 
 ## Resources
 
-- 42 subject: `ft_transcendence_v21.1.pdf`.
-- Local Next.js docs read for this README: `node_modules/next/dist/docs/01-app/index.md`, `05-server-and-client-components.md`, `15-route-handlers.md`, and `14-metadata-and-og-images.md`.
 - Next.js App Router documentation: https://nextjs.org/docs/app
 - React Server Components: https://react.dev/reference/rsc/server-components
 - Prisma documentation: https://www.prisma.io/docs
