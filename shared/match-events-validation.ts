@@ -5,6 +5,7 @@ import type { GameUpdatePayload, MatchSubscribePayload } from "./match-events";
 
 const seatSchema = z.enum(["BLACK", "WHITE"]);
 const aiDifficultySchema = z.enum(aiDifficultyIds);
+const databaseIdSchema = z.string().min(1).max(128);
 const matchModeSchema = z.enum(["ai"]);
 const matchStatusSchema = z.enum(["WAITING", "IN_PROGRESS", "FINISHED", "CANCELLED"]);
 const visibilitySchema = z.enum(["PUBLIC", "PRIVATE"]);
@@ -56,8 +57,8 @@ export const gameUpdatePayloadSchema = z.object({
 
 export const matchSubscribePayloadSchema = z.object({
   lastSeenStateVersion: z.number().int().nonnegative().optional(),
-  matchId: z.string().min(1),
-  participantId: z.string().min(1),
+  matchId: databaseIdSchema,
+  participantId: databaseIdSchema,
 });
 
 export function isGameUpdatePayload(value: unknown): value is GameUpdatePayload {

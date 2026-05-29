@@ -3,30 +3,12 @@ import type { Server, Socket } from "socket.io";
 import {
   cancelMatchmakingQueue,
   type JoinMatchmakingQueueResult,
-  type MatchmakingUser,
   type MatchmakingSession,
   joinMatchmakingQueue,
   getGlobalMatchStats,
 } from "@/lib/matches/matchmaking";
 
-type SocketUser = Partial<MatchmakingUser> & {
-  id?: string;
-};
-
-function getAuthenticatedUser(socket: Socket): MatchmakingUser | null {
-  const user = socket.data.user as SocketUser | undefined;
-
-  if (!user?.id) {
-    return null;
-  }
-
-  return {
-    displayName: user.displayName ?? null,
-    id: user.id,
-    name: user.name ?? null,
-    username: user.username ?? null,
-  };
-}
+import { getMatchmakingUserFromSocket } from "../lib/socket-matchmaking-user";
 
 function emitMatched(socket: Socket, session: MatchmakingSession) {
   socket.emit("queue:matched", session);
@@ -77,7 +59,7 @@ export function registerMatchmakingQueue(socket: Socket, io: Server) {
   });
 
   socket.on("queue:join", async () => {
-    const user = getAuthenticatedUser(socket);
+    const user = getMatchmakingUserFromSocket(socket);
 
     if (!user) {
       socket.emit("queue:error", { error: "unauthorized" });
@@ -94,7 +76,7 @@ export function registerMatchmakingQueue(socket: Socket, io: Server) {
   });
 
   socket.on("queue:leave", async () => {
-    const user = getAuthenticatedUser(socket);
+    const user = getMatchmakingUserFromSocket(socket);
 
     if (!user) {
       socket.emit("queue:error", { error: "unauthorized" });

@@ -50,6 +50,7 @@ import {
   readPositiveIntegerEnv,
   startSocketLifecycle,
 } from "./lib/socket-lifecycle";
+import { getMatchmakingUserFromSocket } from "./lib/socket-matchmaking-user";
 
 const currentDirectory = dirname(fileURLToPath(import.meta.url));
 
@@ -147,25 +148,6 @@ const remoteMatchConnections = createRemoteMatchConnectionManager({
   },
   reconnectWindowMs: matchReconnectWindowMs,
 });
-
-type SocketUser = Partial<MatchmakingUser> & {
-  id?: string;
-};
-
-function getMatchmakingUserFromSocket(socket: Parameters<typeof registerMatchmakingQueue>[0]) {
-  const user = socket.data.user as SocketUser | undefined;
-
-  if (!user?.id) {
-    return null;
-  }
-
-  return {
-    displayName: user.displayName ?? null,
-    id: user.id,
-    name: user.name ?? null,
-    username: user.username ?? null,
-  } satisfies MatchmakingUser;
-}
 
 function logPresenceError(action: string, error: unknown) {
   console.error(`[realtime] Failed to ${action} presence: ${getRealtimeRedisErrorMessage(error)}`);

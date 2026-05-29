@@ -100,7 +100,12 @@ describe("registerMatchSubscription", () => {
     registerMatchSubscription(socket, db);
 
     await handlers.get("match:subscribe")?.({ matchId: "" });
+    await handlers.get("match:subscribe")?.({
+      matchId: "m".repeat(129),
+      participantId: "black-player",
+    });
 
+    expect(emit).toHaveBeenCalledTimes(2);
     expect(emit).toHaveBeenCalledWith("match:error", { error: "invalid_payload" });
     expect(findFirst).not.toHaveBeenCalled();
   });
