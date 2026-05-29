@@ -32,6 +32,14 @@ test("home page renders the redesigned command center", async ({ page }) => {
   await expect(page.getByText("vs Human Lobby", { exact: true })).toHaveCount(0);
 });
 
+test("legal links navigate from desktop sidebar and mobile topbar", async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await expectLegalShellNavigation(page, "desktop sidebar");
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expectLegalShellNavigation(page, "mobile topbar");
+});
+
 test("primary game routes render their new page shells", async ({ page }) => {
   await gotoAppRoute(page, "/ai");
   await expect(
@@ -175,6 +183,35 @@ test("authenticated redesigned pages render at desktop and mobile widths", async
 
 async function gotoAppRoute(page: Page, route: string) {
   await page.goto(route, { waitUntil: "domcontentloaded" });
+}
+
+async function expectLegalShellNavigation(page: Page, shellName: string) {
+  await gotoAppRoute(page, "/");
+
+  const termsLink = page
+    .getByRole("link", { name: "Terms of Service" })
+    .filter({ visible: true })
+    .first();
+  const privacyLink = page
+    .getByRole("link", { name: "Privacy Policy" })
+    .filter({ visible: true })
+    .first();
+
+  await expect(termsLink, `${shellName} exposes the terms link`).toBeVisible();
+  await expect(privacyLink, `${shellName} exposes the privacy link`).toBeVisible();
+
+  await termsLink.click();
+  await expect(page).toHaveURL(/\/en\/terms$/);
+  await expect(page.getByRole("heading", { level: 1, name: "Terms of Service" })).toBeVisible();
+
+  await gotoAppRoute(page, "/");
+  await page
+    .getByRole("link", { name: "Privacy Policy" })
+    .filter({ visible: true })
+    .first()
+    .click();
+  await expect(page).toHaveURL(/\/en\/privacy$/);
+  await expect(page.getByRole("heading", { level: 1, name: "Privacy Policy" })).toBeVisible();
 }
 
 async function expectNoDocumentOverflow(page: Page, route: string) {

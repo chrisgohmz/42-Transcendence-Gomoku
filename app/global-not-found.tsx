@@ -59,7 +59,11 @@ export default async function GlobalNotFound() {
   const { copy, locale } = await getNotFoundPage();
 
   return (
-    <html lang={locale} className={`dark font-sans ${manrope.variable} ${cormorant.variable}`}>
+    <html
+      lang={locale}
+      data-scroll-behavior="smooth"
+      className={`dark font-sans ${manrope.variable} ${cormorant.variable}`}
+    >
       <body>
         <NotFoundContent copy={copy} locale={locale} />
       </body>
