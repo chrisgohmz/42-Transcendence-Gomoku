@@ -34,7 +34,7 @@ export function allowResponseStatus(
 
 export const test = base.extend<ConsoleGuardFixtures>({
   consoleDiagnostics: [
-    async ({ context }, use, testInfo) => {
+    async ({ browserName, context }, use, testInfo) => {
       const diagnostics: BrowserDiagnostic[] = [];
       const pageHandlers = new Map<
         Page,
@@ -63,6 +63,10 @@ export const test = base.extend<ConsoleGuardFixtures>({
           }
         };
         const onPageError = (error: Error) => {
+          if (isIgnoredPageError(browserName, error)) {
+            return;
+          }
+
           diagnostics.push(getPageErrorDiagnostic(error));
         };
         const onRequestFailed = (request: Request) => {
@@ -147,4 +151,8 @@ function isAllowedConsoleStatus(testInfo: TestInfo, text: string) {
 
     return Boolean(status && text.includes(`status of ${status}`));
   });
+}
+
+function isIgnoredPageError(browserName: string, error: Error) {
+  return browserName === "firefox" && error.message === "Error in input stream";
 }

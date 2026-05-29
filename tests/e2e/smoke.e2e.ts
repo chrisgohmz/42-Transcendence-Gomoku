@@ -54,16 +54,16 @@ test("primary game routes render their new page shells", async ({ page }) => {
 test("auth pages expose usable sign-in and sign-up forms", async ({ page }) => {
   await gotoAppRoute(page, "/login");
   await expect(page.getByRole("heading", { name: "Welcome back." })).toBeVisible();
-  await expect(page.getByLabel("Email")).toBeVisible();
-  await expect(page.getByLabel("Password")).toBeVisible();
+  await expect(visibleLabel(page, "Email")).toBeVisible();
+  await expect(visibleLabel(page, "Password")).toBeVisible();
   await expect(page.getByRole("button", { exact: true, name: "Sign in" })).toBeVisible();
 
   await gotoAppRoute(page, "/signup");
   await expect(page.getByRole("heading", { name: "Create your account." })).toBeVisible();
   await expect(page.getByLabel("Username")).toBeVisible();
   await expect(page.getByLabel("Display name")).toBeVisible();
-  await expect(page.getByLabel("Email")).toBeVisible();
-  await expect(page.getByLabel("Password")).toBeVisible();
+  await expect(visibleLabel(page, "Email")).toBeVisible();
+  await expect(visibleLabel(page, "Password")).toBeVisible();
   await expect(page.getByRole("button", { name: "Create account" })).toBeVisible();
 });
 
@@ -243,8 +243,8 @@ async function createAndSignInTestUser(
 
   try {
     await gotoAppRoute(page, "/login");
-    await page.getByLabel("Email").fill(email);
-    await page.getByLabel("Password").fill("password123");
+    await visibleLabel(page, "Email").fill(email);
+    await visibleLabel(page, "Password").fill("password123");
     await page.getByRole("button", { exact: true, name: "Sign in" }).click();
     await expect(page).toHaveURL(/\/en\/profile$/);
   } catch (error) {
@@ -259,6 +259,10 @@ async function createAndSignInTestUser(
     token,
     username,
   };
+}
+
+function visibleLabel(page: Page, text: string) {
+  return page.getByLabel(text).filter({ visible: true }).first();
 }
 
 async function createAcceptedFriend(userId: string, token: string) {
