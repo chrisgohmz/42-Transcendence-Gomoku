@@ -33,7 +33,7 @@ export type RealtimeOutboxEvent = {
   updatedAt: Date;
 };
 
-type RealtimeOutboxModel = {
+type RealtimeOutboxCreateModel = {
   create(args: {
     data: {
       topic: string;
@@ -42,6 +42,9 @@ type RealtimeOutboxModel = {
       lastError: string | null;
     };
   }): Promise<unknown>;
+};
+
+type RealtimeOutboxDrainModel = {
   findMany(args: {
     where: {
       OR: Array<
@@ -83,6 +86,16 @@ type RealtimeOutboxModel = {
   }): Promise<{ count: number }>;
 };
 
+type RealtimeOutboxModel = RealtimeOutboxCreateModel & RealtimeOutboxDrainModel;
+
+export type RealtimeOutboxCreatePrisma = {
+  realtimeOutboxEvent: RealtimeOutboxCreateModel;
+};
+
+export type RealtimeOutboxDrainPrisma = {
+  realtimeOutboxEvent: RealtimeOutboxDrainModel;
+};
+
 export type RealtimeOutboxPrisma = {
   realtimeOutboxEvent: RealtimeOutboxModel;
 };
@@ -90,7 +103,7 @@ export type RealtimeOutboxPrisma = {
 export type DrainRealtimeOutboxOptions = {
   limit?: number;
   now?: Date;
-  prisma?: RealtimeOutboxPrisma;
+  prisma?: RealtimeOutboxDrainPrisma;
   publish: (event: RealtimeOutboxPublishEvent) => Promise<void>;
   staleProcessingMs?: number;
 };
@@ -99,8 +112,14 @@ const defaultBatchLimit = 25;
 const defaultStaleProcessingMs = 5 * 60 * 1000;
 const maxErrorLength = 1000;
 
-function getPrisma(prisma: RealtimeOutboxPrisma | undefined): RealtimeOutboxPrisma {
-  return prisma ?? (defaultPrisma as unknown as RealtimeOutboxPrisma);
+function getCreatePrisma(
+  prisma: RealtimeOutboxCreatePrisma | undefined,
+): RealtimeOutboxCreatePrisma {
+  return prisma ?? (defaultPrisma as unknown as RealtimeOutboxCreatePrisma);
+}
+
+function getDrainPrisma(prisma: RealtimeOutboxDrainPrisma | undefined): RealtimeOutboxDrainPrisma {
+  return prisma ?? (defaultPrisma as unknown as RealtimeOutboxDrainPrisma);
 }
 
 function truncateError(message: string) {
@@ -130,10 +149,10 @@ export async function enqueueRealtimeOutboxEvent({
 }: {
   error?: unknown;
   payload: unknown;
-  prisma?: RealtimeOutboxPrisma;
+  prisma?: RealtimeOutboxCreatePrisma;
   topic: RealtimeOutboxTopic;
 }) {
-  await getPrisma(prisma).realtimeOutboxEvent.create({
+  await getCreatePrisma(prisma).realtimeOutboxEvent.create({
     data: {
       topic,
       payload: payload as Prisma.InputJsonValue,
@@ -150,7 +169,7 @@ export async function drainRealtimeOutbox({
   publish,
   staleProcessingMs = defaultStaleProcessingMs,
 }: DrainRealtimeOutboxOptions) {
-  const client = getPrisma(prisma);
+  const client = getDrainPrisma(prisma);
   const staleProcessingBefore = new Date(now.getTime() - staleProcessingMs);
   const events = await client.realtimeOutboxEvent.findMany({
     where: {

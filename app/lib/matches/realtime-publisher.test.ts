@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 import type { GameUpdatePayload } from "../../../shared/match-events";
 import { internalRealtimeSecretHeader } from "../../../shared/realtime-internal";
 import { realtimeOutboxStatuses, realtimeOutboxTopics } from "../realtime-outbox-contract";
-import type { RealtimeOutboxEvent, RealtimeOutboxPrisma } from "../realtime-outbox-core";
+import type { RealtimeOutboxDrainPrisma, RealtimeOutboxEvent } from "../realtime-outbox-core";
 import {
   drainMatchRealtimeOutbox,
   publishChallengeDeclined,
@@ -351,11 +351,8 @@ describe("drainMatchRealtimeOutbox", () => {
       topic: realtimeOutboxTopics.gameUpdate,
       updatedAt: now,
     };
-    const prisma: RealtimeOutboxPrisma = {
+    const prisma: RealtimeOutboxDrainPrisma = {
       realtimeOutboxEvent: {
-        async create() {
-          return {};
-        },
         async findMany() {
           return [event];
         },

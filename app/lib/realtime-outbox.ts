@@ -6,6 +6,8 @@ export {
   realtimeOutboxStatuses,
   realtimeOutboxTopics,
   type DrainRealtimeOutboxOptions,
+  type RealtimeOutboxCreatePrisma,
+  type RealtimeOutboxDrainPrisma,
   type RealtimeOutboxEvent,
   type RealtimeOutboxPublishEvent,
   type RealtimeOutboxPrisma,
