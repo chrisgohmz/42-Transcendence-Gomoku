@@ -1114,7 +1114,6 @@ export const messages = {
     },
     picture: {
       alt: "个人资料",
-      chooseBuiltIn: "使用 {name}",
       changePhoto: "更换照片",
     },
     edit: {

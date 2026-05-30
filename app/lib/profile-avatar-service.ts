@@ -8,7 +8,6 @@ import {
   getProfileAvatarUrl,
   writeProfileAvatarFile,
 } from "@/lib/profile-avatar-storage";
-import { isSeedProfileAvatarUrl } from "@/lib/seed-avatars";
 
 export async function saveProfileAvatar(userId: string, input: Buffer) {
   const normalizedImage = await normalizeProfileAvatarImage(input);
@@ -41,28 +40,6 @@ export async function saveProfileAvatar(userId: string, input: Buffer) {
   }
 
   if (previousUser?.avatarUrl) {
-    await deleteProfileAvatarFileByUrl(previousUser.avatarUrl).catch(() => undefined);
-  }
-
-  return true;
-}
-
-export async function saveProfileSeedAvatar(userId: string, avatarUrl: string) {
-  if (!isSeedProfileAvatarUrl(avatarUrl)) {
-    return false;
-  }
-
-  const previousUser = await prisma.user.findUnique({
-    select: { avatarUrl: true },
-    where: { id: userId },
-  });
-
-  await prisma.user.update({
-    data: { avatarUrl },
-    where: { id: userId },
-  });
-
-  if (previousUser?.avatarUrl && previousUser.avatarUrl !== avatarUrl) {
     await deleteProfileAvatarFileByUrl(previousUser.avatarUrl).catch(() => undefined);
   }
 

@@ -49,27 +49,6 @@ test("OAuth-only profile settings show linked email and set password without cur
   }
 });
 
-test("profile avatar can switch to a built-in seed avatar", async ({ page }, testInfo) => {
-  const user = await createAndSignInTestUser(page, testInfo);
-
-  try {
-    await gotoAppRoute(page, "/profile/edit");
-    await visibleButton(page, "Use Hoshi").click();
-
-    await expect
-      .poll(() => getUserAvatarUrl(user.id), { timeout: 15_000 })
-      .toBe("/seed-avatars/hoshi.svg");
-    await expect(
-      page.getByRole("img", { name: "Profile" }).filter({ visible: true }).first(),
-    ).toHaveAttribute("src", /\/seed-avatars\/hoshi\.svg/);
-    await expect(
-      page.getByRole("img", { name: "User avatar" }).filter({ visible: true }).first(),
-    ).toHaveAttribute("src", /\/seed-avatars\/hoshi\.svg/);
-  } finally {
-    await cleanupTestUsers([user.username]);
-  }
-});
-
 async function gotoAppRoute(page: Page, route: string) {
   await page.goto(`/en${route}`, { waitUntil: "domcontentloaded" });
 }
@@ -169,15 +148,6 @@ async function hasCredentialAccount(userId: string) {
   });
 
   return Boolean(credentialAccount);
-}
-
-async function getUserAvatarUrl(userId: string) {
-  const user = await prisma.user.findUnique({
-    select: { avatarUrl: true },
-    where: { id: userId },
-  });
-
-  return user?.avatarUrl ?? null;
 }
 
 async function cleanupTestUsers(usernames: string[]) {

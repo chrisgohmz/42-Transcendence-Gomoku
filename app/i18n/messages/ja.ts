@@ -1123,7 +1123,6 @@ export const messages = {
     },
     picture: {
       alt: "プロフィール",
-      chooseBuiltIn: "{name} を使用",
       changePhoto: "写真を変更",
     },
     edit: {
