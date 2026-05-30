@@ -6,7 +6,7 @@ import { headers } from "next/headers";
 import { z } from "zod";
 
 import { getCurrentSession } from "@/lib/auth";
-import { saveProfileAvatar } from "@/lib/profile-avatar-service";
+import { saveProfileAvatar, saveProfileSeedAvatar } from "@/lib/profile-avatar-service";
 import { isRateLimited } from "@/lib/rate-limit";
 import { rateLimitRule, userRateLimitSubject } from "@/lib/rate-limit-rules";
 
@@ -53,7 +53,39 @@ export async function uploadProfilePicture(formData: FormData) {
       return { error: t("invalidImage") };
     }
 
-    revalidatePath("/");
+    revalidatePath("/", "layout");
+    return { success: true };
+  } catch {
+    return { error: t("pictureSaveFailed") };
+  }
+}
+
+export async function selectSeedProfilePicture(avatarUrl: string) {
+  const locale = await getLocale();
+  const t = await getTranslations({ locale, namespace: "profile.errors" });
+  const sessionData = await getCurrentSession();
+
+  if (!sessionData) {
+    return { error: t("loginRequired") };
+  }
+
+  const rateLimitExceeded = await isRateLimited(
+    await headers(),
+    rateLimitRule("profileAvatarUpload", userRateLimitSubject(sessionData.user.id)),
+  );
+
+  if (rateLimitExceeded) {
+    return { error: t("pictureSaveFailed") };
+  }
+
+  try {
+    const saved = await saveProfileSeedAvatar(sessionData.user.id, avatarUrl);
+
+    if (!saved) {
+      return { error: t("invalidImage") };
+    }
+
+    revalidatePath("/", "layout");
     return { success: true };
   } catch {
     return { error: t("pictureSaveFailed") };

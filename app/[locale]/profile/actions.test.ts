@@ -8,6 +8,7 @@ const revalidatePath = mock();
 const headers = mock();
 const getCurrentSession = mock();
 const saveProfileAvatar = mock();
+const saveProfileSeedAvatar = mock();
 
 await mock.module("server-only", () => ({}));
 
@@ -32,9 +33,10 @@ await mock.module("@/lib/auth", () =>
 
 await mock.module("@/lib/profile-avatar-service", () => ({
   saveProfileAvatar,
+  saveProfileSeedAvatar,
 }));
 
-const { uploadProfilePicture } = await import("./actions");
+const { selectSeedProfilePicture, uploadProfilePicture } = await import("./actions");
 
 beforeEach(() => {
   getLocale.mockReset();
@@ -43,6 +45,7 @@ beforeEach(() => {
   headers.mockReset();
   getCurrentSession.mockReset();
   saveProfileAvatar.mockReset();
+  saveProfileSeedAvatar.mockReset();
 
   getLocale.mockResolvedValue("en");
   getTranslations.mockImplementation(
@@ -57,6 +60,7 @@ beforeEach(() => {
     },
   });
   saveProfileAvatar.mockResolvedValue(true);
+  saveProfileSeedAvatar.mockResolvedValue(true);
 });
 
 describe("uploadProfilePicture", () => {
@@ -110,13 +114,49 @@ describe("uploadProfilePicture", () => {
 
     expect(result).toEqual({ success: true });
     expect(saveProfileAvatar).toHaveBeenCalledWith("user-ada", expect.any(Buffer));
-    expect(revalidatePath).toHaveBeenCalledWith("/");
+    expect(revalidatePath).toHaveBeenCalledWith("/", "layout");
   });
 
   test("returns a translated save failure when avatar persistence throws", async () => {
     saveProfileAvatar.mockRejectedValueOnce(new Error("disk full"));
 
     const result = await uploadProfilePicture(formDataWithFile(pngFile()));
+
+    expect(result).toEqual({ error: "profile.errors:pictureSaveFailed" });
+  });
+});
+
+describe("selectSeedProfilePicture", () => {
+  test("requires authentication before selecting a seed avatar", async () => {
+    getCurrentSession.mockResolvedValueOnce(null);
+
+    const result = await selectSeedProfilePicture("/seed-avatars/hoshi.svg");
+
+    expect(result).toEqual({ error: "profile.errors:loginRequired" });
+    expect(saveProfileSeedAvatar).not.toHaveBeenCalled();
+  });
+
+  test("rejects a seed avatar URL that is not whitelisted", async () => {
+    saveProfileSeedAvatar.mockResolvedValueOnce(false);
+
+    const result = await selectSeedProfilePicture("/seed-avatars/../alice.svg");
+
+    expect(result).toEqual({ error: "profile.errors:invalidImage" });
+    expect(saveProfileSeedAvatar).toHaveBeenCalledWith("user-ada", "/seed-avatars/../alice.svg");
+  });
+
+  test("saves a whitelisted seed avatar for the current user", async () => {
+    const result = await selectSeedProfilePicture("/seed-avatars/hoshi.svg");
+
+    expect(result).toEqual({ success: true });
+    expect(saveProfileSeedAvatar).toHaveBeenCalledWith("user-ada", "/seed-avatars/hoshi.svg");
+    expect(revalidatePath).toHaveBeenCalledWith("/", "layout");
+  });
+
+  test("returns a translated save failure when seed avatar persistence throws", async () => {
+    saveProfileSeedAvatar.mockRejectedValueOnce(new Error("database unavailable"));
+
+    const result = await selectSeedProfilePicture("/seed-avatars/hoshi.svg");
 
     expect(result).toEqual({ error: "profile.errors:pictureSaveFailed" });
   });

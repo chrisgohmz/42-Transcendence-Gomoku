@@ -28,7 +28,7 @@ await mock.module("@/lib/prisma", () => ({
   },
 }));
 
-const { saveProfileAvatar } = await import("./profile-avatar-service");
+const { saveProfileAvatar, saveProfileSeedAvatar } = await import("./profile-avatar-service");
 
 const normalizedBuffer = Buffer.from("normalized-avatar");
 const writtenAvatarUrls: string[] = [];
@@ -124,5 +124,34 @@ describe("saveProfileAvatar", () => {
     expect((caughtError as Error).message).toBe("database unavailable");
     expect(savedFilename).not.toBeNull();
     expect(await readProfileAvatarFile(savedFilename!)).toBeNull();
+  });
+});
+
+describe("saveProfileSeedAvatar", () => {
+  test("rejects non-whitelisted seed avatar URLs before persistence", async () => {
+    expect(await saveProfileSeedAvatar("user-ada", "/seed-avatars/../alice.svg")).toBe(false);
+    expect(findUniqueUser).not.toHaveBeenCalled();
+    expect(updateUser).not.toHaveBeenCalled();
+  });
+
+  test("stores a whitelisted seed avatar URL and cleans up the previous uploaded avatar", async () => {
+    const previousFilename = createProfileAvatarFilename("webp");
+    const previousAvatarUrl = getProfileAvatarUrl(previousFilename)!;
+
+    writtenAvatarUrls.push(previousAvatarUrl);
+    await writeProfileAvatarFile(previousFilename, Buffer.from("previous-avatar"));
+    findUniqueUser.mockResolvedValueOnce({ avatarUrl: previousAvatarUrl });
+
+    expect(await saveProfileSeedAvatar("user-ada", "/seed-avatars/hoshi.svg")).toBe(true);
+
+    expect(findUniqueUser).toHaveBeenCalledWith({
+      select: { avatarUrl: true },
+      where: { id: "user-ada" },
+    });
+    expect(updateUser).toHaveBeenCalledWith({
+      data: { avatarUrl: "/seed-avatars/hoshi.svg" },
+      where: { id: "user-ada" },
+    });
+    expect(await readProfileAvatarFile(previousFilename)).toBeNull();
   });
 });

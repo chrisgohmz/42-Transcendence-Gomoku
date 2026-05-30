@@ -6,11 +6,15 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useState, useRef } from "react";
 
-import { uploadProfilePicture } from "./actions";
+import { seedProfileAvatars } from "@/lib/seed-avatars";
+
+import { selectSeedProfilePicture, uploadProfilePicture } from "./actions";
 
 export default function ProfilePicture({ initialImage }: { initialImage?: string | null }) {
   const [isHovering, setIsHovering] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [openFilePickerOnErrorClose, setOpenFilePickerOnErrorClose] = useState(false);
+  const [pendingSeedAvatar, setPendingSeedAvatar] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const t = useTranslations("profile.picture");
   const router = useRouter();
@@ -29,18 +33,38 @@ export default function ProfilePicture({ initialImage }: { initialImage?: string
     const result = await uploadProfilePicture(formData);
 
     if (result?.error) {
+      setOpenFilePickerOnErrorClose(true);
       setErrorMessage(result.error);
     } else if (result?.success) {
       router.refresh();
     }
   };
 
+  const handleSeedAvatarClick = async (avatarUrl: string) => {
+    setPendingSeedAvatar(avatarUrl);
+    setErrorMessage(null);
+
+    try {
+      const result = await selectSeedProfilePicture(avatarUrl);
+
+      if (result?.error) {
+        setOpenFilePickerOnErrorClose(false);
+        setErrorMessage(result.error);
+      } else if (result?.success) {
+        router.refresh();
+      }
+    } finally {
+      setPendingSeedAvatar(null);
+    }
+  };
+
   const closeErrorPopup = () => {
     setErrorMessage(null);
-    if (fileInputRef.current) {
+    if (openFilePickerOnErrorClose && fileInputRef.current) {
       fileInputRef.current.value = "";
       fileInputRef.current.click();
     }
+    setOpenFilePickerOnErrorClose(false);
   };
 
   return (
@@ -88,9 +112,40 @@ export default function ProfilePicture({ initialImage }: { initialImage?: string
         ref={fileInputRef}
         onChange={handleFileChange}
         className="hidden"
-        accept="image/*"
+        accept="image/jpeg,image/png,image/webp"
         aria-label={t("changePhoto")}
       />
+      <div className="grid w-full max-w-[300px] grid-cols-7 gap-2">
+        {seedProfileAvatars.map((avatar) => {
+          const isSelected = initialImage === avatar.url;
+          const isPending = pendingSeedAvatar === avatar.url;
+
+          return (
+            <button
+              key={avatar.url}
+              type="button"
+              aria-label={t("chooseBuiltIn", { name: avatar.name })}
+              title={t("chooseBuiltIn", { name: avatar.name })}
+              disabled={Boolean(pendingSeedAvatar)}
+              onClick={() => handleSeedAvatarClick(avatar.url)}
+              className={`relative aspect-square overflow-hidden rounded-full border bg-white/[0.06] transition focus-visible:ring-3 focus-visible:ring-[var(--mint)]/25 focus-visible:outline-none disabled:cursor-wait disabled:opacity-60 ${
+                isSelected
+                  ? "border-[var(--mint)] shadow-[0_0_0_2px_rgb(93_215_166_/_0.22)]"
+                  : "border-[var(--panel-border-soft)] hover:border-[var(--brass)]/70"
+              }`}
+            >
+              <Image
+                src={avatar.url}
+                alt=""
+                fill
+                sizes="42px"
+                className={`object-cover ${isPending ? "animate-pulse" : ""}`}
+                unoptimized
+              />
+            </button>
+          );
+        })}
+      </div>
     </>
   );
 }

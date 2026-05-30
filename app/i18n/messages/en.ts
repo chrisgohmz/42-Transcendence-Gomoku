@@ -1120,6 +1120,7 @@ export const messages = {
     },
     picture: {
       alt: "Profile",
+      chooseBuiltIn: "Use {name}",
       changePhoto: "Change Photo",
     },
     edit: {

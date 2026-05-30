@@ -7,7 +7,7 @@ import { PlayerProfile, PlayerLogout } from "@/components/player-menu";
 import { SidebarNav, type SidebarNavItem } from "@/components/sidebar-nav";
 import { Button } from "@/components/ui/button";
 import { Link } from "@/i18n/navigation";
-import { getCurrentSessionIdentity } from "@/lib/auth";
+import { getCurrentSession } from "@/lib/auth";
 import { getUnreadDirectMessageCountForUser } from "@/lib/chat/unread";
 import { prisma } from "@/lib/prisma";
 
@@ -25,7 +25,7 @@ const legalLinkMeta = [
 
 export default async function AppSidebar() {
   const [sessionData, brand, nav, footer, legal] = await Promise.all([
-    getCurrentSessionIdentity(),
+    getCurrentSession(),
     getTranslations("brand"),
     getTranslations("nav"),
     getTranslations("footer"),
