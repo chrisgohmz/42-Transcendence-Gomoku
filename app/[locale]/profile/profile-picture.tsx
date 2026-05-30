@@ -11,7 +11,6 @@ import { uploadProfilePicture } from "./actions";
 export default function ProfilePicture({ initialImage }: { initialImage?: string | null }) {
   const [isHovering, setIsHovering] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [openFilePickerOnErrorClose, setOpenFilePickerOnErrorClose] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const t = useTranslations("profile.picture");
   const router = useRouter();
@@ -30,7 +29,6 @@ export default function ProfilePicture({ initialImage }: { initialImage?: string
     const result = await uploadProfilePicture(formData);
 
     if (result?.error) {
-      setOpenFilePickerOnErrorClose(true);
       setErrorMessage(result.error);
     } else if (result?.success) {
       router.refresh();
@@ -39,11 +37,10 @@ export default function ProfilePicture({ initialImage }: { initialImage?: string
 
   const closeErrorPopup = () => {
     setErrorMessage(null);
-    if (openFilePickerOnErrorClose && fileInputRef.current) {
+    if (fileInputRef.current) {
       fileInputRef.current.value = "";
       fileInputRef.current.click();
     }
-    setOpenFilePickerOnErrorClose(false);
   };
 
   return (
