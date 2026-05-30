@@ -2,8 +2,10 @@ import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
 import type { GameUpdatePayload } from "../../../shared/match-events";
 import { internalRealtimeSecretHeader } from "../../../shared/realtime-internal";
-import { realtimeOutboxTopics } from "../realtime-outbox-contract";
+import { realtimeOutboxStatuses, realtimeOutboxTopics } from "../realtime-outbox-contract";
+import type { RealtimeOutboxEvent, RealtimeOutboxPrisma } from "../realtime-outbox-core";
 import {
+  drainMatchRealtimeOutbox,
   publishChallengeDeclined,
   publishChallengeReceived,
   publishGameUpdate,
@@ -327,6 +329,52 @@ describe("publishRealtimeOutboxEvent", () => {
       cache: "no-store",
       method: "POST",
     });
+  });
+});
+
+describe("drainMatchRealtimeOutbox", () => {
+  test("uses the standalone outbox core for non-Next workers", async () => {
+    process.env["REALTIME_INTERNAL_URL"] = "http://localhost:3001/internal/game-update";
+    process.env["REALTIME_INTERNAL_SECRET"] = "outbox-secret";
+    const now = new Date("2026-05-29T01:00:00.000Z");
+    const event: RealtimeOutboxEvent = {
+      attempts: 0,
+      availableAt: now,
+      createdAt: now,
+      id: "evt-1",
+      lastError: null,
+      lockedAt: null,
+      maxAttempts: 5,
+      payload: payload as unknown as RealtimeOutboxEvent["payload"],
+      publishedAt: null,
+      status: realtimeOutboxStatuses.pending,
+      topic: realtimeOutboxTopics.gameUpdate,
+      updatedAt: now,
+    };
+    const prisma: RealtimeOutboxPrisma = {
+      realtimeOutboxEvent: {
+        async create() {
+          return {};
+        },
+        async findMany() {
+          return [event];
+        },
+        async update() {
+          return {};
+        },
+        async updateMany() {
+          return { count: 1 };
+        },
+      },
+    };
+
+    const summary = await drainMatchRealtimeOutbox({ now, prisma });
+
+    expect(summary).toEqual({ failed: 0, published: 1, retried: 0, skipped: 0 });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const call = fetchMock.mock.calls[0] as [string, RequestInit] | undefined;
+
+    expect(call?.[0]).toBe("http://localhost:3001/internal/game-update");
   });
 });
 

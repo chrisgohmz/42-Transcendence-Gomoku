@@ -6,12 +6,15 @@ import {
   internalRealtimeSecretHeader,
   readRealtimeInternalSecret,
 } from "../../../shared/realtime-internal";
-import type { DrainRealtimeOutboxOptions, enqueueRealtimeOutboxEvent } from "../realtime-outbox";
 import {
   realtimeOutboxTopics,
   type RealtimeOutboxPublishEvent,
   type RealtimeOutboxTopic,
 } from "../realtime-outbox-contract";
+import type {
+  DrainRealtimeOutboxOptions,
+  enqueueRealtimeOutboxEvent,
+} from "../realtime-outbox-core";
 
 const defaultGameUpdateUrl = "http://realtime:3001/internal/game-update";
 const defaultQueueMatchedUrl = "http://realtime:3001/internal/queue-matched";
@@ -283,7 +286,7 @@ export async function publishRealtimeOutboxEvent(
 export async function drainMatchRealtimeOutbox(
   options: Omit<DrainRealtimeOutboxOptions, "publish"> = {},
 ) {
-  const { drainRealtimeOutbox } = await import("../realtime-outbox");
+  const { drainRealtimeOutbox } = await import("../realtime-outbox-core");
 
   return drainRealtimeOutbox({
     ...options,
